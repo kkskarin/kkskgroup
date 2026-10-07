@@ -642,6 +642,14 @@
     manage: function () { return Promise.reject(err("unavailable", "No permissions panel here")); }
   });
 
+  /* The super admins as {id, name}, for the app's "Approver" list (the claude.ai version had no such list). */
+  window.bvSuperAdmins = function () {
+    return ready.then(function () { return sb.from("app_super_admins").select("email"); }).then(function (r) {
+      var em = (r.data || []).map(function (x) { return x.email; });
+      return em.length ? sb.from("app_profiles").select("uid,name,email").in("email", em) : { data: [] };
+    }).then(function (r) { return (r.data || []).map(function (p) { return { id: p.uid, name: p.name || "" }; }); }, function () { return []; });
+  };
+
   var CAPS = { db: DB, user: USER, sample: SAMPLE, downloads: DOWNLOADS, permissions: PERMS };
   window.claude = Object.freeze({
     use: function (name) {

@@ -1,19 +1,23 @@
-/* Sign-in screen shown by supabase-runtime.js before the app starts. */
-#bvAuth{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:#F4F6F9;font-family:"Inter","Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#14213D}
+/* Sign-in screen shown by supabase-runtime.js before the app starts, in the KKSK look. */
+#bvAuth{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;font-family:"Jost",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#14231C;
+  background:radial-gradient(1200px 600px at 15% -10%,rgba(45,190,126,.22),transparent 60%),radial-gradient(900px 500px at 110% 110%,rgba(0,146,86,.25),transparent 55%),#10281F}
 #bvAuth[hidden]{display:none!important}
-.bvCard{width:100%;max-width:420px;background:#fff;border:1px solid #E2E6EC;border-radius:14px;box-shadow:0 1px 2px rgba(20,33,61,.05),0 8px 24px -16px rgba(20,33,61,.25);padding:28px 24px;border-top:4px solid #1F3A5F}
-.bvCard h1{font-size:20px;font-weight:700;margin:0 0 6px;letter-spacing:-.01em}
-.bvSub{margin:6px 0 14px;color:#5B6576;font-size:14px;line-height:1.5}
+.bvCard{width:100%;max-width:430px;background:#fff;border-radius:20px;box-shadow:0 30px 80px -30px rgba(0,0,0,.55);padding:32px 28px 26px;position:relative}
+.bvCard::before{content:"";display:block;width:54px;height:54px;margin:0 0 14px;background:url(favicon.png) center/contain no-repeat}
+.bvCard h1{font-family:"Marcellus",Georgia,serif;font-weight:400;font-size:27px;margin:0 0 4px;letter-spacing:.005em;color:#10281F}
+.bvCard h1::after{content:"KKSK GROUP";display:block;font-family:"Jost",sans-serif;font-size:11px;font-weight:600;letter-spacing:.24em;color:#009256;margin-top:6px}
+.bvSub{margin:8px 0 14px;color:#5E6E66;font-size:14.5px;line-height:1.5}
 .bvErr{margin:6px 0 12px;color:#B42318;font-size:14px;font-weight:600}
 .bvForm{display:flex;flex-direction:column;gap:10px}
-.bvField{border:1px solid #CBD2DC;border-radius:8px;padding:10px 12px;min-height:44px;font:inherit;font-size:15px;width:100%;box-sizing:border-box}
-.bvField:focus{outline:none;border-color:#1F3A5F;box-shadow:0 0 0 3px rgba(31,58,95,.14)}
+.bvField{border:1px solid #C9D7CF;border-radius:10px;padding:11px 13px;min-height:46px;font:inherit;font-size:15px;width:100%;box-sizing:border-box}
+.bvField:focus{outline:none;border-color:#009256;box-shadow:0 0 0 3px rgba(0,146,86,.16)}
 .bvCode{letter-spacing:6px;font-size:20px;text-align:center}
-.bvBtn{background:#1F3A5F;color:#fff;border:1px solid #1F3A5F;border-radius:8px;min-height:44px;font:inherit;font-weight:600;cursor:pointer}
+.bvBtn{background:#007A4D;color:#fff;border:1px solid #007A4D;border-radius:10px;min-height:46px;font:inherit;font-weight:600;letter-spacing:.02em;cursor:pointer;box-shadow:0 8px 18px -10px rgba(0,122,77,.8)}
+.bvBtn:hover:not(:disabled){background:#005C3C;border-color:#005C3C}
 .bvBtn:disabled{opacity:.6;cursor:default}
-.bvLink{background:none;border:0;color:#1F3A5F;text-decoration:underline;font:inherit;font-size:13px;padding:6px 0;cursor:pointer}
-#bvSignOut{margin-left:4px;flex:none}
-.bvTabs{display:flex;gap:4px;background:#F3F5F8;border:1px solid #E2E6EC;border-radius:10px;padding:3px;margin:10px 0 4px}
-.bvTab{flex:1;border:0;background:none;border-radius:7px;padding:8px 10px;font:inherit;font-weight:600;font-size:14px;color:#5B6576;cursor:pointer}
-.bvTab[aria-selected="true"]{background:#fff;color:#14213D;box-shadow:0 1px 2px rgba(20,33,61,.12)}
+.bvLink{background:none;border:0;color:#00704A;text-decoration:underline;font:inherit;font-size:13.5px;padding:6px 0;cursor:pointer}
 .bvCard .bvLink{display:block}
+.bvTabs{display:flex;gap:4px;background:#F1F6F3;border:1px solid #DCE5E0;border-radius:12px;padding:4px;margin:14px 0 4px}
+.bvTab{flex:1;border:0;background:none;border-radius:9px;padding:9px 10px;font:inherit;font-weight:600;font-size:14px;color:#5E6E66;cursor:pointer}
+.bvTab[aria-selected="true"]{background:#10281F;color:#fff}
+#bvSignOut{margin-left:4px;flex:none}

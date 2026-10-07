@@ -34,6 +34,21 @@ provides the same calls, so the app code did not need rewriting:
   Edge Function, which calls the Anthropic API with the server-side `ANTHROPIC_API_KEY` secret.
 - **Backups** download as Excel files. (The old "also save to Google Drive" step is not available outside claude.ai.)
 
+### What the app does for each role
+
+- **Approver**: every bill, proforma, import and voucher names the admin who approves it (the super admin or an
+  admin named under Admin › Users). It prints on the voucher and on the checking reports. A named admin sees only
+  the work they approve; the super admin sees everything.
+- **Admins** don't see the entry screens (Enter Bills, Proformas, Imports, Cash Vouchers, To Account) or draft
+  checking reports. Reports › **Transactions** shows every item, the step it is at and who has it now, with a
+  "Who has what open" summary; each view downloads as PDF or Excel. "View as" still opens a person's own screens.
+- **Everyone else**: Weekly, Monthly and Transactions show only their own work and that of profiles on their login.
+- **Voucher numbers** are given automatically per company and financial year: `INTL-VOU001/10/26-27`.
+- **Cash advances** are paid out by the financier in Payment Entry › Advances (date, how paid, reference).
+- **Ledgers and vendors** can be uploaded from Excel (Download template / Upload Excel on their pages). Rows are
+  checked, exact duplicates skipped, and every row's result is listed. Ledgers are chosen by hand on bills.
+- Every report has an **Excel** download, formatted in the KKSK colours.
+
 ### Setup checklist
 
 1. **Anthropic API key**: Supabase dashboard → Edge Functions → Secrets → add `ANTHROPIC_API_KEY`

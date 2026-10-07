@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="icon" href="data:,">
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="theme-color" content="#10281F">
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script src="supabase-runtime.js"></script>
@@ -6,7 +6,7 @@
 <title>Bills &amp; Vouchers Accounting</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&family=Marcellus&display=swap" rel="stylesheet">
 <style>
 :root{
   box-sizing:border-box;
@@ -409,6 +409,7 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .pphead h3{margin:0}
 @media (max-width:760px){.costgrid{grid-template-columns:1fr 1fr}.field.paid{width:100%}}
 .mob-only{display:none}
+.is-admin .teamonly{display:none!important}
 @media (max-width:760px){.mob-only{display:block}}
 /* ---- Professional look: navy and slate on white, gold only for the active heading. Logos always sit on white. ---- */
 :root{
@@ -538,6 +539,77 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   .toast{left:12px;right:12px;transform:none;max-width:none}
   .panel{margin:16px auto;padding:20px 16px}
 }
+/* ---- KKSK look (www.kksk.in): forest green and KKSK green on white, a flared serif for headings,
+   a clean geometric sans for everything else, soft rounded cards and small spaced capitals for labels. ---- */
+:root{
+  --forest:#10281F; --forest-2:#173A2C; --kk:#009256; --kk-light:#2DBE7E;
+  --bg:#F4F7F5; --surface:#FFFFFF; --ink:#14231C; --muted:#5E6E66; --line:#DCE5E0; --soft:#F1F6F3;
+  --brand:#007A4D; --rule:#007A4D; --on-brand:#FFFFFF; --brand-text:#00704A; --brand-dark:#005C3C; --brand-soft:#E3F2EA; --gold:#2DBE7E;
+  --locked:#F1F5F2; --focus:#009256;
+  --ok:#00704A; --ok-bg:#E3F2EA;
+  --shadow:0 1px 2px rgba(16,40,31,.05),0 14px 34px -20px rgba(16,40,31,.30);
+  --font:"Jost","Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --serif:"Marcellus","Jost",Georgia,serif;
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;letter-spacing:.005em}
+.top{background:#fff;border-bottom:1px solid var(--line)}
+.top .wrap{padding-top:14px;padding-bottom:14px}
+.mark{background:#fff;border-radius:10px;width:50px;height:50px;padding:3px}
+.titles .t1{font-family:var(--serif);font-weight:400;font-size:21px;letter-spacing:.01em;color:var(--forest)}
+.titles .t2{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--kk)}
+.me .nm{color:var(--forest);font-weight:600}.me .rl{color:var(--muted)}
+h2{font-family:var(--serif);font-weight:400;font-size:27px;letter-spacing:.005em;color:var(--forest);line-height:1.25}
+.panel h2{font-size:28px}
+h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--brand-text)}
+.modal h3{font-family:var(--serif);font-size:22px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--forest)}
+.sub{color:var(--muted);font-size:14px}
+.navbar{background:var(--forest)}
+.navbar #nav button{color:#B9CEC3;font-weight:500;font-size:14px;letter-spacing:.02em;padding:14px 18px}
+.navbar #nav button.grp-on{color:#fff}
+.navbar #nav button.grp-on::after{background:var(--kk-light);height:3px;left:14px;right:14px}
+@media (hover:hover){.navbar #nav button:not(.grp-on):hover{color:#fff;background:rgba(255,255,255,.05)}}
+.navbar .subbar{background:#fff;border-bottom:1px solid var(--line)}
+.navbar #subnav button{color:var(--muted);font-weight:500;font-size:13.5px;padding:12px 14px}
+.navbar #subnav button[aria-current="page"]{color:var(--brand-text);border-bottom-color:var(--kk);font-weight:600}
+.navbar #nav .count{background:#fff;color:var(--forest)}.navbar #nav .count:not(.info){background:#E5484D;color:#fff}
+.navbar #subnav .count.info{background:var(--brand-soft);color:var(--brand-text)}
+.card,.panel,.stat,.sum .box{border-radius:16px;border-color:var(--line);box-shadow:var(--shadow)}
+.stat{padding:14px 18px;background:#fff}
+.stat .k,.sum .k{font-size:10.5px;font-weight:600;letter-spacing:.16em;color:var(--brand-text)}
+.stat .v{font-family:var(--font);font-weight:600;color:var(--forest);font-size:21px}
+.t th{background:var(--soft);color:var(--brand-text);font-weight:600;font-size:10.5px;letter-spacing:.12em;border-bottom-color:var(--line)}
+.t td{border-bottom-color:#E7EEEA}
+@media (hover:hover) and (min-width:761px){.t tbody tr:hover td{background:#F6FAF8}}
+.t tfoot td{background:var(--soft);border-top-color:var(--line)}
+.btn{border-radius:10px;border:1px solid #C9D7CF;font-weight:500;letter-spacing:.01em;color:var(--forest);background:#fff}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 1px 2px rgba(0,90,60,.25),0 6px 14px -8px rgba(0,122,77,.6)}
+@media (hover:hover){.btn:hover:not(:disabled){border-color:var(--kk);color:var(--brand-text)}.btn.primary:hover:not(:disabled){background:var(--brand-dark);border-color:var(--brand-dark);color:#fff}}
+.btn.danger{color:#B42318;border-color:#EBC3BE}
+.link-btn{color:var(--brand-text);font-weight:500}
+.field{border-radius:10px;border-color:#C9D7CF}
+.field:focus{border-color:var(--kk);box-shadow:0 0 0 3px rgba(0,146,86,.16)}
+.f label,.f .lb{font-weight:600;font-size:12.5px;color:var(--forest)}
+.seg{border-radius:12px;border-color:var(--line);background:#fff}
+.seg button[aria-selected="true"]{background:var(--forest);color:#fff}
+.chip.on{background:var(--brand-soft);color:var(--brand-text)}
+.tag.s-new{background:var(--brand-soft);color:var(--brand-text)}
+.tag.s-payment{background:#DDF3E7;color:#0B6B45}
+.calday.sel{background:var(--brand)}
+.check input,.ck input,.radio input,.t input[type=checkbox]{accent-color:var(--kk)}
+.ck,.radio{border-radius:10px}
+.cohead{background:var(--soft)}.cohead b{color:var(--forest)}
+.form-foot{background:var(--soft)}
+.modal{border-radius:18px}
+.modal-bg{background:rgba(16,40,31,.5)}
+.toast{background:var(--forest);color:#fff;border-radius:12px}
+.flag.w{border-radius:10px}.flag.e{border-radius:10px}
+.lg{color:var(--kk);border-radius:10px}
+.lcopt.sel b{color:var(--brand-text)}
+.lcgrp{color:var(--brand-text);letter-spacing:.12em}
+.uplog .lhead{background:var(--soft);color:var(--forest)}
+.docv,.docb,.dv-tot{border-color:var(--forest)}
+.pernav{border-radius:12px}
+.pphead h3{font-family:var(--serif);font-weight:400;font-size:20px;letter-spacing:0;text-transform:none;color:var(--forest)}
 </style>
 <header class="top"><div class="wrap">
   <div class="mark"><img alt="KKSK" src="data:image/png;base64,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"></div>
@@ -589,6 +661,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       <select class="field" id="lgmCo" aria-label="Filter by company"></select>
       <input class="field" id="lgmQ" type="search" placeholder="Search ledger or sub group" aria-label="Search ledgers" autocomplete="off">
     </div>
+    <div class="card uplog" id="lgmImp" hidden></div>
     <div id="lgmList"></div>
   </section>
   <section id="secAcct" hidden>
@@ -609,7 +682,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     <div class="form-foot" id="aoActs"></div>
   </section>
   <section id="secBooks" hidden>
-    <div class="head"><div class="grow"><h2>Ledger Books</h2><p class="sub">Approved bills, proforma and import tax bills, and vouchers, posted to their ledgers. Choose a ledger to see its entries.</p></div></div>
+    <div class="head"><div class="grow"><h2>Ledger Books</h2><p class="sub">Approved bills, proforma and import tax bills, and vouchers, posted to their ledgers. Choose a ledger to see its entries.</p></div><div class="acts2"><button class="btn" id="bkXls" type="button">Download Excel</button></div></div>
     <div class="filters">
       <div class="seg" role="tablist" aria-label="Book"><button type="button" role="tab" id="bkSide_bills" aria-selected="true">Bills</button><button type="button" role="tab" id="bkSide_proformas" aria-selected="false">Proformas</button><button type="button" role="tab" id="bkSide_vouchers" aria-selected="false">Vouchers</button></div>
       <select class="field" id="bkCo" aria-label="Company"></select>
@@ -744,13 +817,14 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   <section id="secVendors" hidden>
     <div class="head">
       <div class="grow"><h2>Vendor</h2><p class="sub">Vendors are created when their first bill is submitted. A vendor is flagged until its opening balance is captured for every company it has bills in.</p></div>
-      <div class="acts2"><button class="btn" id="vExport" type="button">Export payables PDF</button></div>
+      <div class="acts2"><button class="btn" id="vXls" type="button">Download Excel</button><button class="btn" id="vExport" type="button">Export payables PDF</button></div>
     </div>
     <div class="filters">
       <input class="field" id="vQ" type="search" placeholder="Search name, GSTIN or PAN" aria-label="Search vendors" autocomplete="off">
       <label class="check"><input type="checkbox" id="vNeeds"> Needs details only</label>
       <label class="check"><input type="checkbox" id="vOff"> Show deactivated</label>
     </div>
+    <div class="card uplog" id="vImp" hidden></div>
     <div class="card list scroll" id="vList"></div>
   </section>
 
@@ -788,8 +862,8 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       <span class="grow"></span>
       <select class="field" id="ckCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
-    <h3 style="margin-top:4px">Waiting for a report <span id="ckWaitN"></span></h3>
-    <div class="card list scroll" id="ckWait"></div>
+    <h3 style="margin-top:4px" class="teamonly">Waiting for a report <span id="ckWaitN"></span></h3>
+    <div class="card list scroll teamonly" id="ckWait"></div>
     <div class="head" style="margin:28px 0 10px;align-items:center"><div><h3 style="margin:0">Reports</h3><p class="sub" id="ckListSub" style="margin:2px 0 0"></p></div><span class="grow"></span>
       <input class="field" id="ckQ" type="search" placeholder="Search number, vendor or name" aria-label="Search reports" autocomplete="off" style="width:auto;flex:0 1 280px"></div>
     <div class="card list scroll" id="ckList"></div>
@@ -855,7 +929,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       <span class="grow"></span>
       <select class="field" id="mkCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
-    <div class="seg" role="tablist" aria-label="Payments for"><button type="button" role="tab" id="mkSideV" aria-selected="true">Bills <span id="mkNV"></span></button><button type="button" role="tab" id="mkSideC" aria-selected="false">Vouchers <span id="mkNC"></span></button></div>
+    <div class="seg" role="tablist" aria-label="Payments for"><button type="button" role="tab" id="mkSideV" aria-selected="true">Bills <span id="mkNV"></span></button><button type="button" role="tab" id="mkSideC" aria-selected="false">Vouchers <span id="mkNC"></span></button><button type="button" role="tab" id="mkSideA" aria-selected="false">Advances <span id="mkNA"></span></button></div>
     <div class="stats" id="mkStats"></div>
     <div class="seg" role="tablist" aria-label="Show"><button type="button" role="tab" id="mkTabPay" aria-selected="true">To pay <span id="mkN"></span></button><button type="button" role="tab" id="mkTabDone" aria-selected="false">Paid, last 14 days <span id="mkDN"></span></button></div>
     <div id="mkPay"><div id="mkList"></div></div>
@@ -941,7 +1015,8 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     </div>
     <h3>Waiting for approval <span id="caPendN"></span></h3>
     <div class="card list scroll" id="caPend"></div>
-    <h3>Approved, to be received <span id="caApprN"></span></h3>
+    <h3>Approved, to be paid by the financier <span id="caApprN"></span></h3>
+    <p class="sub" style="margin:-4px 0 10px">The financier pays these out in Payment Entry › Advances; each counts in the balance from then.</p>
     <div class="card list scroll" id="caAppr"></div>
     <h3>Cash balances</h3>
     <p class="sub" style="margin:-4px 0 10px">Opening balance, plus advances received, less vouchers settled from the advance.</p>
@@ -956,8 +1031,8 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       <span class="grow"></span>
       <select class="field" id="vcCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
-    <h3 style="margin-top:4px">Waiting for a report <span id="vcWaitN"></span></h3>
-    <div class="card list scroll" id="vcWait"></div>
+    <h3 style="margin-top:4px" class="teamonly">Waiting for a report <span id="vcWaitN"></span></h3>
+    <div class="card list scroll teamonly" id="vcWait"></div>
     <div class="head" style="margin:28px 0 10px;align-items:center"><div><h3 style="margin:0">Reports</h3><p class="sub" id="vcListSub" style="margin:2px 0 0"></p></div><span class="grow"></span>
       <input class="field" id="vcQ" type="search" placeholder="Search number or name" aria-label="Search reports" autocomplete="off" style="width:auto;flex:0 1 280px"></div>
     <div class="card list scroll" id="vcList"></div>
@@ -996,7 +1071,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     <div class="head">
       <div><h2 id="peTitle"></h2><p class="sub" id="peSub"></p></div>
       <span class="grow"></span>
-      <div class="acts2"><button class="btn primary" id="pePdf">Download PDF</button></div>
+      <div class="acts2"><button class="btn" id="peXls" type="button">Download Excel</button><button class="btn primary" id="pePdf">Download PDF</button></div>
     </div>
     <div class="filters perbar">
       <div class="pernav"><button class="calnav" id="pePrev" type="button" aria-label="Previous period">&#8249;</button><b id="peLabel" class="num"></b><button class="calnav" id="peNext" type="button" aria-label="Next period">&#8250;</button></div>
@@ -1005,6 +1080,23 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     </div>
     <div class="stats" id="peStats"></div>
     <div id="peBox"></div>
+  </section>
+  <section id="secTxn" hidden>
+    <div class="head">
+      <div class="grow"><h2>Transactions</h2><p class="sub" id="txSub"></p></div>
+      <div class="acts2"><button class="btn" id="txXls" type="button">Download Excel</button><button class="btn primary" id="txPdf" type="button">Download PDF</button></div>
+    </div>
+    <div class="seg" role="tablist" aria-label="Show" id="txSeg"></div>
+    <div class="filters" id="txDates">
+      <select class="field" id="txCo" aria-label="Company"></select>
+      <select class="field" id="txSt" aria-label="Status"><option value="open">Open</option><option value="closed">Closed</option><option value="all">Open and closed</option></select>
+      <select class="field" id="txWho" aria-label="Person"></select>
+      <input class="field" id="txQ" type="search" placeholder="Search number, vendor, person or step" aria-label="Search" autocomplete="off">
+    </div>
+    <div class="stats" id="txStats"></div>
+    <div id="txPeople"></div>
+    <h3 id="txListH" style="margin-top:18px">Items</h3>
+    <div class="card list scroll" id="txList"></div>
   </section>
   <section id="secAudit" hidden>
     <div class="head"><div><h2>Change Log</h2><p class="sub">Every change saved in the app, by anyone: who made it, when, and what each field was before and after. Only you can see this.</p></div></div>
@@ -1023,8 +1115,8 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       <span class="grow"></span>
       <select class="field" id="apCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
-    <h3 style="margin-top:4px">Instalments not in a report yet <span id="apWaitN"></span></h3>
-    <div class="card list scroll" id="apWait"></div>
+    <h3 style="margin-top:4px" class="teamonly">Instalments not in a report yet <span id="apWaitN"></span></h3>
+    <div class="card list scroll teamonly" id="apWait"></div>
     <div class="head" style="margin:28px 0 10px;align-items:center"><div><h3 style="margin:0">Reports</h3><p class="sub" id="apListSub" style="margin:2px 0 0"></p></div><span class="grow"></span>
       <input class="field" id="apQ" type="search" placeholder="Search number, vendor or proforma" aria-label="Search reports" autocomplete="off" style="width:auto;flex:0 1 280px"></div>
     <div class="card list scroll" id="apList"></div>
@@ -1126,22 +1218,25 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   var S = { ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secPer", "secAudit", "secApr", "secArch"];
+  var VIEWS = ["secTxn", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secPer", "secAudit", "secApr", "secArch"];
   /* Headings, each with its own tabs. Tab keys stay the same inside the app; labels are what people see. */
   var NAV = [
-    { h: "Reports", tabs: [["Weekly", "Weekly"], ["Monthly", "Monthly"], ["Vendors", "Vendors"], ["Ledgers", "Ledgers"]] },
+    { h: "Reports", tabs: [["Weekly", "Weekly"], ["Monthly", "Monthly"], ["Transactions", "Transactions"], ["Vendors", "Vendors"], ["Ledgers", "Ledgers"]] },
     { h: "Bills", tabs: [["Bills", "Enter Bills"], ["Checking Report", "Bills CR"]] },
     { h: "Proformas", tabs: [["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance CR"]] },
     { h: "Vouchers", tabs: [["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Vouchers CR"], ["Cash Advance", "Cash Advance"]] },
     { h: "Accounts", tabs: [["Accounts", "To Account"], ["Ledger Books", "Ledger Books"]] },
-    { h: "Payments", tabs: [["Payment Planning", "Payment Planning", true], ["Mark Transaction", "Payment Entry"], ["Payment Ledger", "Payment Ledger"]] },
+    { h: "Payments", tabs: [["Payment Planning", "Payment Planning", true], ["Mark Transaction", "Payment Entry"]] },
     { h: "Admin", admin: true, tabs: [["Companies", "Companies"], ["Users", "Users"], ["Change Log", "Change Log"], ["Archive", "Data & Archive"]] }
   ];
   var HOME_TAB = "Weekly", LAST_IN = {};
-  var DATA_TABS = ["Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Weekly", "Monthly", "Advance Report"];
+  var DATA_TABS = ["Transactions", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Weekly", "Monthly", "Advance Report"];
+  /* Admins oversee rather than enter: the entry screens (and the accountant's queue) are left out for them.
+     Reports > Transactions shows every item, where it stands and who is responsible. "View as" still opens a person's screens. */
+  var ADMIN_HIDE = { "Bills": 1, "Plan Advance": 1, "Imports": 1, "Cash Voucher": 1, "Accounts": 1 };
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {
-      return { h: g.h, tabs: g.tabs.filter(function (t) { return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (t[0] === "Bills" && canDo("adv")) : nonAcct())); }) };
+      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (t[0] === "Bills" && canDo("adv")) : nonAcct())); }) };
     }).filter(function (g) { return g.tabs.length; });
   }
   /* Reports other than Ledgers are for people who do more than accounts. */
@@ -1172,6 +1267,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     else if (cr.right > nr.right) bar.scrollLeft += cr.right - nr.right + 8;
   }
   function renderNav() {
+    document.body.classList.toggle("is-admin", !!S.isAdmin);
     var nav = $("nav"), subn = $("subnav"), gs = navGroups(), cg = groupOf(S.tab);
     nav.textContent = ""; subn.textContent = "";
     gs.forEach(function (g) {
@@ -1196,10 +1292,11 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     S.editing = null; S.userEditing = null; S.stmtId = null; VE.id = null; CK.viewId = null; VC.viewId = null; VH.id = null; renderNav();
     if (!S.isAdmin && !S.blLoaded) { show("vLoading"); return; }
     if (lockedNow()) { renderLock(); show("secLock"); return; }
-    if (!S.isAdmin && groupOf(t) === null) { t = S.tab = homeTab(); renderNav(); }
+    if (groupOf(t) === null) { t = S.tab = homeTab(); renderNav(); }
     if (DATA_TABS.indexOf(t) >= 0 && (t !== "Payment Planning" || S.isAdmin)) {
       if (!dataReady()) { show("vLoading"); return; }
       if (t === "Weekly" || t === "Monthly") { renderPer(); show("secPer"); return; }
+      if (t === "Transactions") { renderTxn(); show("secTxn"); return; }
       if (t === "Accounts") { AC.id = null; renderAcct(); show("secAcct"); return; }
       if (t === "Ledger Books") { renderBooks(); show("secBooks"); return; }
       if (t === "Ledgers") { renderLedgers(); show("secLedgers"); return; }
@@ -1686,6 +1783,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       S.profiles = m; syncMyUser(); settle("p");
     }, function () { S.profiles = {}; settle("p"); });
     S.db.collection("departments").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { var x = Object.assign({}, d.data() || {}); x.id = d.id; m[d.id] = x; }); S.departments = m; }, function () {});
+    S.db.collection("admins").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { var a = Object.assign({}, d.data() || {}); a.id = d.id; if (a.active !== false) m[d.id] = a; }); S.admins = m; }, function () {});
     S.db.collection("requests").where("accountedFor", "==", S.me.id).onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var x = Object.assign({}, d.data() || {}); x.id = d.id; if (x.accountedFor === S.me.id) m[d.id] = x; }); S.profReqs = m; renderMe();
     }, function () { S.profReqs = {}; });
@@ -1751,13 +1849,13 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     if (S.tab === "Bills") { readCard(); doSave(); }
     if (!S._adm) S._adm = { a: S.isAdmin, s: S.isSuper, p: S.isAppAdmin, tab: S.tab };
     S.isAdmin = false; S.isSuper = false; S.isAppAdmin = false; S.actId = uid; S.myUser = u; S.myReq = S.requests[uid] || null; S.picked = true;
-    invalidate(); renderAdminMe(); setTab(homeTab()); toast("You are now seeing the app as " + u.name + ". Anything you enter is recorded as theirs, with your name in the change log.");
+    if (S.raw) applyScope(); invalidate(); renderAdminMe(); setTab(homeTab()); toast("You are now seeing the app as " + u.name + ". Anything you enter is recorded as theirs, with your name in the change log.");
   }
   function exitViewAs() {
     var a = S._adm; if (!a) return;
     if (S.tab === "Bills") { readCard(); doSave(); }
     S.isAdmin = a.a; S.isSuper = a.s; S.isAppAdmin = a.p; S._adm = null; S.actId = ""; S.myUser = null; S.myReq = null;
-    invalidate(); renderAdminMe(); setTab(a.tab && a.tab !== "Accounts" ? a.tab : HOME_TAB);
+    if (S.raw) applyScope(); invalidate(); renderAdminMe(); setTab(a.tab && a.tab !== "Accounts" ? a.tab : HOME_TAB);
   }
   function closeMeMenu() { var m = document.querySelector(".memenu"); if (m) m.remove(); var b = document.querySelector(".me .mebtn"); if (b) b.setAttribute("aria-expanded", "false"); document.removeEventListener("click", closeMeMenu); }
   function openMeMenu(box, host) {
@@ -1957,6 +2055,8 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   var SORTS = {};
   function sortTable(box, key, cols, rows, opts) {
     opts = opts || {};
+    /* A column marked with who() is left out when every row is the person's own work. */
+    cols = cols.filter(function (c) { return c && !(c.who && rows.length && rows.every(function (r) { return isMine(c.who(r)); })); });
     var st = SORTS[key] || (SORTS[key] = { i: opts.sortIndex == null ? -1 : opts.sortIndex, dir: opts.sortDir || 1 });
     var list = rows.slice(), sc = cols[st.i];
     if (sc && sc.sort) list.sort(function (a, b) {
@@ -2558,14 +2658,11 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       "- confidence: for each field, how sure you are that what you gave is exactly right, from 0 to 100. Be honest: 90 or more only when it is clearly printed and you read it exactly; 50 to 79 when it is partly unclear or a best reading; under 50 when it is mostly a guess. Use 0 for a field you left null.",
       "- items: every line of the bill's item table, in order, as {\"description\", \"hsn\", \"qty\", \"unit\", \"rate\", \"discount\", \"taxable\", \"gst_pct\", \"amount\"}. Numbers plain; null for anything not printed or unreadable. Copy the description as printed (translate into English in brackets if it is not English). [] if the bill has no item table.",
       "- items_note: one or two sentences on anything you are unsure of in the items (which lines, which figures), or an empty string.",
-      "- ledger_id (on each item, and once for the whole bill): the id from LEDGERS of the expense ledger the item belongs to, judged by what it is and what it is used for. null if none fits or LEDGERS is empty.",
       "",
       "Reply with only this JSON object:",
-      '{"bills_in_file":1,"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null,"ledger_id":null}],"items_note":"","ledger_id":null}',
+      '{"bills_in_file":1,"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}',
       "",
       "COMPANIES: " + JSON.stringify(cos),
-      "",
-      "LEDGERS (id, name, sub group):\n" + (ledPromptList() || "none"),
       "",
       "File name: " + p.name + (p.pages > 1 ? " (" + p.pages + " pages)" : ""),
       p.text ? "PDF TEXT:\n" + p.text : ""
@@ -2815,7 +2912,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       billNo: b.billNo || "", billDate: fmtDate(b.billDate), currency: curOk(b.currency) ? b.currency : "INR", rate: b.fxRate ? fmtRate(b.fxRate) : "",
       taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt),
       termDays: b.termDays == null ? "" : String(b.termDays), termChoice: b.termChoice || "", updateVendorTerm: !!b.updateVendorTerm, narration: b.narration || "", advPick: b.advPick || "", advWhy: b.advWhy || "",
-      ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || ""
+      ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", approverId: b.approverId || ""
     };
   }
   /* A bill read before its vendor was saved (often one upload holding several bills from a new vendor) is linked to that vendor once it exists. */
@@ -2835,6 +2932,33 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     return { preparedBy: uid || "", preparedByName: uid ? userLabel(uid) : "" };
   }
   function prepOf(x) { return x.preparedBy || x.submittedBy || x.createdBy || x.ownerId || ""; }
+  /* ---- Approver: the admin responsible for approving a bill, proforma, import or voucher. Recorded, printed and used to
+     show each admin only the work they approve; the super admin sees everything. ---- */
+  function approverList() {
+    var m = {};
+    (S.supers || []).forEach(function (p) { if (p && p.id) m[p.id] = { id: p.id, name: pnm(p.name) || "Super admin" }; });
+    Object.keys(S.admins || {}).forEach(function (k) { var a = S.admins[k]; if (a && a.active !== false && !m[k]) m[k] = { id: k, name: pnm(a.name) || userLabel(k) || "Admin" }; });
+    return Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return natCmp(a.name, b.name); });
+  }
+  function approverName(x) {
+    if (!x || !x.approverId) return "";
+    var a = approverList().filter(function (y) { return y.id === x.approverId; })[0];
+    return (a && a.name) || pnm(x.approverName) || "";
+  }
+  function approverSelect(id, cur) {
+    var sel = el("select", { class: "field", id: id }), ls = approverList(), o = [["", ls.length ? "Choose who approves it" : "No admins are set up yet"]];
+    ls.forEach(function (a) { o.push([a.id, a.name]); });
+    if (cur && !ls.some(function (a) { return a.id === cur; })) o.push([cur, "Former approver"]);
+    fillSelect(sel, o, cur || ""); return sel;
+  }
+  function approverFields(id) { var a = approverList().filter(function (y) { return y.id === id; })[0]; return { approverId: id || "", approverName: a ? a.name : "" }; }
+  /* The approvers named on the bills, vouchers or proforma in a checking report. */
+  function crApprovers(r) {
+    var xs = r.kind === "vcr" ? (r.voucherIds || []).map(function (id) { return S.vouchers[id]; }) : r.kind === "inst" ? [S.advances[r.advanceId]] : (r.billIds || []).map(function (id) { return S.bills[id]; });
+    var m = {}; xs.forEach(function (x) { var n = approverName(x); if (n) m[n] = 1; });
+    return Object.keys(m).sort(natCmp).join(", ");
+  }
+  var APPR_HINT = "The admin who approves it. It shows in their reports.";
   function prepName(x) { return pnm(x.preparedByName) || (S.isAdmin ? userLabel(prepOf(x)) : prepOf(x) === meId() ? preparedByText() : "") || ""; }
   /* A final bill started from a proforma or import counts under Proformas, imports, Advance CR as well as Bills. */
   function billStep(b) { return b && b.advanceId ? "adv" : "bills"; }
@@ -2847,7 +2971,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       billNo: D.billNo.trim(), billDate: parseDate(D.billDate),
       termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: D.narration.trim(), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
       ledgers: ledLinesOut(D.ledgers)
-    }, amountsOf(D), prepFields(D.prepBy));
+    }, amountsOf(D), prepFields(D.prepBy), approverFields(D.approverId));
   }
   /* PAN is never typed: it is characters 3 to 12 of the GSTIN. */
   function panOfNew(D) { var g = normId(D.vNew.gstin); return g && gstinCheck(g) !== "format" ? panFromGstin(g) : ""; }
@@ -2882,6 +3006,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     if (!D.companyId) E("bcCo", "Choose the company the bill is made out to.");
     else if (!billCanCo(b, D.companyId)) E("bcCo", "You don't have access to this company.");
     if (S.isAdmin && D.companyId) { if (!D.prepBy) E("bcPrep", "Choose who prepared this bill."); else if (!userHas(S.users[D.prepBy], billStep(b), D.companyId)) E("bcPrep", "That person doesn't hold Bills for this company any more. Choose again."); }
+    if (!D.approverId) E("bcAppr", "Choose who approves this bill.");
     if (!D.vendorChoice) E("bcVen", "Choose the vendor, or choose New vendor.");
     else if (D.vendorChoice === "new") {
       var n = D.vNew, g = normId(n.gstin), gp = g ? gstinCheck(g) : "missing"; vt = n.type;
@@ -3031,7 +3156,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     var co = el("select", { class: "field", id: "bcCo" }); fillSelect(co, companyOpts(D.companyId, billStep(b)), D.companyId);
     f.appendChild(fld("Company", co, b.ex && b.ex.companyName ? "On the bill: " + b.ex.companyName : ""));
     if (S.isAdmin) f.appendChild(fld("Prepared by", prepSelect("bcPrep", billStep(b), D.companyId, D.prepBy), "Whose bill this is. Only people given Bills for this company are listed."));
-    else f.appendChild(fld("Prepared by", meSelect("bcPrepMe"), "Filled in from your login or profile. Only the admin can change it."));
+    f.appendChild(fld("Approver", approverSelect("bcAppr", D.approverId), APPR_HINT));
     var ven = el("select", { class: "field", id: "bcVen" }); fillSelect(ven, vendorOpts(D), D.vendorChoice);
     var vh = b.ex && (b.ex.vendorName || b.ex.vendorGstin) ? "On the bill: " + [b.ex.vendorName, b.ex.vendorGstin].filter(Boolean).join(", GSTIN ") : "";
     f.appendChild(fld("Vendor", ven, vh));
@@ -3091,7 +3216,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     D.vNew.name = $("bcVName").value; D.vNew.type = $("bcVType").value; D.vNew.gstin = $("bcVGstin").value; D.vNew.termDays = $("bcVTerm").value;
     D.billNo = $("bcNo").value; D.billDate = $("bcDate").value; D.currency = $("bcCur").value || "INR"; D.rate = $("bcRate").value;
     D.taxable = $("bcTax").value; D.gstAmt = $("bcGst").value;
-    D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value;
+    D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value; if ($("bcAppr")) D.approverId = $("bcAppr").value;
     if ($("bcTerm")) D.termDays = $("bcTerm").value;
     var r = document.querySelector('input[name="bcTermPick"]:checked'); if (r) D.termChoice = r.value;
     if ($("bcUpd")) D.updateVendorTerm = $("bcUpd").checked;
@@ -3110,12 +3235,12 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     }
     updateDynamic(); scheduleSave();
   }
-  /* The bill's ledger lines: suggested until the purchaser changes them. */
-  function billSuggestNow() { var b = S.bills[B.cardId], D = B.D; if (!b || !D) return []; return suggestBill(b, D.companyId, D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : "", num(D.taxable)); }
+  /* The bill's ledger lines are chosen by hand; nothing is filled in from the file. */
+  function billSuggestNow() { return []; }
   function mountBillLed() {
     var w = $("bcLedWrap"); if (!w || !B.D) return;
     B.ledO = { id: "bcLed", lines: B.D.ledgers, max: MAX_LED.bill, cid: function () { return B.D ? B.D.companyId : ""; }, base: function () { return B.D ? num(B.D.taxable) : null; }, baseLabel: "taxable amount",
-      touched: function () { B.ledTouched = true; B.touched = true; scheduleSave(); }, suggest: billSuggestNow };
+      touched: function () { B.ledTouched = true; B.touched = true; scheduleSave(); } };
     w.textContent = ""; w.appendChild(ledEditor(B.ledO)); B.ledCo = B.D.companyId; billLedSync();
   }
   function billLedSync() {
@@ -3527,7 +3652,8 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     return t;
   }
   function renderVendors() {
-    var box = $("vList"); box.textContent = "";
+    if (IMP.busy) return; /* an upload redraws once it is done */
+    var box = $("vList"); box.textContent = ""; if (canImport()) impButtons("vendors", $("vExport").parentNode);
     var q = $("vQ").value.trim().toLowerCase(), onlyNeeds = $("vNeeds").checked, showOff = $("vOff").checked;
     var all = visibleVendors();
     var rows = all.map(function (v) { return { v: v, n: v.active !== false ? vendorNeeds(v) : { list: [], since: 0 } }; }).filter(function (r) {
@@ -3676,7 +3802,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
      tables that take only the room they need with totals in the footer, a worked-out payable, real signature lines,
      and "Page x of y" with the report number at the foot of every page. ---- */
   function pdfLook(doc) {
-    var K = PDFK, L = K.L, R = K.R, W = R - L, LINE = [203, 213, 225];
+    var K = PDFK, L = K.L, R = K.R, W = R - L, LINE = [210, 224, 216];
     function font(f, st, size, col) { doc.setFont(f, st); doc.setFontSize(size); doc.setTextColor(col[0], col[1], col[2]); }
     function hline(x1, x2, y, w, col) { doc.setDrawColor(col[0], col[1], col[2]); doc.setLineWidth(w); doc.line(x1, y, x2, y); }
     function fit(s, w) { s = String(s == null ? "" : s); if (doc.getTextWidth(s) <= w) return s; while (s.length > 1 && doc.getTextWidth(s + "…") > w) s = s.slice(0, -1); return s + "…"; }
@@ -3800,7 +3926,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
         y = P.table(y, ["Cost", { content: "Amount", styles: { halign: "right" } }], cb, { columnStyles: { 1: { cellWidth: 120 } } });
       }
       y = P.mark(P.net(y + 4, [["This instalment", CM(r.total)], ["GST and TDS", "Not applicable"], ["Total payable", CM(r.total)]]));
-      P.finish([["Prepared by", pnm(r.preparedBy)], ["Cashier receipt date", ""], ["Approver sign", ""]], (r.no || "") + " · " + (a ? (a.piNo || "") + " instalment " + (r.inst + 1) + " of " + insts.length : ""));
+      P.finish([["Prepared by", pnm(r.preparedBy)], ["Cashier receipt date", ""], ["Approver sign", crApprovers(r)]], (r.no || "") + " · " + (a ? (a.piNo || "") + " instalment " + (r.inst + 1) + " of " + insts.length : ""));
       return doc;
     }
     var bills = reportBills(r), hasTds = r.billTds || tdsSet(r), adv = advAdjOf(r);
@@ -3820,7 +3946,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     if (adv) rows.push(["Less advance already paid", "(" + CM(adv) + ")"]);
     rows.push(["Total payable", hasTds ? CM(payableOf(r)) : "After TDS"]);
     P.mark(P.net(y2 + 4, rows));
-    P.finish([["Prepared by", pnm(r.preparedBy)], ["Cashier receipt date", ""], ["Approver sign", ""]], (r.no || "") + " · " + v.name);
+    P.finish([["Prepared by", pnm(r.preparedBy)], ["Cashier receipt date", ""], ["Approver sign", crApprovers(r)]], (r.no || "") + " · " + v.name);
     return doc;
   }
 
@@ -3838,7 +3964,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
         { foot: [cFoot((c.shortName || c.name) + " total", 5), cFoot(bc.tds ? "(" + amt(bc.tds) + ")" : "0", 1, "right"), cFoot(amt((bc.total || 0) - (bc.tds || 0)), 1, "right")], columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 54 }, 2: { cellWidth: 50 }, 4: { cellWidth: 62 }, 5: { cellWidth: 44 }, 6: { cellWidth: 56 } } }) + 4;
     });
     P.mark(P.net(y, [["Total amount, " + plural((r.voucherIds || []).length, "voucher"), money(r.total)], ["TDS", r.tds ? "(" + money(r.tds) + ")" : money(0)], ["Total payable", money((r.total || 0) - (r.tds || 0))], ["Settled from cash advance", r.settled ? "(" + money(r.settled) + ")" : money(0)], ["Payment \u2013 By Financier", money(r.toPay)]]));
-    P.finish([["Prepared by", pnm(r.preparedBy)], ["Cashier receipt date", ""], ["Approver sign", ""]], (r.no || "") + " · " + pnm(r.preparedBy));
+    P.finish([["Prepared by", pnm(r.preparedBy)], ["Cashier receipt date", ""], ["Approver sign", crApprovers(r)]], (r.no || "") + " · " + pnm(r.preparedBy));
     return doc;
   }
 
@@ -4046,6 +4172,8 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   function stageOf(r) { return STAGE[r.stage] ? r.stage : (r.tds == null ? "tds" : "generated"); }
   /* Once a report is printed it leaves the team's view; only the admin sees it from then on. */
   function teamSees(r) { var s = stageOf(r); return S.isAdmin || s === "draft" || s === "tds" || s === "generated"; }
+  /* In the report lists the admin sees a report once it is generated for approval; drafts stay with the team. */
+  function listSees(r) { return S.isAdmin ? STAGE_ORDER[stageOf(r)] >= 2 : teamSees(r); }
   function tdsSet(r) { var s = stageOf(r); return r.tds != null && s !== "tds" && s !== "draft"; }
   function payableOf(r) { return r.kind === "inst" ? round2(Number(r.total) || 0) : round2((Number(r.total) || 0) - (Number(r.tds) || 0) - advAdjOf(r)); }
   function tdsText(n, cur) { n = Number(n) || 0; return n > 0 ? "(" + curMoney(cur, n) + ")" : curMoney(cur, 0); }
@@ -4084,6 +4212,9 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   function periodText(from, to) { return from ? fmtDate(from) + (to && to !== from ? " to " + fmtDate(to) : "") : ""; }
   function reportBills(r) { return (r.billIds || []).map(function (id) { return S.bills[id]; }).filter(Boolean).sort(function (a, b) { return natCmp(a.billDate, b.billDate) || natCmp(a.billNo, b.billNo); }); }
   function fyOf(ymd) { var y = Number(ymd.slice(0, 4)), s = Number(ymd.slice(5, 7)) >= 4 ? y : y - 1; return pad(s % 100) + "-" + pad((s + 1) % 100); }
+  /* The person working sees their own name only where it matters (printouts, the corner); lists and forms skip it. */
+  function isMine(name) { return !S.isAdmin && !!name && normName(pnm(name)) === normName(pnm(preparedByText())); }
+  function whoStat(item) { return isMine(item[1]) ? null : item; }
   function preparedByText() {
     var u = S.isAdmin ? S.users[meId()] : S.myUser, name = (u && u.name) || (S.me && S.me.name) || "", loc = u ? locName(u.locationId) : "";
     return name;
@@ -4102,7 +4233,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       { label: "Vendor", sort: function (x) { return S.vendors[x.vid].name; }, cell: function (x, td) {
           var v = S.vendors[x.vid]; td.appendChild(el("b", null, v.name)); if (v.gstin) sub(td, v.gstin);
           if (!opening(v, x.cid)) { var n = el("span", { class: "needs" }); n.appendChild(warnIcon("Blocked")); n.appendChild(document.createTextNode(" Opening balance for " + coLabel(x.cid) + " isn't captured yet.")); td.appendChild(n); } } },
-      { label: "Prepared by", sort: function (x) { return x.prepName; }, cell: function (x, td) { txt(td, x.prepName || "Not recorded"); } },
+      { label: "Prepared by", who: function (x) { return x.prepName; }, sort: function (x) { return x.prepName; }, cell: function (x, td) { txt(td, x.prepName || "Not recorded"); } },
       { label: "Bills", cls: "r num", sort: function (x) { return x.bills.length; }, desc: true, cell: function (x, td) { txt(td, x.bills.length); } },
       { label: "Total amount", cls: "r num", sort: function (x) { return x.total; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, money(x.total))); } },
       { label: "Oldest waiting", cls: "num", sort: function (x) { return -(x.oldest || 0); }, desc: true, cell: function (x, td) {
@@ -4116,13 +4247,13 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
 
     var q = $("ckQ").value.trim().toLowerCase();
     var reps = Object.keys(S.reports).map(function (k) { return S.reports[k]; }).filter(function (r) {
-      if (r.kind === "vcr" || r.kind === "inst" || !canStep("bcr", r.companyId) || (cid && r.companyId !== cid) || !teamSees(r)) return false;
+      if (r.kind === "vcr" || r.kind === "inst" || !canStep("bcr", r.companyId) || (cid && r.companyId !== cid) || !listSees(r)) return false;
       if (q) { var v = S.vendors[r.vendorId]; if (((r.no || "") + " " + (v ? v.name : "") + " " + pnm(r.preparedBy) + " " + STAGE[stageOf(r)]).toLowerCase().indexOf(q) < 0) return false; }
       return true;
     });
     $("ckListSub").textContent = S.isAdmin ? "You see every report. Printed reports can be reversed or sent for payment." : "A report leaves this list once its PDF is downloaded for printing. The admin keeps it from then on.";
     var rb = $("ckList");
-    if (!reps.length) { rb.textContent = ""; rb.appendChild(el("div", { class: "empty" }, q ? "No reports match." : "No Bills CR here. Prepare one from the list above.")); return; }
+    if (!reps.length) { rb.textContent = ""; rb.appendChild(el("div", { class: "empty" }, q ? "No reports match." : S.isAdmin ? "No Bills CR is waiting for approval." : "No Bills CR here. Prepare one from the list above.")); return; }
     sortTable(rb, "ckList", [
       { label: "Report number", kind: "co", sort: function (r) { var fy = r.fy || fyOf(r.checkDate || ymdOfMs(r.createdAt || 0)); return Number(fy.slice(0, 2)) * 10000 + (r.seq || 0); }, desc: true, cell: function (r, td) { td.appendChild(el("b", { class: "mono" }, r.no || "")); sub(td, fmtDay(r.createdAt)); } },
       { label: "Stage", sort: function (r) { return STAGE_ORDER[stageOf(r)]; }, cell: function (r, td) { td.appendChild(stageTag(r)); } },
@@ -4130,7 +4261,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       { label: "Total amount", cls: "r num", sort: function (r) { return r.total || 0; }, desc: true, cell: function (r, td) { txt(td, repMoney(r, r.total)); } },
       { label: "TDS", cls: "r num", sort: function (r) { return tdsSet(r) ? r.tds : -1; }, desc: true, cell: function (r, td) { txt(td, r.kind === "inst" ? "N/A" : tdsSet(r) ? tdsText(r.tds, r.currency) : ""); } },
       { label: "Total payable", cls: "r num", sort: function (r) { return tdsSet(r) ? payableOf(r) : -1; }, desc: true, cell: function (r, td) { if (tdsSet(r)) td.appendChild(el("b", null, repMoney(r, payableOf(r)))); var ad = advAdjOf(r); if (ad) sub(td, "After advance " + repMoney(r, ad)); } },
-      { label: "Prepared by", sort: function (r) { return pnm(r.preparedBy); }, cell: function (r, td) { txt(td, pnm(r.preparedBy)); } },
+      { label: "Prepared by", who: function (r) { return r.preparedBy; }, sort: function (r) { return pnm(r.preparedBy); }, cell: function (r, td) { txt(td, pnm(r.preparedBy)); } },
       { label: "", kind: "act", cls: "r", cell: function (r, td) {
           var o = el("button", { class: "btn sm" }, "Open"); o.setAttribute("aria-label", "Open " + r.no); o.addEventListener("click", function () { openReport(r.id); }); td.appendChild(o); } }
     ], reps, { sortIndex: 0, sortDir: -1, limit: 200, more: function (m, n) { m.appendChild(el("span", { class: "st mut" }, n + " older reports aren't shown. Search to find them.")); } });
@@ -4188,7 +4319,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     var all = newCheckBills(), sel = selectedBills(), t = sumBills(sel);
     Array.prototype.forEach.call(document.querySelectorAll("#cnBills .ckinc"), function (i) { var tr = i.closest("tr"); if (tr) tr.classList.toggle("skip", !i.checked); });
     var a = $("cnAll"); if (a) { a.checked = sel.length === all.length && all.length > 0; a.indeterminate = sel.length > 0 && sel.length < all.length; }
-    statBoxes($("cnStats"), [["Company", c.name, ""], ["Bill from", v.name, v.gstin ? "GSTIN " + v.gstin : ""], ["Prepared by", (all[0] && prepName(all[0])) || "Not recorded", ""], ["Period", periodText(t.from, t.to) || "None selected", ""], ["Bills", sel.length + " of " + all.length, ""]]);
+    statBoxes($("cnStats"), [["Company", c.name, ""], ["Bill from", v.name, v.gstin ? "GSTIN " + v.gstin : ""], whoStat(["Prepared by", (all[0] && prepName(all[0])) || "Not recorded", ""]), ["Period", periodText(t.from, t.to) || "None selected", ""], ["Bills", sel.length + " of " + all.length, ""]]);
     var f = $("cnFoot");
     if (f) {
       f.textContent = "";
@@ -4199,7 +4330,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     $("cnCreate").disabled = !sel.length || CK.busy;
   }
   function statBoxes(box, items) {
-    box.textContent = "";
+    box.textContent = ""; items = items.filter(Boolean);
     items.forEach(function (k) {
       var b = el("div", { class: "stat" + (k[3] ? " " + k[3] : "") }), vv = el("div", { class: "v sm" });
       if (typeof k[1] === "string") vv.textContent = k[1]; else vv.appendChild(k[1]);
@@ -4429,7 +4560,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
 
   /* ---- the printed report: A4, laid out to match the company's Bills Checking Report ---- */
   var PDFK = {
-    navy: [15, 23, 42], slate: [71, 85, 105], muted: [100, 116, 139], body: [51, 65, 85], fill: [241, 245, 249], inner: [203, 213, 225],
+    navy: [16, 40, 31], slate: [0, 112, 74], muted: [94, 110, 102], body: [40, 56, 48], fill: [236, 245, 240], inner: [210, 224, 216],
     L: 42.1, R: 553.7, headTop: 42.1, headMid: 140.95, headBot: 199.7, split: 321.65,
     tblTop: 209.9, tblHead: 17.7, totTop: 667.2, totHeadH: 23.7, totBot: 718.8, signY: 775.7,
     cols: [42.1, 74.7, 156.2, 226.2, 455.9, 553.7],
@@ -4659,7 +4790,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   function blankAdvDraft(kind) {
     return { companyId: "", vendorChoice: "", vNew: { name: "", gstin: "", type: kind === "import" ? "overseas" : "", country: "" }, piNo: "", piDate: "", currency: kind === "import" ? "USD" : "INR", total: "", gst: "", narration: "",
       insts: [{ pct: "30", when: "receipt", days: "" }, { pct: "30", when: "afterPi", days: "" }, { pct: "40", when: "beforeDispatch", days: "" }],
-      dispatch: "", dispConfirmed: false, arrival: "", igst: "", transport: "", duty: "", other: "", taxBillId: "", ex: {} };
+      dispatch: "", dispConfirmed: false, arrival: "", igst: "", transport: "", duty: "", other: "", taxBillId: "", ex: {}, approverId: "" };
   }
   function advToDraft(a) {
     var vn = a.vendorNew || {};
@@ -4668,7 +4799,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       insts: (a.installments || []).map(function (it) { return { pct: String(it.pct), when: it.when, days: it.days == null ? "" : String(it.days) }; }),
       dispatch: fmtDate(a.dispatchDate), dispConfirmed: !!a.dispatchConfirmed, arrival: fmtDate(a.arrivalDate),
       igst: a.igst == null ? "" : fmtInput(a.igst), transport: a.transport == null ? "" : fmtInput(a.transport), duty: a.duty == null ? "" : fmtInput(a.duty), other: a.other == null ? "" : fmtInput(a.other),
-      taxBillId: a.taxBillId || "", ex: a.ex || {} };
+      taxBillId: a.taxBillId || "", ex: a.ex || {}, approverId: a.approverId || "" };
   }
   /* What the record would look like if saved now, for working out amounts and due dates while typing. */
   function draftAsAdv(D) {
@@ -4720,6 +4851,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     var f = el("div", { class: "form", id: "adForm" });
     var co = el("select", { class: "field", id: "adCo" }); fillSelect(co, companyOpts(D.companyId, "adv"), D.companyId);
     f.appendChild(fld("Company", co, D.ex && D.ex.companyName ? "On the file: " + D.ex.companyName : ""));
+    f.appendChild(fld("Approver", approverSelect("adAppr", D.approverId), APPR_HINT));
     var ven = el("select", { class: "field", id: "adVen" }); fillSelect(ven, advVendorOpts(D), D.vendorChoice);
     f.appendChild(fld("Vendor", ven, D.ex && D.ex.vendorName ? "On the file: " + D.ex.vendorName : imp ? "Overseas vendors only." : ""));
     var vb = el("div", { class: "vbox", id: "adVBox" }); vb.hidden = D.vendorChoice !== "new";
@@ -4819,7 +4951,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   function readAdvForm() {
     var D = ADV.D, imp = ADV.kind === "import"; if (!$("adCo")) return D;
     function v(id) { var e = $(id); return e ? e.value : ""; }
-    D.companyId = v("adCo"); D.vendorChoice = v("adVen"); D.vNew.name = v("adVName");
+    D.companyId = v("adCo"); D.vendorChoice = v("adVen"); D.vNew.name = v("adVName"); D.approverId = v("adAppr");
     if (imp) D.vNew.country = v("adVCountry"); else { D.vNew.type = v("adVType"); D.vNew.gstin = v("adVGstin"); }
     D.piNo = v("adNo"); D.piDate = v("adDate"); if (imp) D.currency = v("adCur"); D.total = v("adTotal"); if (!imp) D.gst = v("adGst");
     D.insts = D.insts.map(function (it, i) { return { pct: v("adPct" + i), when: i === 0 ? "receipt" : v("adWhen" + i), days: i === 0 ? "" : v("adDays" + i) }; });
@@ -4853,6 +4985,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     function E(id, m) { errOn(id, m); ok = false; }
     if (!D.companyId) E("adCo", "Choose the company."); else if (!canStep("adv", D.companyId)) E("adCo", "You don't have access to this company.");
     var g = "";
+    if (!D.approverId) E("adAppr", "Choose who approves this.");
     if (!D.vendorChoice) E("adVen", "Choose the vendor, or New vendor.");
     else if (D.vendorChoice === "new") {
       if (!D.vNew.name.trim()) E("adVName", "Type the vendor's name.");
@@ -4894,7 +5027,8 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     }
     var doc = { kind: ADV.kind, companyId: D.companyId, vendorId: vid, vendorNew: null, piNo: D.piNo.trim().toUpperCase(), piDate: pd, currency: imp ? D.currency : "INR", total: round2(tot), gst: !imp && D.gst.trim() ? round2(num(D.gst)) : null,
       installments: D.insts.map(function (it, i) { return { pct: round2(num(it.pct)), when: i === 0 ? "receipt" : it.when, days: i === 0 ? 0 : dayCount(it.days) }; }),
-      dispatchDate: dd || null, dispatchConfirmed: !!(D.dispConfirmed && dd), narration: sentenceFix(D.narration.trim()), updatedAt: now, updatedBy: meId() };
+      dispatchDate: dd || null, dispatchConfirmed: !!(D.dispConfirmed && dd), narration: sentenceFix(D.narration.trim()), updatedAt: now, updatedBy: meId(),
+      approverId: D.approverId || "", approverName: approverFields(D.approverId).approverName };
     if (doc.dispatchConfirmed && !(real && real.dispatchConfirmed && real.dispatchDate === dd)) doc.dispatchConfirmedOn = todayYmd();
     if (!doc.dispatchConfirmed) doc.dispatchConfirmedOn = null;
     if (imp) { doc.arrivalDate = ad || null; Object.assign(doc, costs); }
@@ -5056,6 +5190,17 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
 
   /* ================= instalments in checking reports ================= */
   function repMoney(r, n) { return curMoney(r && r.currency, n); }
+  /* Voucher numbers: CODE-VOU001/MM/FY, counting up within each company and financial year (never reused). */
+  function nextVoucherNo(cid, day) {
+    day = day || todayYmd();
+    var fy = fyOf(day), c = S.companies[cid] || {}, top = 0, code = normId(c.shortName || c.name).slice(0, 10) || "CO";
+    Object.keys(S.vouchers || {}).forEach(function (k) {
+      var v = S.vouchers[k]; if (v.companyId !== cid) return;
+      var m = /-VOU(\d+)\//.exec(v.voucherNo || ""), sq = v.voucherSeq || (m ? Number(m[1]) : 0);
+      if (sq && (v.voucherFy || fyOf(v.voucherDate || "")) === fy && sq > top) top = sq;
+    });
+    return { no: serialNo(code + "-VOU", top + 1, day, fy), seq: top + 1, fy: fy };
+  }
   function nextReportNo(cid, now, series) {
     series = series || "BCR";
     var day = ymdOfMs(now), fy = fyOf(day), used = {}, seq = 1, c = S.companies[cid] || {};
@@ -5109,7 +5254,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     ], list, { sortIndex: 3, sortDir: 1, rowClass: function (x) { return x.st === "due" ? "" : "later"; } });
     var q = $("apQ").value.trim().toLowerCase();
     var reps = Object.keys(S.reports).map(function (k) { return S.reports[k]; }).filter(function (r) {
-      if (r.kind !== "inst" || !canStep("adv", r.companyId) || (cid && r.companyId !== cid) || !teamSees(r)) return false;
+      if (r.kind !== "inst" || !canStep("adv", r.companyId) || (cid && r.companyId !== cid) || !listSees(r)) return false;
       var a = S.advances[r.advanceId];
       if (q && ((r.no || "") + " " + ((S.vendors[r.vendorId] || {}).name || "") + " " + (a ? a.piNo : "") + " " + pnm(r.preparedBy)).toLowerCase().indexOf(q) < 0) return false;
       return true;
@@ -5122,7 +5267,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       { label: "Stage", sort: function (r) { return STAGE_ORDER[stageOf(r)]; }, cell: function (r, td) { td.appendChild(stageTag(r)); } },
       { label: "Vendor", sort: function (r) { return (S.vendors[r.vendorId] || {}).name; }, cell: function (r, td) { var a = S.advances[r.advanceId]; td.appendChild(el("b", null, (S.vendors[r.vendorId] || {}).name || "")); sub(td, coLabel(r.companyId) + (a ? " · " + (a.kind === "import" ? "Import " : "Proforma ") + a.piNo + ", " + instLabel(a, r.inst).toLowerCase() : "")); } },
       { label: "Amount", cls: "r num", sort: function (r) { return r.total || 0; }, desc: true, cell: function (r, td) { td.appendChild(el("b", null, repMoney(r, r.total))); } },
-      { label: "Prepared by", sort: function (r) { return r.preparedBy; }, cell: function (r, td) { txt(td, pnm(r.preparedBy)); } },
+      { label: "Prepared by", who: function (r) { return r.preparedBy; }, sort: function (r) { return r.preparedBy; }, cell: function (r, td) { txt(td, pnm(r.preparedBy)); } },
       { label: "", kind: "act", cls: "r", cell: function (r, td) { var b = el("button", { class: "btn sm" }, "Open"); b.setAttribute("aria-label", "Open " + r.no); b.addEventListener("click", function () { openReport(r.id); }); td.appendChild(b); } }
     ], reps, { sortIndex: 0, sortDir: -1 });
   }
@@ -5257,6 +5402,8 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     if (MK.busy) return;
     var sel = $("mkCo"), cur = sel.value, side = MK.side;
     fillSelect(sel, [["", "All your companies"]].concat(roleCos("txn").map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
+    var na = mkAdvRows(sel.value, false).length; $("mkNA").textContent = na ? "(" + na + ")" : ""; $("mkSideA").setAttribute("aria-selected", side === "advances" ? "true" : "false");
+    if (side === "advances") { renderMarkAdv(); return; }
     var rows = mkRows(sel.value, side), box = $("mkList"); MK.stale = false;
     var nv = mkRows(sel.value, "vendors").length, nc = mkRows(sel.value, "vouchers").length;
     $("mkSideV").setAttribute("aria-selected", side === "vendors" ? "true" : "false"); $("mkSideC").setAttribute("aria-selected", side === "vouchers" ? "true" : "false");
@@ -5285,6 +5432,37 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       ], rs, { sortIndex: -1 });
     });
     renderDoneTx();
+  }
+  /* ---- Payment Entry › Advances: approved cash advances, paid out here by the financier ---- */
+  function mkAdvRows(cid, paid) {
+    var since = Date.now() - 14 * 864e5;
+    return caList().filter(function (a) {
+      if (!canStep("txn", a.companyId) || (cid && a.companyId !== cid)) return false;
+      return paid ? a.status === "received" && (a.receivedAt || 0) >= since : a.status === "approved";
+    });
+  }
+  function renderMarkAdv() {
+    var cid = $("mkCo").value, rows = mkAdvRows(cid, false).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); }), done = mkAdvRows(cid, true).sort(function (a, b) { return (b.receivedAt || 0) - (a.receivedAt || 0); });
+    $("mkSideV").setAttribute("aria-selected", "false"); $("mkSideC").setAttribute("aria-selected", "false");
+    var tot = rows.reduce(function (s0, a) { return s0 + (Number(a.approvedAmount) || 0); }, 0), wk = 0, ws = weekStart(todayYmd());
+    done.concat(caList().filter(function (a) { return a.status === "received" && canStep("txn", a.companyId) && (!cid || a.companyId === cid) && ymdOk(a.receivedDate) && a.receivedDate >= ws; })).forEach(function (a, i, arr) { if (arr.indexOf(a) === i && ymdOk(a.receivedDate) && a.receivedDate >= ws) wk += Number(a.approvedAmount) || 0; });
+    statBoxes($("mkStats"), [["To pay", money(round2(tot)), plural(rows.length, "advance")], ["Paid this week", money(round2(wk)), "Since " + fmtDate(ws)]]);
+    $("mkN").textContent = rows.length ? "(" + rows.length + ")" : ""; $("mkDN").textContent = done.length ? "(" + done.length + ")" : "";
+    $("mkTabPay").setAttribute("aria-selected", MK.view !== "done" ? "true" : "false"); $("mkTabDone").setAttribute("aria-selected", MK.view === "done" ? "true" : "false");
+    $("mkPay").hidden = MK.view === "done"; $("mkDoneWrap").hidden = MK.view !== "done";
+    var who = { label: "Pay to", kind: "co", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, coLabel(a.companyId)); } };
+    var pur = { label: "Purpose", cls: "desc", cell: function (a, td) { txt(td, a.purpose || ""); if (a.note) sub(td, "Admin: " + a.note); } };
+    var box = $("mkList"); box.textContent = "";
+    if (!rows.length) box.appendChild(el("div", { class: "card empty" }, "No cash advances are waiting to be paid. An advance appears here once the admin approves it."));
+    else { var w = el("div", { class: "card list scroll" }); box.appendChild(w); sortTable(w, "mkAdv", [who, pur,
+      { label: "Amount", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.approvedAmount))); sub(td, "Approved " + fmtDay(a.approvedAt) + (Number(a.approvedAmount) !== Number(a.amount) ? ", asked " + money(a.amount) : "")); } },
+      { label: "", kind: "act", cls: "r", cell: function (a, td) { var y = el("button", { class: "btn sm primary" }, "Mark paid"); y.addEventListener("click", function () { caReceive(a); }); td.appendChild(y); } }], rows, { sortIndex: -1 }); }
+    var db = $("mkDone"); db.textContent = "";
+    if (!done.length) db.appendChild(el("div", { class: "empty" }, "No cash advances paid in the last 14 days."));
+    else sortTable(db, "mkAdvDone", [who, pur,
+      { label: "Amount", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.approvedAmount))); } },
+      { label: "Paid", cell: function (a, td) { txt(td, fmtDate(a.receivedDate)); var m = modeInfo(a.payMode); sub(td, (m ? m[1] : "") + (a.payRef ? (m ? " · " : "") + a.payRef : "") + (a.paidByName ? " · by " + pnm(a.paidByName) : "")); } },
+      { label: "", kind: "act", cls: "r", cell: function (a, td) { if (S.isAdmin || (a.receivedBy === meId() && Date.now() - (a.receivedAt || 0) < TX_DAYS * 864e5)) { var u = el("button", { class: "btn sm" }, "Undo"); u.addEventListener("click", function () { caUndo(a, u, "approved"); }); td.appendChild(u); } } }], done, { sortIndex: -1 });
   }
   /* Checks shared by the row and the pop-up. Returns an error message, or "". */
   function payCheck(x, n, date, mode, ref, skipId) {
@@ -5397,6 +5575,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     });
   }
   function renderDoneTx() {
+    if (MK.side === "advances") { renderMarkAdv(); return; }
     var cid = $("mkCo").value, q = $("mkQ").value.trim().toLowerCase(), box = $("mkDone"), vch = MK.side === "vouchers";
     var rows = txList().filter(function (t) {
       if (!canStep("txn", t.companyId) || (cid && t.companyId !== cid) || !!(t.vcrId || t.voucherId) !== vch) return false;
@@ -5428,7 +5607,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
         } }
     ], rows, { sortIndex: -1, limit: MK.doneLimit, more: function (m, n) { var mb = el("button", { class: "btn" }, "Show " + Math.min(100, n) + " more of " + n); mb.addEventListener("click", function () { MK.doneLimit += 100; renderDoneTx(); }); m.appendChild(mb); } });
   }
-  function markBadge() { return mkRows("").length; }
+  function markBadge() { return mkRows("").length + mkAdvRows("", false).length; }
 
   /* ================= Payment Ledger ================= */
   /* Every payment and discount, newest first. For vendors, each line shows what it settled: the opening balance (overdue part first),
@@ -5478,6 +5657,465 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
           if (t.reason) sub(td, "Reason: " + t.reason, "color:var(--warn);font-weight:600"); } }
     ];
     sortTable(box, "lgList", cols, rows, { sortIndex: 0, limit: LG.limit, more: function (m, n) { var mb = el("button", { class: "btn" }, "Show " + Math.min(100, n) + " more of " + n); mb.addEventListener("click", function () { LG.limit += 100; renderLedger(); }); m.appendChild(mb); } });
+  }
+
+  /* ================= Reports › Transactions ================= */
+  /* Every bill, proforma or import, voucher and payment, with where it stands now and who is holding it.
+     The admin sees everything (a named admin, what they approve); everyone else sees their own work and their profiles'. */
+  var TX = { side: "bills", status: "open", limit: 200 };
+  var TX_SIDES = [["bills", "Bills"], ["advances", "Proformas & Imports"], ["vouchers", "Vouchers"], ["payments", "Payments"]];
+  function namesOf(us, fallback) { var n = us.map(function (u) { return pnm(u.name); }).filter(Boolean); return n.length ? n.join(", ") : fallback; }
+  function holdersFor(step, cid, fallback) { var us = cid ? usersWith(step, cid) : []; return { ids: us.map(function (u) { return u.id; }), name: namesOf(us, fallback) }; }
+  function holderPrep(x) { var id = prepOf(x); return { ids: id ? [id] : [], name: prepName(x) || userLabel(id) || "Preparer" }; }
+  function holderAppr(x) { return { ids: x && x.approverId ? [x.approverId] : [], name: approverName(x) || "Admin" }; }
+  function ageDays(ymd) { return ymdOk(ymd) ? Math.max(0, Math.round((new Date(todayYmd()) - new Date(ymd)) / 864e5)) : null; }
+  function txBillRow(b) {
+    var ck = checkOf(b), inf = billInfo(b), r = ck && ck.r, st = r ? stageOf(r) : "", step, cls, h, open = true;
+    if (b.status !== "done") { step = b.status === "postponed" ? "Postponed while entering" : "Being entered"; cls = "s-draft"; h = holderPrep(b); }
+    else if (r && st === "payment") {
+      if (inf.rem <= 0.004 && (Number(b.total) || 0) > 0) { step = "Paid"; cls = "s-payment"; h = { ids: [], name: "" }; open = false; }
+      else { step = inf.paid + inf.disc > 0 ? "Part paid" : "Sent for payment"; cls = "s-payment"; h = holdersFor("txn", b.companyId, "Financier"); }
+    }
+    else if (r && (st === "generated" || st === "printed")) { step = "Waiting for approval"; cls = "s-" + st; h = holderAppr(b); }
+    else if (r) { step = "In a Bills CR draft"; cls = "s-" + st; h = holderPrep(b); }
+    else if (b.acct === "back") { step = "Sent back by the accountant"; cls = "s-tds"; h = holderPrep(b); }
+    else if (!acctOk(b)) { step = b.acct === "held" ? "Postponed by the accountant" : "With the accountant"; cls = b.acct === "held" ? "s-tds" : "s-draft"; h = holdersFor("acct", b.companyId, "Accountant"); }
+    else { step = "Waiting for a Bills CR"; cls = "s-draft"; h = holderPrep(b); }
+    return { kind: "bill", x: b, id: b.id, no: b.billNo || "(no number yet)", date: b.billDate || "", cid: b.companyId, party: vendorLabelOfBill(b) || "Vendor not chosen", desc: b.narration || "",
+      cur: b.currency || "INR", amount: Number(b.total) || 0, paid: round2(inf.paid + inf.disc), bal: b.status === "done" ? inf.rem : Number(b.total) || 0, step: step, cls: cls, ref: r ? r.no : "",
+      holder: h, prep: prepName(b) || userLabel(prepOf(b)), appr: approverName(b), open: open, age: ageDays(b.billDate) };
+  }
+  function txAdvRow(a) {
+    var n = (a.installments || []).length, paid = advPaid(a.id), tot = Number(a.total) || 0, step, cls, h, open = a.status !== "closed", ref = "", i, nxt = -1;
+    for (i = 0; i < n; i++) if (instState(a, i) !== "paid") { nxt = i; break; }
+    if (!open) { step = "Closed by its tax bill"; cls = "s-payment"; h = { ids: [], name: "" }; }
+    else if (nxt < 0) { step = "Fully paid, waiting for the tax bill"; cls = "s-printed"; h = holderPrep(a); }
+    else {
+      var s0 = instState(a, nxt), rr = instReport(a, nxt), lab = "Instalment " + (nxt + 1) + " of " + n; ref = rr ? rr.no : "";
+      if (s0 === "payment") { step = lab + ": sent for payment"; cls = "s-payment"; h = holdersFor("txn", a.companyId, "Financier"); }
+      else if (s0 === "generated" || s0 === "printed") { step = lab + ": waiting for approval"; cls = "s-" + s0; h = holderAppr(a); }
+      else if (s0 === "draft" || s0 === "tds") { step = lab + ": Advance CR draft"; cls = "s-draft"; h = holderPrep(a); }
+      else if (s0 === "due") { step = lab + ": due " + fmtDate(instDue(a, nxt)); cls = "s-tds"; h = holderPrep(a); }
+      else if (s0 === "dispatch") { step = lab + ": waiting for the dispatch date"; cls = "s-draft"; h = holderPrep(a); }
+      else { step = lab + (instDue(a, nxt) ? ": due " + fmtDate(instDue(a, nxt)) : ": upcoming"); cls = "s-generated"; h = holderPrep(a); }
+    }
+    var v = S.vendors[a.vendorId];
+    return { kind: a.kind === "import" ? "import" : "proforma", x: a, id: a.id, no: a.piNo || "", date: a.piDate || "", cid: a.companyId, party: v ? v.name : (a.vendorNew && a.vendorNew.name) || "",
+      desc: (a.kind === "import" ? "Import" : "Proforma") + (a.narration ? " · " + a.narration : ""), cur: a.currency || "INR", amount: tot, paid: paid, bal: round2(Math.max(0, tot - paid)),
+      step: step, cls: cls, ref: ref, holder: h, prep: prepName(a) || userLabel(prepOf(a)), appr: approverName(a), open: open, age: ageDays(a.piDate) };
+  }
+  function vchIsPaid(v, r) {
+    if (v.settle) return !!v.approvedAt;
+    if (vchPaid(v.id) >= vPayable(v) - 0.5) return true;
+    if (!r || stageOf(r) !== "payment") return false;
+    var due = vcrVouchers(r, v.companyId).filter(function (x) { return !x.settle; }).reduce(function (s, x) { return s + vPayable(x); }, 0);
+    return due > 0 && vcrPaid(r.id, v.companyId) >= due - 0.5;
+  }
+  function txVchRow(v) {
+    var r = vcrOf(v.id), st = r ? stageOf(r) : "", step, cls, h, open = true, paid = 0;
+    if (v.sentBack) { step = "Sent back: " + sendBackText(v.sentBack); cls = "s-tds"; h = holderPrep(v); }
+    else if (r && st === "payment") {
+      if (vchIsPaid(v, r)) { step = v.settle ? "Settled from cash advance" : "Paid"; cls = "s-payment"; h = { ids: [], name: "" }; open = false; paid = vPayable(v); }
+      else { step = "Sent for payment"; cls = "s-payment"; h = holdersFor("txn", v.companyId, "Financier"); paid = vchPaid(v.id); }
+    }
+    else if (r && (st === "generated" || st === "printed")) { step = "Waiting for approval"; cls = "s-" + st; h = holderAppr(v); }
+    else if (r) { step = "In a Vouchers CR draft"; cls = "s-draft"; h = holderPrep(v); }
+    else if (!acctOk(v)) { step = v.acct === "held" ? "Postponed by the accountant" : v.acct === "back" ? "Sent back by the accountant" : "With the accountant"; cls = v.acct === "back" || v.acct === "held" ? "s-tds" : "s-draft"; h = v.acct === "back" ? holderPrep(v) : holdersFor("acct", v.companyId, "Accountant"); }
+    else { step = "Waiting for a Vouchers CR"; cls = "s-draft"; h = holderPrep(v); }
+    var tot = Number(v.total) || 0;
+    return { kind: "voucher", x: v, id: v.id, no: v.voucherNo || "", date: v.voucherDate || "", cid: v.companyId, party: v.payee || "", desc: v.narration || "", cur: "INR", amount: tot,
+      paid: paid, bal: open ? round2(vPayable(v) - paid) : 0, step: step, cls: cls, ref: r ? r.no : "", holder: h, prep: pnm(v.preparedByName) || userLabel(prepOf(v)), appr: approverName(v),
+      open: open, age: ageDays(v.voucherDate), pay: v.settle ? "Cash advance" : "By Financier" };
+  }
+  function txPayRow(t) {
+    var v = S.vendors[t.vendorId], a = t.advanceId && S.advances[t.advanceId], vv = t.voucherId && S.vouchers[t.voucherId], rr = t.vcrId && S.reports[t.vcrId], forTxt;
+    if (a) forTxt = (a.kind === "import" ? "Import " : "Proforma ") + (a.piNo || "") + (t.inst != null ? ", instalment " + (Number(t.inst) + 1) : "");
+    else if (vv) forTxt = "Voucher " + (vv.voucherNo || "") + (rr ? " · " + rr.no : "");
+    else if (rr) forTxt = "Vouchers CR " + (rr.no || "");
+    else forTxt = allocLines(t).map(function (l) { return l[0] + ": " + curMoney(t.currency, l[1]); }).join("; ");
+    return { kind: "payment", x: t, id: t.id, no: t.kind === "discount" ? "Discount" : "Payment", date: t.date || "", cid: t.companyId, party: v ? v.name : t.payee || "", desc: forTxt, cur: t.currency || "INR",
+      amount: Number(t.amount) || 0, paid: Number(t.amount) || 0, bal: 0, step: t.kind === "discount" ? "Discount received" : modeText(t) || "Paid", cls: t.kind === "discount" ? "s-printed" : "s-payment",
+      ref: t.ref || "", holder: { ids: [], name: "" }, prep: pnm(t.byName || ""), appr: "", open: false, age: null, reason: t.reason || "" };
+  }
+  /* A non-admin's own payments: entered by them, or paying their own bills, vouchers or proformas. */
+  function txPayMine(t) {
+    if (S.isAdmin) return true;
+    var m = myPeople(); if (m[t.by] || m[t.createdBy]) return true;
+    var a = t.advanceId && S.advances[t.advanceId], vv = t.voucherId && S.vouchers[t.voucherId];
+    if (a) return ownWork(a); if (vv) return ownWork(vv);
+    return allocLines(t).length > 0 && (t.billIds || []).some(function (id) { return S.bills[id] && ownWork(S.bills[id]); });
+  }
+  function txRows(side) {
+    if (side === "bills") return billList().filter(function (b) { return canSee(b.companyId) && ownWork(b) && (b.status === "done" || b.status === "draft" || b.status === "postponed"); }).map(txBillRow);
+    if (side === "advances") return Object.keys(S.advances || {}).map(function (k) { return S.advances[k]; }).filter(function (a) { return canSee(a.companyId) && ownWork(a); }).map(txAdvRow);
+    if (side === "vouchers") return vchList().filter(function (v) { return canSee(v.companyId) && ownWork(v); }).map(txVchRow);
+    return txList().filter(function (t) { return canSee(t.companyId) && txPayMine(t); }).map(txPayRow);
+  }
+  function txFiltered() {
+    var side = TX.side, cid = $("txCo").value, who = $("txWho").value, q = $("txQ").value.trim().toLowerCase();
+    var from = parseDate(($("txFrom") || {}).value || "") || "", to = parseDate(($("txTo") || {}).value || "") || "";
+    return txRows(side).filter(function (r) {
+      if (side !== "payments" && TX.status === "open" && !r.open) return false;
+      if (side !== "payments" && TX.status === "closed" && r.open) return false;
+      if (cid && r.cid !== cid) return false;
+      if (who && r.holder.ids.indexOf(who) < 0 && prepOf(r.x) !== who && (r.x.approverId || "") !== who) return false;
+      if (from && (!r.date || r.date < from)) return false; if (to && (!r.date || r.date > to)) return false;
+      if (q && [r.no, r.party, r.desc, r.step, r.ref, r.holder.name, r.prep, r.appr, coLabel(r.cid)].join(" ").toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    }).sort(function (a, b) { return natCmp(b.date, a.date) || natCmp(a.no, b.no); });
+  }
+  function txPeopleOpts() {
+    var m = {};
+    ["bills", "advances", "vouchers"].forEach(function (sd) { txRows(sd).forEach(function (r) { r.holder.ids.forEach(function (id) { m[id] = m[id] || userLabel(id) || approverName({ approverId: id }); }); var p = prepOf(r.x); if (p) m[p] = m[p] || r.prep; }); });
+    return Object.keys(m).filter(function (k) { return m[k]; }).map(function (k) { return [k, pnm(m[k])]; }).sort(function (a, b) { return natCmp(a[1], b[1]); });
+  }
+  function renderTxn() {
+    var side = TX.side, pay = side === "payments";
+    $("txSub").textContent = (S.isAdmin ? (approverScoped() ? "The bills, proformas, imports and vouchers you approve" : "Every bill, proforma, import and voucher") : "Your bills, proformas, imports and vouchers (and those of profiles on your login)") + ", where each one stands and who has it now. Payments lists every payment and discount recorded.";
+    var seg = $("txSeg"); seg.textContent = "";
+    TX_SIDES.forEach(function (sd) { var b = el("button", { type: "button", role: "tab", "aria-selected": side === sd[0] ? "true" : "false" }, sd[1]); b.addEventListener("click", function () { TX.side = sd[0]; TX.limit = 200; renderTxn(); }); seg.appendChild(b); });
+    var cs = $("txCo"), cc = cs.value; fillSelect(cs, [["", "All companies"]].concat(myCompanies().map(function (c) { return [c.id, c.shortName || c.name]; })), cc);
+    var ws = $("txWho"), wc = ws.value; fillSelect(ws, [["", "Everyone"]].concat(txPeopleOpts()), wc); ws.hidden = pay;
+    var ss = $("txSt"); ss.value = TX.status; ss.hidden = pay;
+    if (!$("txFrom")) {
+      var fb = $("txDates");
+      [["txFrom", "From date"], ["txTo", "To date"]].forEach(function (d) { var b = dateBox(d[0], "", { min: addDays(todayYmd(), -3650), max: todayYmd(), clearable: true, label: d[1] }); b.placeholder = d[1]; var hold = el("div", { class: "perjump" }); hold.appendChild(b); fb.appendChild(hold); b.addEventListener("change", function () { TX.limit = 200; renderTxn(); }); });
+    }
+    var rows = txFiltered(), tot = {}, bal = {}, openN = 0;
+    rows.forEach(function (r) { curAdd(tot, r.cur, r.amount); if (r.open) { openN++; curAdd(bal, r.cur, r.bal); } });
+    var label = { bills: "Bills", advances: "Proformas & imports", vouchers: "Vouchers", payments: "Payments" }[side];
+    statBoxes($("txStats"), pay ? [[label, String(rows.length), ""], ["Total", curSum(tot), ""]]
+      : [[label, String(rows.length), TX.status === "open" ? "Open" : TX.status === "closed" ? "Closed" : "Open and closed"], ["Total amount", curSum(tot), ""], ["Still to pay", curSum(bal), openN ? plural(openN, "open item") : ""], ["Oldest open", (function () { var o = rows.filter(function (r) { return r.open && r.age != null; }).reduce(function (m, r) { return Math.max(m, r.age); }, -1); return o < 0 ? "None" : plural(o, "day"); })(), ""]]);
+    $("txPdf").disabled = !rows.length || !S.downloads; $("txXls").disabled = !rows.length || !S.downloads;
+    /* Who has what open: one line per person holding items now, by step. */
+    var pb = $("txPeople"); pb.textContent = "";
+    if (!pay) {
+      var by = {};
+      txRows(side).filter(function (r) { return r.open && (!$("txCo").value || r.cid === $("txCo").value); }).forEach(function (r) {
+        var key = (r.holder.name || "Unassigned") + "|" + r.step.replace(/^Instalment \d+ of \d+: /, "").replace(/: due .*$/, ": due"), g = by[key] || (by[key] = { who: r.holder.name || "Unassigned", step: r.step.replace(/^Instalment \d+ of \d+: /, "Instalment ").replace(/: due .*$/, " due"), n: 0, amt: {}, oldest: -1 });
+        g.n++; curAdd(g.amt, r.cur, r.bal); if (r.age != null && r.age > g.oldest) g.oldest = r.age;
+      });
+      var gl = Object.keys(by).map(function (k) { return by[k]; });
+      if (gl.length) {
+        pb.appendChild(el("h3", { style: "margin-top:4px" }, "Who has what open"));
+        var pc = el("div", { class: "card list scroll" }); pb.appendChild(pc);
+        sortTable(pc, "txPeople_" + side, [
+          { label: "With", kind: "co", sort: function (g) { return g.who; }, cell: function (g, td) { td.appendChild(el("b", null, g.who)); } },
+          { label: "Step", sort: function (g) { return g.step; }, cell: function (g, td) { txt(td, g.step); } },
+          { label: "Items", cls: "r num", sort: function (g) { return g.n; }, desc: true, cell: function (g, td) { td.appendChild(el("b", null, String(g.n))); } },
+          { label: "Still to pay", cls: "r num", sort: function (g) { return g.amt.INR || 0; }, desc: true, cell: function (g, td) { txt(td, curSum(g.amt)); } },
+          { label: "Oldest", cls: "r num", sort: function (g) { return g.oldest; }, desc: true, cell: function (g, td) { td.appendChild(el("span", { class: g.oldest > 7 ? "late" : "" }, g.oldest < 0 ? "-" : g.oldest ? plural(g.oldest, "day") : "Today")); } }
+        ], gl, { sortIndex: 2, sortDir: -1 });
+      }
+    }
+    var box = $("txList");
+    if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nothing matches.")); return; }
+    var cols = [
+      { label: pay ? "Date" : "Number", kind: "co", sort: function (r) { return r.date; }, cell: function (r, td) { td.appendChild(el("b", { class: "mono" }, pay ? fmtDate(r.date) : r.no)); sub(td, (pay ? r.no : fmtDate(r.date)) + " · " + coLabel(r.cid)); } },
+      { label: pay ? "Paid to" : side === "vouchers" ? "Paid to" : "Vendor", cls: "desc", sort: function (r) { return r.party; }, cell: function (r, td) { td.appendChild(el("b", null, r.party)); if (r.desc) sub(td, r.desc); if (r.reason) sub(td, "Reason: " + r.reason, "color:var(--warn);font-weight:600"); } },
+      { label: "Amount", cls: "r num", sort: function (r) { return r.amount; }, desc: true, cell: function (r, td) { td.appendChild(el("b", null, curMoney(r.cur, r.amount))); if (!pay && r.paid > 0 && r.open) sub(td, "Paid " + curMoney(r.cur, r.paid)); } }
+    ];
+    if (!pay) cols.push({ label: "Where it is", sort: function (r) { return r.step; }, cell: function (r, td) { td.appendChild(el("span", { class: "tag stg " + r.cls }, r.step)); if (r.ref) sub(td, r.ref); } });
+    if (!pay) cols.push({ label: "With", sort: function (r) { return r.holder.name; }, cell: function (r, td) { txt(td, r.holder.name || (r.open ? "Unassigned" : "-")); if (r.open && r.age != null) sub(td, r.age ? plural(r.age, "day") + " old" : "Today", r.age > 30 ? "color:var(--bad);font-weight:600" : ""); } });
+    if (pay) cols.push({ label: "Paid by", cell: function (r, td) { txt(td, r.step); } });
+    cols.push({ label: pay ? "Entered by" : "Prepared by", who: function (r) { return r.prep; }, sort: function (r) { return r.prep; }, cell: function (r, td) { txt(td, r.prep || "-"); } });
+    if (!pay) cols.push({ label: "Approver", sort: function (r) { return r.appr; }, cell: function (r, td) { txt(td, r.appr || "Not set"); } });
+    sortTable(box, "txList_" + side, cols, rows, { sortIndex: 0, sortDir: -1, limit: TX.limit, more: function (m, n) { var mb = el("button", { class: "btn" }, "Show " + Math.min(200, n) + " more of " + n); mb.addEventListener("click", function () { TX.limit += 200; renderTxn(); }); m.appendChild(mb); } });
+  }
+  function txTitle() { return { bills: "Bills", advances: "Proformas and imports", vouchers: "Vouchers", payments: "Payments" }[TX.side]; }
+  function txFilterText() {
+    var parts = [], co = $("txCo").value, who = $("txWho").value, from = parseDate(($("txFrom") || {}).value || ""), to = parseDate(($("txTo") || {}).value || ""), q = $("txQ").value.trim();
+    if (TX.side !== "payments") parts.push(TX.status === "open" ? "Open items" : TX.status === "closed" ? "Closed items" : "All items");
+    parts.push(co ? coLabel(co) : "All companies"); if (who) parts.push("Person: " + pnm($("txWho").selectedOptions[0].textContent));
+    if (from || to) parts.push((from ? fmtDate(from) : "Start") + " to " + (to ? fmtDate(to) : "today")); if (q) parts.push("Search: " + q);
+    return parts.join(" · ");
+  }
+  function downloadTxPdf(btn) {
+    if (!S.downloads) return;
+    var rows = txFiltered(), pay = TX.side === "payments", label = btn.textContent; if (!rows.length) return;
+    btn.disabled = true; btn.textContent = "Preparing";
+    loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }).then(function () {
+      var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
+      var doc = newPdf(jsPDF), P = pdfLook(doc), co = $("txCo").value, one = co ? S.companies[co] : null, tot = {}, bal = {};
+      rows.forEach(function (r) { curAdd(tot, r.cur, r.amount); if (r.open) curAdd(bal, r.cur, r.bal); });
+      var y = P.head({ logo: one ? one.logo : groupLogo(), name: one ? one.name : "KKSK Group", sub: "Transactions · " + txTitle() + " · Internal", big: txTitle(), bigSub: txFilterText() + " · Generated " + fmtDate(todayYmd()),
+        facts: pay ? [["Payments", String(rows.length)], ["Total", curSum(tot)]] : [["Items", String(rows.length)], ["Total amount", curSum(tot)], ["Still to pay", curSum(bal)], ["Open", String(rows.filter(function (r) { return r.open; }).length)]] });
+      var head = pay ? ["Date", "Company", "Paid to · for", { content: "Amount", styles: { halign: "right" } }, "Paid by", "Entered by"]
+        : ["Number · date", "Company", (TX.side === "vouchers" ? "Paid to" : "Vendor") + " · description", { content: "Amount", styles: { halign: "right" } }, "Where it is", "With", "Approver"];
+      var body = rows.map(function (r) {
+        return pay ? [fmtDate(r.date), coLabel(r.cid), cB(r.party + (r.desc ? "\n" + r.desc : "")), cR(curMoney(r.cur, r.amount), true), r.step, r.prep || "-"]
+          : [cB(r.no + "\n" + fmtDate(r.date)), coLabel(r.cid), r.party + (r.desc ? "\n" + r.desc : ""), cR(curMoney(r.cur, r.amount) + (r.open && r.paid > 0 ? "\nPaid " + curMoney(r.cur, r.paid) : ""), true), r.step + (r.ref ? "\n" + r.ref : ""), (r.holder.name || "-") + (r.open && r.age != null ? "\n" + (r.age ? plural(r.age, "day") : "Today") : ""), r.appr || "Not set"];
+      });
+      P.table(y, head, body, { foot: pay ? [cFoot("Total, " + plural(rows.length, "payment"), 3), cFoot(curSum(tot), 1, "right"), cFoot("", 2)] : [cFoot("Total, " + plural(rows.length, "item"), 3), cFoot(curSum(tot), 1, "right"), cFoot("Still to pay " + curSum(bal), 3)],
+        columnStyles: pay ? { 0: { cellWidth: 52 }, 1: { cellWidth: 40 }, 3: { cellWidth: 70 }, 4: { cellWidth: 80 }, 5: { cellWidth: 62 } } : { 0: { cellWidth: 62 }, 1: { cellWidth: 44 }, 3: { cellWidth: 62 }, 4: { cellWidth: 84, fontSize: 6.8 }, 5: { cellWidth: 62, fontSize: 6.8 }, 6: { cellWidth: 52, fontSize: 6.8 } } });
+      P.finish(null, "Transactions · " + txTitle() + " · " + fmtDate(todayYmd()));
+      return S.downloads.save({ filename: "Transactions - " + txTitle() + " " + fmtDate(todayYmd()) + ".pdf", data: doc.output("blob") });
+    }).then(function () { toast("PDF ready."); }, function (e) { if (!(e && e.code === "declined")) toast(e && e.kind === "lib" ? "The PDF maker didn't load. Check the connection and try again." : "The PDF couldn't be made."); })
+      .then(function () { btn.disabled = false; btn.textContent = label; });
+  }
+  function downloadTxXls(btn) {
+    var rows = txFiltered(), pay = TX.side === "payments"; if (!rows.length) return;
+    var cols = pay ? [{ h: "Date", t: "date", w: 12 }, { h: "Company", w: 10 }, { h: "Paid to", w: 30 }, { h: "For", w: 46 }, { h: "Currency", w: 9 }, { h: "Amount", t: "money", w: 14, sum: true }, { h: "Paid by", w: 24 }, { h: "Reference", w: 18 }, { h: "Entered by", w: 18 }, { h: "Reason", w: 30 }]
+      : [{ h: "Number", w: 18 }, { h: "Date", t: "date", w: 12 }, { h: "Company", w: 10 }, { h: TX.side === "vouchers" ? "Paid to" : "Vendor", w: 30 }, { h: "Description", w: 40 }, { h: "Currency", w: 9 }, { h: "Amount", t: "money", w: 14, sum: true }, { h: "Paid", t: "money", w: 14, sum: true }, { h: "Still to pay", t: "money", w: 14, sum: true }, { h: "Where it is", w: 32 }, { h: "Report", w: 22 }, { h: "With", w: 22 }, { h: "Days old", t: "int", w: 9 }, { h: "Prepared by", w: 20 }, { h: "Approver", w: 20 }, { h: "Open", w: 7 }];
+    var data = rows.map(function (r) {
+      return pay ? [r.date, coLabel(r.cid), r.party, r.desc, r.cur, r.amount, r.step, r.ref, r.prep, r.reason || ""]
+        : [r.no, r.date, coLabel(r.cid), r.party, r.desc, r.cur, r.amount, r.paid, r.open ? r.bal : 0, r.step, r.ref, r.holder.name || "", r.open ? r.age : null, r.prep, r.appr, r.open ? "Yes" : "No"];
+    });
+    xlDownload(btn, "Transactions - " + txTitle() + " " + fmtDate(todayYmd()) + ".xlsx", [{ name: txTitle(), title: "Transactions · " + txTitle(), sub: txFilterText() + " · Generated " + fmtDate(todayYmd()), cols: cols, rows: data }]);
+  }
+
+  /* Excel versions of the other reports. */
+  function downloadPerXls(btn) {
+    var D = perData(), mon = S.tab === "Monthly", R = D.R, b = [], v = [];
+    if (!D.cos.length) { toast("Nothing is dated in that period."); return; }
+    D.cos.forEach(function (x) {
+      x.bills.forEach(function (bl) { var inf = billInfo(bl); b.push([x.c.shortName || x.c.name, bl.billDate, bl.billNo || "", vendorLabelOfBill(bl), bl.narration || "", bl.currency || "INR", Number(bl.taxable) || 0, Number(bl.gstAmt) || 0, Number(bl.total) || 0, inf.tds || 0, billStatus(bl).t, prepName(bl) || userLabel(prepOf(bl)), approverName(bl)]); });
+      x.vchs.forEach(function (vc) { v.push([x.c.shortName || x.c.name, vc.voucherDate, vc.voucherNo || "", vc.payee || "", vc.narration || "", Number(vc.total) || 0, Number(vc.tds) || 0, vc.settle ? "Cash advance" : "By Financier", vchStatus(vc).text, pnm(vc.preparedByName), approverName(vc)]); });
+    });
+    var period = mon ? R.long : fmtDate(R.from) + " to " + fmtDate(R.to), sub = (mon ? "Monthly" : "Weekly") + " report · " + period + " · Generated " + fmtDate(todayYmd());
+    xlDownload(btn, (mon ? "Monthly report " + R.label.replace("'", "") : "Weekly report " + fmtDate(R.from) + " to " + fmtDate(R.to)) + ".xlsx", [
+      { name: "Bills", title: "Bills · " + period, sub: sub, rows: b, cols: [{ h: "Company", w: 10 }, { h: "Bill date", t: "date", w: 12 }, { h: "Bill no.", w: 16 }, { h: "Vendor", w: 30 }, { h: "Narration", w: 36 }, { h: "Currency", w: 9 }, { h: "Taxable", t: "money", w: 14, sum: true }, { h: "GST", t: "money", w: 12, sum: true }, { h: "Total", t: "money", w: 14, sum: true }, { h: "TDS", t: "money", w: 12, sum: true }, { h: "Status", w: 34 }, { h: "Prepared by", w: 18 }, { h: "Approver", w: 18 }] },
+      { name: "Cash vouchers", title: "Cash vouchers · " + period, sub: sub, rows: v, cols: [{ h: "Company", w: 10 }, { h: "Voucher date", t: "date", w: 12 }, { h: "Voucher no.", w: 22 }, { h: "Paid to", w: 26 }, { h: "Narration", w: 36 }, { h: "Total", t: "money", w: 14, sum: true }, { h: "TDS", t: "money", w: 12, sum: true }, { h: "Paid from", w: 14 }, { h: "Status", w: 30 }, { h: "Prepared by", w: 18 }, { h: "Approver", w: 18 }] }
+    ]);
+  }
+  function downloadBooksXls(btn) {
+    var co = $("bkCo").value, lg = $("bkLed").value, fr = parseDate($("bkFrom").value) || "", to = parseDate($("bkTo").value) || "";
+    var es = bookEntries(BK.side, co, fr, to).filter(function (e) { return !lg || e.lg === lg; });
+    if (!es.length) { toast("Nothing is posted in this period."); return; }
+    es.sort(function (a, b) { return ledCmp(S.ledgers[a.lg] || {}, S.ledgers[b.lg] || {}) || natCmp(a.d, b.d); });
+    var book = { bills: "Bills", proformas: "Proforma and import tax bills", vouchers: "Vouchers" }[BK.side];
+    var rows = es.map(function (e) { var l = S.ledgers[e.lg] || {}; return [l.main || "", l.sub || "", ledName(e.lg) || "Unknown ledger", e.d, coLabel(e.cid), e.no || "", e.type || "", e.who || "", e.what || "", e.prep || "", e.amt, e.tds || 0, e.sec || ""]; });
+    xlDownload(btn, "Ledger book - " + book + " " + fmtDate(fr || todayYmd()) + " to " + fmtDate(to || todayYmd()) + ".xlsx", [{ name: book, title: "Ledger book · " + book + (lg ? " · " + ledName(lg) : ""), sub: (co ? coLabel(co) : "All companies") + " · " + (fr ? fmtDate(fr) : "Start") + " to " + (to ? fmtDate(to) : "today") + " · Generated " + fmtDate(todayYmd()), rows: rows,
+      cols: [{ h: "Main group", w: 16 }, { h: "Sub group", w: 24 }, { h: "Ledger", w: 30 }, { h: "Date", t: "date", w: 12 }, { h: "Company", w: 10 }, { h: "No.", w: 18 }, { h: "Type", w: 14 }, { h: BK.side === "vouchers" ? "Paid to" : "Vendor", w: 26 }, { h: "Description", w: 36 }, { h: "Prepared by", w: 18 }, { h: "Amount", t: "money", w: 14, sum: true }, { h: "TDS", t: "money", w: 12, sum: true }, { h: "TDS section", w: 11 }] }]);
+  }
+  function downloadVendorsXls(btn) {
+    var idx = lidx(), cos = sorted().filter(function (c) { return c.active !== false && (S.isAdmin || canSee(c.id)); }), rows = [];
+    visibleVendors().slice().sort(function (a, b) { return natCmp(a.name, b.name); }).forEach(function (v) {
+      var any = false;
+      cos.forEach(function (c) { var r = idx[c.id + "|" + v.id]; if (!r) return; any = true; rows.push([v.name || "", vtypeOk(v.type) ? vtypeLabel(v.type) : "", v.gstin || "", v.pan || "", v.country || "", v.termDays == null ? null : v.termDays, c.shortName || c.name, r.cur || "INR", round2(r.outstanding || 0), round2(r.overdue || 0), v.active === false ? "No" : "Yes"]); });
+      if (!any) rows.push([v.name || "", vtypeOk(v.type) ? vtypeLabel(v.type) : "", v.gstin || "", v.pan || "", v.country || "", v.termDays == null ? null : v.termDays, "", "", null, null, v.active === false ? "No" : "Yes"]);
+    });
+    if (!rows.length) { toast("No vendors yet."); return; }
+    xlDownload(btn, "Vendors and payables " + fmtDate(todayYmd()) + ".xlsx", [{ name: "Vendors", title: "Vendors and payables", sub: "One line per vendor and company · Generated " + fmtDate(todayYmd()), rows: rows,
+      cols: [{ h: "Vendor", w: 32 }, { h: "Type", w: 16 }, { h: "GSTIN", w: 18 }, { h: "PAN", w: 12 }, { h: "Country", w: 12 }, { h: "Terms (days)", t: "int", w: 11 }, { h: "Company", w: 10 }, { h: "Currency", w: 9 }, { h: "Outstanding", t: "money", w: 15, sum: true }, { h: "Overdue", t: "money", w: 14, sum: true }, { h: "Active", w: 8 }] }]);
+  }
+
+  /* ================= Excel templates: ledgers and vendors ================= */
+  /* Download a template, fill it in Excel, upload it. Each row is checked; exact duplicates are skipped, and every row
+     gets a result (added, updated, skipped or an error to fix by hand). A file that isn't in the template's layout is refused. */
+  var IMP = { busy: false };
+  function canImport() { return S.isAdmin || canDo("acct"); }
+  var IMP_SPECS = {
+    ledgers: {
+      title: "Ledgers", key: "ledger name",
+      cols: [{ h: "Ledger Main Group", w: 20, need: true, alias: ["main group"] }, { h: "Ledger Sub Group", w: 32, need: true, alias: ["sub group"] }, { h: "Ledger Name", w: 38, need: true, alias: ["name", "ledger"] },
+        { h: "Companies", w: 26, alias: ["company"] }, { h: "Active?", w: 9, alias: ["active"] }],
+      help: function () { return [["Ledger Main Group", "Direct Expenses or Indirect Expenses"], ["Ledger Sub Group", "Any name, e.g. Administrative Expenses"], ["Ledger Name", "The expense ledger, e.g. Travelling Expenses"], ["Companies", "Short names separated by commas (" + myCompanies().map(function (c) { return c.shortName || c.name; }).join(", ") + "), or All. Blank means all."], ["Active?", "Yes or No. Blank means Yes."], ["Duplicates", "A ledger already in the same main group and sub group is not added again; new companies on it are ticked."]]; }
+    },
+    vendors: {
+      title: "Vendors", key: "vendor name",
+      cols: [{ h: "Vendor Name", w: 36, need: true, alias: ["name", "vendor"] }, { h: "Type", w: 15, need: true, alias: ["vendor type"] }, { h: "GSTIN", w: 18, alias: ["gst", "gst number"] }, { h: "PAN", w: 13 },
+        { h: "Country", w: 14 }, { h: "Payment Terms (days)", w: 12, alias: ["terms", "payment terms", "credit days"] }, { h: "Active?", w: 9, alias: ["active"] }],
+      help: function () { return [["Vendor Name", "As it appears on bills"], ["Type", VTYPES.map(function (t) { return t[1]; }).join(", ")], ["GSTIN", "Needed for Registered vendors; leave blank for Overseas"], ["PAN", "Optional; taken from the GSTIN when blank"], ["Country", "For Overseas vendors"], ["Payment Terms (days)", "Whole number of days, e.g. 30. Blank if not known."], ["Active?", "Yes or No. Blank means Yes."], ["Duplicates", "A vendor with the same GSTIN, or the same name, is not added again."]]; }
+    }
+  };
+  function downloadTemplate(kind, btn) {
+    var sp = IMP_SPECS[kind];
+    xlDownload(btn, sp.title + " template.xlsx", [
+      { name: sp.title, title: sp.title + " · upload template", sub: "Fill one row per " + (kind === "ledgers" ? "ledger" : "vendor") + " under the green headings, keep the headings as they are, then upload it in the app.", cols: sp.cols.map(function (c) { return { h: c.h, w: c.w }; }), rows: [] },
+      { name: "How to fill", title: "How to fill the " + sp.title.toLowerCase() + " template", sub: "Rows that don't follow these rules are listed after the upload, so they can be fixed or added by hand.", cols: [{ h: "Column", w: 24 }, { h: "What to enter", w: 90 }], rows: sp.help() }
+    ]);
+  }
+  /* Finds the heading row (anywhere in the first 15 rows) and maps each template column to a column of the file. */
+  function impHeader(aoa, sp) {
+    function norm(x) { return String(x == null ? "" : x).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+    for (var r = 0; r < Math.min(15, aoa.length); r++) {
+      var row = (aoa[r] || []).map(norm); if (row.indexOf(sp.key) < 0) continue;
+      var map = {}, ok = true;
+      sp.cols.forEach(function (c) { var names = [norm(c.h)].concat((c.alias || []).map(norm)), j = -1; names.some(function (n) { j = row.indexOf(n); return j >= 0; }); map[c.h] = j; if (c.need && j < 0) ok = false; });
+      return ok ? { row: r, map: map } : null;
+    }
+    return null;
+  }
+  function impCompanies(txt) {
+    var t = String(txt == null ? "" : txt).trim(), all = myCompanies();
+    if (!t || /^all$/i.test(t)) return { ids: all.map(function (c) { return c.id; }) };
+    var ids = [], bad = [];
+    t.split(/[,;\/]+/).map(function (x) { return x.trim(); }).filter(Boolean).forEach(function (x) {
+      var k = normId(x), c = all.filter(function (c0) { return normId(c0.shortName) === k || normId(c0.name) === k; })[0];
+      if (c) { if (ids.indexOf(c.id) < 0) ids.push(c.id); } else bad.push(x);
+    });
+    return bad.length ? { err: "Company not found: " + bad.join(", ") } : { ids: ids };
+  }
+  function impYes(v) { var t = String(v == null ? "" : v).trim().toLowerCase(); if (!t || t === "yes" || t === "y" || t === "true" || t === "1") return true; if (t === "no" || t === "n" || t === "false" || t === "0") return false; return null; }
+  function uploadTemplate(kind, file) {
+    if (IMP.busy || !file) return;
+    var sp = IMP_SPECS[kind], box = $(kind === "ledgers" ? "lgmImp" : "vImp");
+    IMP.busy = true; box.hidden = false; box.textContent = ""; box.appendChild(el("div", { class: "lhead" }, "Reading " + file.name + "…"));
+    Promise.all([loadScript(XLSX_URL), file.arrayBuffer()]).then(function (r) {
+      var XLSX = window.XLSX; if (!XLSX) throw { kind: "lib" };
+      var wb = XLSX.read(new Uint8Array(r[1]), { type: "array" }), ws = wb.Sheets[wb.SheetNames[0]], aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: "" });
+      var hd = impHeader(aoa, sp);
+      if (!hd) throw { kind: "format" };
+      var rows = [];
+      for (var i = hd.row + 1; i < aoa.length; i++) {
+        var a = aoa[i] || [], o = { n: i + 1 }; sp.cols.forEach(function (c) { var j = hd.map[c.h]; o[c.h] = j >= 0 ? String(a[j] == null ? "" : a[j]).trim() : ""; });
+        if (sp.cols.every(function (c) { return !o[c.h]; })) continue;
+        if (/^total/i.test(o[sp.cols[0].h])) continue;
+        rows.push(o);
+      }
+      if (!rows.length) throw { kind: "empty" };
+      return kind === "ledgers" ? impLedgers(rows, box) : impVendors(rows, box);
+    }).catch(function (e) {
+      e = e || {}; box.textContent = "";
+      var msg = e.kind === "format" ? "This file isn't in the template's layout: the heading row (" + sp.cols.filter(function (c) { return c.need; }).map(function (c) { return c.h; }).join(", ") + ") wasn't found. Download the template and copy your rows into it, or add them by hand."
+        : e.kind === "empty" ? "The file has the headings but no rows under them." : e.kind === "lib" ? "The Excel reader didn't load. Check the connection and try again." : "The file couldn't be read (" + (e.code || e.message || "error") + "). Is it an Excel file?";
+      var n = el("div", { class: "flag e" }); n.innerHTML = WARN_SVG; n.appendChild(el("span", null, msg)); box.appendChild(n);
+      window.alert(msg);
+    }).then(function () { IMP.busy = false; });
+  }
+  /* Runs the writes one at a time, showing progress, then the result of every row. */
+  function impRun(box, kind, plan) {
+    var todo = plan.filter(function (p) { return p.write; }), done = 0, head = el("div", { class: "lhead" }); box.textContent = ""; box.appendChild(head);
+    function say() { head.textContent = "Saving " + done + " of " + todo.length + "…"; }
+    say();
+    return todo.reduce(function (pr, p) {
+      return pr.then(function () { return retry(p.write).then(function () { p.res = p.res || "Added"; }, function (e) { p.res = "Error"; p.why = explain(e); }).then(function () { done++; say(); }); });
+    }, Promise.resolve()).then(function () { impReport(box, kind, plan); });
+  }
+  function impReport(box, kind, plan) {
+    var cnt = {}; plan.forEach(function (p) { cnt[p.res] = (cnt[p.res] || 0) + 1; });
+    box.textContent = "";
+    var hd = el("div", { class: "lhead" }); hd.appendChild(el("span", { class: "grow" }, "Upload finished: " + ["Added", "Updated", "Skipped", "Error"].filter(function (k) { return cnt[k]; }).map(function (k) { return cnt[k] + " " + k.toLowerCase(); }).join(", ") + "."));
+    var cl = el("button", { class: "link-btn", type: "button" }, "Close"); cl.addEventListener("click", function () { box.hidden = true; box.textContent = ""; }); hd.appendChild(cl); box.appendChild(hd);
+    if (cnt.Error) { var n = el("div", { class: "flag e", style: "margin:10px 16px" }); n.innerHTML = WARN_SVG; n.appendChild(el("span", null, plural(cnt.Error, "row") + " couldn't be added. Fix them in the file and upload again, or add them by hand. Rows already added are skipped next time.")); box.appendChild(n); }
+    var w = el("div", { class: "list scroll" }); box.appendChild(w);
+    sortTable(w, "imp_" + kind, [
+      { label: "Row", kind: "co", cls: "num", sort: function (p) { return p.n; }, cell: function (p, td) { td.appendChild(el("b", null, String(p.n))); } },
+      { label: kind === "ledgers" ? "Ledger" : "Vendor", cls: "desc", cell: function (p, td) { td.appendChild(el("b", null, p.name || "(no name)")); if (p.sub) sub(td, p.sub); } },
+      { label: "Result", sort: function (p) { return ["Error", "Skipped", "Updated", "Added"].indexOf(p.res); }, cell: function (p, td) { td.appendChild(el("span", { class: "tag stg " + (p.res === "Added" ? "s-payment" : p.res === "Updated" ? "s-generated" : p.res === "Skipped" ? "s-printed" : "s-tds") }, p.res)); } },
+      { label: "Detail", cls: "desc", cell: function (p, td) { txt(td, p.why || ""); } }
+    ], plan, { sortIndex: 2 });
+    IMP.busy = false; if (kind === "ledgers") renderLedgers(); else renderVendors();
+  }
+  function impLedgers(rows, box) {
+    var now = Date.now(), seen = {}, plan = [];
+    rows.forEach(function (o) {
+      var mainIn = o["Ledger Main Group"], main = LED_MAINS.filter(function (m) { return m.toLowerCase() === mainIn.toLowerCase().replace(/\s+/g, " "); })[0];
+      var sb = o["Ledger Sub Group"].replace(/\s+/g, " "), nm = o["Ledger Name"].replace(/\s+/g, " "), p = { n: o.n, name: nm, sub: (main || mainIn) + " › " + sb };
+      plan.push(p);
+      if (!main) { p.res = "Error"; p.why = "Main group must be Direct Expenses or Indirect Expenses."; return; }
+      if (!sb || !nm) { p.res = "Error"; p.why = !nm ? "The ledger name is empty." : "The sub group is empty."; return; }
+      var co = impCompanies(o["Companies"]); if (co.err) { p.res = "Error"; p.why = co.err; return; }
+      if (!co.ids.length) { p.res = "Error"; p.why = "No company to add it to."; return; }
+      var act = impYes(o["Active?"]); if (act == null) { p.res = "Error"; p.why = "Active? must be Yes or No."; return; }
+      var key = main + "|" + normName(sb) + "|" + normName(nm);
+      if (seen[key]) { p.res = "Skipped"; p.why = "Repeats row " + seen[key] + " of this file."; return; }
+      seen[key] = o.n;
+      var ex = ledAll().filter(function (x) { return x.main === main && normName(x.sub) === normName(sb) && normName(x.name) === normName(nm); })[0];
+      if (ex) {
+        var add = co.ids.filter(function (c) { return (ex.companyIds || []).indexOf(c) < 0; });
+        if (!add.length) { p.res = "Skipped"; p.why = "Already in the app."; return; }
+        var cos = (ex.companyIds || []).concat(add);
+        p.res = "Updated"; p.why = "Already in the app; now also ticked for " + add.map(coLabel).join(", ") + ".";
+        p.write = function () { return S.db.doc("ledgers/" + ex.id).update({ companyIds: cos, updatedAt: now, by: meId() }).then(function () { S.ledgers[ex.id] = Object.assign({}, ex, { companyIds: cos }); }); };
+        return;
+      }
+      var id = "lg_" + now.toString(36) + Math.random().toString(36).slice(2, 7), doc = { main: main, sub: sb, name: nm, companyIds: co.ids, active: act, createdAt: now, updatedAt: now, by: meId(), source: "upload" };
+      p.write = function () { return S.db.doc("ledgers/" + id).set(doc).then(function () { S.ledgers[id] = Object.assign({ id: id }, doc); }); };
+    });
+    return impRun(box, "ledgers", plan);
+  }
+  function impVendors(rows, box) {
+    var now = Date.now(), seenG = {}, seenN = {}, plan = [];
+    rows.forEach(function (o) {
+      var nm = smartCase(o["Vendor Name"].replace(/\s+/g, " ")), tIn = o["Type"].toLowerCase(), p = { n: o.n, name: nm };
+      plan.push(p);
+      var ty = (VTYPES.filter(function (t) { return t[0] === tIn || t[1].toLowerCase() === tIn; })[0] || [])[0];
+      if (!nm) { p.res = "Error"; p.why = "The vendor name is empty."; return; }
+      if (!ty) { p.res = "Error"; p.why = "Type must be one of " + VTYPES.map(function (t) { return t[1]; }).join(", ") + "."; return; }
+      var g = normId(o["GSTIN"]), pan = normId(o["PAN"]), country = o["Country"].trim(), terms = o["Payment Terms (days)"].trim(), act = impYes(o["Active?"]);
+      p.sub = vtypeLabel(ty) + (g ? " · " + g : "");
+      /* already in the app, or earlier in this file: say so before any format problem */
+      var nk = normName(nm), ex = g ? vendorByGstin(g) : null, exN = vendorByName(nm);
+      if (g && seenG[g]) { p.res = "Skipped"; p.why = "Repeats row " + seenG[g] + " of this file (same GSTIN)."; return; }
+      if (seenN[nk]) { p.res = "Skipped"; p.why = "Repeats row " + seenN[nk] + " of this file (same name)."; return; }
+      if (g) seenG[g] = o.n; seenN[nk] = o.n;
+      if (ex) { p.res = "Skipped"; p.why = "Already in the app as " + ex.name + " (same GSTIN)."; return; }
+      if (exN) { p.res = "Skipped"; p.why = "Already in the app (same name)" + (exN.gstin ? ", GSTIN " + exN.gstin : "") + "."; return; }
+      if (ty === "overseas" && g) { p.res = "Error"; p.why = "An Overseas vendor has no GSTIN; leave it blank."; return; }
+      if (ty === "registered" && !g) { p.res = "Error"; p.why = GSTIN_MSG.missing; return; }
+      if (g && gstinCheck(g)) { p.res = "Error"; p.why = GSTIN_MSG[gstinCheck(g)] || "The GSTIN isn't valid."; return; }
+      if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) { p.res = "Error"; p.why = "The PAN should look like ABCDE1234F."; return; }
+      if (g && pan && panFromGstin(g) !== pan) { p.res = "Error"; p.why = "The PAN doesn't match the GSTIN (characters 3 to 12 should be " + panFromGstin(g) + ")."; return; }
+      var td = null; if (terms) { td = intOrNull(terms); if (td == null || td < 0 || td > 365) { p.res = "Error"; p.why = "Payment terms must be a whole number of days, 0 to 365."; return; } }
+      if (act == null) { p.res = "Error"; p.why = "Active? must be Yes or No."; return; }
+      var id = newId("v"), doc = { name: nm, gstin: g, pan: pan || (g ? panFromGstin(g) : ""), type: ty, country: ty === "overseas" ? smartCase(country) : "", termDays: td, active: act, openings: {}, createdAt: now, createdBy: meId(), updatedAt: now, updatedBy: meId(), source: "upload" };
+      p.write = function () { return S.db.doc("vendors/" + id).set(doc).then(function () { S.vendors[id] = Object.assign({ id: id }, doc); invalidate(); }); };
+    });
+    return impRun(box, "vendors", plan);
+  }
+  function impButtons(kind, wrap) {
+    if (!wrap || wrap.querySelector(".impbtn")) return;
+    var f = el("input", { type: "file", accept: ".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", hidden: "" });
+    var t = el("button", { class: "btn impbtn", type: "button" }, "Download template"), u = el("button", { class: "btn impbtn", type: "button" }, "Upload Excel");
+    t.addEventListener("click", function () { downloadTemplate(kind, t); });
+    u.addEventListener("click", function () { f.value = ""; f.click(); });
+    f.addEventListener("change", function () { if (f.files && f.files[0]) uploadTemplate(kind, f.files[0]); });
+    wrap.insertBefore(f, wrap.firstChild); wrap.insertBefore(u, wrap.firstChild); wrap.insertBefore(t, wrap.firstChild);
+  }
+
+  /* ================= Styled Excel downloads ================= */
+  /* A sheet: KKSK title block, a green header row, banded rows, money and dates as real numbers, totals in bold, filters on. */
+  var XL_GREEN = "0B6B45", XL_DARK = "10281F", XL_BAND = "F2F7F4", XL_LINE = "D6E2DB";
+  function xlSerial(ymd) { if (!ymdOk(ymd)) return null; var p = ymd.split("-"); return (Date.UTC(+p[0], +p[1] - 1, +p[2]) - Date.UTC(1899, 11, 30)) / 864e5; }
+  function xlSheet(XLSX, o) {
+    var ws = {}, cols = o.cols, nC = cols.length, r0 = 4, bd = { style: "thin", color: { rgb: XL_LINE } }, border = { top: bd, bottom: bd, left: bd, right: bd };
+    function put(r, c, cell) { ws[XLSX.utils.encode_cell({ r: r, c: c })] = cell; }
+    put(0, 0, { t: "s", v: o.title || "", s: { font: { name: "Calibri", sz: 16, bold: true, color: { rgb: XL_DARK } } } });
+    put(1, 0, { t: "s", v: o.sub || "", s: { font: { name: "Calibri", sz: 10, italic: true, color: { rgb: "5B6B63" } } } });
+    put(2, 0, { t: "s", v: "KKSK Group · Bills & Vouchers Accounting", s: { font: { name: "Calibri", sz: 9, color: { rgb: "8A9A92" } } } });
+    cols.forEach(function (c, j) { put(r0 - 1, j, { t: "s", v: c.h, s: { font: { name: "Calibri", sz: 10, bold: true, color: { rgb: "FFFFFF" } }, fill: { patternType: "solid", fgColor: { rgb: XL_GREEN } }, alignment: { vertical: "center", horizontal: c.t === "money" || c.t === "int" ? "right" : "left", wrapText: true }, border: border } }); });
+    o.rows.forEach(function (row, i) {
+      var band = i % 2 ? { patternType: "solid", fgColor: { rgb: XL_BAND } } : undefined;
+      cols.forEach(function (c, j) {
+        var v = row[j], st = { font: { name: "Calibri", sz: 10, color: { rgb: "1E2B25" } }, border: border, alignment: { vertical: "top", wrapText: c.w >= 30 } }; if (band) st.fill = band;
+        var cell;
+        if (c.t === "date") { var n = xlSerial(v); cell = n == null ? { t: "s", v: "" } : { t: "n", v: n, z: "dd-mmm-yy" }; }
+        else if (c.t === "money") { cell = v == null || v === "" ? { t: "s", v: "" } : { t: "n", v: Number(v) || 0, z: "#,##0.00" }; st.alignment.horizontal = "right"; }
+        else if (c.t === "int") { cell = v == null || v === "" ? { t: "s", v: "" } : { t: "n", v: Number(v) || 0, z: "0" }; st.alignment.horizontal = "right"; }
+        else cell = { t: "s", v: v == null ? "" : String(v) };
+        cell.s = st; put(r0 + i, j, cell);
+      });
+    });
+    var last = r0 + o.rows.length;
+    if (cols.some(function (c) { return c.sum; })) {
+      cols.forEach(function (c, j) {
+        var st = { font: { name: "Calibri", sz: 10, bold: true, color: { rgb: XL_DARK } }, fill: { patternType: "solid", fgColor: { rgb: "E3EEE8" } }, border: { top: { style: "medium", color: { rgb: XL_GREEN } }, bottom: bd, left: bd, right: bd } };
+        if (j === 0) put(last, j, { t: "s", v: "Total (" + o.rows.length + ")", s: st });
+        else if (c.sum) { var tot = o.rows.reduce(function (s, row) { return s + (Number(row[j]) || 0); }, 0); st.alignment = { horizontal: "right" }; put(last, j, { t: "n", v: Math.round(tot * 100) / 100, z: "#,##0.00", s: st }); }
+        else put(last, j, { t: "s", v: "", s: st });
+      });
+      last++;
+    }
+    ws["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(last - 1, r0), c: nC - 1 } });
+    ws["!cols"] = cols.map(function (c) { return { wch: c.w || 16 }; });
+    ws["!rows"] = [{ hpt: 24 }, { hpt: 16 }, { hpt: 14 }, { hpt: 22 }];
+    ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.min(nC - 1, 6) } }, { s: { r: 1, c: 0 }, e: { r: 1, c: Math.min(nC - 1, 8) } }];
+    if (o.rows.length) ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: r0 - 1, c: 0 }, e: { r: r0 - 1 + o.rows.length, c: nC - 1 } }) };
+    return ws;
+  }
+  function xlDownload(btn, filename, sheets) {
+    if (!S.downloads) { toast("Downloads aren't available here."); return; }
+    var label = btn ? btn.textContent : ""; if (btn) { btn.disabled = true; btn.textContent = "Preparing"; }
+    return loadScript(XLSX_URL).then(function () {
+      var XLSX = window.XLSX; if (!XLSX) throw { kind: "lib" };
+      var wb = XLSX.utils.book_new(), used = {};
+      sheets.forEach(function (sh) { var nm = String(sh.name || "Sheet").replace(/[\\/?*\[\]:]/g, " ").slice(0, 31) || "Sheet", k = nm, i = 2; while (used[k]) k = nm.slice(0, 28) + " " + i++; used[k] = 1; XLSX.utils.book_append_sheet(wb, xlSheet(XLSX, sh), k); });
+      var out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      return S.downloads.save({ filename: filename, data: new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }) });
+    }).then(function () { toast("Excel file ready."); }, function (e) { if (!(e && e.code === "declined")) toast(e && e.kind === "lib" ? "The Excel maker didn't load. Check the connection and try again." : "The Excel file couldn't be made."); })
+      .then(function () { if (btn) { btn.disabled = false; btn.textContent = label; } });
   }
 
   /* ================= Payment Planning (admin) ================= */
@@ -5969,7 +6607,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       { label: "Company", cell: function (v, td) { td.appendChild(el("b", null, coLabel(v.companyId))); } },
       { label: "Paid to", cls: "desc", cell: function (v, td) { td.appendChild(el("b", null, v.payee || "")); sub(td, v.narration || ""); } },
       { label: "Payable", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(vPayable(v)))); } },
-      { label: "Payment", cell: function (v, td) { td.appendChild(el("span", { class: "tag stg " + (v.settle ? "s-printed" : "s-generated") }, v.settle ? "Cash advance" : "By Financier")); sub(td, String(pnm(v.preparedByName)).split(" - ")[0]); } },
+      { label: "Payment", cell: function (v, td) { td.appendChild(el("span", { class: "tag stg " + (v.settle ? "s-printed" : "s-generated") }, v.settle ? "Cash advance" : "By Financier")); if (!isMine(v.preparedByName)) sub(td, String(pnm(v.preparedByName)).split(" - ")[0]); } },
       { label: "Status", cell: function (v, td) { var st = vchStatus(v); td.appendChild(el("span", { class: "tag stg " + st.cls }, st.r ? st.r.no : st.text)); if (st.r) sub(td, v.approvedAt ? "Approved" : STAGE[stageOf(st.r)]); if (st.back) sub(td, "From " + (v.sentBack.fromNo || "a report") + " by " + (v.sentBack.byName || "the admin") + ". Change it, or send it again as it is."); if (st.acct && v.acct === "back" && v.acctNote) sub(td, v.acctNote + " Edit it and save to send it again.", "color:var(--bad)"); } },
       { label: "", kind: "act", cls: "r", cell: function (v, td) {
           if (vchEditable(v)) {
@@ -5996,23 +6634,24 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     var cos = roleCos("vouchers");
     var lg0 = ((v && v.ledgers) || [])[0] || {};
     var lines = v ? (v.lines && v.lines.length ? v.lines.map(function (x) { return { d: x.d || "", amt: fmtInput(x.amt), lg: x.lg || ((v.ledgers || []).length === 1 ? lg0.id : ""), touched: true }; }) : [{ d: v.narration || "", amt: fmtInput(v.total), lg: lg0.id || "", touched: true }]) : [{ d: "", amt: "", lg: "", touched: false }];
-    VH.D = v ? { companyId: v.companyId, prepBy: v.preparedBy || "", voucherNo: v.voucherNo || "", voucherDate: v.voucherDate || "", payee: v.payee || "", payeeChoice: v.payee || "", payeeNew: "", settle: v.settle ? "yes" : "no", lines: lines,
+    VH.D = v ? { companyId: v.companyId, prepBy: v.preparedBy || "", approverId: v.approverId || "", voucherNo: v.voucherNo || "", voucherDate: v.voucherDate || "", payee: v.payee || "", payeeChoice: v.payee || "", payeeNew: "", settle: v.settle ? "yes" : "no", lines: lines,
         vtype: v.vtype || "", supplyOf: v.supplyOf || "", payeeAddr: v.payeeAddr || "" }
-      : { companyId: cos.length === 1 ? cos[0].id : "", prepBy: "", voucherNo: "", voucherDate: "", payee: "", payeeChoice: "", payeeNew: "", settle: "", lines: lines, vtype: "", supplyOf: "", payeeAddr: "" };
+      : { companyId: cos.length === 1 ? cos[0].id : "", prepBy: "", approverId: "", voucherNo: "", voucherDate: "", payee: "", payeeChoice: "", payeeNew: "", settle: "", lines: lines, vtype: "", supplyOf: "", payeeAddr: "" };
     $("vfTitle").textContent = v ? "Voucher " + v.voucherNo : "New voucher";
     $("vfSub").textContent = v && v.acct === "back" && v.acctNote ? "Sent back by the accountant: " + v.acctNote : "Paid in full: by cash, or by the financier in cash or cheque. GST and TDS are entered by the accountant.";
     $("vfSave").textContent = v ? "Save changes" : "Submit voucher"; $("vfDelete").hidden = !v;
     buildVchForm(); show("secVchForm");
-    var f = $("vfCo"); if (f && !VH.D.companyId) f.focus(); else if ($("vfNo")) $("vfNo").focus();
+    var f = $("vfCo"); if (f && !VH.D.companyId) f.focus(); else if ($("vfType")) $("vfType").focus();
   }
   function vchTotal(D) { var s = 0, ok = false; D.lines.forEach(function (x) { var n = num(x.amt); if (n != null) { s += n; ok = true; } }); return ok ? round2(s) : null; }
   function buildVchForm() {
     var D = VH.D, f = $("vfBody"); f.textContent = "";
     var co = el("select", { class: "field", id: "vfCo" }); fillSelect(co, companyOpts(D.companyId, "vouchers"), D.companyId); f.appendChild(fld("Company", co));
     if (S.isAdmin) f.appendChild(fld("Prepared by", prepSelect("vfPrep", "vouchers", D.companyId, D.prepBy), "Who made the voucher. Only people given vouchers for this company are listed."));
-    else f.appendChild(fld("Prepared by", meSelect("vfPrepMe"), "Filled in from your login or profile. Only the admin can change it."));
+    f.appendChild(fld("Approver", approverSelect("vfAppr", D.approverId), APPR_HINT));
     var ty = el("select", { class: "field", id: "vfType" }); fillSelect(ty, [["", "Choose the type"]].concat(VTYPES_V), D.vtype); f.appendChild(fld("Type of voucher", ty, "Cash Voucher, Self Invoice, or Freight & Transport."));
-    f.appendChild(fld("Voucher number", inp("vfNo", D.voucherNo, { maxlength: "40", "data-fmt": "upper" })));
+    var vno = inp("vfNo", D.voucherNo, { readonly: "", class: "field ro mono", placeholder: "Given automatically when you submit", tabindex: "-1" });
+    f.appendChild(fld("Voucher number", vno, D.voucherNo ? "Fixed. It is printed on the voucher." : "Numbered in order for each company and financial year, like " + (D.companyId ? nextVoucherNo(D.companyId, todayYmd()).no : serialNo("INTL-VOU", 1, todayYmd(), fyOf(todayYmd()))) + "."));
     f.appendChild(fld("Voucher date", dateBox("vfDate", D.voucherDate, { min: addDays(todayYmd(), -14), max: todayYmd(), label: "Choose the voucher date" }), "Within the last 2 weeks."));
     var ps = el("select", { class: "field", id: "vfPayeeSel" }); fillSelect(ps, payeeOpts(D), D.payeeChoice);
     f.appendChild(fld("Paid to", ps, "Someone paid before, or New person or shop."));
@@ -6052,7 +6691,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   }
   function readVchForm() {
     var D = VH.D; if (!D || !$("vfCo")) return;
-    D.companyId = $("vfCo").value; if ($("vfPrep")) D.prepBy = $("vfPrep").value;
+    D.companyId = $("vfCo").value; if ($("vfPrep")) D.prepBy = $("vfPrep").value; if ($("vfAppr")) D.approverId = $("vfAppr").value;
     D.voucherNo = $("vfNo").value; D.voucherDate = parseDate($("vfDate").value) || ""; D.payeeChoice = $("vfPayeeSel").value; D.payeeNew = $("vfPayee").value;
     D.payee = D.payeeChoice === "new" ? D.payeeNew : D.payeeChoice; D.vtype = $("vfType").value; D.payeeAddr = $("vfAddr").value; D.supplyOf = $("vfSupply").value;
     D.lines.forEach(function (x, i) { if ($("vfLd" + i)) { x.d = $("vfLd" + i).value; x.amt = $("vfLa" + i).value; x.lg = $("vfLg" + i).value; } });
@@ -6065,10 +6704,8 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     if (!D.companyId) E("vfCo", "Choose the company.");
     else if (!hasRole("vouchers", D.companyId)) E("vfCo", "You don't handle vouchers for this company.");
     if (S.isAdmin && D.companyId) { if (!D.prepBy) E("vfPrep", "Choose who made the voucher."); else if (!userHas(S.users[D.prepBy], "vouchers", D.companyId)) E("vfPrep", "That person doesn't hold vouchers for this company any more. Choose again."); }
+    if (!D.approverId) E("vfAppr", "Choose who approves this voucher.");
     if (!D.vtype) E("vfType", "Choose the type of voucher.");
-    var no = D.voucherNo.trim();
-    if (!no) E("vfNo", "Enter the voucher number.");
-    else if (D.companyId && vchList().some(function (v) { return v.id !== VH.id && v.companyId === D.companyId && normId(v.voucherNo) === normId(no); })) E("vfNo", "Voucher " + no + " already exists for " + coLabel(D.companyId) + ".");
     if (!D.voucherDate) E("vfDate", "Choose the voucher date.");
     else if (D.voucherDate > todayYmd()) E("vfDate", "The date can't be in the future.");
     else if (!VH.id && D.voucherDate < addDays(todayYmd(), -14)) E("vfDate", "Only the last 2 weeks can be chosen.");
@@ -6124,10 +6761,12 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     var lines = D.lines.map(function (x) { return { d: sentenceFix(x.d.trim()), amt: round2(num(x.amt)), lg: x.lg }; });
     var tds = old ? Number(old.tds) || 0 : 0;
     var lmap = {}, lorder = []; lines.forEach(function (x) { if (lmap[x.lg] == null) { lmap[x.lg] = 0; lorder.push(x.lg); } lmap[x.lg] = round2(lmap[x.lg] + x.amt); });
-    var doc = Object.assign({ companyId: D.companyId, voucherNo: D.voucherNo.trim().toUpperCase(), voucherDate: D.voucherDate, payee: D.payee.trim(), total: total, tds: tds, lines: lines,
+    /* A new voucher, or one moved to another company, takes the next number in that company's series. */
+    var vn = !old || old.companyId !== D.companyId || !old.voucherNo ? nextVoucherNo(D.companyId, D.voucherDate) : { no: old.voucherNo, seq: old.voucherSeq || null, fy: old.voucherFy || fyOf(D.voucherDate) };
+    var doc = Object.assign({ companyId: D.companyId, voucherNo: vn.no, voucherSeq: vn.seq, voucherFy: vn.fy, voucherDate: D.voucherDate, payee: D.payee.trim(), total: total, tds: tds, lines: lines,
       narration: lines.map(function (x) { return x.d; }).join(" "), vtype: D.vtype, gstApp: old && other ? old.gstApp || "N/A" : "N/A", gstRate: old && other && old.gstApp === "RCM" ? old.gstRate : null, taxable: total,
       supplyOf: other ? D.supplyOf.trim() : "", payeeAddr: other ? D.payeeAddr.trim() : "", ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
-      settle: D.settle === "yes", acct: "pending", acctNote: "", updatedAt: now, updatedBy: meId() }, prepFields(D.prepBy));
+      settle: D.settle === "yes", acct: "pending", acctNote: "", updatedAt: now, updatedBy: meId() }, prepFields(D.prepBy), approverFields(D.approverId));
     doc.payable = round2(doc.total - doc.tds);
     if (!old) Object.assign(doc, { createdAt: now, createdBy: meId() });
     if (old && old.sentBack) Object.assign(doc, { sentBack: null, sentBackLog: (old.sentBackLog || []).concat([old.sentBack]), resentAt: now, approvedAt: null });
@@ -6154,7 +6793,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   function caVisible(a) { return S.isAdmin || a.uid === meId(); }
   function caName(a) { return pnm(a.name) || (S.isAdmin ? userLabel(a.uid) : preparedByText()); }
   function renderCash() {
-    $("caSub").textContent = S.isAdmin ? "Approve the cash advances people ask for. An approved advance counts in their balance only once they mark it received." : "Ask the admin for a cash advance. Once approved, mark it received when the cash reaches you; only then is it added to your balance.";
+    $("caSub").textContent = S.isAdmin ? "Approve the cash advances people ask for. An approved advance counts in their balance once the financier pays it in Payment Entry." : "Ask the admin for a cash advance. Once approved, the financier pays it out; it is added to your balance then.";
     var mine = S.isAdmin || canDo("cash");
     $("caReqCard").hidden = !mine;
     $("caSend").textContent = S.isAdmin ? "Request for this person" : "Send request";
@@ -6169,7 +6808,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       f.appendChild(tidyField("Purpose", tidyBox("caPur", "", "purpose", 300), "What the cash is needed for, in any language."));
     } else if (mine) { var cs = $("caCo"), cv = cs.value; fillSelect(cs, companyOpts(cv, "cash"), cv); }
     $("caReqTitle").textContent = S.isAdmin ? "Request on someone's behalf" : "Ask for a cash advance";
-    $("caReqHint").textContent = S.isAdmin ? "It is approved straight away, as you are the approver. It counts in their balance once they mark it received." : "The admin approves it, and may change the amount.";
+    $("caReqHint").textContent = S.isAdmin ? "It is approved straight away, as you are the approver. It counts in their balance once the financier pays it." : "The admin approves it, and may change the amount.";
     var all = caList().filter(function (a) { return caVisible(a) && canSee(a.companyId); });
     var pend = all.filter(function (a) { return a.status === "pending"; }).sort(function (a, b) { return (a.requestedAt || 0) - (b.requestedAt || 0); });
     var appr = all.filter(function (a) { return a.status === "approved"; }).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); });
@@ -6187,11 +6826,10 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
           else if (a.uid === meId()) { var cx = el("button", { class: "btn sm" }, "Withdraw"); cx.addEventListener("click", function () { caDelete(a, cx); }); w.appendChild(cx); }
           td.appendChild(w); } }], pend, { sortIndex: -1 });
     box = $("caAppr");
-    if (!appr.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nothing approved is waiting to be received.")); }
+    if (!appr.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nothing approved is waiting to be paid.")); }
     else sortTable(box, "caAppr", [who, coC, { label: "Approved", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.approvedAmount))); sub(td, fmtDay(a.approvedAt) + (Number(a.approvedAmount) !== Number(a.amount) ? ", asked " + money(a.amount) : "")); } }, pur,
       { label: "", kind: "act", cls: "r", cell: function (a, td) {
           var w = el("div", { class: "acts" });
-          if (S.isAdmin || a.uid === meId()) { var y = el("button", { class: "btn sm primary" }, "Mark received"); y.addEventListener("click", function () { caReceive(a); }); w.appendChild(y); }
           if (S.isAdmin) { var u = el("button", { class: "btn sm" }, "Undo approval"); u.addEventListener("click", function () { caUndo(a, u, "pending"); }); w.appendChild(u); }
           td.appendChild(w); } }], appr, { sortIndex: -1 });
     /* balances */
@@ -6210,10 +6848,10 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       { label: "Balance", cls: "r num", cell: function (p, td) { var b = cashBalance(p.uid, p.cid).balance; td.appendChild(el("b", b < 0 ? { style: "color:var(--bad)" } : null, money(b))); } }
     ], people, { sortIndex: -1 });
     box = $("caHist");
-    if (!hist.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "No advances received or declined yet.")); }
+    if (!hist.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "No advances paid or declined yet.")); }
     else sortTable(box, "caHist", [who, coC,
       { label: "Amount", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.status === "received" ? a.approvedAmount : a.amount))); } },
-      { label: "Status", cell: function (a, td) { td.appendChild(el("span", { class: "tag stg " + (a.status === "received" ? "s-payment" : "s-draft") }, a.status === "received" ? "Received" : "Declined")); sub(td, a.status === "received" ? fmtDate(a.receivedDate) : fmtDay(a.declinedAt)); } }, pur,
+      { label: "Status", cell: function (a, td) { td.appendChild(el("span", { class: "tag stg " + (a.status === "received" ? "s-payment" : "s-draft") }, a.status === "received" ? "Paid" : "Declined")); sub(td, a.status === "received" ? fmtDate(a.receivedDate) : fmtDay(a.declinedAt)); } }, pur,
       { label: "", kind: "act", cls: "r", cell: function (a, td) {
           if (a.status === "received" && (S.isAdmin || (a.receivedBy === meId() && Date.now() - (a.receivedAt || 0) < TX_DAYS * 864e5))) { var u = el("button", { class: "btn sm" }, "Undo received"); u.addEventListener("click", function () { caUndo(a, u, "approved"); }); td.appendChild(u); }
           else if (a.status === "declined" && a.uid === meId()) { var d = el("button", { class: "btn sm" }, "Remove"); d.addEventListener("click", function () { caDelete(a, d); }); td.appendChild(d); }
@@ -6240,7 +6878,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     if (CA.busy) return Promise.resolve(false);
     CA.busy = true; patch.updatedAt = Date.now(); patch.updatedBy = meId();
     return retry(function () { return S.db.doc("cashadv/" + a.id).update(patch); }).then(function () {
-      S.cashadv[a.id] = Object.assign({}, a, patch); CA.busy = false; toast(msg); renderCash(); renderNav(); return true;
+      S.cashadv[a.id] = Object.assign({}, a, patch); CA.busy = false; toast(msg); if (S.tab === "Mark Transaction") renderMark(); else renderCash(); renderNav(); return true;
     }, function (e) { CA.busy = false; toast(explain(e)); return false; });
   }
   function caApprove(a) {
@@ -6266,13 +6904,17 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     caUpdate(a, p, to === "pending" ? "Approval undone. The request is waiting again." : "Marked as not received yet.");
     });
   }
+  /* The financier pays out an approved cash advance (Payment Entry › Advances). */
   function caReceive(a) {
     var body = el("div", { class: "mform" });
-    body.appendChild(fld("Date received", dateBox("caRcDate", todayYmd(), { min: ymdOfMs(a.approvedAt || Date.now()), max: todayYmd(), label: "Choose the date received" }), "Up to today."));
-    popForm("Mark received", money(a.approvedAmount) + " for " + coLabel(a.companyId) + ". It is added to " + (a.uid === meId() ? "your" : caName(a) + "'s") + " cash balance.", body, "Mark received", function () {
-      errClear(body); var d = parseDate($("caRcDate").value);
+    body.appendChild(fld("Date paid", dateBox("caRcDate", todayYmd(), { min: ymdOfMs(a.approvedAt || Date.now()), max: todayYmd(), label: "Choose the date paid" }), "Up to today."));
+    var md = el("select", { class: "field", id: "caRcMode" }); fillSelect(md, [["cash", "Cash"], ["cheque", "Cheque"], ["neft", "NEFT / RTGS"], ["upi", "UPI"]], "cash"); body.appendChild(fld("Paid by", md));
+    var rf = inp("caRcRef", "", { maxlength: "60", placeholder: "Not needed for cash" }); body.appendChild(fld("Reference", rf, "Cheque number, UTR or UPI reference."));
+    popForm("Mark paid", money(a.approvedAmount) + " to " + caName(a) + " for " + coLabel(a.companyId) + ". It is added to their cash balance.", body, "Mark paid", function () {
+      errClear(body); var d = parseDate($("caRcDate").value), m = md.value, r = rf.value.trim();
       if (!d) { errOn("caRcDate", "Choose the date."); return false; }
-      return caUpdate(a, { status: "received", receivedDate: d, receivedAt: Date.now(), receivedBy: meId() }, money(a.approvedAmount) + " received and added to the cash balance.");
+      if (m !== "cash" && !r) { errOn("caRcRef", "Enter the " + (modeInfo(m) || [0, 0, "reference"])[2] + "."); return false; }
+      return caUpdate(a, { status: "received", receivedDate: d, receivedAt: Date.now(), receivedBy: meId(), payMode: m, payRef: m === "cash" ? "" : r, paidByName: S.isAdmin ? (S.me && S.me.name) || "Admin" : preparedByText() }, money(a.approvedAmount) + " paid to " + caName(a) + " and added to their cash balance.");
     });
   }
   function caDelete(a, btn) {
@@ -6281,7 +6923,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   }
   function caBadge() {
     if (S.isAdmin) { var n = caList().filter(function (a) { return a.status === "pending"; }).length; return n ? { n: n, cls: "count", label: n + " waiting for approval" } : null; }
-    var m = caList().filter(function (a) { return a.status === "approved" && a.uid === meId(); }).length; return m ? { n: m, cls: "count info", label: m + " to mark received" } : null;
+    return null;
   }
 
   /* ---- Voucher Checking Report tab ---- */
@@ -6310,7 +6952,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     var wb = $("vcWait");
     if (!groups.length) { wb.textContent = ""; wb.appendChild(el("div", { class: "empty" }, "No vouchers are waiting for a report.")); }
     else sortTable(wb, "vcWait", [
-      { label: "Prepared by", kind: "co", sort: function (x) { return x.name; }, cell: function (x, td) { td.appendChild(el("b", null, x.name || "Not recorded")); } },
+      { label: "Prepared by", kind: "co", who: function (x) { return x.name; }, sort: function (x) { return x.name; }, cell: function (x, td) { td.appendChild(el("b", null, x.name || "Not recorded")); } },
       { label: "Companies", cell: function (x, td) { txt(td, sorted().filter(function (c) { return x.cos[c.id]; }).map(function (c) { return (c.shortName || c.name) + " (" + x.cos[c.id] + ")"; }).join(", ")); } },
       { label: "Vouchers", cls: "r num", sort: function (x) { return x.vs.length; }, desc: true, cell: function (x, td) { txt(td, x.vs.length); } },
       { label: "Total amount", cls: "r num", sort: function (x) { return x.total; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, money(x.total))); } },
@@ -6319,18 +6961,18 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     ], groups, { sortIndex: 0, sortDir: 1 });
     var q = $("vcQ").value.trim().toLowerCase();
     var reps = vcrList().filter(function (r) {
-      if (!vcrTeamSees(r) || !(r.companyIds || []).some(function (c) { return canSee(c) && hasRole("vcr", c); })) return false;
+      if (!vcrTeamSees(r) || (S.isAdmin && STAGE_ORDER[stageOf(r)] < 2) || !(r.companyIds || []).some(function (c) { return canSee(c) && hasRole("vcr", c); })) return false;
       if (cid && (r.companyIds || []).indexOf(cid) < 0) return false;
       if (q && ((r.no || "") + " " + pnm(r.preparedBy) + " " + STAGE[stageOf(r)]).toLowerCase().indexOf(q) < 0) return false;
       return true;
     });
     $("vcListSub").textContent = S.isAdmin ? "You see every report. Printed reports can be reversed or sent for payment." : "A report leaves this list once its PDF is downloaded for printing. The admin keeps it from then on.";
     var rb = $("vcList");
-    if (!reps.length) { rb.textContent = ""; rb.appendChild(el("div", { class: "empty" }, q ? "No reports match." : "No Vouchers CR here. Prepare one from the list above.")); return; }
+    if (!reps.length) { rb.textContent = ""; rb.appendChild(el("div", { class: "empty" }, q ? "No reports match." : S.isAdmin ? "No Vouchers CR is waiting for approval." : "No Vouchers CR here. Prepare one from the list above.")); return; }
     sortTable(rb, "vcList", [
       { label: "Report number", kind: "co", sort: function (r) { return Number(String(r.fy || "00").slice(0, 2)) * 10000 + (r.seq || 0); }, desc: true, cell: function (r, td) { td.appendChild(el("b", { class: "mono" }, r.no || "")); sub(td, fmtDay(r.createdAt)); } },
       { label: "Stage", sort: function (r) { return STAGE_ORDER[stageOf(r)]; }, cell: function (r, td) { td.appendChild(stageTag(r)); } },
-      { label: "Prepared by", sort: function (r) { return r.preparedBy; }, cell: function (r, td) { txt(td, pnm(r.preparedBy)); sub(td, (r.companyIds || []).map(coLabel).join(", ")); } },
+      { label: "Prepared by", who: function (r) { return r.preparedBy; }, sort: function (r) { return r.preparedBy; }, cell: function (r, td) { txt(td, pnm(r.preparedBy)); sub(td, (r.companyIds || []).map(coLabel).join(", ")); } },
       { label: "Total amount", cls: "r num", sort: function (r) { return r.total || 0; }, desc: true, cell: function (r, td) { txt(td, money(r.total)); sub(td, "TDS " + tdsText(r.tds, "INR")); } },
       { label: "By Financier", cls: "r num", sort: function (r) { return r.toPay || 0; }, desc: true, cell: function (r, td) { td.appendChild(el("b", null, money(r.toPay))); if (r.settled) sub(td, money(r.settled) + " settled from advance"); } },
       { label: "", kind: "act", cls: "r", cell: function (r, td) { var b = el("button", { class: "btn sm" }, "Open"); b.addEventListener("click", function () { openVcr(r.id); }); td.appendChild(b); } }
@@ -6367,7 +7009,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   function updVcrNew() {
     var all = vcrNewList(), sel = vcrPicked(), t = vcrSums(sel);
     Array.prototype.forEach.call(document.querySelectorAll("#vnBox .vninc"), function (i) { var tr = i.closest("tr"), v = S.vouchers[i.getAttribute("data-id")]; if (tr && v) tr.classList.toggle("skip", !(i.checked && VC.cos[v.companyId])); i.disabled = v && !VC.cos[v.companyId]; });
-    statBoxes($("vnStats"), [["Prepared by", pnm(all[0] && (all[0].preparedByName || prepName(all[0]))) || "Not recorded", ""], ["Vouchers", sel.length + " of " + all.length, ""], ["Total amount", money(t.total), ""], ["TDS", tdsText(t.tds, "INR"), ""], ["By Financier", money(t.toPay), t.settled ? money(t.settled) + " settled from advance" : ""]]);
+    statBoxes($("vnStats"), [whoStat(["Prepared by", pnm(all[0] && (all[0].preparedByName || prepName(all[0]))) || "Not recorded", ""]), ["Vouchers", sel.length + " of " + all.length, ""], ["Total amount", money(t.total), ""], ["TDS", tdsText(t.tds, "INR"), ""], ["By Financier", money(t.toPay), t.settled ? money(t.settled) + " settled from advance" : ""]]);
     $("vnCreate").disabled = !sel.length || VC.busy;
   }
   function createVcr() {
@@ -6395,7 +7037,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     if (!vcrTeamSees(r)) { toast("Report " + r.no + " has been printed and is with the admin now."); backToVcr(); return; }
     var s = stageOf(r), admin = S.isAdmin;
     $("vvTitle").textContent = r.no; $("vvSub").textContent = "Vouchers CR, " + STAGE[s].toLowerCase() + ". Generated " + stamp(r.generatedAt || r.createdAt) + ".";
-    statBoxes($("vvStats"), [["Prepared by", pnm(r.preparedBy), ""], ["Checking date", fmtDate(r.checkDate), ""], ["Period", periodText(r.periodFrom, r.periodTo), ""], ["Stage", stageTag(r), ""]]);
+    statBoxes($("vvStats"), [whoStat(["Prepared by", pnm(r.preparedBy), ""]), ["Checking date", fmtDate(r.checkDate), ""], ["Period", periodText(r.periodFrom, r.periodTo), ""], ["Stage", stageTag(r), ""]]);
     var box = $("vvBox"); box.textContent = "";
     (r.companyIds || []).forEach(function (cid) {
       var vs = vcrVouchers(r, cid), c = S.companies[cid] || { name: "" }, bc = (r.byCo || {})[cid] || vcrSums(vs);
@@ -6572,11 +7214,18 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     var st = stageOf(ck.r), lg = st === "payment" && !(inf.paid + inf.disc > 0) && b.vendorId ? ledger(b.companyId, b.vendorId) : null;
     return { t: (st === "payment" ? (inf.paid + inf.disc > 0 ? "Part paid" : lg && lg.opRem > 0.5 && lg.opPay > 0 ? "Sent for payment, opening balance being paid first" : "Sent for payment") : STAGE[st]) + " · " + ck.r.no, cls: "s-" + st };
   }
+  /* The people whose work a non-admin's reports cover: themselves (login and current profile) and the profiles linked to their login. */
+  function myPeople() {
+    var m = {}; m[meId()] = 1; if (S.me && S.me.id && !S._adm) m[S.me.id] = 1;
+    Object.keys(S.profiles || {}).forEach(function (k) { m[k] = 1; });
+    return m;
+  }
+  function ownWork(x) { if (S.isAdmin) return true; var m = myPeople(); return !!(m[prepOf(x)] || (x.ownerId && m[x.ownerId])); }
   function perData() {
     var R = perRange(), cid = PE.override ? "" : $("peCo").value, out = {};
     function slot(c) { return out[c] || (out[c] = { bills: [], vchs: [] }); }
-    billList().forEach(function (b) { if (b.status === "done" && canSee(b.companyId) && (!cid || b.companyId === cid) && ymdOk(b.billDate) && b.billDate >= R.from && b.billDate <= R.to) slot(b.companyId).bills.push(b); });
-    vchList().forEach(function (v) { if (vchVisible(v) && canSee(v.companyId) && (!cid || v.companyId === cid) && v.voucherDate >= R.from && v.voucherDate <= R.to) slot(v.companyId).vchs.push(v); });
+    billList().forEach(function (b) { if (b.status === "done" && ownWork(b) && canSee(b.companyId) && (!cid || b.companyId === cid) && ymdOk(b.billDate) && b.billDate >= R.from && b.billDate <= R.to) slot(b.companyId).bills.push(b); });
+    vchList().forEach(function (v) { if (vchVisible(v) && ownWork(v) && canSee(v.companyId) && (!cid || v.companyId === cid) && v.voucherDate >= R.from && v.voucherDate <= R.to) slot(v.companyId).vchs.push(v); });
     var cos = sorted().filter(function (c) { return out[c.id]; }).map(function (c) {
       var x = out[c.id];
       x.bills.sort(function (a, b) { return natCmp(a.billDate, b.billDate) || natCmp(vendorLabelOfBill(a), vendorLabelOfBill(b)) || natCmp(a.billNo, b.billNo); });
@@ -6592,7 +7241,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   function renderPer() {
     var mon = S.tab === "Monthly";
     $("peTitle").textContent = mon ? "Monthly Report" : "Weekly Report";
-    $("peSub").textContent = "Every bill and cash voucher dated in the " + (mon ? "month" : "week (Monday to Sunday)") + ", company by company, with where each one stands now.";
+    $("peSub").textContent = (S.isAdmin ? "Every bill and cash voucher" : "Your bills and cash vouchers (and those of profiles on your login)") + " dated in the " + (mon ? "month" : "week (Monday to Sunday)") + ", company by company, with where each one stands now.";
     var sel = $("peCo"), cur = sel.value;
     fillSelect(sel, [["", "All your companies"]].concat(myCompanies().map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
     var D = perData(), R = D.R;
@@ -6605,7 +7254,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     var all = { total: {}, tds: {}, nb: 0, nv: 0, vTotal: 0, vTds: 0 };
     D.cos.forEach(function (x) { Object.keys(x.t.total).forEach(function (k) { curAdd(all.total, k, x.t.total[k]); }); Object.keys(x.t.tds).forEach(function (k) { curAdd(all.tds, k, x.t.tds[k]); }); all.nb += x.bills.length; all.nv += x.vchs.length; all.vTotal += x.t.vTotal; all.vTds += x.t.vTds; });
     statBoxes($("peStats"), [["Bills", String(all.nb), ""], ["Bills total", curSum(all.total), all.nb ? "TDS " + curSum(all.tds) : ""], ["Cash vouchers", String(all.nv), ""], ["Vouchers total", money(round2(all.vTotal)), all.nv ? "TDS " + money(round2(all.vTds)) : ""]]);
-    $("pePdf").disabled = !D.cos.length || !S.downloads;
+    $("pePdf").disabled = !D.cos.length || !S.downloads; $("peXls").disabled = !D.cos.length || !S.downloads;
     var box = $("peBox"); box.textContent = "";
     if (!D.cos.length) { box.appendChild(el("div", { class: "card empty" }, "No bills or vouchers are dated " + (mon ? "in " + R.long : "between " + R.long.replace(" to ", " and ")) + ".")); return; }
     D.cos.forEach(function (x) {
@@ -6631,7 +7280,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
         sortTable(vc, "peV_" + c.id, [
           { label: "Voucher", kind: "co", cell: function (v, td) { td.appendChild(el("b", { class: "mono" }, v.voucherNo || "")); sub(td, fmtDate(v.voucherDate)); } },
           { label: "Paid to", cls: "desc", cell: function (v, td) { td.appendChild(el("b", null, v.payee || "")); if (v.narration) sub(td, v.narration); } },
-          { label: "Prepared by", cell: function (v, td) { txt(td, pnm(v.preparedByName)); } },
+          { label: "Prepared by", who: function (v) { return v.preparedByName; }, cell: function (v, td) { txt(td, pnm(v.preparedByName)); } },
           { label: "Total", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(v.total))); } },
           { label: "TDS", cls: "r num", cell: function (v, td) { txt(td, tdsText(v.tds, "INR")); } },
           { label: "Payment", cell: function (v, td) { txt(td, v.settle ? "Cash advance" : "By Financier"); } },
@@ -6768,7 +7417,8 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   }
   /* ================= Data & Archive (admin): usage meter and the financial-year close ================= */
   var AR = { busy: false, fy: "", downloaded: {}, msg: "" };
-  var XLSX_URL = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+  /* SheetJS 0.18.5 with cell styles (same API), so downloads can be formatted. */
+  var XLSX_URL = "https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js";
   function fyRange(fy) { var y = 2000 + Number(fy.slice(0, 2)); return { from: y + "-04-01", to: (y + 1) + "-03-31", long: "April " + y + " to March " + (y + 1) }; }
   function msOfYmdEnd(ymd) { var p = ymd.split("-"); return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 23, 59, 59, 999).getTime(); }
   function closableFys() {
@@ -7183,8 +7833,23 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   }
   /* ================= live data for bills and vendors ================= */
   function dataReady() { return S.vLoaded && S.bLoaded && S.rLoaded && S.aLoaded && S.tLoaded && S.vcLoaded && S.caLoaded && S.blLoaded && S.lpLoaded && (!S.isAdmin || (S.loaded && S.pLoaded)); }
+  /* A named admin (not the super admin) sees only the bills, proformas, imports and vouchers they approve,
+     and the checking reports that hold any of them. Everyone else sees what their companies and steps allow. */
+  function approverScoped() { return !!(S.isAppAdmin && !S.isSuper); }
+  function applyScope() {
+    var R = S.raw, me = S.me && S.me.id, sc = approverScoped();
+    function pick(src, ok) { var m = {}; Object.keys(src || {}).forEach(function (k) { if (!sc || ok(src[k])) m[k] = src[k]; }); return m; }
+    function mine(x) { return x.approverId === me; }
+    S.bills = pick(R.bills, mine); S.vouchers = pick(R.vouchers, mine); S.advances = pick(R.advances, mine);
+    S.reports = pick(R.reports, function (r) {
+      if (r.kind === "vcr") return (r.voucherIds || []).some(function (id) { return S.vouchers[id]; });
+      if (r.kind === "inst") return !!S.advances[r.advanceId];
+      return (r.billIds || []).some(function (id) { return S.bills[id]; });
+    });
+  }
   function startData() {
     if (S.dataStarted) return; S.dataStarted = true;
+    S.raw = { bills: {}, vouchers: {}, advances: {}, reports: {} };
     S.db.collection("ledgers").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var l = Object.assign({}, d.data() || {}); l.id = d.id; m[d.id] = l; });
       S.ledgers = m; onData();
@@ -7195,15 +7860,15 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     }, function (e) { toast("The vendor list stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     S.db.collection("bills").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var b = Object.assign({}, d.data() || {}); b.id = d.id; m[d.id] = b; });
-      S.bills = m; S.bLoaded = true; invalidate(); onData();
+      S.raw.bills = m; applyScope(); S.bLoaded = true; invalidate(); onData();
     }, function (e) { toast("The bill list stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     S.db.collection("reports").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var r = Object.assign({}, d.data() || {}); r.id = d.id; m[d.id] = r; });
-      S.reports = m; S.rLoaded = true; invalidate(); onData();
+      S.raw.reports = m; applyScope(); S.rLoaded = true; invalidate(); onData();
     }, function (e) { toast("The report list stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     S.db.collection("advances").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var a = Object.assign({}, d.data() || {}); a.id = d.id; m[d.id] = a; });
-      S.advances = m; S.aLoaded = true; invalidate(); onData();
+      S.raw.advances = m; applyScope(); S.aLoaded = true; invalidate(); onData();
     }, function (e) { S.aLoaded = true; onData(); toast("Proformas and imports stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     S.db.collection("transactions").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var t = Object.assign({}, d.data() || {}); t.id = d.id; m[d.id] = t; });
@@ -7211,7 +7876,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     }, function (e) { S.tLoaded = true; onData(); toast("Payments stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     S.db.collection("vouchers").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var v = Object.assign({}, d.data() || {}); v.id = d.id; m[d.id] = v; });
-      S.vouchers = m; S.vcLoaded = true; onData();
+      S.raw.vouchers = m; applyScope(); S.vcLoaded = true; onData();
     }, function (e) { S.vcLoaded = true; onData(); toast("Vouchers stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     S.db.collection("cashadv").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var v = Object.assign({}, d.data() || {}); v.id = d.id; m[d.id] = v; });
@@ -7255,7 +7920,12 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   function ledAll() { return Object.keys(S.ledgers || {}).map(function (k) { return S.ledgers[k]; }); }
   function ledCmp(a, b) { return LED_MAINS.indexOf(a.main) - LED_MAINS.indexOf(b.main) || natCmp(a.sub, b.sub) || natCmp(a.name, b.name); }
   function ledFor(cid) { return ledAll().filter(function (l) { return l.active !== false && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
-  function ledName(id) { var l = S.ledgers && S.ledgers[id]; return l ? l.name : ""; }
+  /* A name used by more than one ledger (e.g. Travelling Expenses under two sub groups) carries its sub group. */
+  function ledName(id) {
+    var l = S.ledgers && S.ledgers[id]; if (!l) return "";
+    var k = normName(l.name), twin = ledAll().some(function (x) { return x.id !== l.id && normName(x.name) === k; });
+    return twin ? l.name + " (" + l.sub + ")" : l.name;
+  }
   function ledOk(id, cid) { var l = S.ledgers && S.ledgers[id]; return !!l && l.active !== false && (l.companyIds || []).indexOf(cid) >= 0; }
   function ledText(lines) { return (lines || []).map(function (x) { return ledName(x.id) || "Unknown ledger"; }).join(", "); }
   /* A ledger dropdown for one company, grouped by main group and sub group. */
@@ -7456,9 +8126,10 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   /* ================= Reports › Ledgers ================= */
   var LGM = { side: "Indirect Expenses", busy: false };
   function renderLedgers() {
+    if (IMP.busy) return; /* an upload redraws once it is done */
     var sel = $("lgmCo"), cur = sel.value;
     fillSelect(sel, [["", "All companies"]].concat(activeCompanies().map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
-    $("lgmAdd").hidden = !canLedgers();
+    $("lgmAdd").hidden = !canLedgers(); if (canImport()) impButtons("ledgers", $("lgmAdd").parentNode);
     var all = ledAll(), q = $("lgmQ").value.trim().toLowerCase(), cid = sel.value;
     LED_MAINS.forEach(function (m, i) { var b = $(i ? "lgmSideI" : "lgmSideD"); b.setAttribute("aria-selected", LGM.side === m ? "true" : "false"); b.querySelector("span").textContent = "(" + all.filter(function (l) { return l.main === m && l.active !== false && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).length + ")"; });
     var rows = all.filter(function (l) { return l.main === LGM.side && (!cid || (l.companyIds || []).indexOf(cid) >= 0) && (!q || (l.name + " " + l.sub).toLowerCase().indexOf(q) >= 0); }).sort(ledCmp);
@@ -7496,7 +8167,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
       var main = ms.value, sb = ss.value === "__new__" ? nsub.value.trim().replace(/\s+/g, " ") : ss.value, nm = $("lfName").value.trim().replace(/\s+/g, " "), cos = readChecks(ck), ok = true;
       if (!sb) { errOn(ss.value === "__new__" ? "lfSubNew" : "lfSub", "Choose or type the sub group."); ok = false; }
       if (!nm) { errOn("lfName", "Type the ledger name."); ok = false; }
-      else if (ledAll().some(function (x) { return x.id !== l.id && normName(x.name) === normName(nm) && (x.companyIds || []).some(function (c) { return cos.indexOf(c) >= 0; }); })) { errOn("lfName", "A ledger with this name already exists for one of these companies."); ok = false; }
+      else if (ledAll().some(function (x) { return x.id !== l.id && x.main === main && normName(x.sub) === normName(sb) && normName(x.name) === normName(nm) && (x.companyIds || []).some(function (c) { return cos.indexOf(c) >= 0; }); })) { errOn("lfName", "This ledger already exists in this sub group for one of these companies."); ok = false; }
       if (!cos.length) { errOn("lfCos", "Tick at least one company."); ok = false; }
       if (!ok) return false;
       var id = l.id || ("lg_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)), doc = { main: main, sub: sb, name: nm, companyIds: cos, active: isNew ? true : ac.checked, updatedAt: Date.now(), by: meId() };
@@ -7536,7 +8207,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     sortTable(box, "ac_" + AC.side, [
       { label: isB ? "Bill" : "Voucher", kind: "co", sort: function (x) { return isB ? x.billDate : x.voucherDate; }, cell: function (x, td) { td.appendChild(el("b", { class: "mono" }, isB ? x.billNo : x.voucherNo)); sub(td, fmtDate(isB ? x.billDate : x.voucherDate) + " · " + coLabel(x.companyId)); } },
       { label: isB ? "Vendor" : "Paid to", cls: "desc", cell: function (x, td) { td.appendChild(el("b", null, isB ? vendorLabelOfBill(x) : x.payee || "")); sub(td, isB ? x.narration || "" : (x.vtype || "Type not set") + (x.gstApp === "RCM" ? " · RCM" : "") + " · " + (x.narration || "")); } },
-      { label: "Prepared by", cell: function (x, td) { txt(td, pnm(x.preparedByName) || userLabel(prepOf(x)) || ""); var d = personDept(prepOf(x)); if (d) sub(td, d); } },
+      { label: "Prepared by", who: function (x) { return pnm(x.preparedByName) || userLabel(prepOf(x)); }, cell: function (x, td) { txt(td, pnm(x.preparedByName) || userLabel(prepOf(x)) || ""); var d = personDept(prepOf(x)); if (d) sub(td, d); } },
       { label: isB ? "Taxable" : "Total", cls: "r num", sort: function (x) { return Number(isB ? x.taxable : x.total) || 0; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, isB ? bm(x, x.taxable) : money(x.total))); if (isB) sub(td, "Total " + bm(x, x.total)); } },
       { label: "Ledger", cell: function (x, td) { txt(td, ledText(x.ledgers) || "Not chosen"); if (x.tds != null && x.acct === "approved") sub(td, "TDS " + money(x.tds) + (x.tdsSection ? " · " + x.tdsSection : "")); } },
       { label: "Status", cell: function (x, td) { var l = acctLabel(x); td.appendChild(el("span", { class: "tag stg " + l[1] }, l[0])); if (x.acctNote && x.acct !== "approved") sub(td, x.acctNote); } },
@@ -7561,6 +8232,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     var f = $("aoBody"); f.textContent = "";
     var facts = isB ? [["Company", coLabel(x.companyId)], ["Bill date", fmtDate(x.billDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Taxable", bm(x, x.fcTaxable != null ? x.fcTaxable : x.taxable)], ["GST", bm(x, x.fcGst != null ? x.fcGst : x.gstAmt)], ["Total", bm(x, x.total)]]
       : [["Company", coLabel(x.companyId)], ["Voucher date", fmtDate(x.voucherDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Total", money(x.total)], ["GST", x.gstApp === "RCM" ? "RCM " + (x.gstRate || 0) + "%" : "Not applicable"], ["Payment", x.settle ? "From cash advance" : "By Financier"]];
+    facts.push(["Approver", approverName(x) || "Not set"]);
     var fb = el("div", { class: "stats" }); facts.forEach(function (k) { var s = el("div", { class: "stat" }); s.appendChild(el("div", { class: "k" }, k[0])); s.appendChild(el("div", { class: "v" }, k[1] || "")); fb.appendChild(s); }); f.appendChild(fb);
     var det = el("div", { class: "card", style: "padding:14px 18px;margin:12px 0" });
     det.appendChild(el("p", { style: "margin:0 0 6px" }, (isB ? "Narration: " : "Description: ") + (x.narration || "None")));
@@ -7729,7 +8401,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   }
   function drawVoucher(doc, v) {
     var c = S.companies[v.companyId] || {}, type = v.vtype || "Cash Voucher", rcm = v.gstApp === "RCM", taxTable = type === "Freight & Transport" || (type === "Self Invoice" && rcm);
-    var NAVY = [15, 23, 42], SL = [100, 116, 139], INK = [51, 65, 85], FILL = [241, 245, 249];
+    var NAVY = [16, 40, 31], SL = [0, 112, 74], INK = [40, 56, 48], FILL = [236, 245, 240];
     var X = 4, W = 202, Y0 = 4, H = 110;
     function F(st, size, col) { doc.setFont("Lato", st); doc.setFontSize(size); doc.setTextColor(col[0], col[1], col[2]); }
     function line(x1, y1, x2, y2, w) { doc.setDrawColor(15, 23, 42); doc.setLineWidth(w || 0.3); doc.line(x1, y1, x2, y2); }
@@ -7784,7 +8456,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     /* row 6: comments, mode, date, seal, approved by */
     F("bold", 5.2, SL); T("COMMENTS & PAYABLE ADJUSTMENTS", X + 3, ry[5] + 3.2); T("PAYMENT REFERENCE (IF ANY):", X + 3, ry[6] - 1.8);
     T("MODE OF PAYMENT", cx[2] + cols[2] / 2, ry[5] + 4.5, { align: "center" }); F("bold", 8.2, NAVY); T("Cash / Cheque", cx[2] + cols[2] / 2, ry[5] + 9, { align: "center" });
-    F("bold", 5.2, SL); T("PAYMENT DATE", cx[3] + cols[3] / 2, ry[6] - 1.8, { align: "center" }); T("CASHIER SEAL", cx[4] + cols[4] / 2, ry[6] - 1.8, { align: "center" }); T("APPROVED BY", cx[5] + cols[5] / 2, ry[6] - 1.8, { align: "center" });
+    F("bold", 5.2, SL); T("PAYMENT DATE", cx[3] + cols[3] / 2, ry[6] - 1.8, { align: "center" }); T("CASHIER SEAL", cx[4] + cols[4] / 2, ry[6] - 1.8, { align: "center" }); T("APPROVED BY", cx[5] + cols[5] / 2, ry[6] - 1.8, { align: "center" }); if (approverName(v)) { F("normal", 6.5, INK); T(fitT(approverName(v), cols[5] - 3), cx[5] + cols[5] / 2, ry[5] + 4.5, { align: "center" }); }
     /* grid */
     doc.setDrawColor(15, 23, 42); doc.setLineWidth(1); doc.rect(X, Y0, W, H);
     [1, 2, 3, 4, 5].forEach(function (i) { line(X, ry[i], X + W, ry[i], 0.35); });
@@ -7918,6 +8590,10 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     $("auQ").addEventListener("input", function () { AU.limit = 100; renderAudit(); }); $("auWho").addEventListener("change", renderAudit); $("auCol").addEventListener("change", renderAudit);
     $("pePrev").addEventListener("click", function () { perShift(-1); }); $("peNext").addEventListener("click", function () { perShift(1); });
     $("peCo").addEventListener("change", renderPer); $("pePdf").addEventListener("click", function () { downloadPer(this); });
+    $("txCo").addEventListener("change", function () { TX.limit = 200; renderTxn(); }); $("txWho").addEventListener("change", function () { TX.limit = 200; renderTxn(); });
+    $("txSt").addEventListener("change", function () { TX.status = this.value; TX.limit = 200; renderTxn(); }); $("txQ").addEventListener("input", function () { TX.limit = 200; renderTxn(); });
+    $("txPdf").addEventListener("click", function () { downloadTxPdf(this); });
+    $("peXls").addEventListener("click", function () { downloadPerXls(this); }); $("bkXls").addEventListener("click", function () { downloadBooksXls(this); }); $("vXls").addEventListener("click", function () { downloadVendorsXls(this); }); $("txXls").addEventListener("click", function () { downloadTxXls(this); });
     $("vhNew").addEventListener("click", function () { openVchForm(null); });
     $("vhCo").addEventListener("change", renderVch); $("vhQ").addEventListener("input", renderVch);
     $("vfBack").addEventListener("click", backToVch); $("vfCancel").addEventListener("click", backToVch); $("vfSave").addEventListener("click", saveVch);
@@ -7955,7 +8631,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     $("secPlanPay").addEventListener("focusout", function () { setTimeout(function () { var ae = document.activeElement; if (PP.stale && !(ae && $("secPlanPay").contains(ae) && ae.tagName === "INPUT")) { PP.stale = false; renderPlanning(); } }, 0); });
     $("ppPdf").addEventListener("click", function () { downloadPlan(this); }); $("ppClear").addEventListener("click", function () { ppClearAll(this); }); $("ppLock").addEventListener("click", function () { lockPlan(this); }); $("ppSideV").addEventListener("click", function () { PP.side = "vendors"; renderPlanning(); }); $("ppSideC").addEventListener("click", function () { PP.side = "vouchers"; renderPlanning(); }); $("ppSideL").addEventListener("click", function () { PP.side = "locked"; renderPlanning(); });
     $("vaBack").addEventListener("click", function () { openVcr(VA.rid); }); $("vaCancel").addEventListener("click", function () { openVcr(VA.rid); }); $("vaGo").addEventListener("click", function () { goVcrApprove(this); });
-    $("mkSideV").addEventListener("click", function () { MK.side = "vendors"; renderMark(); }); $("mkSideC").addEventListener("click", function () { MK.side = "vouchers"; renderMark(); });
+    $("mkSideV").addEventListener("click", function () { MK.side = "vendors"; renderMark(); }); $("mkSideC").addEventListener("click", function () { MK.side = "vouchers"; renderMark(); }); $("mkSideA").addEventListener("click", function () { MK.side = "advances"; renderMark(); });
     $("lgSideV").addEventListener("click", function () { LG.side = "vendors"; LG.limit = 100; renderLedger(); }); $("lgSideC").addEventListener("click", function () { LG.side = "vouchers"; LG.limit = 100; renderLedger(); });
     $("lgCo").addEventListener("change", renderLedger); $("lgQ").addEventListener("input", renderLedger);
     $("bDoneQ").addEventListener("input", function () { B.doneLimit = 100; renderDone(); });
@@ -7987,6 +8663,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
           .then(function (st) { fail(st === "denied" ? "db-denied" : "db-null", st || "no state"); });
       }
       if (!S.user) { fail("user-null"); return; }
+      if (window.bvSuperAdmins) window.bvSuperAdmins().then(function (l) { S.supers = l || []; }, function () { S.supers = []; });
       return S.user.me().then(function (me) {
         S.me = me || {};
         var box = $("me"); box.textContent = "";

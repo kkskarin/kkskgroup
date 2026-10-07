@@ -8270,8 +8270,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     facts.push(["Approver", approverName(x) || "Not set"]);
     var fb = el("div", { class: "stats" }); facts.forEach(function (k) { var s = el("div", { class: "stat" }); s.appendChild(el("div", { class: "k" }, k[0])); s.appendChild(el("div", { class: "v" }, k[1] || "")); fb.appendChild(s); }); f.appendChild(fb);
     var det = el("div", { class: "card", style: "padding:14px 18px;margin:12px 0" });
-    det.appendChild(el("p", { style: "margin:0 0 6px" }, (isB ? "Narration: " : "Description: ") + (x.narration || "None")));
-    if (!isB) { (x.lines || []).forEach(function (ln, i) { det.appendChild(el("div", { class: "hint" }, (i + 1) + ". " + ln.d + " — " + money(ln.amt))); }); if (x.supplyOf) det.appendChild(el("div", { class: "hint" }, "Supply of: " + x.supplyOf)); }
+    var vl = !isB && (x.lines || []).length > 1 ? x.lines : null;
+    det.appendChild(el("p", { style: "margin:0 0 6px" }, (isB ? "Narration: " : "Description: ") + (vl ? "" : x.narration || "None")));
+    if (vl) vl.forEach(function (ln, i) { det.appendChild(el("div", null, (i + 1) + ". " + ln.d)); });
+    if (!isB && x.supplyOf) det.appendChild(el("div", { class: "hint" }, "Supply of: " + x.supplyOf));
     if (isB && x.ex && (x.ex.items || []).length) {
       var it = el("details"); it.appendChild(el("summary", { style: "cursor:pointer;font-weight:600" }, "Items read from the bill (" + x.ex.items.length + ")"));
       var tw = el("div", { class: "list scroll" }); it.appendChild(tw); det.appendChild(it);
@@ -8289,7 +8291,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     }
     var lf = el("div", { class: "f wide" }); lf.appendChild(el("span", { class: "lb" }, isB ? "Ledgers" : "Ledger"));
     var eo = { id: "aoLed", lines: D.lines, max: isB ? MAX_LED.bill : MAX_LED.voucher, cid: function () { return x.companyId; }, base: function () { return D.base; }, baseLabel: isB ? "taxable amount" : "total", suggest: isB ? function () { return suggestBill(x, x.companyId, x.vendorId, D.base); } : null };
-    lf.appendChild(ledEditor(eo)); lf.appendChild(el("span", { class: "hint" }, isB ? "Up to 4 ledgers. The amounts must add up to the taxable amount, " + amt2(D.base) + "." : "Up to 2 ledgers. The amounts must add up to the total, " + amt2(D.base) + ".")); lf.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" })); form.appendChild(lf);
+    lf.appendChild(ledEditor(eo)); lf.appendChild(el("span", { class: "hint" }, isB ? "Up to 4 ledgers. The amounts must add up to the taxable amount, " + amt2(D.base) + "." : "Up to 2 ledgers. The amounts must add up to the total, " + amt2(D.base) + ".")); lf.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" }));
+    var lw = el("div", { class: "form", style: "margin-top:12px" }); lw.appendChild(lf); f.insertBefore(lw, det);
     var ti = inp("aoTds", D.tds, { inputmode: "decimal", class: "field num" }); ti.disabled = locked; ti.addEventListener("input", function () { D.tds = ti.value; }); ti.addEventListener("blur", function () { if (num(ti.value) != null) ti.value = fmtInput(ti.value); });
     form.appendChild(fld("TDS" + (isB && x.currency && x.currency !== "INR" ? " (" + x.currency + ")" : " (₹)"), ti, "Enter 0 if none is deducted."));
     var ts = el("select", { class: "field", id: "aoSec" }); fillSelect(ts, [["", "No TDS"]].concat(TDS_SECTIONS), D.sec); ts.disabled = locked; ts.addEventListener("change", function () { D.sec = ts.value; }); form.appendChild(fld("TDS section", ts));

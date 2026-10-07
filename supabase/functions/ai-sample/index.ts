@@ -67,9 +67,17 @@ Deno.serve(async (req) => {
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({ model: MODELS[tier], max_tokens: maxTokens, messages }),
   });
-  if (r.status === 429) return fail(429, "rate_limited", "Too many requests to Claude. Wait a minute.");
-  if (r.status === 401 || r.status === 403) return fail(503, "sampling_disabled", "The Anthropic API key was refused.");
-  if (!r.ok) return fail(502, "upstream_error", "Claude did not answer (" + r.status + ").");
+  if (!r.ok) {
+    // Keep Anthropic's reason in the function logs (Edge Functions > ai-sample > Logs).
+    const detail = await r.text().catch(() => "");
+    console.error("anthropic", r.status, MODELS[tier], images.length + " images", detail.slice(0, 600));
+    let why = "";
+    try { why = JSON.parse(detail)?.error?.message ?? ""; } catch { /* not JSON */ }
+    if (r.status === 429) return fail(429, "rate_limited", "Too many requests to Claude. Wait a minute.");
+    if (r.status === 401 || r.status === 403) return fail(503, "sampling_disabled", "The Anthropic API key was refused.");
+    if (/credit balance/i.test(why)) return fail(503, "sampling_disabled", "The Anthropic account is out of credit.");
+    return fail(502, "upstream_error", "Claude did not answer (" + r.status + "): " + why.slice(0, 200));
+  }
   const out = await r.json();
   const text = (out.content ?? []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join("");
   return reply(200, { text, truncated: out.stop_reason === "max_tokens", modelTierApplied: tier });

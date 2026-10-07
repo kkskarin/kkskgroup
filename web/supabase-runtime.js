@@ -38,7 +38,7 @@
     }
     o.hidden = false; o.textContent = "";
     var card = h("div", { class: "bvCard" });
-    card.appendChild(h("h1", { text: "Bills & Vouchers Accounting" }));
+    var h1 = h("h1"); h1.innerHTML = 'Bills <span class="amp">&amp;</span> Vouchers Accounting'; card.appendChild(h1);
     o.appendChild(card);
     return card;
   }

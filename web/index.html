@@ -556,6 +556,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15p
 .top .wrap{padding-top:14px;padding-bottom:14px}
 .mark{background:#fff;border-radius:10px;width:50px;height:50px;padding:3px}
 .titles .t1{font-family:var(--serif);font-weight:400;font-size:21px;letter-spacing:.01em;color:var(--forest)}
+.titles .t1 .amp,.bvCard h1 .amp{font-family:"Jost",system-ui,sans-serif;font-weight:300;font-size:.82em;color:var(--kk,#009256);margin:0 .08em;position:relative;top:-.04em}
 .titles .t2{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--kk)}
 .me .nm{color:var(--forest);font-weight:600}.me .rl{color:var(--muted)}
 h2{font-family:var(--serif);font-weight:400;font-size:27px;letter-spacing:.005em;color:var(--forest);line-height:1.25}
@@ -613,7 +614,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 </style>
 <header class="top"><div class="wrap">
   <div class="mark"><img alt="KKSK" src="data:image/png;base64,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"></div>
-  <div class="titles"><div class="t1">Bills &amp; Vouchers Accounting</div><div class="t2">KKSK Group</div></div>
+  <div class="titles"><div class="t1">Bills <span class="amp">&amp;</span> Vouchers Accounting</div><div class="t2">KKSK Group</div></div>
   <div class="me" id="me" hidden></div>
 </div></header>
 <nav class="navbar" id="navbar" aria-label="Sections" hidden><div class="wrap" id="nav"></div><div class="subbar"><div class="wrap" id="subnav"></div></div></nav>
@@ -796,7 +797,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       <span class="grow"></span>
       <div class="acts2">
         <button class="btn" id="bManual">Enter a bill by hand</button>
-        <button class="btn primary" id="bUpload">Upload bills (PDF or photo)</button>
+        <button class="btn primary" id="bUpload">Upload bills (up to 15)</button>
       </div>
       <input type="file" id="bFiles" multiple accept="application/pdf,.pdf,image/jpeg,image/png,image/webp" hidden>
     </div>
@@ -816,7 +817,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secVendors" hidden>
     <div class="head">
-      <div class="grow"><h2>Vendor</h2><p class="sub">Vendors are created when their first bill is submitted. A vendor is flagged until its opening balance is captured for every company it has bills in.</p></div>
+      <div class="grow"><h2>Vendors</h2><p class="sub">Vendors are created when their first bill is submitted. A vendor is flagged until its opening balance is captured for every company it has bills in.</p></div>
       <div class="acts2"><button class="btn" id="vXls" type="button">Download Excel</button><button class="btn" id="vExport" type="button">Export payables PDF</button></div>
     </div>
     <div class="filters">
@@ -837,6 +838,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         <div class="f"><label for="veType">Vendor type</label><select class="field" id="veType"></select><span class="err" id="veTypeE" hidden></span></div>
         <div class="f"><label for="veGstin">GSTIN</label><input class="field mono" id="veGstin" maxlength="20" autocomplete="off" spellcheck="false"><span class="hint">Required for a registered vendor.</span><span class="err" id="veGstinE" hidden></span></div>
         <div class="f"><label for="vePan">PAN</label><input class="field mono ro" id="vePan" disabled><span class="hint">Taken from the GSTIN.</span><span class="err" id="vePanE" hidden></span></div>
+        <div class="f wide"><label for="veAddr">Address</label><textarea class="field" id="veAddr" rows="2" maxlength="240"></textarea><span class="hint">Street, town and PIN code (with the country for an overseas vendor).</span><span class="err" id="veAddrE" hidden></span></div>
         <div class="f"><label for="veTerm">Payment terms (days)</label><input class="field num" id="veTerm" inputmode="numeric" maxlength="3" autocomplete="off"><span class="hint">Days from the bill date to the due date.</span><span class="err" id="veTermE" hidden></span></div>
       </div>
       <div style="padding:0 22px 22px">
@@ -1039,7 +1041,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   </section>
 
   <section id="secVcrNew" hidden>
-    <div class="head"><div><button class="link-btn" id="vnBack">Back to Vouchers CR</button><h2>New Vouchers CR</h2><p class="sub">One table per company, in your company order. Untick a company or a voucher to leave it for a later report.</p></div></div>
+    <div class="head"><div><button class="link-btn" id="vnBack">Back to Vouchers CR</button><h2>New Voucher CR</h2><p class="sub">One table per company, in your company order. Untick a company or a voucher to leave it for a later report.</p></div></div>
     <div class="stats" id="vnStats"></div>
     <div id="vnBox"></div>
     <div class="card" style="margin-top:14px">
@@ -1186,6 +1188,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var lead = first && !/[A-Za-z0-9]/.test(t.slice(0, i));
       if (!/^[a-z]/.test(w)) return w;
       if (!lead && TC_SMALL[w]) return w;
+      if (/\([^)]*$/.test(t.slice(0, i))) return w;
       var prev = t.slice(0, i); if (/[A-Za-z0-9]-$/.test(prev) || /\.$/.test(prev) && !/\s$/.test(prev)) return w;
       return w.charAt(0).toUpperCase() + w.slice(1);
     });
@@ -2389,6 +2392,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var n = [], oldest = 0;
     if (!vtypeOk(v.type)) n.push("vendor type");
     if (v.termDays == null) n.push("payment terms");
+    if (!String(v.address || "").trim()) n.push("address");
     if (v.type === "registered" && gstinCheck(v.gstin)) n.push("a valid GSTIN");
     var miss = vendorBillCompanies(v.id).filter(canSee).filter(function (cid) { return !opening(v, cid); });
     if (miss.length) {
@@ -2764,8 +2768,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     busy: "Claude didn't answer. Upload this file again."
   };
   var B = { log: [], pending: [], running: 0, aiOff: "", D: null, cardId: null, saveTimer: null, dirty: false, savePromise: null, busy: false, tried: false, armDiscard: false, vSig: "", cSig: "", doneLimit: 100 };
+  var MAX_SCAN = 15;
   function startUpload(files) {
     files = Array.prototype.slice.call(files || []); if (!files.length) return;
+    var busy = B.pending.length + B.running, room = MAX_SCAN - busy;
+    if (files.length > room) { var m = "Up to " + MAX_SCAN + " bills can be read at a time." + (busy ? " " + busy + " are still being read, so choose up to " + Math.max(room, 0) + " now." : " Choose up to " + MAX_SCAN + " files."); toast(m); window.alert(m); return; }
     if (!S.sample || B.aiOff) { toast("Bills can't be read here. Enter them by hand."); return; }
     if (B.log.length && !B.pending.length && !B.running) B.log = [];
     var link = takeLink();
@@ -2908,13 +2915,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var vn = b.vendorNew || {};
     return {
       companyId: b.companyId || "", vendorChoice: b.vendorId || (vn.name || vn.gstin ? "new" : ""),
-      vNew: { name: vn.name || "", gstin: vn.gstin || "", pan: vn.pan || "", type: vn.type || "", termDays: vn.termDays == null ? "" : String(vn.termDays) },
+      vNew: { name: vn.name || "", gstin: vn.gstin || "", pan: vn.pan || "", type: vn.type || "", termDays: vn.termDays == null ? "" : String(vn.termDays), addr: vn.address || "" },
       billNo: b.billNo || "", billDate: fmtDate(b.billDate), currency: curOk(b.currency) ? b.currency : "INR", rate: b.fxRate ? fmtRate(b.fxRate) : "",
       taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt),
       termDays: b.termDays == null ? "" : String(b.termDays), termChoice: b.termChoice || "", updateVendorTerm: !!b.updateVendorTerm, narration: b.narration || "", advPick: b.advPick || "", advWhy: b.advWhy || "",
       ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", approverId: b.approverId || ""
     };
   }
+  function draftFromBill(b) { var D = draftFrom(b); if (!D.ledgers.length && num(D.taxable) != null && num(D.taxable) > 0) D.ledgers.push({ id: "", amt: D.taxable }); return D; }
   /* A bill read before its vendor was saved (often one upload holding several bills from a new vendor) is linked to that vendor once it exists. */
   function autoLink(D) {
     if (D.vendorChoice !== "new") return false;
@@ -2967,7 +2975,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function draftToDoc(D) {
     return Object.assign({
       companyId: D.companyId || null, vendorId: D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : null,
-      vendorNew: { name: D.vNew.name.trim(), gstin: normId(D.vNew.gstin), pan: panOfNew(D), type: D.vNew.type || "", termDays: intOrNull(D.vNew.termDays) },
+      vendorNew: { name: D.vNew.name.trim(), gstin: normId(D.vNew.gstin), pan: panOfNew(D), type: D.vNew.type || "", termDays: intOrNull(D.vNew.termDays), address: String(D.vNew.addr || "").trim() },
       billNo: D.billNo.trim(), billDate: parseDate(D.billDate),
       termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: D.narration.trim(), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
       ledgers: ledLinesOut(D.ledgers)
@@ -3011,6 +3019,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     else if (D.vendorChoice === "new") {
       var n = D.vNew, g = normId(n.gstin), gp = g ? gstinCheck(g) : "missing"; vt = n.type;
       if (!n.name.trim()) E("bcVName", "Type the vendor's name.");
+      if (!String(n.addr || "").trim()) E("bcVAddr", "Enter the vendor's address.");
       if (!vtypeOk(n.type)) E("bcVType", "Choose the vendor type.");
       if (n.type === "registered" && gp === "missing") E("bcVGstin", GSTIN_MSG.missing);
       else if (g && gp) E("bcVGstin", GSTIN_MSG[gp]);
@@ -3027,11 +3036,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     else if (bd > todayYmd()) E("bcDate", "The bill date can't be in the future.");
     else if (bd < addDays(todayYmd(), -14)) warns.push("The bill date is more than 2 weeks old.");
     var tx = num(D.taxable), ga = num(D.gstAmt), foreign = D.currency !== "INR", A = amountsOf(D), cl = foreign ? D.currency + " " : "\u20B9 ";
-    [["bcTax", tx, D.taxable, "taxable amount"], ["bcGst", ga, D.gstAmt, "GST amount"]].forEach(function (a) {
+    /* the taxable amount comes from the ledger lines, so its problems are shown there */
+    if (tx == null) E("bcLed", "Enter the amount on each ledger line. Together they make the taxable amount.");
+    else if (tx < 0) E("bcLed", "The ledger lines can't add up to less than zero.");
+    [["bcGst", ga, D.gstAmt, "GST amount"]].forEach(function (a) {
       if (a[1] == null) E(a[0], String(a[2]).trim() ? "Enter the " + a[3] + " as a number." : "Enter the " + a[3] + (a[0] === "bcGst" ? ". Enter 0 if no GST is charged." : "."));
       else if (a[1] < 0) E(a[0], "The " + a[3] + " can't be negative.");
     });
-    if (tx != null && ga != null && tx + ga <= 0) E("bcTax", "The total must be more than zero.");
+    if (tx != null && ga != null && tx + ga <= 0) E("bcLed", "The total must be more than zero.");
     if (D.companyId && tx != null && tx > 0) { var le = ledCheck(D.ledgers, tx, D.companyId, MAX_LED.bill); if (le) E("bcLed", le); }
     if (foreign && vendorTypeOfCard(D) !== "overseas") E("bcCur", "Only an overseas vendor's bill can be in another currency.");
     var printed = b.ex && b.ex.printedTotal;
@@ -3170,6 +3182,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     vbox.appendChild(fld("Vendor type", vt));
     vbox.appendChild(fld("GSTIN", inp("bcVGstin", D.vNew.gstin, { maxlength: "20", class: "field mono", spellcheck: "false" })));
     vbox.appendChild(fld("PAN", inp("bcVPan", panOfNew(D), { class: "field mono ro", disabled: "" }), "Taken from the GSTIN."));
+    var bva = el("textarea", { class: "field", id: "bcVAddr", rows: "2", maxlength: "240" }); bva.value = D.vNew.addr || ""; vbox.appendChild(fld("Address", bva, "Street, town and PIN code.", true));
     vbox.appendChild(fld("Payment terms (days)", inp("bcVTerm", D.vNew.termDays, { inputmode: "numeric", maxlength: "3", class: "field num" }), "Days from the bill date to the due date. Saved as the vendor's terms."));
     f.appendChild(vbox);
     f.appendChild(el("div", { class: "f wide vline", id: "bcVInfo" }));
@@ -3179,14 +3192,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     f.appendChild(el("div", { class: "f", id: "bcTermBox" }));
     var due = el("div", { class: "f" }); due.appendChild(el("span", { class: "lb" }, "Due date")); due.appendChild(el("div", { class: "field ro num", id: "bcDue" })); f.appendChild(due);
     f.appendChild(tidyField("Narration", tidyBox("bcNar", D.narration, "bill", null, 3), "What the bill is for, in any language." + (S.sample ? " It is turned into clean English when you leave the box." : "") + (b.narrLock ? " The closing breakup at the end is always kept, even if deleted." : "")));
+    var lgf = el("div", { class: "f wide" }); lgf.appendChild(el("span", { class: "lb" }, "Ledgers")); lgf.appendChild(el("div", { id: "bcLedWrap" }));
+    lgf.appendChild(el("span", { class: "hint" }, "Choose the ledger for each part of the bill and enter its amount, before GST. Together they make the taxable amount." + (b.source === "file" ? " The taxable amount read from the bill is filled in on the first line." : "") + " TDS is entered by the accountant."));
+    lgf.appendChild(el("span", { class: "err", id: "bcLedE", hidden: "" })); f.appendChild(lgf);
     var rf = fld("Exchange rate", inp("bcRate", D.rate, { inputmode: "decimal", class: "field num" }), " "); rf.id = "bcRateF"; rf.className = "f wide"; f.appendChild(rf);
-    f.appendChild(fld("Taxable amount", inp("bcTax", D.taxable, { inputmode: "decimal", class: "field num" })));
+    f.appendChild(fld("Taxable amount", inp("bcTax", D.taxable, { inputmode: "decimal", class: "field num ro", readonly: "", tabindex: "-1" }), "The total of the ledger lines."));
     f.appendChild(fld("GST amount", inp("bcGst", D.gstAmt, { inputmode: "decimal", class: "field num" }), "CGST plus SGST, or IGST. Enter 0 if none."));
     var tf = el("div", { class: "f" }); tf.appendChild(el("span", { class: "lb", id: "bcTotL" }, "Total amount")); tf.appendChild(el("div", { class: "field ro num", id: "bcTot" })); tf.appendChild(el("span", { class: "hint", id: "bcTotH" }, "Taxable amount plus GST.")); f.appendChild(tf);
     var pf = el("div", { class: "f" }); pf.appendChild(el("span", { class: "lb" }, "GST percentage")); pf.appendChild(el("div", { class: "field ro num", id: "bcPct" })); pf.appendChild(el("span", { class: "hint" }, "Calculated from the two amounts.")); f.appendChild(pf);
-    var lgf = el("div", { class: "f wide" }); lgf.appendChild(el("span", { class: "lb" }, "Ledgers")); lgf.appendChild(el("div", { id: "bcLedWrap" }));
-    lgf.appendChild(el("span", { class: "hint" }, "Suggested from the bill's items and how the accountant booked similar bills. The amounts must add up to the taxable amount. TDS is entered by the accountant."));
-    lgf.appendChild(el("span", { class: "err", id: "bcLedE", hidden: "" })); f.appendChild(lgf);
     f.appendChild(el("div", { class: "flags", id: "bcFlags" }));
     if (b.acct === "back" && b.acctNote) { var bk = el("div", { class: "flag w", style: "margin:0 0 12px" }); bk.innerHTML = WARN_SVG; bk.appendChild(el("span", null, "Sent back by " + (b.acctByName || "the accountant") + ": " + b.acctNote)); f.insertBefore(bk, f.firstChild); }
     body.appendChild(f); card.appendChild(body);
@@ -3213,7 +3226,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function readCard() {
     var D = B.D; if (!D || !$("bcCo")) return;
     D.companyId = $("bcCo").value; D.vendorChoice = $("bcVen").value; if ($("bcAdvWhy")) D.advWhy = $("bcAdvWhy").value;
-    D.vNew.name = $("bcVName").value; D.vNew.type = $("bcVType").value; D.vNew.gstin = $("bcVGstin").value; D.vNew.termDays = $("bcVTerm").value;
+    D.vNew.name = $("bcVName").value; D.vNew.type = $("bcVType").value; D.vNew.gstin = $("bcVGstin").value; D.vNew.termDays = $("bcVTerm").value; D.vNew.addr = $("bcVAddr").value;
     D.billNo = $("bcNo").value; D.billDate = $("bcDate").value; D.currency = $("bcCur").value || "INR"; D.rate = $("bcRate").value;
     D.taxable = $("bcTax").value; D.gstAmt = $("bcGst").value;
     D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value; if ($("bcAppr")) D.approverId = $("bcAppr").value;
@@ -3240,8 +3253,16 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function mountBillLed() {
     var w = $("bcLedWrap"); if (!w || !B.D) return;
     B.ledO = { id: "bcLed", lines: B.D.ledgers, max: MAX_LED.bill, cid: function () { return B.D ? B.D.companyId : ""; }, base: function () { return B.D ? num(B.D.taxable) : null; }, baseLabel: "taxable amount",
-      touched: function () { B.ledTouched = true; B.touched = true; scheduleSave(); } };
+      touched: function () { B.ledTouched = true; B.touched = true; scheduleSave(); }, sumMode: true, onSum: billTaxFromLines };
     w.textContent = ""; w.appendChild(ledEditor(B.ledO)); B.ledCo = B.D.companyId; billLedSync();
+  }
+  /* The taxable amount is the total of the ledger lines. */
+  function billTaxFromLines() {
+    var D = B.D; if (!D) return;
+    var amts = D.ledgers.map(function (x) { return num(x.amt); }).filter(function (n) { return n != null; });
+    D.taxable = amts.length ? fmtInput(round2(amts.reduce(function (s0, n) { return s0 + n; }, 0))) : "";
+    if ($("bcTax")) $("bcTax").value = D.taxable;
+    updateDynamic(); scheduleSave();
   }
   function billLedSync() {
     var D = B.D, o = B.ledO; if (!D || !o || !$("bcLed")) return;
@@ -3354,7 +3375,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       toast("Currency set to INR because the vendor isn't overseas." + (A.taxable != null ? " Amounts converted from " + was + " to rupees." : " Enter the amounts in rupees."));
       scheduleSave();
     }
-    cs.disabled = !overseas;
+    cs.disabled = !overseas; var cf0 = cs.closest(".f"); if (cf0) cf0.hidden = !overseas;
     if (h) h.textContent = overseas ? "" : "INR, because the vendor isn't overseas.";
   }
   function updateDynamic() {
@@ -3425,7 +3446,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (ex) vid = ex.id;
       else {
         vid = newId("v"); madeVendor = D.vNew.name.trim();
-        var vdoc = { name: madeVendor, gstin: g, pan: panOfNew(D), type: D.vNew.type, termDays: intOrNull(D.vNew.termDays), active: true, openings: {},
+        var vdoc = { address: String(D.vNew.addr || "").trim(), name: madeVendor, gstin: g, pan: panOfNew(D), type: D.vNew.type, termDays: intOrNull(D.vNew.termDays), active: true, openings: {},
           createdAt: now, createdBy: meId(), firstBillId: b.id, updatedAt: now, updatedBy: meId() };
         job = job.then(function () { return retry(function () { return S.db.doc("vendors/" + vid).set(vdoc); }); }).then(function () { S.vendors[vid] = Object.assign({ id: vid }, vdoc); invalidate(); });
       }
@@ -3579,7 +3600,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var ob = $("bOpen");
     if (!open) { B.cardId = null; B.D = null; ob.textContent = ""; ob.appendChild(el("div", { class: "card empty" }, "Nothing to check. Upload bills, or enter one by hand.")); }
     else if (B.cardId !== open.id || !$("bcCo")) {
-      B.cardId = open.id; B.D = draftFrom(open); B.tried = false; B.armDiscard = false; B.touched = false; micStop(); B.vSig = sigOf(); B.cSig = myCompanyIds().join(); B.ledTouched = !!(open.ledgers || []).length; B.ledKey = ""; B.ledO = null;
+      B.cardId = open.id; B.D = draftFromBill(open); B.tried = false; B.armDiscard = false; B.touched = false; micStop(); B.vSig = sigOf(); B.cSig = myCompanyIds().join(); B.ledTouched = !!(open.ledgers || []).length; B.ledKey = ""; B.ledO = null;
       var linked = autoLink(B.D);
       ob.textContent = ""; ob.appendChild(buildCard(open)); renderTermBox(); updateDynamic();
       if (linked) scheduleSave();
@@ -3689,7 +3710,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function openVendor(id) {
     var v = S.vendors[id]; if (!v) return;
     VE.id = id; veClear();
-    $("veName").value = v.name || ""; fillSelect($("veType"), [["", "Choose a type"]].concat(VTYPES), v.type || "");
+    $("veName").value = v.name || ""; $("veAddr").value = v.address || ""; fillSelect($("veType"), [["", "Choose a type"]].concat(VTYPES), v.type || "");
     $("veGstin").value = v.gstin || ""; $("vePan").value = v.gstin && gstinCheck(v.gstin) !== "format" ? panFromGstin(v.gstin) : ""; $("veTerm").value = v.termDays == null ? "" : String(v.termDays);
     renderOpenings(v); renderVendorHead(v); renderVendorStatements();
     var tg = $("veToggle"); tg.hidden = !S.isAdmin;
@@ -3758,6 +3779,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var pan = g && gstinCheck(g) !== "format" ? panFromGstin(g) : "";
     $("veGstin").value = g; $("vePan").value = pan;
     if (!name) { veErr("veName", "Enter the vendor's name."); ok = false; }
+    var addr = $("veAddr").value.trim(); if (!addr) { veErr("veAddr", "Enter the vendor's address."); ok = false; }
     if (!vtypeOk(type)) { veErr("veType", "Choose the vendor type."); ok = false; }
     var gp = g ? gstinCheck(g) : "missing";
     if (type === "registered" && gp === "missing") { veErr("veGstin", GSTIN_MSG.missing); ok = false; }
@@ -3778,7 +3800,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       openings[cid] = { balance: round2(bn), overdue: round2(on), setAt: now, setBy: meId() }; changed++;
     });
     if (!ok) { var first = document.querySelector("#secVendor .field.bad"); if (first) first.focus(); return; }
-    var data = { name: name, type: type, gstin: g, pan: pan, termDays: intOrNull(term), updatedAt: now, updatedBy: meId() };
+    var data = { name: name, type: type, gstin: g, pan: pan, address: addr, termDays: intOrNull(term), updatedAt: now, updatedBy: meId() };
     if (changed) data.openings = openings;
     VE.busy = true; $("veSave").disabled = true;
     retry(function () { return S.db.doc("vendors/" + v.id).update(data); }).then(function () { toast("Vendor saved."); backToVendors(); }, function (e) { toast(explain(e)); })
@@ -4857,6 +4879,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var vb = el("div", { class: "vbox", id: "adVBox" }); vb.hidden = D.vendorChoice !== "new";
     vb.appendChild(el("div", { class: "ttl" }, "New vendor. It is saved with this record."));
     vb.appendChild(fld("Vendor name", inp("adVName", D.vNew.name, { maxlength: "140", "data-fmt": "name" })));
+    var ava = el("textarea", { class: "field", id: "adVAddr", rows: "2", maxlength: "240" }); ava.value = D.vNew.addr || ""; vb.appendChild(fld("Address", ava, imp ? "Full address, with the country." : "Street, town and PIN code.", true));
     if (imp) vb.appendChild(fld("Country", inp("adVCountry", D.vNew.country, { maxlength: "60", "data-fmt": "name" }), "No GST details are needed for an overseas vendor."));
     else {
       var vt = el("select", { class: "field", id: "adVType" }); fillSelect(vt, [["", "Choose a type"]].concat(VTYPES.filter(function (x) { return x[0] !== "overseas"; })), D.vNew.type);
@@ -4951,7 +4974,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function readAdvForm() {
     var D = ADV.D, imp = ADV.kind === "import"; if (!$("adCo")) return D;
     function v(id) { var e = $(id); return e ? e.value : ""; }
-    D.companyId = v("adCo"); D.vendorChoice = v("adVen"); D.vNew.name = v("adVName"); D.approverId = v("adAppr");
+    D.companyId = v("adCo"); D.vendorChoice = v("adVen"); D.vNew.name = v("adVName"); D.vNew.addr = v("adVAddr"); D.approverId = v("adAppr");
     if (imp) D.vNew.country = v("adVCountry"); else { D.vNew.type = v("adVType"); D.vNew.gstin = v("adVGstin"); }
     D.piNo = v("adNo"); D.piDate = v("adDate"); if (imp) D.currency = v("adCur"); D.total = v("adTotal"); if (!imp) D.gst = v("adGst");
     D.insts = D.insts.map(function (it, i) { return { pct: v("adPct" + i), when: i === 0 ? "receipt" : v("adWhen" + i), days: i === 0 ? "" : v("adDays" + i) }; });
@@ -4989,6 +5012,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!D.vendorChoice) E("adVen", "Choose the vendor, or New vendor.");
     else if (D.vendorChoice === "new") {
       if (!D.vNew.name.trim()) E("adVName", "Type the vendor's name.");
+      if (!String(D.vNew.addr || "").trim()) E("adVAddr", "Enter the vendor's address.");
       if (!imp) {
         g = normId(D.vNew.gstin);
         if (!D.vNew.type) E("adVType", "Choose the vendor type.");
@@ -5021,7 +5045,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (ex) vid = ex.id;
       else {
         vid = newId("v"); madeVendor = smartCase(D.vNew.name);
-        var vdoc = { name: madeVendor, gstin: imp ? "" : g, pan: !imp && g ? panFromGstin(g) : "", type: imp ? "overseas" : D.vNew.type, country: imp ? smartCase(D.vNew.country) : "", termDays: null, active: true, openings: {}, createdAt: now, createdBy: meId(), updatedAt: now, updatedBy: meId() };
+        var vdoc = { address: String(D.vNew.addr || "").trim(), name: madeVendor, gstin: imp ? "" : g, pan: !imp && g ? panFromGstin(g) : "", type: imp ? "overseas" : D.vNew.type, country: imp ? smartCase(D.vNew.country) : "", termDays: null, active: true, openings: {}, createdAt: now, createdBy: meId(), updatedAt: now, updatedBy: meId() };
         job = retry(function () { return S.db.doc("vendors/" + vid).set(vdoc); }).then(function () { S.vendors[vid] = Object.assign({ id: vid }, vdoc); invalidate(); });
       }
     }
@@ -5892,12 +5916,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var idx = lidx(), cos = sorted().filter(function (c) { return c.active !== false && (S.isAdmin || canSee(c.id)); }), rows = [];
     visibleVendors().slice().sort(function (a, b) { return natCmp(a.name, b.name); }).forEach(function (v) {
       var any = false;
-      cos.forEach(function (c) { var r = idx[c.id + "|" + v.id]; if (!r) return; any = true; rows.push([v.name || "", vtypeOk(v.type) ? vtypeLabel(v.type) : "", v.gstin || "", v.pan || "", v.country || "", v.termDays == null ? null : v.termDays, c.shortName || c.name, r.cur || "INR", round2(r.outstanding || 0), round2(r.overdue || 0), v.active === false ? "No" : "Yes"]); });
-      if (!any) rows.push([v.name || "", vtypeOk(v.type) ? vtypeLabel(v.type) : "", v.gstin || "", v.pan || "", v.country || "", v.termDays == null ? null : v.termDays, "", "", null, null, v.active === false ? "No" : "Yes"]);
+      cos.forEach(function (c) { var r = idx[c.id + "|" + v.id]; if (!r) return; any = true; rows.push([v.name || "", vtypeOk(v.type) ? vtypeLabel(v.type) : "", v.gstin || "", v.pan || "", v.address || "", v.country || "", v.termDays == null ? null : v.termDays, c.shortName || c.name, r.cur || "INR", round2(r.outstanding || 0), round2(r.overdue || 0), v.active === false ? "No" : "Yes"]); });
+      if (!any) rows.push([v.name || "", vtypeOk(v.type) ? vtypeLabel(v.type) : "", v.gstin || "", v.pan || "", v.address || "", v.country || "", v.termDays == null ? null : v.termDays, "", "", null, null, v.active === false ? "No" : "Yes"]);
     });
     if (!rows.length) { toast("No vendors yet."); return; }
     xlDownload(btn, "Vendors and payables " + fmtDate(todayYmd()) + ".xlsx", [{ name: "Vendors", title: "Vendors and payables", sub: "One line per vendor and company · Generated " + fmtDate(todayYmd()), rows: rows,
-      cols: [{ h: "Vendor", w: 32 }, { h: "Type", w: 16 }, { h: "GSTIN", w: 18 }, { h: "PAN", w: 12 }, { h: "Country", w: 12 }, { h: "Terms (days)", t: "int", w: 11 }, { h: "Company", w: 10 }, { h: "Currency", w: 9 }, { h: "Outstanding", t: "money", w: 15, sum: true }, { h: "Overdue", t: "money", w: 14, sum: true }, { h: "Active", w: 8 }] }]);
+      cols: [{ h: "Vendor", w: 32 }, { h: "Type", w: 16 }, { h: "GSTIN", w: 18 }, { h: "PAN", w: 12 }, { h: "Address", w: 40 }, { h: "Country", w: 12 }, { h: "Terms (days)", t: "int", w: 11 }, { h: "Company", w: 10 }, { h: "Currency", w: 9 }, { h: "Outstanding", t: "money", w: 15, sum: true }, { h: "Overdue", t: "money", w: 14, sum: true }, { h: "Active", w: 8 }] }]);
   }
 
   /* ================= Excel templates: ledgers and vendors ================= */
@@ -5915,8 +5939,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     vendors: {
       title: "Vendors", key: "vendor name",
       cols: [{ h: "Vendor Name", w: 36, need: true, alias: ["name", "vendor"] }, { h: "Type", w: 15, need: true, alias: ["vendor type"] }, { h: "GSTIN", w: 18, alias: ["gst", "gst number"] }, { h: "PAN", w: 13 },
-        { h: "Country", w: 14 }, { h: "Payment Terms (days)", w: 12, alias: ["terms", "payment terms", "credit days"] }, { h: "Active?", w: 9, alias: ["active"] }],
-      help: function () { return [["Vendor Name", "As it appears on bills"], ["Type", VTYPES.map(function (t) { return t[1]; }).join(", ")], ["GSTIN", "Needed for Registered vendors; leave blank for Overseas"], ["PAN", "Optional; taken from the GSTIN when blank"], ["Country", "For Overseas vendors"], ["Payment Terms (days)", "Whole number of days, e.g. 30. Blank if not known."], ["Active?", "Yes or No. Blank means Yes."], ["Duplicates", "A vendor with the same GSTIN, or the same name, is not added again."]]; }
+        { h: "Address", w: 44, need: true, alias: ["vendor address", "full address"] }, { h: "Country", w: 14 }, { h: "Payment Terms (days)", w: 12, alias: ["terms", "payment terms", "credit days"] }, { h: "Active?", w: 9, alias: ["active"] }],
+      help: function () { return [["Vendor Name", "As it appears on bills"], ["Type", VTYPES.map(function (t) { return t[1]; }).join(", ")], ["GSTIN", "Needed for Registered vendors; leave blank for Overseas"], ["PAN", "Optional; taken from the GSTIN when blank"], ["Address", "Street, town and PIN code (with the country for Overseas vendors). Every vendor needs one."], ["Country", "For Overseas vendors"], ["Payment Terms (days)", "Whole number of days, e.g. 30. Blank if not known."], ["Active?", "Yes or No. Blank means Yes."], ["Duplicates", "A vendor with the same GSTIN, or the same name, is not added again."]]; }
     }
   };
   function downloadTemplate(kind, btn) {
@@ -6034,7 +6058,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var ty = (VTYPES.filter(function (t) { return t[0] === tIn || t[1].toLowerCase() === tIn; })[0] || [])[0];
       if (!nm) { p.res = "Error"; p.why = "The vendor name is empty."; return; }
       if (!ty) { p.res = "Error"; p.why = "Type must be one of " + VTYPES.map(function (t) { return t[1]; }).join(", ") + "."; return; }
-      var g = normId(o["GSTIN"]), pan = normId(o["PAN"]), country = o["Country"].trim(), terms = o["Payment Terms (days)"].trim(), act = impYes(o["Active?"]);
+      var g = normId(o["GSTIN"]), pan = normId(o["PAN"]), addr = o["Address"].replace(/\s+/g, " ").trim(), country = o["Country"].trim(), terms = o["Payment Terms (days)"].trim(), act = impYes(o["Active?"]);
       p.sub = vtypeLabel(ty) + (g ? " · " + g : "");
       /* already in the app, or earlier in this file: say so before any format problem */
       var nk = normName(nm), ex = g ? vendorByGstin(g) : null, exN = vendorByName(nm);
@@ -6043,6 +6067,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (g) seenG[g] = o.n; seenN[nk] = o.n;
       if (ex) { p.res = "Skipped"; p.why = "Already in the app as " + ex.name + " (same GSTIN)."; return; }
       if (exN) { p.res = "Skipped"; p.why = "Already in the app (same name)" + (exN.gstin ? ", GSTIN " + exN.gstin : "") + "."; return; }
+      if (!addr) { p.res = "Error"; p.why = "The address is empty. Every vendor needs one."; return; }
       if (ty === "overseas" && g) { p.res = "Error"; p.why = "An Overseas vendor has no GSTIN; leave it blank."; return; }
       if (ty === "registered" && !g) { p.res = "Error"; p.why = GSTIN_MSG.missing; return; }
       if (g && gstinCheck(g)) { p.res = "Error"; p.why = GSTIN_MSG[gstinCheck(g)] || "The GSTIN isn't valid."; return; }
@@ -6050,7 +6075,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (g && pan && panFromGstin(g) !== pan) { p.res = "Error"; p.why = "The PAN doesn't match the GSTIN (characters 3 to 12 should be " + panFromGstin(g) + ")."; return; }
       var td = null; if (terms) { td = intOrNull(terms); if (td == null || td < 0 || td > 365) { p.res = "Error"; p.why = "Payment terms must be a whole number of days, 0 to 365."; return; } }
       if (act == null) { p.res = "Error"; p.why = "Active? must be Yes or No."; return; }
-      var id = newId("v"), doc = { name: nm, gstin: g, pan: pan || (g ? panFromGstin(g) : ""), type: ty, country: ty === "overseas" ? smartCase(country) : "", termDays: td, active: act, openings: {}, createdAt: now, createdBy: meId(), updatedAt: now, updatedBy: meId(), source: "upload" };
+      var id = newId("v"), doc = { name: nm, gstin: g, pan: pan || (g ? panFromGstin(g) : ""), type: ty, address: addr, country: ty === "overseas" ? smartCase(country) : "", termDays: td, active: act, openings: {}, createdAt: now, createdBy: meId(), updatedAt: now, updatedBy: meId(), source: "upload" };
       p.write = function () { return S.db.doc("vendors/" + id).set(doc).then(function () { S.vendors[id] = Object.assign({ id: id }, doc); invalidate(); }); };
     });
     return impRun(box, "vendors", plan);
@@ -6591,7 +6616,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var sel = $("vhCo"), cur = sel.value;
     fillSelect(sel, [["", "All your companies"]].concat(roleCos("vouchers").map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
     var bal = $("vhBal"); bal.textContent = "";
-    if (!S.isAdmin) cashCos(S.myUser).forEach(function (cid) { var b = cashBalance(meId(), cid); var s = el("div", { class: "stat" }); s.appendChild(el("div", { class: "k" }, "Cash with you, " + coLabel(cid))); s.appendChild(el("div", { class: "v num" + (b.balance < 0 ? " bad" : "") }, money(b.balance))); if (b.pending) s.appendChild(el("div", { class: "tsub" }, "Free to use " + money(b.free) + "; " + money(b.pending) + " waiting for approval")); bal.appendChild(s); });
+    if (!S.isAdmin) cashCos(S.myUser).forEach(function (cid) { var b = cashBalance(meId(), cid); var s = el("div", { class: "stat" }); s.appendChild(el("div", { class: "k" }, "Cash on hand, " + coLabel(cid))); s.appendChild(el("div", { class: "v num" + (b.free < 0 ? " bad" : "") }, money(b.free))); bal.appendChild(s); });
     bal.hidden = !bal.children.length;
     var cid = sel.value, q = $("vhQ").value.trim().toLowerCase();
     var rows = vchList().filter(function (v) {
@@ -6615,8 +6640,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
             e.setAttribute("aria-label", "Edit voucher " + v.voucherNo); d.setAttribute("aria-label", "Delete voucher " + v.voucherNo);
             e.addEventListener("click", function () { if (v.sentBack) openVchForm(v.id); else adminGate(v.createdAt, "voucher", function () { openVchForm(v.id); }); }); d.addEventListener("click", function () { deleteVch(v, d); });
             if (v.sentBack) { var rs = el("button", { class: "btn sm primary" }, "Send again"); rs.addEventListener("click", function () { resendVch(v, rs); }); w.appendChild(rs); }
-            w.appendChild(e); w.appendChild(d); if (S.downloads) { var pr0 = el("button", { class: "btn sm" }, "Print"); pr0.addEventListener("click", function () { printVoucher(v.id, pr0); }); w.appendChild(pr0); } td.appendChild(w);
-          } else { if (S.downloads) { var pr1 = el("button", { class: "btn sm" }, "Print"); pr1.addEventListener("click", function () { printVoucher(v.id, pr1); }); td.appendChild(pr1); } var vr = vcrOf(v.id); sub(td, vr ? (stageOf(vr) === "generated" ? "In " + vr.no + ". Cancel that report to change it." : S.isAdmin ? "In " + vr.no + ". Reverse it to generated and cancel it to change this voucher." : "In " + vr.no + ". Only the admin can change it now.") : (prepOf(v) === meId() || v.createdBy === meId()) ? "Locked after " + REV_DAYS + " days. Only the admin can change it." : "Only the person who prepared it or the admin can change it"); }
+            w.appendChild(e); w.appendChild(d); if (S.downloads && acctOk(v)) { var pr0 = el("button", { class: "btn sm" }, "Print"); pr0.addEventListener("click", function () { printVoucher(v.id, pr0); }); w.appendChild(pr0); } td.appendChild(w);
+          } else { if (S.downloads && acctOk(v)) { var pr1 = el("button", { class: "btn sm" }, "Print"); pr1.addEventListener("click", function () { printVoucher(v.id, pr1); }); td.appendChild(pr1); } var vr = vcrOf(v.id); sub(td, vr ? (stageOf(vr) === "generated" ? "In " + vr.no + ". Cancel that report to change it." : S.isAdmin ? "In " + vr.no + ". Reverse it to generated and cancel it to change this voucher." : "In " + vr.no + ". Only the admin can change it now.") : (prepOf(v) === meId() || v.createdBy === meId()) ? "Locked after " + REV_DAYS + " days. Only the admin can change it." : "Only the person who prepared it or the admin can change it"); }
         } }
     ], rows, { sortIndex: -1, rowClass: function (v) { return v.sentBack ? "sentback" : ""; }, limit: VH.limit, more: function (m, n) { var mb = el("button", { class: "btn" }, "Show " + Math.min(100, n) + " more of " + n); mb.addEventListener("click", function () { VH.limit += 100; renderVch(); }); m.appendChild(mb); } });
   }
@@ -6650,17 +6675,16 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (S.isAdmin) f.appendChild(fld("Prepared by", prepSelect("vfPrep", "vouchers", D.companyId, D.prepBy), "Who made the voucher. Only people given vouchers for this company are listed."));
     f.appendChild(fld("Approver", approverSelect("vfAppr", D.approverId), APPR_HINT));
     var ty = el("select", { class: "field", id: "vfType" }); fillSelect(ty, [["", "Choose the type"]].concat(VTYPES_V), D.vtype); f.appendChild(fld("Type of voucher", ty, "Cash Voucher, Self Invoice, or Freight & Transport."));
-    var vno = inp("vfNo", D.voucherNo, { readonly: "", class: "field ro mono", placeholder: "Given automatically when you submit", tabindex: "-1" });
-    f.appendChild(fld("Voucher number", vno, D.voucherNo ? "Fixed. It is printed on the voucher." : "Numbered in order for each company and financial year, like " + (D.companyId ? nextVoucherNo(D.companyId, todayYmd()).no : serialNo("INTL-VOU", 1, todayYmd(), fyOf(todayYmd()))) + "."));
-    f.appendChild(fld("Voucher date", dateBox("vfDate", D.voucherDate, { min: addDays(todayYmd(), -14), max: todayYmd(), label: "Choose the voucher date" }), "Within the last 2 weeks."));
     var ps = el("select", { class: "field", id: "vfPayeeSel" }); fillSelect(ps, payeeOpts(D), D.payeeChoice);
-    f.appendChild(fld("Paid to", ps, "Someone paid before, or New person or shop."));
+    f.appendChild(fld("Paid To", ps, "Someone paid before, or a new person or shop."));
     var pb = el("div", { class: "vbox", id: "vfPayeeBox" }); pb.hidden = D.payeeChoice !== "new";
-    pb.appendChild(el("div", { class: "ttl" }, "New person or shop. The name is offered next time."));
+    pb.appendChild(el("div", { class: "ttl" }, "New person or shop. The name and address are offered next time."));
     pb.appendChild(fld("Name", inp("vfPayee", D.payeeNew, { maxlength: "120", autocomplete: "off", "data-fmt": "name" })));
     f.appendChild(pb);
-    var ad = el("textarea", { class: "field", id: "vfAddr", rows: "2", maxlength: "240" }); ad.value = D.payeeAddr; var adf = fld("Address of the person or transporter", ad, "Printed under the name on a Self Invoice or Freight voucher.", true); adf.id = "vfAddrF"; f.appendChild(adf);
-    var so = fld("Supply of", inp("vfSupply", D.supplyOf, { maxlength: "60", "data-fmt": "name" }), "What was supplied, such as Labour, Transport or Goods."); so.id = "vfSupplyF"; f.appendChild(so);
+    var ad = el("textarea", { class: "field", id: "vfAddr", rows: "2", maxlength: "240" }); ad.value = D.payeeAddr; var adf = fld("Address", ad, "Saved with the name and filled in next time. Printed on the voucher.", true); adf.id = "vfAddrF"; f.appendChild(adf);
+    var sup = el("select", { class: "field", id: "vfSupply" }), sopts = [["", "Choose"]].concat(SUPPLY_OF.map(function (x) { return [x, x]; }));
+    if (D.supplyOf && SUPPLY_OF.indexOf(D.supplyOf) < 0) sopts.push([D.supplyOf, D.supplyOf]);
+    fillSelect(sup, sopts, D.supplyOf); var so = fld("Supply Of", sup, "Goods, Services, or Composite (goods and services together)."); so.id = "vfSupplyF"; f.appendChild(so);
     var lw = el("div", { class: "f wide" }); lw.appendChild(el("span", { class: "lb" }, "Details and ledger (up to 2 lines)")); var lb = el("div", { id: "vfLines" }); lw.appendChild(lb); lw.appendChild(el("span", { class: "err", id: "vfLinesE", hidden: "" })); f.appendChild(lw);
     drawVchLines();
     var tt = el("div", { class: "f" }); tt.appendChild(el("span", { class: "lb" }, "Total amount")); tt.appendChild(el("div", { class: "field ro num", id: "vfTotV" })); tt.appendChild(el("span", { class: "hint" }, "The lines added up. Paid in full.")); f.appendChild(tt);
@@ -6689,10 +6713,19 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
     if (D.lines.length < MAX_LED.voucher) { var add = el("button", { class: "link-btn", type: "button" }, "+ Add a line"); add.addEventListener("click", function () { readVchForm(); D.lines.push({ d: "", amt: "", lg: "", touched: false }); drawVchLines(); updVchForm(); var n = $("vfLd" + (D.lines.length - 1)); if (n) n.focus(); }); box.appendChild(add); }
   }
+  var SUPPLY_OF = ["Goods", "Services", "Composite"];
+  /* People and shops paid by voucher, with their address: payees/<key>. Picking a saved one fills the address back in. */
+  function payeeKey(n) { return "p_" + normId(n).slice(0, 60); }
+  function payeeAddrOf(n) {
+    var p = S.payees && S.payees[payeeKey(n)]; if (p && p.address) return p.address;
+    var last = vchList().filter(function (v) { return normName(v.payee) === normName(n) && v.payeeAddr; }).sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); })[0];
+    return last ? last.payeeAddr : "";
+  }
   function readVchForm() {
     var D = VH.D; if (!D || !$("vfCo")) return;
     D.companyId = $("vfCo").value; if ($("vfPrep")) D.prepBy = $("vfPrep").value; if ($("vfAppr")) D.approverId = $("vfAppr").value;
-    D.voucherNo = $("vfNo").value; D.voucherDate = parseDate($("vfDate").value) || ""; D.payeeChoice = $("vfPayeeSel").value; D.payeeNew = $("vfPayee").value;
+    var pc0 = D.payeeChoice; D.payeeChoice = $("vfPayeeSel").value; D.payeeNew = $("vfPayee").value;
+    if (D.payeeChoice !== pc0) { $("vfAddr").value = D.payeeChoice && D.payeeChoice !== "new" ? payeeAddrOf(D.payeeChoice) : ""; }
     D.payee = D.payeeChoice === "new" ? D.payeeNew : D.payeeChoice; D.vtype = $("vfType").value; D.payeeAddr = $("vfAddr").value; D.supplyOf = $("vfSupply").value;
     D.lines.forEach(function (x, i) { if ($("vfLd" + i)) { x.d = $("vfLd" + i).value; x.amt = $("vfLa" + i).value; x.lg = $("vfLg" + i).value; } });
     var r = document.querySelector('input[name="vfSettle"]:checked'); D.settle = r ? r.value : "";
@@ -6706,13 +6739,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (S.isAdmin && D.companyId) { if (!D.prepBy) E("vfPrep", "Choose who made the voucher."); else if (!userHas(S.users[D.prepBy], "vouchers", D.companyId)) E("vfPrep", "That person doesn't hold vouchers for this company any more. Choose again."); }
     if (!D.approverId) E("vfAppr", "Choose who approves this voucher.");
     if (!D.vtype) E("vfType", "Choose the type of voucher.");
-    if (!D.voucherDate) E("vfDate", "Choose the voucher date.");
-    else if (D.voucherDate > todayYmd()) E("vfDate", "The date can't be in the future.");
-    else if (!VH.id && D.voucherDate < addDays(todayYmd(), -14)) E("vfDate", "Only the last 2 weeks can be chosen.");
     if (!D.payeeChoice) E("vfPayeeSel", "Choose who was paid, or choose New person or shop.");
     else if (D.payeeChoice === "new" && !D.payeeNew.trim()) E("vfPayee", "Type the name of the person or shop paid.");
     var other = D.vtype && D.vtype !== "Cash Voucher";
-    if (other && !D.supplyOf.trim()) E("vfSupply", "Say what was supplied.");
+    if (D.payeeChoice && !String(D.payeeAddr || "").trim()) E("vfAddr", "Enter the address of the person or shop.");
+    if (other && !D.supplyOf.trim()) E("vfSupply", "Choose Goods, Services or Composite.");
     var bad = "";
     D.lines.forEach(function (x, i) { if (bad) return; var n = num(x.amt); if (!String(x.d).trim()) bad = "Describe line " + (i + 1) + "."; else if (n == null || n <= 0) bad = "Enter the amount on line " + (i + 1) + ", more than zero."; });
     if (bad) E("vfLines", bad);
@@ -6722,7 +6753,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!D.settle) E("vfSet", "Choose Yes or No.");
     else if (D.settle === "yes" && D.companyId && vchPrep(D) && t != null) {
       var b = cashBalance(vchPrep(D), D.companyId, VH.id);
-      if (t > b.free + 0.004) E("vfSet", "The total " + money(t) + " is more than the " + money(b.free) + " cash free to use" + (b.pending ? " (" + money(b.pending) + " is in vouchers waiting for approval)" : "") + ". Choose No, or ask for a cash advance first.");
+      if (t > b.free + 0.004) E("vfSet", "The total " + money(t) + " is more than the " + money(b.free) + " cash on hand. Choose No, or ask for a cash advance first.");
     }
     return errs;
   }
@@ -6731,7 +6762,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("vfPayeeBox").hidden = D.payeeChoice !== "new";
     var po = $("vfPayeeSel").options[1]; if (po) po.textContent = D.payeeNew.trim() ? "New person or shop: " + D.payeeNew.trim() : "New person or shop";
     var other = D.vtype && D.vtype !== "Cash Voucher";
-    $("vfAddrF").hidden = !other; $("vfSupplyF").hidden = !other;
+    $("vfAddrF").hidden = !D.payeeChoice; $("vfSupplyF").hidden = !other;
     var t = vchTotal(D); $("vfTotV").textContent = t == null ? "" : money(t);
     if ($("vfLg0") && ($("vfLg0").getAttribute("data-co") || "") !== (D.companyId || "")) { drawVchLines(); }
     if (D.companyId) D.lines.forEach(function (x, i) { if (x.touched || !$("vfLg" + i)) return; var sg = suggestVch(D.companyId, D.payee, x.d + " " + D.supplyOf); if (sg && sg !== x.lg) { x.lg = sg; $("vfLg" + i).value = sg; } });
@@ -6741,8 +6772,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (!D.companyId || !who) bx.appendChild(el("div", { class: "ttl" }, S.isAdmin ? "Choose the company and who prepared it to see their balance." : "Choose the company to see your balance."));
       else {
         var b = cashBalance(who, D.companyId, VH.id);
-        bx.appendChild(el("div", { class: "ttl" }, (S.isAdmin ? userLabel(who) + "'s" : "Your") + " cash for " + coLabel(D.companyId) + ": " + money(b.balance) + " · free to use " + money(b.free)));
-        bx.appendChild(el("span", { class: "hint" }, "Opening " + money(b.opening) + " + advances received " + money(b.received) + " − approved vouchers " + money(b.settled) + (b.pending ? ". Another " + money(b.pending) + " is in vouchers waiting for approval, so it is not free to use." : ".") + (openingOf(who, D.companyId) == null ? " No opening balance entered yet." : "")));
+        bx.appendChild(el("div", { class: "ttl" }, "Cash on hand for " + coLabel(D.companyId) + ": " + money(b.free)));
       }
     }
     errClear($("vfBody"));
@@ -6759,20 +6789,23 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var D = VH.D, now = Date.now(), id = VH.id || newId("vc"), old = VH.id && S.vouchers[VH.id], total = vchTotal(D), other = D.vtype !== "Cash Voucher";
     if (old && vcrOf(old.id)) { toast("This voucher was just put in a report. It can't be changed now."); backToVch(); return; }
     var lines = D.lines.map(function (x) { return { d: sentenceFix(x.d.trim()), amt: round2(num(x.amt)), lg: x.lg }; });
+    D.voucherDate = old && old.voucherDate ? old.voucherDate : todayYmd(); /* a voucher is dated the day it is entered */
     var tds = old ? Number(old.tds) || 0 : 0;
     var lmap = {}, lorder = []; lines.forEach(function (x) { if (lmap[x.lg] == null) { lmap[x.lg] = 0; lorder.push(x.lg); } lmap[x.lg] = round2(lmap[x.lg] + x.amt); });
     /* A new voucher, or one moved to another company, takes the next number in that company's series. */
     var vn = !old || old.companyId !== D.companyId || !old.voucherNo ? nextVoucherNo(D.companyId, D.voucherDate) : { no: old.voucherNo, seq: old.voucherSeq || null, fy: old.voucherFy || fyOf(D.voucherDate) };
     var doc = Object.assign({ companyId: D.companyId, voucherNo: vn.no, voucherSeq: vn.seq, voucherFy: vn.fy, voucherDate: D.voucherDate, payee: D.payee.trim(), total: total, tds: tds, lines: lines,
       narration: lines.map(function (x) { return x.d; }).join(" "), vtype: D.vtype, gstApp: old && other ? old.gstApp || "N/A" : "N/A", gstRate: old && other && old.gstApp === "RCM" ? old.gstRate : null, taxable: total,
-      supplyOf: other ? D.supplyOf.trim() : "", payeeAddr: other ? D.payeeAddr.trim() : "", ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
+      supplyOf: other ? D.supplyOf.trim() : "", payeeAddr: D.payeeAddr.trim(), ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
       settle: D.settle === "yes", acct: "pending", acctNote: "", updatedAt: now, updatedBy: meId() }, prepFields(D.prepBy), approverFields(D.approverId));
     doc.payable = round2(doc.total - doc.tds);
     if (!old) Object.assign(doc, { createdAt: now, createdBy: meId() });
     if (old && old.sentBack) Object.assign(doc, { sentBack: null, sentBackLog: (old.sentBackLog || []).concat([old.sentBack]), resentAt: now, approvedAt: null });
     VH.busy = true; $("vfSave").disabled = true;
+    var pk = payeeKey(doc.payee), pOld = S.payees && S.payees[pk];
     retry(function () { return old ? S.db.doc("vouchers/" + id).update(doc) : S.db.doc("vouchers/" + id).set(doc); }).then(function () {
-      S.vouchers[id] = Object.assign({ id: id }, old || {}, doc); toast("Voucher " + doc.voucherNo + (old ? " updated." : " submitted.") + " It now goes to the accountant.");
+      if (doc.payee && (!pOld || pOld.address !== doc.payeeAddr || pOld.name !== doc.payee)) S.db.doc("payees/" + pk).set({ name: doc.payee, address: doc.payeeAddr, updatedAt: now, by: meId() }).catch(function () {});
+      S.vouchers[id] = Object.assign({ id: id }, old || {}, doc); toast("Voucher " + (old ? "updated" : "submitted") + ". It now goes to the accountant.");
       backToVch(); renderNav();
     }, function (e) { toast(explain(e)); }).then(function () { VH.busy = false; $("vfSave").disabled = false; });
   }
@@ -7878,6 +7911,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var m = {}; snap.docs.forEach(function (d) { var v = Object.assign({}, d.data() || {}); v.id = d.id; m[d.id] = v; });
       S.raw.vouchers = m; applyScope(); S.vcLoaded = true; onData();
     }, function (e) { S.vcLoaded = true; onData(); toast("Vouchers stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
+    S.db.collection("payees").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data() || {}; }); S.payees = m; }, function () {});
     S.db.collection("cashadv").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var v = Object.assign({}, d.data() || {}); v.id = d.id; m[d.id] = v; });
       S.cashadv = m; S.caLoaded = true; onData();
@@ -8020,23 +8054,23 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     function draw() {
       box.textContent = "";
       var base = o.base(), lines = o.lines;
-      if (!lines.length) lines.push({ id: "", amt: base != null && base > 0 ? fmtInput(base) : "" });
+      if (!lines.length) lines.push({ id: "", amt: o.sumMode ? "" : base != null && base > 0 ? fmtInput(base) : "" });
       lines.forEach(function (x, i) {
         var row = el("div", { class: "ledrow" });
         var s = ledSelect(o.cid(), x.id, { "aria-label": "Ledger, line " + (i + 1) });
         s.addEventListener("change", function () { x.id = s.value; o.touched && o.touched(); info(); });
         var a = inp(o.id + "_a" + i, x.amt, { inputmode: "decimal", class: "field num", "aria-label": "Amount, line " + (i + 1), placeholder: "Amount" });
         if (o.max === 1) { a.disabled = true; x.amt = base == null ? "" : fmtInput(base); a.value = x.amt; }
-        a.addEventListener("input", function () { x.amt = a.value; o.touched && o.touched(); info(); });
+        a.addEventListener("input", function () { x.amt = a.value; o.touched && o.touched(); if (o.onSum) o.onSum(); info(); });
         a.addEventListener("blur", function () { if (num(a.value) != null) { a.value = fmtInput(a.value); x.amt = a.value; } });
         row.appendChild(s); row.appendChild(a);
-        if (lines.length > 1) { var rm = el("button", { class: "btn sm", type: "button", "aria-label": "Remove line " + (i + 1) }, "Remove"); rm.addEventListener("click", function () { lines.splice(i, 1); o.touched && o.touched(); draw(); }); row.appendChild(rm); }
+        if (lines.length > 1) { var rm = el("button", { class: "btn sm", type: "button", "aria-label": "Remove line " + (i + 1) }, "Remove"); rm.addEventListener("click", function () { lines.splice(i, 1); o.touched && o.touched(); if (o.onSum) o.onSum(); draw(); }); row.appendChild(rm); }
         box.appendChild(row);
       });
       var ft = el("div", { class: "ledfoot" });
       if (lines.length < o.max) {
         var add = el("button", { class: "link-btn", type: "button" }, "+ Add a ledger line");
-        add.addEventListener("click", function () { var left = base == null ? null : round2(base - lines.reduce(function (s0, x) { return s0 + (num(x.amt) || 0); }, 0)); lines.push({ id: "", amt: left != null && left > 0 ? fmtInput(left) : "" }); o.touched && o.touched(); draw(); });
+        add.addEventListener("click", function () { var left = o.sumMode || base == null ? null : round2(base - lines.reduce(function (s0, x) { return s0 + (num(x.amt) || 0); }, 0)); lines.push({ id: "", amt: left != null && left > 0 ? fmtInput(left) : "" }); o.touched && o.touched(); draw(); });
         ft.appendChild(add);
       }
       if (o.suggest) { var sg = el("button", { class: "link-btn", type: "button" }, "Suggest again"); sg.addEventListener("click", function () { var s0 = o.suggest(); if (s0 && s0.length) { o.lines.length = 0; s0.forEach(function (x) { o.lines.push(x); }); draw(); } else toast("No suggestion yet for this one. Choose the ledger."); }); ft.appendChild(sg); }
@@ -8045,6 +8079,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     }
     function info() {
       var base = o.base(), sum = o.lines.reduce(function (s0, x) { return s0 + (num(x.amt) || 0); }, 0), t = $(o.id + "Sum"); if (!t) return;
+      if (o.sumMode) { t.textContent = "Taxable amount " + amt2(sum); t.className = "ledsum"; return; }
       var ok = base != null && Math.abs(round2(sum) - round2(base)) <= 0.5;
       t.textContent = base == null ? "Enter the " + (o.baseLabel || "taxable amount") + " first." : "Allocated " + amt2(sum) + " of " + amt2(base) + (ok ? "" : ", " + amt2(round2(base - sum)) + " left");
       t.className = "ledsum" + (base != null && !ok ? " bad" : "");
@@ -8266,7 +8301,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (x.acct !== "approved") { var ho = el("button", { class: "btn" }, "Postpone"); ho.addEventListener("click", function () { acctHold(ho); }); acts.appendChild(ho); }
       var sb = el("button", { class: "btn danger" }, "Send back"); sb.addEventListener("click", acctSendBack); acts.appendChild(sb);
     }
-    if (!isB && S.downloads) { var pv = el("button", { class: "btn" }, "Print voucher"); pv.addEventListener("click", function () { printVoucher(x.id, pv); }); acts.appendChild(pv); }
+    if (!isB && S.downloads && acctOk(x)) { var pv = el("button", { class: "btn" }, "Print voucher"); pv.addEventListener("click", function () { printVoucher(x.id, pv); }); acts.appendChild(pv); }
   }
   function acctCheck() {
     var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, errs = [];
@@ -8400,88 +8435,94 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       .then(function () { btn.disabled = false; btn.textContent = label; });
   }
   function drawVoucher(doc, v) {
-    var c = S.companies[v.companyId] || {}, type = v.vtype || "Cash Voucher", rcm = v.gstApp === "RCM", taxTable = type === "Freight & Transport" || (type === "Self Invoice" && rcm);
-    var NAVY = [16, 40, 31], SL = [0, 112, 74], INK = [40, 56, 48], FILL = [236, 245, 240];
-    var X = 4, W = 202, Y0 = 4, H = 110;
+    /* A5 landscape. The header keeps its colour per voucher type (white, yellow for Freight, deep blue for Self Invoice);
+       everything else is a clean grid: who was paid, the lines with their ledgers, the net payable, then empty sign-off boxes. */
+    var c = S.companies[v.companyId] || {}, type = v.vtype || "Cash Voucher", rcm = v.gstApp === "RCM", taxTable = type === "Freight & Transport" || (type === "Self Invoice" && rcm), cash = type === "Cash Voucher";
+    var INK = [16, 40, 31], SL = [0, 112, 74], BODY = [40, 56, 48], MUTE = [94, 110, 102], FILL = [236, 245, 240], RULE = [190, 208, 198];
+    var X = 6, W = 198, R = X + W, Y = 6;
     function F(st, size, col) { doc.setFont("Lato", st); doc.setFontSize(size); doc.setTextColor(col[0], col[1], col[2]); }
-    function line(x1, y1, x2, y2, w) { doc.setDrawColor(15, 23, 42); doc.setLineWidth(w || 0.3); doc.line(x1, y1, x2, y2); }
-    function T(s, x, y, o) { doc.text(String(s == null ? "" : s), x, y, o || {}); }
-    function fitT(s, w) { s = String(s || ""); while (s.length > 1 && doc.getTextWidth(s) > w) s = s.slice(0, -2) + "…"; return s; }
-    var cols = type === "Cash Voucher" ? [10.1, 77.6, 28, 28, 28, 30.3] : [10.1, 70.7, 30.3, 30.3, 30.3, 30.3], cx = [X]; cols.forEach(function (w, i) { cx.push(cx[i] + w); });
-    var rh = type === "Cash Voucher" ? [28, 15, 7, 37, 8, 15] : [26, 15, 7, 37, 8, 15], ry = [Y0]; rh.forEach(function (h, i) { ry.push(ry[i] + h); });
-    /* header */
-    var hdrBg = type === "Freight & Transport" ? [254, 240, 138] : type === "Self Invoice" ? [30, 58, 138] : [255, 255, 255];
-    doc.setFillColor(hdrBg[0], hdrBg[1], hdrBg[2]); doc.rect(cx[2], ry[0], X + W - cx[2], rh[0], "F");
+    function T(s0, x, y, o) { doc.text(String(s0 == null ? "" : s0), x, y, o || {}); }
+    function fitT(s0, w) { s0 = String(s0 || ""); if (doc.getTextWidth(s0) <= w) return s0; while (s0.length > 1 && doc.getTextWidth(s0 + "…") > w) s0 = s0.slice(0, -1); return s0 + "…"; }
+    function hl(x1, x2, y, w, col) { col = col || RULE; doc.setDrawColor(col[0], col[1], col[2]); doc.setLineWidth(w || 0.25); doc.line(x1, y, x2, y); }
+    function vl(x, y1, y2, w, col) { col = col || RULE; doc.setDrawColor(col[0], col[1], col[2]); doc.setLineWidth(w || 0.25); doc.line(x, y1, x, y2); }
+    /* letter spacing only on left-aligned labels: the PDF maker doesn't count it when aligning right or centre */
+    function lab(s0, x, y, o) { F("bold", 5.4, SL); T(String(s0).toUpperCase(), x, y, o && o.align ? o : { charSpace: 0.45 }); }
+    /* ---- header ---- */
+    var hH = 27, split = X + 112;
+    var hdrBg = type === "Freight & Transport" ? [254, 240, 138] : type === "Self Invoice" ? [30, 58, 138] : [255, 255, 255], dark = type === "Self Invoice";
+    doc.setFillColor(hdrBg[0], hdrBg[1], hdrBg[2]); doc.rect(split, Y, R - split, hH, "F");
     var lx = X + 4;
-    if (c.logo) { try { var pp = doc.getImageProperties(c.logo), lh = type === "Cash Voucher" ? 19 : 17, lw = Math.min(pp.width * lh / pp.height, 22); doc.addImage(c.logo, pp.fileType || "PNG", lx, ry[0] + (rh[0] - lh) / 2, lw, lh); lx += lw + 4; } catch (e) {} }
-    var tw = cx[2] - lx - 3;
-    F("bold", 10, NAVY); T(fitT(c.name || "", tw), lx, ry[0] + 9);
-    F("normal", 7, SL); T("GSTIN: ", lx, ry[0] + 14); var gx = lx + doc.getTextWidth("GSTIN: "); F("bold", 7.5, NAVY); T(c.gstin || "-", gx, ry[0] + 14); gx += doc.getTextWidth(c.gstin || "-") + 4; F("normal", 7, SL); T("State: ", gx, ry[0] + 14); F("bold", 7.5, NAVY); T(c.stateCode || "-", gx + doc.getTextWidth("State: "), ry[0] + 14);
-    F("normal", 7.2, INK); var al = doc.splitTextToSize(String(c.address || "").replace(/\n/g, ", "), tw).slice(0, 2); al.forEach(function (s0, i) { T(s0, lx, ry[0] + 18.5 + i * 3.4); });
-    var dark = type === "Self Invoice", mid = (cx[2] + X + W) / 2;
-    F("bold", 7.5, dark ? [203, 213, 225] : [71, 85, 105]); T("PAYMENT VOUCHER", mid, ry[0] + 8, { align: "center", charSpace: 0.6 });
-    F("bold", 16, dark ? [255, 255, 255] : NAVY); T(v.voucherNo || "", mid, ry[0] + 16, { align: "center" });
-    F("bold", 8, dark ? [203, 213, 225] : [71, 85, 105]); T(fmtDate(v.voucherDate).toUpperCase(), mid, ry[0] + 22, { align: "center", charSpace: 0.4 });
-    /* row 2: bill to, vendor, signature, prepared by, supply of, ledger */
-    F("bold", 6.5, [30, 41, 59]); T("BILL", cx[0] + cols[0] / 2, ry[1] + 6.5, { align: "center" }); T("TO", cx[0] + cols[0] / 2, ry[1] + 9.5, { align: "center" });
-    F("bold", type === "Cash Voucher" ? 13 : 10.5, NAVY); T(fitT(v.payee || "", cols[1] - 6), cx[1] + 3, ry[1] + (type === "Cash Voucher" || !v.payeeAddr ? 9 : 6));
-    if (type !== "Cash Voucher" && v.payeeAddr) { F("normal", 6.5, INK); doc.splitTextToSize(String(v.payeeAddr).replace(/\n/g, ", "), cols[1] - 6).slice(0, 2).forEach(function (s0, i) { T(s0, cx[1] + 3, ry[1] + 9.5 + i * 2.8); }); }
-    F("bold", 5.2, SL); T("VENDOR SIGNATURE", cx[2] + cols[2] / 2, ry[2] - 1.5, { align: "center" }); T("PREPARED BY", cx[3] + cols[3] / 2, ry[2] - 1.5, { align: "center" });
-    F("normal", 6.5, INK); T(fitT(pnm(v.preparedByName), cols[3] - 3), cx[3] + cols[3] / 2, ry[1] + 7, { align: "center" });
-    var lgn = ledText(v.ledgers) || "-";
-    if (type === "Cash Voucher") { F("bold", 5.2, SL); T("LEDGER NAME", (cx[4] + cx[6]) / 2, ry[1] + 4.5, { align: "center" }); F("bold", 9.5, NAVY); doc.splitTextToSize(lgn, cols[4] + cols[5] - 4).slice(0, 2).forEach(function (s0, i) { T(s0, (cx[4] + cx[6]) / 2, ry[1] + 9 + i * 3.6, { align: "center" }); }); }
-    else {
-      F("bold", 8, NAVY); T("Supply Of", cx[4] + cols[4] / 2, ry[1] + 5.5, { align: "center" }); doc.splitTextToSize(v.supplyOf || "-", cols[4] - 3).slice(0, 2).forEach(function (s0, i) { T(s0, cx[4] + cols[4] / 2, ry[1] + 9.5 + i * 3.2, { align: "center" }); });
-      F("bold", 5.2, SL); T("LEDGER NAME", cx[5] + cols[5] / 2, ry[1] + 4.5, { align: "center" }); F("bold", 7.8, NAVY); doc.splitTextToSize(lgn, cols[5] - 3).slice(0, 3).forEach(function (s0, i) { T(s0, cx[5] + cols[5] / 2, ry[1] + 8.5 + i * 3, { align: "center" }); });
-    }
-    /* row 3: headings */
-    doc.setFillColor(FILL[0], FILL[1], FILL[2]); doc.rect(X, ry[2], W, rh[2], "F");
-    F("bold", 6.8, [30, 41, 59]); T("S.NO", cx[0] + cols[0] / 2, ry[2] + 4.7, { align: "center" }); T("DESCRIPTION", (cx[1] + cx[5]) / 2, ry[2] + 4.7, { align: "center", charSpace: 0.8 }); T("AMOUNT (₹)", cx[5] + cols[5] / 2, ry[2] + 4.7, { align: "center" });
-    /* row 4: lines, then TDS */
-    var lines = (v.lines && v.lines.length ? v.lines : [{ d: v.narration || "", amt: v.total }]).slice(0, 5), tds = Number(v.tds) || 0, area = 37, tdsH = tds > 0 ? 6 : 0, rH = (area - tdsH) / lines.length, yy = ry[3];
+    if (c.logo) { try { var pp = doc.getImageProperties(c.logo), lh = 17, lw = Math.min(pp.width * lh / pp.height, 22); doc.addImage(c.logo, pp.fileType || "PNG", lx, Y + (hH - lh) / 2, lw, lh); lx += lw + 4; } catch (e) {} }
+    var tw = split - lx - 4;
+    F("bold", 10.5, INK); T(fitT(c.name || "", tw), lx, Y + 8.5);
+    F("normal", 6.6, MUTE); T("GSTIN", lx, Y + 13.4); var gx = lx + doc.getTextWidth("GSTIN") + 1.5; F("bold", 7, INK); T(c.gstin || "-", gx, Y + 13.4);
+    gx += doc.getTextWidth(c.gstin || "-") + 5; F("normal", 6.6, MUTE); T("State", gx, Y + 13.4); F("bold", 7, INK); T(c.stateCode || "-", gx + doc.getTextWidth("State") + 1.5, Y + 13.4);
+    F("normal", 6.8, BODY); doc.splitTextToSize(String(c.address || "").replace(/\n/g, ", "), tw).slice(0, 2).forEach(function (s0, i) { T(s0, lx, Y + 18.4 + i * 3.3); });
+    var mid = (split + R) / 2, sub = dark ? [203, 213, 225] : [71, 85, 105];
+    F("bold", 7, sub); T("PAYMENT VOUCHER", mid, Y + 7.5, { align: "center", charSpace: 1.2 });
+    F("bold", 15, dark ? [255, 255, 255] : INK); T(fitT(v.voucherNo || "", R - split - 8), mid, Y + 15.5, { align: "center" });
+    F("bold", 7, sub); T((fmtDate(v.voucherDate) + "  ·  " + type).toUpperCase(), mid, Y + 22, { align: "center", charSpace: 0.5 });
+    var y = Y + hH;
+    /* ---- paid to, supply of, payment ---- */
+    var iH = 15, c1 = cash ? 128 : 98, c2 = cash ? 0 : 34, c3 = W - c1 - c2;
+    lab("Paid to", X + 3, y + 4.2);
+    F("bold", 10.5, INK); T(fitT(v.payee || "", c1 - 6), X + 3, y + 9);
+    if (v.payeeAddr) { F("normal", 6.4, BODY); T(fitT(String(v.payeeAddr).replace(/\n/g, ", "), c1 - 6), X + 3, y + 12.6); }
+    if (!cash) { vl(X + c1, y, y + iH); lab("Supply of", X + c1 + 3, y + 4.2); F("bold", 9, INK); T(fitT(v.supplyOf || "-", c2 - 6), X + c1 + 3, y + 9.5); }
+    vl(X + c1 + c2, y, y + iH); lab("Payment", X + c1 + c2 + 3, y + 4.2); F("bold", 9, INK); T(v.settle ? "From cash advance" : "By the financier", X + c1 + c2 + 3, y + 9.5);
+    F("normal", 6.2, MUTE); T(v.settle ? "Settled against the holder's advance" : "Cash or cheque", X + c1 + c2 + 3, y + 12.6);
+    hl(X, R, y, 0.35, INK); y += iH; hl(X, R, y, 0.35, INK);
+    /* ---- lines ---- */
+    var cN = 9, cA = 32, cL = 58, cD = W - cN - cL - cA, xD = X + cN, xL = xD + cD, xA = xL + cL;
+    doc.setFillColor(FILL[0], FILL[1], FILL[2]); doc.rect(X, y, W, 6.5, "F");
+    lab("#", X + cN / 2, y + 4.3, { align: "center" }); lab("Description", xD + 3, y + 4.3); lab("Ledger", xL + 3, y + 4.3); lab("Amount (₹)", R - 3, y + 4.3, { align: "right" });
+    y += 6.5; hl(X, R, y);
+    var lines = (v.lines && v.lines.length ? v.lines : [{ d: v.narration || "", amt: v.total }]).slice(0, 5), tds = Number(v.tds) || 0;
+    var area = taxTable ? 22 : 30, rH = Math.min(11, area / Math.max(lines.length, 2)), y0 = y;
     lines.forEach(function (ln, i) {
-      var last = i === lines.length - 1 && !tds;
-      F("normal", 8.5, INK); T(String(i + 1), cx[0] + cols[0] / 2, yy + rH / 2 + 1.2, { align: "center" });
-      var dl = doc.splitTextToSize(String(ln.d || ""), cx[5] - cx[1] - 6).slice(0, Math.max(1, Math.floor(rH / 3.6))); F("normal", 9.5, INK); dl.forEach(function (s0, k) { T(s0, (cx[1] + cx[5]) / 2, yy + rH / 2 + 1.2 + (k - (dl.length - 1) / 2) * 3.8, { align: "center" }); });
-      F("bold", 8.5, NAVY); T("₹ " + amt2(ln.amt), cx[5] + cols[5] / 2, yy + rH / 2 + 1.2, { align: "center" });
-      if (!last) line(X, yy + rH, X + W, yy + rH, 0.18);
-      yy += rH;
+      var ly = y + i * rH, base = ly + rH / 2 + 1.2, lgName = (ln.lg && ledName(ln.lg)) || (i === 0 ? ledText(v.ledgers) : "") || "-";
+      F("normal", 8, MUTE); T(String(i + 1), X + cN / 2, base, { align: "center" });
+      var dl = doc.splitTextToSize(String(ln.d || ""), cD - 6).slice(0, rH >= 9 ? 2 : 1); F("normal", 8.6, BODY);
+      dl.forEach(function (s0, k) { T(s0, xD + 3, base + (k - (dl.length - 1) / 2) * 3.6); });
+      F("bold", 7.4, INK); doc.splitTextToSize(lgName, cL - 6).slice(0, 2).forEach(function (s0, k, arr) { T(s0, xL + 3, base + (k - (arr.length - 1) / 2) * 3.2); });
+      F("bold", 8.6, INK); T(amt2(ln.amt), R - 3, base, { align: "right" });
+      if (i < lines.length - 1) hl(X, R, ly + rH, 0.15);
     });
-    if (tds) { F("normal", 6.5, INK); T(String(lines.length + 1), cx[0] + cols[0] / 2, yy + 4, { align: "center" }); F("bold", 5.6, SL); T("LESS: TDS" + (v.tdsSection ? " (" + v.tdsSection + ")" : ""), cx[5] - 3, yy + 4, { align: "right" }); F("italic", 7.5, NAVY); T("₹ " + amt2(tds), cx[5] + cols[5] / 2, yy + 4, { align: "center" }); }
-    /* row 5: words and net payable */
-    F("normal", 5.2, SL); T("AMOUNT IN WORDS", X + 3, ry[4] + 3); var net = round2((Number(v.total) || 0) - tds);
-    F("italic", 7.4, NAVY); T(fitT(inWords(net), cx[5] - X - 34), X + 3, ry[4] + 6.6);
-    F("bold", 6.6, [71, 85, 105]); T("NET PAYABLE:", cx[5] - 3, ry[4] + 5.2, { align: "right" });
-    F("bold", 9.5, NAVY); T("₹ " + amt2(net), cx[5] + cols[5] / 2, ry[4] + 5.3, { align: "center" });
-    /* row 6: comments, mode, date, seal, approved by */
-    F("bold", 5.2, SL); T("COMMENTS & PAYABLE ADJUSTMENTS", X + 3, ry[5] + 3.2); T("PAYMENT REFERENCE (IF ANY):", X + 3, ry[6] - 1.8);
-    T("MODE OF PAYMENT", cx[2] + cols[2] / 2, ry[5] + 4.5, { align: "center" }); F("bold", 8.2, NAVY); T("Cash / Cheque", cx[2] + cols[2] / 2, ry[5] + 9, { align: "center" });
-    F("bold", 5.2, SL); T("PAYMENT DATE", cx[3] + cols[3] / 2, ry[6] - 1.8, { align: "center" }); T("CASHIER SEAL", cx[4] + cols[4] / 2, ry[6] - 1.8, { align: "center" }); T("APPROVED BY", cx[5] + cols[5] / 2, ry[6] - 1.8, { align: "center" }); if (approverName(v)) { F("normal", 6.5, INK); T(fitT(approverName(v), cols[5] - 3), cx[5] + cols[5] / 2, ry[5] + 4.5, { align: "center" }); }
-    /* grid */
-    doc.setDrawColor(15, 23, 42); doc.setLineWidth(1); doc.rect(X, Y0, W, H);
-    [1, 2, 3, 4, 5].forEach(function (i) { line(X, ry[i], X + W, ry[i], 0.35); });
-    line(cx[2], ry[0], cx[2], ry[1], 0.5);
-    if (type === "Cash Voucher") { [2, 3, 4].forEach(function (i) { line(cx[i], ry[1], cx[i], ry[2], 0.5); }); }
-    else [3, 4, 5].forEach(function (i) { line(cx[i], ry[1], cx[i], ry[2], 0.5); });
-    line(cx[1], ry[2], cx[1], ry[4], 0.5); line(cx[5], ry[2], cx[5], ry[5], 0.5);
-    line(cx[2], ry[5], cx[2], ry[6], 0.5); line(cx[3], ry[5], cx[3], ry[6], 0.5); line(cx[4], ry[5], cx[4], ry[6], 0.5); line(cx[5], ry[5], cx[5], ry[6], 0.5);
-    var y = Y0 + H + 4;
+    y = y0 + area; vl(xD, y0 - 6.5, y); vl(xL, y0 - 6.5, y); vl(xA, y0 - 6.5, y + (tds ? 6 : 0) + 9);
+    if (tds) { hl(X, R, y); F("italic", 7.4, MUTE); T("Less: TDS" + (v.tdsSection ? " under section " + v.tdsSection : ""), xA - 3, y + 4.1, { align: "right" }); F("italic", 8.2, INK); T("(" + amt2(tds) + ")", R - 3, y + 4.1, { align: "right" }); y += 6; }
+    var net = round2((Number(v.total) || 0) - tds);
+    hl(X, R, y, 0.35, INK); doc.setFillColor(FILL[0], FILL[1], FILL[2]); doc.rect(xA, y, cA, 9, "F");
+    lab("Amount in words", X + 3, y + 3.6); F("italic", 7.4, INK); T(fitT(inWords(net), xA - X - 34), X + 3, y + 7.4);
+    F("bold", 7, SL); T("NET PAYABLE", xA - 3, y + 5.8, { align: "right" }); F("bold", 10.5, INK); T("₹ " + amt2(net), R - 3, y + 6.2, { align: "right" });
+    y += 9; hl(X, R, y, 0.35, INK);
+    /* ---- tax (Freight & Transport, or a Self Invoice under RCM) ---- */
     if (taxTable) {
-      var taxable = Number(v.taxable != null ? v.taxable : v.total) || 0, rate = Number(v.gstRate) || 0, tax = round2(taxable * rate / 100), half = round2(tax / 2), th = 16;
-      var tc = rcm ? [["TAX PAYABLE ON REVERSE CHARGE BASIS", 64, "YES"], ["TAXABLE VALUE", 48, "₹ " + amt2(taxable)], ["TOTAL TAX (" + rate + "%)", 58, "₹ " + amt2(tax)], ["ACCOUNTED BY", 32, ""]]
-        : [["TAXABLE VALUE", 42, "₹ " + amt2(taxable)], ["CGST (" + rate / 2 + "%)", 38, "₹ " + amt2(half)], ["SGST (" + rate / 2 + "%)", 38, "₹ " + amt2(tax - half)], ["TOTAL TAX (" + rate + "%)", 52, "₹ " + amt2(tax)], ["ACCOUNTED BY", 32, ""]];
-      doc.setFillColor(FILL[0], FILL[1], FILL[2]); doc.rect(X, y, W, 8, "F");
-      var xx = X; tc.forEach(function (k, i) { F("bold", 5.6, [30, 41, 59]); T(k[0], xx + k[1] / 2, y + 5, { align: "center" }); F("bold", 8, NAVY); T(k[2], xx + k[1] / 2, y + 13, { align: "center" }); xx += k[1]; if (i < tc.length - 1) line(xx, y, xx, y + th, 0.5); });
-      doc.setLineWidth(0.7); doc.rect(X, y, W, th); line(X, y + 8, X + W, y + 8, 0.35);
-      y += th + 4;
+      var taxable = Number(v.taxable != null ? v.taxable : v.total) || 0, rate = Number(v.gstRate) || 0, tax = round2(taxable * rate / 100), half = round2(tax / 2);
+      var tc = rcm ? [["Tax payable on reverse charge", "Yes"], ["Taxable value", "₹ " + amt2(taxable)], ["Total tax (" + rate + "%)", "₹ " + amt2(tax)]]
+        : [["Taxable value", "₹ " + amt2(taxable)], ["CGST (" + rate / 2 + "%)", "₹ " + amt2(half)], ["SGST (" + rate / 2 + "%)", "₹ " + amt2(tax - half)], ["Total tax (" + rate + "%)", "₹ " + amt2(tax)]];
+      var tw0 = W / tc.length;
+      tc.forEach(function (k, i) { var tx = X + tw0 * i; if (i) vl(tx, y, y + 10); lab(k[0], tx + 3, y + 3.8); F("bold", 8.6, INK); T(k[1], tx + 3, y + 8.3); });
+      y += 10; hl(X, R, y, 0.35, INK);
     }
+    /* ---- payment details ---- */
+    var pH = 9, pw = [50, 44, 50, W - 144];
+    [["Mode of payment", "Cash  /  Cheque"], ["Payment date", ""], ["Reference", ""], ["Comments", ""]].forEach(function (k, i) {
+      var px = X + pw.slice(0, i).reduce(function (a, b) { return a + b; }, 0); if (i) vl(px, y, y + pH); lab(k[0], px + 3, y + 3.6); if (k[1]) { F("bold", 7.6, INK); T(k[1], px + 3, y + 7.6); }
+    });
+    y += pH; hl(X, R, y, 0.35, INK);
+    /* ---- sign-off: left empty for signatures ---- */
+    var sH = Math.max(14, Math.min(20, 142 - y)), sw = W / 5;
+    ["Receiver's signature", "Prepared by", "Accounted by", "Approved by", "Cashier seal"].forEach(function (k, i) { var sx = X + sw * i; if (i) vl(sx, y, y + sH); lab(k, sx + sw / 2, y + sH - 2.2, { align: "center" }); });
+    y += sH;
+    /* frame */
+    doc.setDrawColor(INK[0], INK[1], INK[2]); doc.setLineWidth(0.6); doc.rect(X, Y, W, y - Y); vl(split, Y, Y + hH, 0.35, INK);
+    /* footer */
     var taxInv = type === "Freight & Transport" || (type === "Self Invoice" && rcm);
-    var left = String(c.name || "").toUpperCase(), right = taxInv ? "TAX INVOICE" : "NOT A TAX INVOICE", fy = Math.min(y + 2, 146);
-    F("bold", 7, NAVY); var lw0 = doc.getTextWidth(left), rw0 = doc.getTextWidth(right), gap = 10, sx = X + W / 2 - (lw0 + gap + rw0) / 2;
-    T(left, sx, fy); T(right, sx + lw0 + gap, fy); var dx = sx + lw0 + gap / 2, dy = fy - 1.1;
-    doc.setFillColor(15, 23, 42); doc.triangle(dx - 1.3, dy, dx, dy - 1.3, dx + 1.3, dy, "F"); doc.triangle(dx - 1.3, dy, dx, dy + 1.3, dx + 1.3, dy, "F");
+    var left = String(c.name || "").toUpperCase(), right = taxInv ? "TAX INVOICE" : "NOT A TAX INVOICE", fy = Math.min(y + 4.5, 145.5);
+    F("bold", 6.6, INK); var lw0 = doc.getTextWidth(left), rw0 = doc.getTextWidth(right), gap = 9, sx0 = X + W / 2 - (lw0 + gap + rw0) / 2;
+    T(left, sx0, fy); T(right, sx0 + lw0 + gap, fy); var dx = sx0 + lw0 + gap / 2, dy = fy - 1.05;
+    doc.setFillColor(SL[0], SL[1], SL[2]); doc.triangle(dx - 1.2, dy, dx, dy - 1.2, dx + 1.2, dy, "F"); doc.triangle(dx - 1.2, dy, dx, dy + 1.2, dx + 1.2, dy, "F");
   }
-
   function onData() {
     if (S.failed) return;
     sweepIncomplete();

@@ -1,6 +1,7 @@
 // Bills & Vouchers: asks Claude on behalf of a signed-in member of the app.
 // Stands in for the claude.ai `sample` capability the app was built on.
-// Needs the ANTHROPIC_API_KEY secret (Edge Functions > Secrets).
+// Needs the ANTHROPIC_API_KEY secret (Edge Functions > Secrets). If the key is not tied to a
+// workspace, also set ANTHROPIC_WORKSPACE_ID to the workspace the requests should run in.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const MODELS: Record<string, string> = {
@@ -39,6 +40,7 @@ Deno.serve(async (req) => {
 
   const key = Deno.env.get("ANTHROPIC_API_KEY");
   if (!key) return fail(503, "sampling_disabled", "Reading with Claude is not set up yet.");
+  const workspace = Deno.env.get("ANTHROPIC_WORKSPACE_ID")?.trim();
 
   let body: { messages?: Turn[]; images?: Img[]; modelTier?: string; maxTokens?: number };
   try { body = await req.json(); } catch { return fail(400, "invalid_argument", "Bad JSON"); }
@@ -64,7 +66,10 @@ Deno.serve(async (req) => {
 
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    headers: {
+      "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json",
+      ...(workspace ? { "anthropic-workspace-id": workspace } : {}),
+    },
     body: JSON.stringify({ model: MODELS[tier], max_tokens: maxTokens, messages }),
   });
   if (!r.ok) {

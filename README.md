@@ -32,7 +32,8 @@ provides the same calls, so the app code did not need rewriting:
 
 ### Setup checklist
 
-1. **Anthropic API key**: Supabase dashboard → Edge Functions → Secrets → add `ANTHROPIC_API_KEY`.
+1. **Anthropic API key**: Supabase dashboard → Edge Functions → Secrets → add `ANTHROPIC_API_KEY`
+   (a key created inside a workspace; for a key with no workspace, also add `ANTHROPIC_WORKSPACE_ID`).
    Until then, bills are entered by hand and the app says reading with Claude isn't set up.
 2. **Host the `web/` folder** on any static host, no build step. For example, connect this repository to
    Cloudflare Pages, Netlify or Vercel and set the output/publish directory to `web`.

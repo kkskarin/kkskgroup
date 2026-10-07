@@ -671,7 +671,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   </section>
 
   <section id="secUsers" hidden>
-    <div class="head"><div class="grow"><h2>Users</h2><p class="sub">A person opens the app, signs in with their work email and sends a request, and you approve or decline it. You can also add a person without a login, so their bills can be entered before they start; link them when their request comes in.</p></div><div class="acts2"><button class="btn primary" id="uAddOff" type="button">Add Person Without Login</button></div></div>
+    <div class="head"><div class="grow"><h2>Users</h2><p class="sub">A person opens the app, creates an account with any email address and sends a request, and you approve or decline it. You can also add a person without a login, so their bills can be entered before they start; link them when their request comes in.</p></div><div class="acts2"><button class="btn primary" id="uAddOff" type="button">Add Person Without Login</button></div></div>
     <div class="flags" id="roleGaps" style="margin-bottom:14px"></div>
     <h3 style="margin-top:0">Requests</h3>
     <div class="card" id="reqList"></div>
@@ -1443,7 +1443,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
     var row = el("div", { class: "row" }), who = el("div", { class: "who" });
     who.appendChild(el("b", null, rec.name || "No name given"));
     if (extra) who.appendChild(extra);
-    if (profile && profile.name) who.appendChild(el("span", { class: "ln" }, "Signed in as " + profile.name));
+    if (profile && (profile.name || profile.email)) who.appendChild(el("span", { class: "ln" }, "Signed in as " + [profile.name, profile.email].filter(Boolean).join(" · ")));
     who.appendChild(el("span", { class: "ln" }, "Location: " + (locName(rec.locationId) || "Not set") + " · Department: " + (deptName(rec.deptId) || "Not set") + " · Role: " + (jobsText(jobsOf(rec)) || "Not set")));
     who.appendChild(companyTags(rec.companyIds));
     row.appendChild(who);

@@ -20,10 +20,14 @@ provides the same calls, so the app code did not need rewriting:
 
 - **Data**: every record is a JSON document in `public.app_docs` (`path` such as `bills/b_123`).
   Pages see each other's changes live through Supabase Realtime, with a 30-second refresh as a fallback.
-- **Sign-in**: email sign-in (link or 6-digit code) through Supabase Auth. First sign-in asks for a name.
-- **Who can get in**: anyone with an `@kksk.in` address (`app_allowed_domains`), plus addresses listed in
-  `app_allowed_emails`. Inside the app, the existing request and approval flow still decides what each person sees.
-- **Super admin**: addresses in `app_super_admins` (starts with `arin@kksk.in`). This is the "owner" of the old artifact.
+- **Sign-in**: email and password (Create account / Sign in / Forgot password), with an emailed
+  one-time code as a fallback. First sign-in asks for a name.
+- **Who can get in**: anyone can create an account with any email. Until an admin approves their
+  request in the app, the database only shows them what the "Ask for Access" screen needs
+  (company, location and department lists, and their own request). Approved = an active
+  `users/<id>` record, an app admin, or a super admin.
+- **Super admin**: addresses in `app_super_admins` (starts with `arin@kksk.in`), once that email is
+  confirmed. Add a super admin only after the person has created their account.
 - **Access rules** (same as the artifact had): only a super admin writes `admins/*`; nobody writes their own
   `users/<id>` record unless they are an admin; every other record is writable by any member.
 - **Claude**: bill and proforma reading and the "tidy into clean English" boxes call the `ai-sample`
@@ -41,14 +45,13 @@ provides the same calls, so the app code did not need rewriting:
    address and add it under *Redirect URLs*, so emailed sign-in links come back to the app.
 4. **Sign-in email with a code (optional)**: Authentication → Emails → *Magic Link* template: add `{{ .Token }}`
    so people can type the 6-digit code instead of clicking the link.
-5. **Email sending**: Supabase's built-in email is rate-limited and meant for testing. For a team, set up
-   custom SMTP under Authentication → Emails → SMTP Settings.
+5. **Email sending (needed for open sign-up)**: Supabase's built-in email sends only a few emails an hour
+   and only to the project's team members, so new accounts can't receive their confirmation or
+   password-reset emails. Set up custom SMTP under Authentication → Emails → SMTP Settings.
 
 ### Managing access (SQL editor)
 
 ```sql
--- let someone outside @kksk.in in
-insert into public.app_allowed_emails (email) values ('person@example.com');
--- add another super admin
+-- add another super admin (after they have created an account)
 insert into public.app_super_admins (email) values ('someone@kksk.in');
 ```

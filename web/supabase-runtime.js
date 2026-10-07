@@ -20,8 +20,8 @@
   window.bvSupabase = sb;
 
   /* ================= Sign-in gate ================= */
-  var ME = null; // { authId, uid, email, name, member, super }
-  // Settles once a member is signed in; every capability waits on it. Never rejects.
+  var ME = null; // { authId, uid, email, name, member (approved), super }
+  // Settles once someone is signed in; every capability waits on it. Never rejects.
   var ready = new Promise(function (resolve) { gate(resolve); });
 
   function h(tag, attrs, kids) {
@@ -45,29 +45,149 @@
   function closeOverlay() { var o = document.getElementById("bvAuth"); if (o) o.hidden = true; }
   function onBody(fn) { if (document.body) fn(); else document.addEventListener("DOMContentLoaded", fn); }
 
+  var BASE = location.origin + location.pathname;
+  // Arriving from a "set a new password" email link (?reset=1).
+  var RESET = /[?&]reset=1\b/.test(location.search);
+
   function gate(resolve) {
     sb.auth.getSession().then(function (r) {
       var s = r.data && r.data.session;
+      if (s && RESET) { onBody(function () { newPasswordForm(resolve); }); return; }
       if (s) return admit(s, resolve);
-      onBody(function () { signInForm(resolve); });
+      onBody(function () { signInForm(resolve, "signin"); });
     });
   }
 
-  function signInForm(resolve, note) {
-    var card = overlay();
-    card.appendChild(h("p", { class: "bvSub", text: "Sign in with your work email. We'll email you a sign-in link and a 6-digit code." }));
+  function field(type, ac, ph, label) {
+    return h("input", { type: type, required: "", autocomplete: ac, placeholder: ph, class: "bvField", "aria-label": label });
+  }
+  function link(text, fn) { var b = h("button", { type: "button", class: "bvLink", text: text }); b.addEventListener("click", fn); return b; }
+
+  /* Email and password: "Sign in" for existing accounts, "Create account" for new ones. */
+  function signInForm(resolve, mode, note, email0) {
+    var card = overlay(), up = mode === "signup";
+    var tabs = h("div", { class: "bvTabs", role: "tablist" });
+    [["signin", "Sign in"], ["signup", "Create account"]].forEach(function (t) {
+      var b = h("button", { type: "button", role: "tab", "aria-selected": String(mode === t[0]), class: "bvTab", text: t[1] });
+      b.addEventListener("click", function () { if (mode !== t[0]) signInForm(resolve, t[0], "", em.value); });
+      tabs.appendChild(b);
+    });
+    card.appendChild(tabs);
+    card.appendChild(h("p", { class: "bvSub", text: up
+      ? "Any email address works. After you create your account, you ask for access and an admin approves it."
+      : "Sign in with your email and password." }));
     if (note) card.appendChild(h("p", { class: "bvErr", text: note }));
     var f = h("form", { class: "bvForm" });
-    var em = h("input", { type: "email", required: "", autocomplete: "email", placeholder: "name@kksk.in", class: "bvField", "aria-label": "Work email" });
-    var go = h("button", { type: "submit", class: "bvBtn", text: "Email me a sign-in code" });
+    var em = field("email", "email", "you@example.com", "Email");
+    if (email0) em.value = email0;
+    var pw = field("password", up ? "new-password" : "current-password", up ? "Choose a password (8 or more characters)" : "Password", "Password");
+    var pw2 = up ? field("password", "new-password", "Type the password again", "Password again") : null;
+    var go = h("button", { type: "submit", class: "bvBtn", text: up ? "Create account" : "Sign in" });
+    var st = h("p", { class: "bvSub", role: "status" });
+    f.appendChild(em); f.appendChild(pw); if (pw2) f.appendChild(pw2); f.appendChild(go);
+    card.appendChild(f); card.appendChild(st);
+    if (!up) card.appendChild(link("Forgot password?", function () { forgotForm(resolve, em.value); }));
+    card.appendChild(link("Email me a one-time sign-in code instead", function () { otpForm(resolve, em.value); }));
+    (email0 ? pw : em).focus();
+    f.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var email = em.value.trim().toLowerCase(), pass = pw.value;
+      if (!email || !pass) return;
+      if (up && pass.length < 8) { st.textContent = "Use at least 8 characters for the password."; return; }
+      if (up && pass !== pw2.value) { st.textContent = "The two passwords don't match."; return; }
+      go.disabled = true; st.textContent = up ? "Creating your account…" : "Signing in…";
+      var call = up ? sb.auth.signUp({ email: email, password: pass, options: { emailRedirectTo: BASE } })
+        : sb.auth.signInWithPassword({ email: email, password: pass });
+      call.then(function (r) {
+        go.disabled = false;
+        var m = r.error ? String(r.error.message || "") : "";
+        if (r.error) {
+          if (/not confirmed/i.test(m)) { confirmNote(resolve, email); return; }
+          if (/invalid login/i.test(m)) { st.textContent = "Wrong email or password. If you haven't set a password yet, use Forgot password."; return; }
+          if (/rate limit/i.test(m)) { st.textContent = "The app has sent too many emails in the last hour. Try again later, or ask the admin."; return; }
+          if (/already registered/i.test(m)) { st.textContent = "This email already has an account. Sign in instead, or use Forgot password."; return; }
+          st.textContent = m; return;
+        }
+        if (r.data && r.data.session) { admit(r.data.session, resolve); return; }
+        confirmNote(resolve, email);
+      });
+    });
+  }
+
+  /* New accounts confirm their email once; after that it's just the password. */
+  function confirmNote(resolve, email) {
+    var card = overlay();
+    card.appendChild(h("p", { class: "bvSub", text: "We sent an email to " + email + ". Open the link in it once to confirm your address. After that you sign in with your password." }));
+    var st = h("p", { class: "bvSub", role: "status" });
+    card.appendChild(link("Send the email again", function () {
+      st.textContent = "Sending…";
+      sb.auth.resend({ type: "signup", email: email, options: { emailRedirectTo: BASE } }).then(function (r) { st.textContent = r.error ? r.error.message : "Sent. Check your inbox and spam folder."; });
+    }));
+    card.appendChild(st);
+    card.appendChild(link("Back to sign in", function () { signInForm(resolve, "signin", "", email); }));
+  }
+
+  function forgotForm(resolve, email0) {
+    var card = overlay();
+    card.appendChild(h("p", { class: "bvSub", text: "Enter your email. We'll send a link to set a new password." }));
+    var f = h("form", { class: "bvForm" });
+    var em = field("email", "email", "you@example.com", "Email"); if (email0) em.value = email0;
+    var go = h("button", { type: "submit", class: "bvBtn", text: "Send the link" });
     var st = h("p", { class: "bvSub", role: "status" });
     f.appendChild(em); f.appendChild(go); card.appendChild(f); card.appendChild(st);
+    card.appendChild(link("Back to sign in", function () { signInForm(resolve, "signin", "", em.value); }));
     em.focus();
     f.addEventListener("submit", function (ev) {
       ev.preventDefault();
       var email = em.value.trim().toLowerCase(); if (!email) return;
       go.disabled = true; st.textContent = "Sending…";
-      sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: location.origin + location.pathname } }).then(function (r) {
+      sb.auth.resetPasswordForEmail(email, { redirectTo: BASE + "?reset=1" }).then(function (r) {
+        go.disabled = false;
+        st.textContent = r.error ? "Couldn't send the email: " + r.error.message : "If that email has an account, a link is on its way. Open it on this device.";
+      });
+    });
+  }
+
+  function newPasswordForm(resolve) {
+    var card = overlay();
+    card.appendChild(h("p", { class: "bvSub", text: "Choose a new password." }));
+    var f = h("form", { class: "bvForm" });
+    var pw = field("password", "new-password", "New password (8 or more characters)", "New password");
+    var pw2 = field("password", "new-password", "Type it again", "New password again");
+    var go = h("button", { type: "submit", class: "bvBtn", text: "Save password" });
+    var st = h("p", { class: "bvSub", role: "status" });
+    f.appendChild(pw); f.appendChild(pw2); f.appendChild(go); card.appendChild(f); card.appendChild(st);
+    pw.focus();
+    f.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      if (pw.value.length < 8) { st.textContent = "Use at least 8 characters."; return; }
+      if (pw.value !== pw2.value) { st.textContent = "The two passwords don't match."; return; }
+      go.disabled = true; st.textContent = "Saving…";
+      sb.auth.updateUser({ password: pw.value }).then(function (r) {
+        go.disabled = false;
+        if (r.error) { st.textContent = r.error.message; return; }
+        RESET = false; history.replaceState(null, "", BASE);
+        sb.auth.getSession().then(function (x) { admit(x.data.session, resolve); });
+      });
+    });
+  }
+
+  /* Fallback: a one-time code (or link) by email. */
+  function otpForm(resolve, email0) {
+    var card = overlay();
+    card.appendChild(h("p", { class: "bvSub", text: "We'll email you a sign-in link and code. No password needed." }));
+    var f = h("form", { class: "bvForm" });
+    var em = field("email", "email", "you@example.com", "Email"); if (email0) em.value = email0;
+    var go = h("button", { type: "submit", class: "bvBtn", text: "Email me a sign-in code" });
+    var st = h("p", { class: "bvSub", role: "status" });
+    f.appendChild(em); f.appendChild(go); card.appendChild(f); card.appendChild(st);
+    card.appendChild(link("Back to sign in", function () { signInForm(resolve, "signin", "", em.value); }));
+    em.focus();
+    f.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var email = em.value.trim().toLowerCase(); if (!email) return;
+      go.disabled = true; st.textContent = "Sending…";
+      sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: BASE } }).then(function (r) {
         go.disabled = false;
         if (r.error) { st.textContent = "Couldn't send the email: " + r.error.message; return; }
         codeForm(email, resolve);
@@ -77,15 +197,14 @@
 
   function codeForm(email, resolve) {
     var card = overlay();
-    card.appendChild(h("p", { class: "bvSub", text: "We sent an email to " + email + ". Open its link on this device, or type the 6-digit code from it here." }));
+    card.appendChild(h("p", { class: "bvSub", text: "We sent an email to " + email + ". Open its link on this device, or type the code from it here." }));
     var f = h("form", { class: "bvForm" });
     var code = h("input", { inputmode: "numeric", autocomplete: "one-time-code", maxlength: "10", placeholder: "123456", class: "bvField bvCode", "aria-label": "Code from the email" });
     var go = h("button", { type: "submit", class: "bvBtn", text: "Sign in" });
     var st = h("p", { class: "bvSub", role: "status" });
-    var back = h("button", { type: "button", class: "bvLink", text: "Use a different email" });
-    f.appendChild(code); f.appendChild(go); card.appendChild(f); card.appendChild(st); card.appendChild(back);
+    f.appendChild(code); f.appendChild(go); card.appendChild(f); card.appendChild(st);
+    card.appendChild(link("Back to sign in", function () { signInForm(resolve, "signin", "", email); }));
     code.focus();
-    back.addEventListener("click", function () { signInForm(resolve); });
     f.addEventListener("submit", function (ev) {
       ev.preventDefault();
       var t = code.value.replace(/\s/g, ""); if (!t) return;
@@ -99,22 +218,13 @@
   }
   sb.auth.onAuthStateChange(function (ev) { if (ev === "SIGNED_OUT") location.reload(); });
 
+  /* Everyone signed in gets into the app. People not approved yet see its "Ask for Access" screen;
+     the database only shows them what that screen needs. */
   function admit(session, resolve) {
     return sb.rpc("app_whoami").then(function (r) {
-      if (r.error) { onBody(function () { signInForm(resolve, "Couldn't check your access (" + r.error.message + "). Try again."); }); return; }
+      if (r.error) { onBody(function () { signInForm(resolve, "signin", "Couldn't check your access (" + r.error.message + "). Try again."); }); return; }
       var w = r.data || {};
-      if (!w.member) {
-        onBody(function () {
-          var card = overlay();
-          card.appendChild(h("p", { class: "bvErr", text: (w.email || "This email") + " isn't allowed to use this app." }));
-          card.appendChild(h("p", { class: "bvSub", text: "Sign in with your company email, or ask the admin to add your address." }));
-          var out = h("button", { type: "button", class: "bvBtn", text: "Sign out" });
-          out.addEventListener("click", function () { sb.auth.signOut(); });
-          card.appendChild(out);
-        });
-        return;
-      }
-      ME = { authId: session.user.id, uid: w.uid, email: w.email, super: !!w.super, member: true, name: "" };
+      ME = { authId: session.user.id, uid: w.uid, email: w.email, super: !!w.super, member: !!w.member, name: "" };
       return sb.from("app_profiles").select("name").eq("user_id", ME.authId).maybeSingle().then(function (p) {
         var name = p.data && p.data.name;
         if (name) { ME.name = name; finish(resolve); return; }
@@ -435,8 +545,8 @@
   function profiles(ids) {
     ids = (ids || []).filter(function (x) { return typeof x === "string" && /^u_[0-9a-f]{32}$/.test(x); });
     var need = ids.filter(function (x) { return !PROF[x]; });
-    var p = need.length ? ready.then(function () { return sb.from("app_profiles").select("uid,name").in("uid", need); }).then(function (r) {
-      (r.data || []).forEach(function (row) { PROF[row.uid] = { id: row.uid, name: row.name || "", avatarUrl: "", guest: false }; });
+    var p = need.length ? ready.then(function () { return sb.from("app_profiles").select("uid,name,email").in("uid", need); }).then(function (r) {
+      (r.data || []).forEach(function (row) { PROF[row.uid] = { id: row.uid, name: row.name || "", email: row.email || "", avatarUrl: "", guest: false }; });
     }, function () {}) : Promise.resolve();
     return p.then(function () { var out = {}; ids.forEach(function (x) { out[x] = PROF[x] || { id: x, name: "", avatarUrl: "", guest: false }; }); return out; });
   }
@@ -447,7 +557,8 @@
     me: function () { return ready.then(function (m) { return { id: m.uid, name: m.name, email: m.email, avatarUrl: "", guest: false, canEdit: m.super, isOwner: m.super }; }); },
     isOwner: function () { return ready.then(function (m) { return m.super; }); },
     canEdit: function () { return ready.then(function (m) { return m.super; }); },
-    can: function (what) { return ready.then(function (m) { return what === "data.write" ? m.member : null; }); },
+    // Everyone signed in may write their own access request; the database refuses anything else.
+    can: function (what) { return ready.then(function () { return what === "data.write" ? true : null; }); },
     profiles: profiles,
     search: function (q) {
       return ready.then(function () {

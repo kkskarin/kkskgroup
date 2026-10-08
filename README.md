@@ -44,15 +44,22 @@ provides the same calls, so the app code did not need rewriting:
   instead). Reports › **Transactions** shows every item, the step it is at and who has it now, with a
   "Who has what open" summary; each view downloads as PDF or Excel. "View as" still opens a person's own screens.
 - **Everyone else**: Transactions shows only their own work and that of profiles on their login.
-- **Weekly and Monthly** are part of Reports › Transactions: pick All Dates, Weekly or Monthly (arrows move the
-  period) and download that period's report. The Payments view can be narrowed to Bills, Proformas & Imports or
-  Vouchers (cash advances paid count under Vouchers).
+- **Transactions** has Expenses and Payments, each narrowed to All, Bills, Proformas & Imports or Vouchers (cash
+  advances paid count under Vouchers). Weekly and Monthly live here: pick All Dates, Weekly or Monthly (arrows move
+  the period) and download that period's report.
 - **Financier** (pays out only): two headings. Reports › **Payables** (unpaid bills and opening balances with the AP
   ageing by vendor) and **Payments** (Transactions showing payments only) cover every company they pay for; Payments › Payment Entry and
   **Advances** (each person's opening balance, advances paid, vouchers settled, cash on hand, the balance when an
   advance was asked for, and the Advance Ageing (AS Ageing) summary).
 - **Filters** on Transactions and Payables are tick-box lists for companies, vendors, prepared by and
   approver, plus a from/to date range. A heading with a single tab shows no sub-tab bar.
+- **Demo and Live**: admins switch with the DEMO / LIVE pill in the header (remembered per browser). Everyone else
+  always works in Live. Data is kept apart by a `demo__` prefix on every collection except users, admins and
+  requests. Everything entered before the switch existed is Demo; Live started with the companies, locations,
+  departments and ledgers copied across.
+- **Bill files** are kept in the private `bill-files` Storage bucket (`live/` or `demo/` folder). The accountant sees
+  the file beside the form with page, zoom, fit, rotate and drag. Bills typed in by hand can attach a file.
+- **Purchasers** must have a default approver (Admin › Users); it is filled in on their new work and can be changed.
 - **Voucher numbers** are given automatically per company and financial year: `INTL-VOU001/10/26-27`.
 - **Cash advances** are paid out by the financier in Payment Entry › Advances (date, how paid, reference).
 - **Ledgers and vendors** can be uploaded from Excel (Download template / Upload Excel on their pages). Rows are

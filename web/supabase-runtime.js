@@ -540,6 +540,16 @@
   }
   var DB = Object.freeze({ doc: docRef, collection: collRef });
 
+  /* Bill files, kept in the private bill-files bucket. */
+  var BUCKET = "bill-files";
+  function stErr(r) { if (r.error) throw err(r.error.statusCode === "403" || /row-level|not authori[sz]ed/i.test(r.error.message || "") ? "permission_denied" : "unavailable", r.error.message); return r.data; }
+  window.bvFiles = Object.freeze({
+    put: function (path, blob, type) { return ready.then(function () { return sb.storage.from(BUCKET).upload(path, blob, { contentType: type || blob.type || "application/octet-stream", upsert: false }); }).then(stErr).then(function () { return path; }); },
+    get: function (path) { return ready.then(function () { return sb.storage.from(BUCKET).download(path); }).then(stErr); },
+    link: function (path) { return ready.then(function () { return sb.storage.from(BUCKET).createSignedUrl(path, 3600); }).then(stErr).then(function (d) { return d.signedUrl; }); },
+    remove: function (path) { return ready.then(function () { return sb.storage.from(BUCKET).remove([path]); }).then(stErr); }
+  });
+
   /* ================= People ================= */
   var PROF = {};
   function profiles(ids) {

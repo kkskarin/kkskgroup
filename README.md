@@ -54,9 +54,9 @@ provides the same calls, so the app code did not need rewriting:
 - **Filters** on Transactions and Payables are tick-box lists for companies, vendors, prepared by and
   approver, plus a from/to date range. A heading with a single tab shows no sub-tab bar.
 - **Demo and Live**: admins switch with the DEMO / LIVE pill in the header (remembered per browser). Everyone else
-  always works in Live. Data is kept apart by a `demo__` prefix on every collection except users, admins and
-  requests. Everything entered before the switch existed is Demo; Live started with the companies, locations,
-  departments and ledgers copied across.
+  always works in Live. People, admins, access requests, companies, locations, departments and ledgers are
+  shared; entries (bills, vouchers, proformas, reports, payments, cash advances, vendors, balances, change log)
+  are kept apart by a `demo__` prefix. Everything entered before the switch existed is Demo.
 - **Bill files** are kept in the private `bill-files` Storage bucket (`live/` or `demo/` folder). The accountant sees
   the file beside the form with page, zoom, fit, rotate and drag. Bills typed in by hand can attach a file.
 - **Purchasers** must have a default approver (Admin › Users); it is filled in on their new work and can be changed.

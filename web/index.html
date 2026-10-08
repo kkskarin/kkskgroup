@@ -9310,8 +9310,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
           if (!$("navbar").hidden) renderNav();
         }, function (e) { if (S.loaded) toast("Live updates stopped. Reload the page to reconnect."); else fail("sub", "companies " + ((e && e.code) || "unknown")); });
   }
-  /* ---- Demo and Live: admins can switch; everyone else always works in Live. People, admins and access requests are shared. ---- */
-  var NS_SHARED = { users: 1, admins: 1, requests: 1 };
+  /* ---- Demo and Live: admins can switch; everyone else always works in Live. The set-up (people, admins, access requests,
+     companies, locations, departments, ledgers, preferences) is shared; entries are kept apart. ---- */
+  var NS_SHARED = { users: 1, admins: 1, requests: 1, companies: 1, locations: 1, departments: 1, ledgers: 1, prefs: 1 };
   function nsPath(p) { if (S.mode !== "demo") return p; var top = String(p).split("/")[0]; return NS_SHARED[top] ? p : "demo__" + p; }
   function nsDb(db) { return { doc: function (p) { return db.doc(nsPath(p)); }, collection: function (p) { return db.collection(nsPath(p)); } }; }
   function modeKey() { return "bv_mode_" + ((S.me && S.me.id) || ""); }

@@ -2685,6 +2685,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       "- company_id: the id of the matching company from COMPANIES, matched on the buyer's name. null if none clearly matches.",
       "- vendor_type: registered if the supplier shows a GSTIN; overseas if the supplier is outside India; exempt if the bill says the supply is exempt from GST; unregistered if an Indian supplier shows no GSTIN; null if unsure.",
       "- GSTIN has 15 characters and PAN has 10. Copy them exactly as printed, without spaces.",
+      "- vendor_address: the seller's full address as printed in the seller's block (street, area, town, state and PIN or postcode, and the country if outside India), on one line, in proper case. Not the buyer's, consignee's or delivery address. Empty string if not printed.",
       "- bill_date as YYYY-MM-DD. Indian bills write the day first, so 04/05/2026 is 4 May 2026.",
       "- currency: the ISO code of the currency the bill's amounts are in, such as INR, USD or EUR. INR for rupees.",
       "- Amounts are plain numbers in the bill's currency with no commas or symbols. taxable_amount is the value before tax. gst_amount is CGST plus SGST or UTGST plus IGST, or 0 if no GST is charged. total_amount is the final amount payable as printed, after any round-off.",
@@ -2698,7 +2699,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       "- items_note: one or two sentences on anything you are unsure of in the items (which lines, which figures), or an empty string.",
       "",
       "Reply with only this JSON object:",
-      '{"bills_in_file":1,"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}',
+      '{"bills_in_file":1,"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}',
       "",
       "COMPANIES: " + JSON.stringify(cos),
       "",
@@ -2733,6 +2734,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       .filter(function (it) { return it.description || it.amount != null || it.qty != null; });
   }
   function str(v, max) { return v == null ? "" : String(v).replace(/\s+/g, " ").trim().slice(0, max || 200); }
+  /* The seller's address read from a file, on one line. */
+  function aiAddr(a) { return String(a == null ? "" : a).replace(/\s*\n\s*/g, ", ").replace(/\s+/g, " ").replace(/,\s*,/g, ",").trim().slice(0, 240); }
+  /* A vendor saved without an address takes the one read from its bill or proforma. */
+  function fillVendorAddr(v, addr, now) {
+    if (!v || !v.id || String(v.address || "").trim() || !String(addr || "").trim()) return;
+    var a = String(addr).trim(); v.address = a;
+    retry(function () { return S.db.doc("vendors/" + v.id).update({ address: a, updatedAt: now, updatedBy: meId() }); }).then(invalidate, function () { v.address = ""; });
+  }
   var BILL_AI = [["company", "company_id", "company_name_on_bill"], ["vendor", "vendor_id", "vendor_name"], ["vendor_gstin", "vendor_gstin", "vendor_pan"], ["bill_number", "bill_number"], ["bill_date", "bill_date"],
     ["taxable_amount", "taxable_amount"], ["gst_amount", "gst_amount"], ["total_amount", "total_amount"], ["payment_term_days", "payment_term_days"], ["narration", "narration"]];
   function docFromResult(res, it) {
@@ -2759,12 +2768,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     return {
       status: "draft", ownerId: meId(), uploadedBy: meId(), uploadedAt: now, updatedAt: now, source: "file", fileName: str(it.name, 160),
       companyId: cid || null, vendorId: v ? v.id : null,
-      vendorNew: v ? { name: "", gstin: "", pan: "", type: "", termDays: null } : { name: smartCase(str(res.vendor_name, 140)), gstin: g, pan: pan, type: type, termDays: term },
+      vendorNew: v ? { name: "", gstin: "", pan: "", type: "", termDays: null } : { name: smartCase(str(res.vendor_name, 140)), gstin: g, pan: pan, type: type, termDays: term, address: aiAddr(res.vendor_address) },
       billNo: str(res.bill_number, 60).toUpperCase(), billDate: date, currency: A.currency, fxRate: A.fxRate, fcTaxable: A.fcTaxable, fcGst: A.fcGst, fcTotal: A.fcTotal,
       taxable: A.taxable, gstAmt: A.gstAmt, gstPct: A.gstPct, total: A.total,
       termDays: v ? (v.termDays != null ? v.termDays : term) : term, termChoice: "", updateVendorTerm: false,
       narration: sentenceFix(str(res.narration, 400)),
-      ex: { companyName: str(res.company_name_on_bill, 160), vendorName: str(res.vendor_name, 160), vendorGstin: g, billTermDays: term, printedTotal: printed, rateFrom: rateFrom, notes: str(res.notes, 300), aiUnsure: aiUnsure(res, ["company", "vendor", "vendor_gstin", "bill_number", "bill_date", "currency", "taxable_amount", "gst_amount", "payment_term_days", "narration"]), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) }
+      ex: { companyName: str(res.company_name_on_bill, 160), vendorName: str(res.vendor_name, 160), vendorGstin: g, vendorAddress: aiAddr(res.vendor_address), billTermDays: term, printedTotal: printed, rateFrom: rateFrom, notes: str(res.notes, 300), aiUnsure: aiUnsure(res, ["company", "vendor", "vendor_gstin", "bill_number", "bill_date", "currency", "taxable_amount", "gst_amount", "payment_term_days", "narration"]), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) }
     };
   }
   /* Which bill-card box each read field lives in, and how to get its value from the card's draft. */
@@ -3490,6 +3499,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       else if (ti.mismatch && D.termChoice === "bill" && D.updateVendorTerm) newTerm = ti.billTerm;
       else if (!ti.mismatch && D.updateVendorTerm && days !== v.termDays) newTerm = days;
       if (newTerm != null) job = job.then(function () { return retry(function () { return S.db.doc("vendors/" + vid).update({ termDays: newTerm, updatedAt: now, updatedBy: meId() }); }); });
+      fillVendorAddr(v, b.ex && b.ex.vendorAddress, now);
     }
     if (doc.currency !== "INR" && doc.fxRate > 0) {
       var last = S.rates[doc.currency];
@@ -5083,7 +5093,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         var vdoc = { address: String(D.vNew.addr || "").trim(), name: madeVendor, gstin: imp ? "" : g, pan: !imp && g ? panFromGstin(g) : "", type: imp ? "overseas" : D.vNew.type, country: imp ? smartCase(D.vNew.country) : "", termDays: null, active: true, openings: {}, createdAt: now, createdBy: meId(), updatedAt: now, updatedBy: meId() };
         job = retry(function () { return S.db.doc("vendors/" + vid).set(vdoc); }).then(function () { S.vendors[vid] = Object.assign({ id: vid }, vdoc); invalidate(); });
       }
-    }
+    } else fillVendorAddr(S.vendors[vid], D.ex && D.ex.vendorAddress, Date.now());
     var doc = { kind: ADV.kind, companyId: D.companyId, vendorId: vid, vendorNew: null, piNo: D.piNo.trim().toUpperCase(), piDate: pd, currency: imp ? D.currency : "INR", total: round2(tot), gst: !imp && D.gst.trim() ? round2(num(D.gst)) : null,
       installments: D.insts.map(function (it, i) { return { pct: round2(num(it.pct)), when: i === 0 ? "receipt" : it.when, days: i === 0 ? 0 : dayCount(it.days) }; }),
       dispatchDate: dd || null, dispatchConfirmed: !!(D.dispConfirmed && dd), narration: sentenceFix(D.narration.trim()), updatedAt: now, updatedBy: meId(),
@@ -5177,6 +5187,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       "- Read as much as you can. Partial answers are wanted: fill every field you can make out and use null only for what you truly cannot read.",
       "- readable: false only if the file shows no such document at all. A hard-to-read copy is still readable: true.",
       "- The vendor is the seller. The company is the buyer it is addressed to. Never swap them.",
+      "- vendor_address: the seller's full address as printed in the seller's block (street, area, town, state and PIN or postcode, and the country if outside India), on one line, in proper case. Not the buyer's, consignee's or delivery address. Empty string if not printed.",
       "- company_id: the matching id from COMPANIES by the buyer's name, or null.",
       "- proforma_date as YYYY-MM-DD. Indian documents write the day first.",
       "- currency: ISO code of the amounts, such as INR, USD, EUR.",
@@ -5189,7 +5200,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       "- items: every line of the item table, in order, as {\"description\", \"hsn\", \"qty\", \"unit\", \"rate\", \"discount\", \"taxable\", \"gst_pct\", \"amount\"}; null for anything not printed; [] if none. items_note: anything unsure in the items, or an empty string.",
       "",
       "Reply with only this JSON object:",
-      '{"readable":true,"company_id":null,"company_name":"","vendor_name":"","vendor_gstin":"","vendor_country":"","proforma_number":"","proforma_date":"YYYY-MM-DD","currency":"INR","total_amount":0,"gst_amount":null,"installments":[],"dispatch_date":null,"arrival_date":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"proforma_number":0,"proforma_date":0,"currency":0,"total_amount":0,"gst_amount":0,"installments":0,"dispatch_date":0,"arrival_date":0,"narration":0},"items":[],"items_note":""}',
+      '{"readable":true,"company_id":null,"company_name":"","vendor_name":"","vendor_gstin":"","vendor_country":"","vendor_address":"","proforma_number":"","proforma_date":"YYYY-MM-DD","currency":"INR","total_amount":0,"gst_amount":null,"installments":[],"dispatch_date":null,"arrival_date":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"proforma_number":0,"proforma_date":0,"currency":0,"total_amount":0,"gst_amount":0,"installments":0,"dispatch_date":0,"arrival_date":0,"narration":0},"items":[],"items_note":""}',
       "",
       "COMPANIES: " + JSON.stringify(cos),
       "",
@@ -5211,7 +5222,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!D.companyId && res.company_name) { var k = normName(res.company_name); myCompanies().forEach(function (c) { if (!D.companyId && (normName(c.name) === k || normName(c.internalName) === k)) D.companyId = c.id; }); }
     var g = normId(res.vendor_gstin); if (g.length < 15) g = "";
     var v = g ? vendorByGstin(g) : null; if (!v && res.vendor_id && S.vendors[res.vendor_id]) v = S.vendors[res.vendor_id]; if (!v) v = vendorByName(res.vendor_name);
-    if (v) D.vendorChoice = v.id; else if (res.vendor_name) { D.vendorChoice = "new"; D.vNew = { name: smartCase(str(res.vendor_name, 140)), gstin: imp ? "" : g, type: imp ? "overseas" : g ? "registered" : "", country: imp ? smartCase(str(res.vendor_country, 60)) : "" }; }
+    if (v) D.vendorChoice = v.id; else if (res.vendor_name) { D.vendorChoice = "new"; D.vNew = { name: smartCase(str(res.vendor_name, 140)), gstin: imp ? "" : g, type: imp ? "overseas" : g ? "registered" : "", country: imp ? smartCase(str(res.vendor_country, 60)) : "", addr: aiAddr(res.vendor_address) }; }
     D.piNo = str(res.proforma_number, 60).toUpperCase(); D.piDate = ymdOk(res.proforma_date) ? fmtDate(res.proforma_date) : "";
     var cur = normId(res.currency); if (imp) D.currency = curOk(cur) && cur !== "INR" ? cur : "USD";
     if (num(res.total_amount) != null) D.total = fmtInput(num(res.total_amount));
@@ -5222,7 +5233,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (ymdOk(res.dispatch_date)) D.dispatch = fmtDate(res.dispatch_date);
     if (imp && ymdOk(res.arrival_date)) D.arrival = fmtDate(res.arrival_date);
     D.narration = sentenceFix(str(res.narration, 400));
-    D.ex = { companyName: str(res.company_name, 160), vendorName: [str(res.vendor_name, 160), g].filter(Boolean).join(", GSTIN "), notes: str(res.notes, 300), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) };
+    D.ex = { vendorAddress: aiAddr(res.vendor_address), companyName: str(res.company_name, 160), vendorName: [str(res.vendor_name, 160), g].filter(Boolean).join(", GSTIN "), notes: str(res.notes, 300), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) };
     return D;
   }
   function readAdvFile(file) {

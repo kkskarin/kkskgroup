@@ -6202,6 +6202,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       .map(function (a) { var cb = cashBalance(a.uid, a.companyId); return { a: a, cid: a.companyId, prep: a.uid, prepName: caName(a), ven: "", appr: a.approvedBy || "", date: "", atAsk: cashBalanceAt(a.uid, a.companyId, a.requestedAt || Date.now()), cb: cb, ag: asAgeing(a.uid, a.companyId) }; })
       .sort(function (x, y) { return (x.a.status === "approved" ? 0 : 1) - (y.a.status === "approved" ? 0 : 1) || (x.a.approvedAt || x.a.requestedAt || 0) - (y.a.approvedAt || y.a.requestedAt || 0); });
   }
+  function asHolds(p) { return Math.abs(p.cb.balance) > 0.004 || Math.abs(p.cb.free) > 0.004; }
   function asOldestText(d) { return d < 0 ? "-" : d >= 9999 ? "Over 60 days" : d === 0 ? "Today" : plural(d, "day"); }
   function renderAdvSum() {
     var ppl0 = asPeople();
@@ -6229,8 +6230,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "", kind: "act", cls: "r", cell: function (r, td) { if (r.a.status === "approved" && canStep("txn", r.cid) && !S.isAdmin) { var y = el("button", { class: "btn sm primary" }, "Mark paid"); y.addEventListener("click", function () { caReceive(r.a); }); td.appendChild(y); } } }
     ], open, { sortIndex: -1 });
     /* ageing summary */
+    /* Only people still holding cash (or short of it) in a company are listed. */
+    var held = ppl.filter(asHolds);
     box = $("asAge");
-    if (!ppl.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nobody holds cash for these filters.")); return; }
+    if (!held.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nobody holds cash for these filters.")); return; }
     var cols = [
       { label: "Person", kind: "co", sort: function (p) { return p.name; }, cell: function (p, td) { td.appendChild(el("b", null, p.name)); sub(td, coLabel(p.cid)); } },
       { label: "Opening", cls: "r num", sort: function (p) { return p.cb.opening; }, desc: true, cell: function (p, td) { var o = openingOf(p.uid, p.cid); if (o == null) { var n = el("span", { class: "needs" }); n.appendChild(warnIcon("Missing")); n.appendChild(document.createTextNode(" Not entered")); td.appendChild(n); } else txt(td, money(o)); } },
@@ -6239,14 +6242,17 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Cash on Hand", cls: "r num", sort: function (p) { return p.cb.free; }, desc: true, cell: function (p, td) { td.appendChild(el("b", p.cb.balance < 0 ? { style: "color:var(--bad)" } : null, money(p.cb.free))); if (p.cb.pending) sub(td, "Balance " + money(p.cb.balance)); } }
     ];
     AS_AGE.forEach(function (a) { cols.push({ label: a[1], cls: "r num", sort: function (p) { return p.ag[a[0]]; }, desc: true, cell: function (p, td) { var n = p.ag[a[0]]; td.appendChild(el(n > 0.004 ? "b" : "span", n > 0.004 && a[0] === "a60p" ? { style: "color:var(--bad)" } : null, n > 0.004 ? money(n) : "-")); } }); });
-    sortTable(box, "asAge", cols, ppl, { sortIndex: 4, sortDir: -1, foot: function () {
+    sortTable(box, "asAge", cols, held, { sortIndex: 4, sortDir: -1, foot: function () {
       var tf = el("tfoot"), tr = el("tr"), l = el("td", { class: "c-co" }); l.appendChild(el("b", null, "Everyone")); tr.appendChild(l);
-      [["Opening", tot.op], ["Advances Paid", tot.rec], ["Settled", tot.set], ["Cash on Hand", tot.free]].forEach(function (k, i) { var td = el("td", { class: "r num", "data-label": k[0] }); td.appendChild(el(i === 3 ? "b" : "span", null, i === 2 && k[1] ? "(" + money(k[1]) + ")" : money(k[1]))); tr.appendChild(td); });
-      AS_AGE.forEach(function (a) { tr.appendChild(el("td", { class: "r num", "data-label": a[1] }, money(tot[a[0]]))); });
+      var ft = { op: 0, rec: 0, set: 0, free: 0, a15: 0, a30: 0, a60: 0, a60p: 0 };
+      held.forEach(function (p) { ft.op += p.cb.opening; ft.rec += p.cb.received; ft.set += p.cb.settled; ft.free += p.cb.free; AS_AGE.forEach(function (a) { ft[a[0]] += p.ag[a[0]]; }); });
+      Object.keys(ft).forEach(function (k) { ft[k] = round2(ft[k]); });
+      [["Opening", ft.op], ["Advances Paid", ft.rec], ["Settled", ft.set], ["Cash on Hand", ft.free]].forEach(function (k, i) { var td = el("td", { class: "r num", "data-label": k[0] }); td.appendChild(el(i === 3 ? "b" : "span", null, i === 2 && k[1] ? "(" + money(k[1]) + ")" : money(k[1]))); tr.appendChild(td); });
+      AS_AGE.forEach(function (a) { tr.appendChild(el("td", { class: "r num", "data-label": a[1] }, money(ft[a[0]]))); });
       tf.appendChild(tr); return tf; } });
   }
   function downloadAdvSumXls(btn) {
-    var ppl = asPeople().filter(function (p) { return msPass("as", p, true); }), open = asOpenAdvances().filter(function (r) { return msPass("as", r, true); }); if (!ppl.length) return;
+    var ppl = asPeople().filter(function (p) { return msPass("as", p, true) && asHolds(p); }), open = asOpenAdvances().filter(function (r) { return msPass("as", r, true); }); if (!ppl.length) return;
     var sub0 = msText("as", true) + " · As on " + fmtDate(todayYmd());
     xlDownload(btn, "Advances " + fmtDate(todayYmd()) + ".xlsx", [
       { name: "Advance ageing", title: "Advances · cash with people and Advance Ageing (AS Ageing)", sub: sub0, rows: ppl.map(function (p) { return [p.name, coLabel(p.cid), openingOf(p.uid, p.cid), p.cb.received, p.cb.settled, p.cb.pending, p.cb.free].concat(AS_AGE.map(function (a) { return p.ag[a[0]]; })).concat([p.ag.oldest < 0 || p.ag.oldest >= 9999 ? null : p.ag.oldest]); }),

@@ -81,6 +81,8 @@ provides the same calls, so the app code did not need rewriting:
    Until then, bills are entered by hand and the app says reading with Claude isn't set up.
 2. **Host the `web/` folder** on any static host, no build step. For example, connect this repository to
    Cloudflare Pages, Netlify or Vercel and set the output/publish directory to `web`.
+   The live site (https://kkskgroup.netlify.app) deploys from this branch on every push; each production deploy
+   uses Netlify credits. Put `[skip netlify]` in a commit message to push without deploying.
 3. **Auth URLs**: Supabase dashboard → Authentication → URL Configuration: set *Site URL* to the site's
    address and add it under *Redirect URLs*, so emailed sign-in links come back to the app.
 4. **Sign-in email with a code (optional)**: Authentication → Emails → *Magic Link* template: add `{{ .Token }}`

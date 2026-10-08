@@ -41,14 +41,17 @@ provides the same calls, so the app code did not need rewriting:
   the work they approve; the super admin sees everything.
 - **Admins** don't see the entry screens (Enter Bills, Proformas, Imports, Cash Vouchers, To Account, Payment Entry)
   or draft checking reports, and don't ask for cash advances on anyone's behalf (switch to the person's profile
-  instead). Weekly and Monthly have **Expenses** and **Payments** sub-tabs for admins. Reports › **Transactions** shows every item, the step it is at and who has it now, with a
+  instead). Reports › **Transactions** shows every item, the step it is at and who has it now, with a
   "Who has what open" summary; each view downloads as PDF or Excel. "View as" still opens a person's own screens.
-- **Everyone else**: Weekly, Monthly and Transactions show only their own work and that of profiles on their login.
-- **Financier** (pays out only): two headings. Reports › Transactions and **Payables** (unpaid bills and opening
-  balances with the AP ageing by vendor) cover every company they pay for; Payments › Payment Entry and
+- **Everyone else**: Transactions shows only their own work and that of profiles on their login.
+- **Weekly and Monthly** are part of Reports › Transactions: pick All Dates, Weekly or Monthly (arrows move the
+  period) and download that period's report. The Payments view can be narrowed to Bills, Proformas & Imports or
+  Vouchers (cash advances paid count under Vouchers).
+- **Financier** (pays out only): two headings. Reports › **Payables** (unpaid bills and opening balances with the AP
+  ageing by vendor) and **Payments** (Transactions showing payments only) cover every company they pay for; Payments › Payment Entry and
   **Advances** (each person's opening balance, advances paid, vouchers settled, cash on hand, the balance when an
   advance was asked for, and the Advance Ageing (AS Ageing) summary).
-- **Filters** on Transactions, Payables and Weekly/Monthly are tick-box lists for companies, vendors, prepared by and
+- **Filters** on Transactions and Payables are tick-box lists for companies, vendors, prepared by and
   approver, plus a from/to date range. A heading with a single tab shows no sub-tab bar.
 - **Voucher numbers** are given automatically per company and financial year: `INTL-VOU001/10/26-27`.
 - **Cash advances** are paid out by the financier in Payment Entry › Advances (date, how paid, reference).

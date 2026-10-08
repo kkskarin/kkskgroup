@@ -37,7 +37,7 @@ provides the same calls, so the app code did not need rewriting:
 ### What the app does for each role
 
 - **Approver**: every bill, proforma, import and voucher names the admin who approves it (the super admin or an
-  admin named under Admin › Users). It prints on the voucher and on the checking reports. A named admin sees only
+  admin named under Settings › Users). It prints on the voucher and on the checking reports. A named admin sees only
   the work they approve; the super admin sees everything.
 - **Admins** don't see the entry screens (Enter Bills, Proformas, Imports, Cash Vouchers, To Account, Payment Entry)
   or draft checking reports, and don't ask for cash advances on anyone's behalf (switch to the person's profile
@@ -59,7 +59,13 @@ provides the same calls, so the app code did not need rewriting:
   are kept apart by a `demo__` prefix. Everything entered before the switch existed is Demo.
 - **Bill files** are kept in the private `bill-files` Storage bucket (`live/` or `demo/` folder). The accountant sees
   the file beside the form with page, zoom, fit, rotate and drag. Bills typed in by hand can attach a file.
-- **Purchasers** must have a default approver (Admin › Users); it is filled in on their new work and can be changed.
+- **Settings** (everyone): My Settings has light/dark/device mode, a colour, text size, table density, a
+  profile picture shown at the top, and Change Password. Admins also see Companies, Users, Change Log and Data &
+  Archive there. PDFs and Excel always keep the standard KKSK format.
+- **Logins made by an admin**: Settings › Users › Add Person With Login makes the email and password straight
+  away (admin-users Edge Function), with roles and companies set before the person ever signs in. Editing a
+  person with a login can set a new password (only the super admin can for admins).
+- **Purchasers** must have a default approver (Settings › Users); it is filled in on their new work and can be changed.
 - **Voucher numbers** are given automatically per company and financial year: `INTL-VOU001/10/26-27`.
 - **Cash advances** are paid out by the financier in Payment Entry › Advances (date, how paid, reference).
 - **Ledgers and vendors** can be uploaded from Excel (Download template / Upload Excel on their pages). Rows are

@@ -579,6 +579,21 @@
     }
   });
 
+  /* ================= Logins: an admin makes them (admin-users Edge Function); anyone changes their own password ================= */
+  function adminUsers(body) {
+    return ready.then(function () { return sb.auth.getSession(); }).then(function (s) {
+      var tok = s.data.session && s.data.session.access_token;
+      return fetch(CFG.supabaseUrl + "/functions/v1/admin-users", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok, apikey: CFG.supabaseKey }, body: JSON.stringify(body) });
+    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw err(j.code || "unavailable", j.message || ("HTTP " + r.status)); return j; }); });
+  }
+  window.bvAccount = Object.freeze({
+    createLogin: function (email, password, name) { return adminUsers({ action: "create", email: email, password: password, name: name }); },
+    setPassword: function (uid, password) { return adminUsers({ action: "password", uid: uid, password: password }); },
+    changeMyPassword: function (password) { return ready.then(function () { return sb.auth.updateUser({ password: password }); }).then(function (r) { if (r.error) throw err("invalid_argument", r.error.message); return true; }); },
+    email: function () { return ready.then(function (m) { return m.email || ""; }); },
+    signOut: function () { return sb.auth.signOut(); }
+  });
+
   /* ================= Claude (through the ai-sample Edge Function) ================= */
   var IMG_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
   function shrink(blob) {

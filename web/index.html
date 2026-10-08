@@ -1772,20 +1772,56 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     job.then(function () { toast(on ? (rec.name || "They") + " is now an admin. They see everything you see in the app once they reload, but cannot edit the app." : (rec.name || "They") + " is no longer an admin."); }, function (e) { toast(explain(e)); })
       .then(function () { S.busy = false; renderUsers(); });
   }
+  /* Super Admin only: add an admin straight away, with a login (email and password) or without one (named as approver only). */
+  function addAdminForm() {
+    if (!S.isSuper) return;
+    var body = el("div", { class: "mform" }), canLogin = !!window.bvAccount;
+    body.appendChild(fld("Name", inp("aaName", "", { maxlength: "60", autocomplete: "off", "data-fmt": "name" })));
+    var lw = el("label", { class: "check" }), lc = el("input", { type: "checkbox", id: "aaLogin" }); lc.checked = canLogin; lc.disabled = !canLogin; lw.appendChild(lc); lw.appendChild(document.createTextNode(" Give them a login now"));
+    body.appendChild(lw);
+    var mf = fld("Login Email", inp("aaMail", "", { type: "email", maxlength: "120", autocomplete: "off", placeholder: "name@example.com" }), "Any email: their own, Gmail, Yahoo or kksk.in.");
+    var pf = fld("Password", inp("aaPw", "", { type: "text", maxlength: "72", autocomplete: "new-password", spellcheck: "false" }), "At least 8 characters. Give it to them; they can change it under Settings.");
+    body.appendChild(mf); body.appendChild(pf);
+    function sync() { mf.hidden = pf.hidden = !lc.checked; } lc.addEventListener("change", sync); sync();
+    popForm("Add Admin", "Admins see and do everything in the app, and can be chosen as approver. Without a login they are only named as approver until you add them again with one.", body, "Add Admin", function () {
+      errClear(body); var name = $("aaName").value.trim(), withLogin = lc.checked, mail = $("aaMail").value.trim().toLowerCase(), pw = $("aaPw").value, ok = true, now = Date.now();
+      if (!name) { errOn("aaName", "Enter their name."); ok = false; }
+      if (withLogin && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { errOn("aaMail", "Enter a valid email address."); ok = false; }
+      if (withLogin && pw.length < 8) { errOn("aaPw", "Use at least 8 characters."); ok = false; }
+      if (!ok) return false;
+      var made = withLogin ? window.bvAccount.createLogin(mail, pw, name).then(function (r) { return { id: r.uid, email: r.email || mail }; }, function (e) { errOn("aaMail", (e && e.message) || "The login couldn't be made."); throw { quiet: true }; })
+        : Promise.resolve({ id: newId("p"), email: "" });
+      return made.then(function (x) {
+        return retry(function () { return S.db.doc("admins/" + x.id).set({ name: name, email: x.email, active: true, noLogin: !withLogin, addedAt: now, addedBy: meId() }); }).then(function () {
+          toast(withLogin ? name + " is an admin and can sign in with " + x.email + "." : name + " is added as an admin, without a login."); renderUsers(); return true;
+        });
+      }).catch(function (e) { if (!(e && e.quiet)) toast(explain(e)); return false; });
+    });
+  }
+  function adminPwForm(id, name) {
+    var body = el("div", { class: "mform" }); body.appendChild(fld("New Password", inp("apPw", "", { type: "text", maxlength: "72", autocomplete: "new-password", spellcheck: "false" }), "At least 8 characters. Give it to them."));
+    popForm("Set Password", "A new password for " + (name || "this admin") + ".", body, "Set Password", function () {
+      errClear(body); var pw = $("apPw").value; if (pw.length < 8) { errOn("apPw", "Use at least 8 characters."); return false; }
+      return window.bvAccount.setPassword(id, pw).then(function () { toast("Password set for " + (name || "the admin") + "."); return true; }, function (e) { errOn("apPw", (e && e.message) || "The password couldn't be set."); return false; });
+    });
+  }
   function renderAdmins(ps) {
     var box = $("admList"); box.textContent = "";
     $("admSub").textContent = S.isSuper ? "Admins can see and do everything in the app that you can, but cannot edit or republish the app. Only you, the Super Admin, can add or remove them." : "Admins can see and do everything in the app. Only the super admin can add or remove admins, and only the super admin can edit the app.";
     var me0 = el("div", { class: "row" }), w0 = el("div", { class: "who" });
-    w0.appendChild(el("b", null, S.isSuper ? (S.me && S.me.name) || "You" : "The app owner")); w0.appendChild(el("span", { class: "ln" }, "Super Admin. Can edit and update the app.")); me0.appendChild(w0); box.appendChild(me0);
+    w0.appendChild(el("b", null, S.isSuper ? (S.me && S.me.name) || "You" : "The app owner")); w0.appendChild(el("span", { class: "ln" }, "Super Admin. Can edit and update the app.")); me0.appendChild(w0);
+    if (S.isSuper) { var aa = el("div", { class: "acts" }), ab = el("button", { class: "btn primary", type: "button", id: "admAdd" }, "Add Admin"); ab.addEventListener("click", addAdminForm); aa.appendChild(ab); me0.appendChild(aa); }
+    box.appendChild(me0);
     Object.keys(S.admins).forEach(function (id) {
       var a = S.admins[id], row = el("div", { class: "row" }), w = el("div", { class: "who" });
       w.appendChild(el("b", null, a.name || (ps && ps[id] && ps[id].name) || "Admin"));
-      w.appendChild(el("span", { class: "ln" }, "Admin since " + fmtDay(a.addedAt) + (id === meId() ? " · this is you" : "")));
+      w.appendChild(el("span", { class: "ln" }, "Admin since " + fmtDay(a.addedAt) + (a.email ? " · " + a.email : "") + (/^u_/.test(id) ? "" : " · no login, named as approver only") + (id === meId() ? " · this is you" : "")));
       row.appendChild(w);
-      if (S.isSuper) { var acts = el("div", { class: "acts" }), rb = el("button", { class: "btn danger" }, "Remove admin"); rb.addEventListener("click", function () { makeAdmin({ id: id, name: a.name }, rb, false); }); acts.appendChild(rb); row.appendChild(acts); }
+      if (S.isSuper) { var acts = el("div", { class: "acts" }), rb = el("button", { class: "btn danger" }, "Remove admin");
+        if (/^u_[0-9a-f]{32}$/.test(id) && window.bvAccount) { var pb = el("button", { class: "btn" }, "Set Password"); pb.addEventListener("click", function () { adminPwForm(id, a.name); }); acts.appendChild(pb); } rb.addEventListener("click", function () { makeAdmin({ id: id, name: a.name }, rb, false); }); acts.appendChild(rb); row.appendChild(acts); }
       box.appendChild(row);
     });
-    if (!Object.keys(S.admins).length) box.appendChild(el("div", { class: "empty" }, S.isSuper ? "No other admins yet. Ask them to open the app and request access, then press Make admin on their request or user row." : "No other admins."));
+    if (!Object.keys(S.admins).length) box.appendChild(el("div", { class: "empty" }, S.isSuper ? "No other admins yet. Press Add Admin, or Make admin on a request or user row." : "No other admins."));
   }
   function renderUsers() {
     var pend = pendingRequests(), gf = $("roleGaps"), gaps = roleGaps(); gf.textContent = ""; $("uAddLogin").hidden = !window.bvAccount;

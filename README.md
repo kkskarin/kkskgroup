@@ -62,6 +62,8 @@ provides the same calls, so the app code did not need rewriting:
 - **Settings** (everyone): My Settings has light/dark/device mode, a colour, text size, table density, a
   profile picture shown at the top, and Change Password. Admins also see Companies, Users, Change Log and Data &
   Archive there. PDFs and Excel always keep the standard KKSK format.
+- **Admins** are added only by the Super Admin (Settings › Users › Add Admin), with a login or without one
+  (named as approver only). The Super Admin can set an admin's password.
 - **Logins made by an admin**: Settings › Users › Add Person With Login makes the email and password straight
   away (admin-users Edge Function), with roles and companies set before the person ever signs in. Editing a
   person with a login can set a new password (only the super admin can for admins).

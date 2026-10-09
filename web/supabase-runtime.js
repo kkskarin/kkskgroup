@@ -38,7 +38,7 @@
     }
     o.hidden = false; o.textContent = "";
     var card = h("div", { class: "bvCard" });
-    var h1 = h("h1"); h1.innerHTML = 'Bills <span class="amp">&amp;</span> Vouchers Accounting'; card.appendChild(h1);
+    card.appendChild(h("h1", { text: "KKSK Group" }));
     o.appendChild(card);
     return card;
   }
@@ -49,11 +49,15 @@
   // Arriving from a "set a new password" email link (?reset=1).
   var RESET = /[?&]reset=1\b/.test(location.search);
 
+  /* An app page (Bills & Vouchers, Production Planning) sends people to the KKSK Group sign-in, and back after. */
+  var HOME = window.BV_HOME || "";
+  function toHome() { location.replace(HOME + "?next=" + encodeURIComponent(location.pathname + location.search)); }
   function gate(resolve) {
     sb.auth.getSession().then(function (r) {
       var s = r.data && r.data.session;
       if (s && RESET) { onBody(function () { newPasswordForm(resolve); }); return; }
       if (s) return admit(s, resolve);
+      if (window.BV_APP) { toHome(); return; }
       onBody(function () { signInForm(resolve, "signin"); });
     });
   }
@@ -264,6 +268,14 @@
       }
     });
     startRealtime();
+    /* Someone approved for other KKSK apps but not this one goes back to the KKSK Group home. */
+    if (window.BV_APP === "bv") {
+      sb.rpc("app_portal").then(function (r) {
+        var p = r.data || {};
+        if (!r.error && p.approved && !(p.apps && p.apps.bv)) location.replace(HOME); else resolve(ME);
+      }, function () { resolve(ME); });
+      return;
+    }
     resolve(ME);
   }
 
@@ -668,6 +680,14 @@
   });
 
   /* The super admins as {id, name}, for the app's "Approver" list (the claude.ai version had no such list). */
+  /* What the signed-in person may open across KKSK Group. */
+  window.bvPortal = function () { return ready.then(function () { return sb.rpc("app_portal"); }).then(function (r) { if (r.error) throw err("unavailable", r.error.message); return r.data || {}; }); };
+  /* Super admins (only a super admin can list, add or remove them). */
+  window.bvSupers = Object.freeze({
+    list: function () { return ready.then(function () { return sb.rpc("super_admins_list"); }).then(function (r) { if (r.error) throw err("permission_denied", r.error.message); return r.data || []; }); },
+    add: function (email) { return ready.then(function () { return sb.rpc("super_admin_add", { p_email: email }); }).then(function (r) { if (r.error) throw err("invalid_argument", r.error.message); return true; }); },
+    remove: function (email) { return ready.then(function () { return sb.rpc("super_admin_remove", { p_email: email }); }).then(function (r) { if (r.error) throw err("invalid_argument", r.error.message); return true; }); }
+  });
   window.bvSuperAdmins = function () {
     return ready.then(function () { return sb.from("app_super_admins").select("email"); }).then(function (r) {
       var em = (r.data || []).map(function (x) { return x.email; });

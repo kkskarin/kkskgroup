@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Production Planning</title>
+<link rel="icon" type="image/png" href="../favicon.png"><link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<script src="../config.js"></script>
+<script>window.BV_APP = "pp"; window.BV_HOME = "../";
+/* KKSK-Production: Zoho orders and production tables. Public address and publishable key only. */
+window.PP_CONFIG = { url: "https://rutrnzxcjtvakllvzpkw.supabase.co", key: "sb_publishable_PLot4SdLiaQLyJVKVznBEQ_rTT5f9co" };</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="../supabase-runtime.js"></script>
+<link rel="stylesheet" href="../auth.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&family=Marcellus&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bar:#10281F;--bar2:#173A2C;--hl:#009256;--hl-light:#2DBE7E;--brand:#007A4D;--brand-text:#00704A;--brand-dark:#005C3A;
+--brand-soft:#E3F2EA;--bg:#F4F7F5;--surface:#FFFFFF;--ink:#14231C;--text:#14231C;--muted:#5E6E66;--line:#DCE5E0;--soft:#F1F6F3;--fieldline:#C9D6CF;
+--navtext:#B9CCC2;--focus:#009256;--gold:#2DBE7E;
+--ok:#00704A;--ok-bg:#E3F2EA;--bad:#B42318;--bad-bg:#FDECEA;--warn:#7A4F00;--warn-bg:#FFF1CC;--demo:#78350F;--demo-bg:#FEF3C7;
+--wb:#2F6FB2;--wb-bg:#E6EEF8;--cr:#9A6A1F;--cr-bg:#F6ECDB;--fl:#6B3E26;--fl-bg:#EFE3DA;
+--shadow:0 1px 2px rgba(16,40,31,.05),0 8px 24px -16px rgba(16,40,31,.28);
+--font:"Jost",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--serif:"Marcellus",Georgia,"Times New Roman",serif;color-scheme:light}
+:root[data-accent="ocean"]{--bar:#0F2A3D;--bar2:#16384F;--hl:#0A84C1;--brand:#0A6FA3;--brand-text:#0A6FA3;--brand-dark:#085A85;--brand-soft:#E3F1F8;--focus:#0A84C1;--gold:#4FB3E3}
+:root[data-accent="indigo"]{--bar:#1E1B4B;--bar2:#29265F;--hl:#4F46E5;--brand:#4338CA;--brand-text:#4338CA;--brand-dark:#3730A3;--brand-soft:#EAE9FC;--focus:#4F46E5;--gold:#8B85F0}
+:root[data-accent="plum"]{--bar:#3B0A2E;--bar2:#4D1240;--hl:#A21CAF;--brand:#86198F;--brand-text:#86198F;--brand-dark:#701A75;--brand-soft:#F8E8FA;--focus:#A21CAF;--gold:#D36BDC}
+:root[data-accent="terracotta"]{--bar:#3A1A0E;--bar2:#4C2516;--hl:#C2410C;--brand:#B23C0B;--brand-text:#9A3412;--brand-dark:#9A3412;--brand-soft:#FBEBE3;--focus:#C2410C;--gold:#F08A5B}
+:root[data-accent="charcoal"]{--bar:#1F2328;--bar2:#2B3036;--hl:#4B5563;--brand:#374151;--brand-text:#374151;--brand-dark:#1F2937;--brand-soft:#ECEEF1;--focus:#4B5563;--gold:#9CA3AF}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1513;--surface:#16201C;--ink:#E4ECE7;--text:#E4ECE7;--muted:#9DB0A6;--line:#2B3B34;--soft:#1B2722;--fieldline:#34463E;--brand-soft:color-mix(in srgb,var(--hl) 22%,#16201C);--brand-text:var(--hl-light);
+--ok:#5CC28E;--ok-bg:#163527;--bad:#F08A7E;--bad-bg:#3A1F1E;--warn:#E7B95A;--warn-bg:#3A301B;--demo:#FCD34D;--demo-bg:#3A2E12;--wb:#8DB8E8;--wb-bg:#1E2E47;--cr:#DDB06A;--cr-bg:#3A2F1C;--fl:#D49A76;--fl-bg:#3A2A22;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0E1513;--surface:#16201C;--ink:#E4ECE7;--text:#E4ECE7;--muted:#9DB0A6;--line:#2B3B34;--soft:#1B2722;--fieldline:#34463E;--brand-soft:color-mix(in srgb,var(--hl) 22%,#16201C);--brand-text:var(--hl-light);
+--ok:#5CC28E;--ok-bg:#163527;--bad:#F08A7E;--bad-bg:#3A1F1E;--warn:#E7B95A;--warn-bg:#3A301B;--demo:#FCD34D;--demo-bg:#3A2E12;--wb:#8DB8E8;--wb-bg:#1E2E47;--cr:#DDB06A;--cr-bg:#3A2F1C;--fl:#D49A76;--fl-bg:#3A2A22;color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);overflow-y:scroll}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+h1,h2,h3{margin:0;color:var(--ink)}
+h2{font-family:var(--serif);font-size:24px;font-weight:400;letter-spacing:0;line-height:1.25;color:var(--bar)}
+:root[data-theme="dark"] h2{color:var(--ink)}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) h2{color:var(--ink)}}
+.sheet h2{font-family:var(--serif);font-weight:400}
+h3{font-size:13px;font-weight:700}
+.wrap{max-width:1180px;margin:0 auto;padding-left:24px;padding-right:24px}
+main.wrap{padding-top:22px;padding-bottom:56px}
+.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:14px;padding-top:10px;padding-bottom:10px}
+.mark{flex:none;display:grid;place-items:center;background:#fff;border-radius:10px;width:52px;height:52px;padding:3px;border:1px solid var(--line)}
+.mark img{width:100%;height:100%;object-fit:contain;display:block}
+.titles{flex:1 1 auto;min-width:0}
+.titles .t1{font-family:var(--serif);font-size:22px;color:var(--bar);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+:root[data-theme="dark"] .titles .t1{color:var(--ink)}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .titles .t1{color:var(--ink)}}
+.titles .t2{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:2px}
+.tright{flex:none;display:flex;align-items:center;gap:12px}
+.pill{border:0;border-radius:999px;padding:4px 11px;font-size:11px;font-weight:700;letter-spacing:.12em}
+.pill.demo{background:var(--demo-bg);color:var(--demo)}.pill.live{background:var(--brand-soft);color:var(--brand-text)}
+.rseg{display:inline-flex;border:1px solid var(--line);border-radius:9px;padding:2px;background:var(--soft)}
+.rseg button{border:0;background:none;padding:5px 11px;border-radius:7px;font-weight:600;font-size:13px;color:var(--muted)}
+.rseg button[aria-pressed=true]{background:var(--surface);color:var(--brand-text);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.rseg.static{padding:5px 11px;font-weight:600;font-size:13px;color:var(--brand-text);background:var(--brand-soft);border-color:transparent}
+.me{display:flex;align-items:center;gap:9px;text-align:left}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:600;font-size:13.5px;flex:none;letter-spacing:.02em}
+.me .nm{font-weight:600;font-size:14px;color:var(--ink);line-height:1.2}
+.me select{border:0;background:none;padding:0;font-size:12px;color:var(--muted);font-weight:500;max-width:190px;min-height:0;cursor:pointer}
+.navbar{background:var(--bar)}
+.navbar .wrap{display:flex;overflow-x:auto;scrollbar-width:thin}
+.navbar #nav button{border:0;background:none;color:var(--navtext);font-size:14px;font-weight:500;padding:12px 16px;white-space:nowrap;flex:none;position:relative;letter-spacing:.02em}
+.navbar #nav button[aria-current=page]{color:#fff;background:var(--bar2)}
+.navbar #nav button[aria-current=page]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--hl)}
+.count{display:inline-block;min-width:19px;padding:0 6px;border-radius:9px;background:rgba(255,255,255,.14);color:#fff;font-size:11px;line-height:18px;margin-left:7px;font-weight:600;text-align:center}
+.count.alert{background:var(--hl)}
+.tabbar{background:var(--surface);border-bottom:1px solid var(--line)}
+.tabbar .wrap{display:flex;gap:2px;overflow-x:auto}
+.tabbar button{border:0;background:none;color:var(--muted);font-size:13.5px;font-weight:500;padding:11px 14px;border-bottom:3px solid transparent;white-space:nowrap}
+.tabbar button[aria-current=page]{color:var(--brand-text);border-bottom-color:var(--brand);font-weight:600}
+.demostrip{background:var(--demo-bg);color:var(--demo);font-size:13px}
+.demostrip .wrap{display:flex;align-items:center;gap:10px;padding-top:7px;padding-bottom:7px;flex-wrap:wrap}
+.demostrip b{letter-spacing:.12em;font-size:11.5px}
+.demostrip .btn{margin-left:auto}
+.head,.sechead{display:flex;align-items:flex-end;gap:12px 20px;flex-wrap:wrap;margin-bottom:16px}
+.grow{flex:1 1 auto}
+.sub{color:var(--muted);font-size:13.5px;margin:2px 0 0;max-width:72ch}
+.btn{border:1px solid var(--brand);background:var(--brand);color:#fff;border-radius:9px;padding:8px 14px;min-height:40px;font-weight:600;box-shadow:0 1px 2px rgba(20,33,61,.18)}
+.btn.ghost{background:var(--surface);color:var(--ink);border-color:var(--fieldline);box-shadow:none}
+.btn.small{padding:6px 11px;min-height:34px;font-size:13px}
+.btn.danger{background:var(--surface);color:var(--bad);border-color:var(--fieldline);box-shadow:none}
+.btn:disabled{opacity:.5;cursor:default}
+@media (hover:hover){.btn:hover:not(:disabled){background:var(--brand-dark);border-color:var(--brand-dark)}.btn.ghost:hover:not(:disabled),.btn.danger:hover:not(:disabled){background:var(--surface);border-color:var(--brand);color:var(--brand)}.navbar #nav button:not([aria-current=page]):hover{color:#fff;background:rgba(255,255,255,.06)}.subbar button:not([aria-current=page]):hover{color:var(--ink);background:var(--soft)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;margin-bottom:12px}
+.card.flag{border-left:4px solid var(--bad)}
+.card.tbl{padding:0;overflow:hidden}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap;background:var(--soft);color:var(--muted)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.bad{background:var(--bad-bg);color:var(--bad)}.chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.wb{background:var(--wb-bg);color:var(--wb)}.chip.cr{background:var(--cr-bg);color:var(--cr)}.chip.fl{background:var(--fl-bg);color:var(--fl)}
+.lotno{font-weight:600;font-size:16px;color:var(--brand-text);text-decoration:none;letter-spacing:.01em}
+a.lotno:hover{text-decoration:underline}
+.sku{font-weight:700;color:var(--ink)}
+.stats,.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:12px}
+.fig{background:var(--soft);border-radius:10px;padding:8px 12px}
+.fig small{display:block;text-transform:uppercase;letter-spacing:.1em;font-size:10.5px;color:var(--muted);font-weight:600}
+.fig b{font-size:18px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.fig b.bad{color:var(--bad)}.fig b.ok{color:var(--ok)}
+.strip{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin:12px 0 4px}
+.strip i{height:6px;border-radius:2px;background:var(--line)}
+.strip i.on.wb{background:var(--wb)}.strip i.on.cr{background:var(--cr)}.strip i.on.fl{background:var(--fl)}
+.strip i.now{outline:2px solid var(--ink);outline-offset:1px}
+.stage{font-size:13px;color:var(--muted)}
+.tscroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{background:var(--soft);text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--muted);font-weight:600;text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:14px;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.card:not(.tbl) table th{background:transparent;padding:7px 8px}.card:not(.tbl) table td{padding:7px 8px}
+.drill{margin-top:12px;background:var(--bad-bg);border-radius:8px;padding:10px 14px;font-size:13.5px;color:var(--text)}
+.drill h4{margin:0 0 4px;font-size:13.5px;color:var(--bad)}
+.drill ul{margin:0 0 6px;padding-left:18px}
+.drill a{color:var(--bad);font-weight:600}
+.empty{color:var(--muted);padding:26px 18px;background:var(--surface);border:1px dashed var(--line);border-radius:12px}
+h3.sec{font-size:11.5px;margin:24px 0 10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600}
+.sheet-back{position:fixed;inset:0;background:rgba(20,33,61,.45);z-index:60;display:grid;place-items:center;padding:16px;padding-top:max(16px,env(safe-area-inset-top,0px));padding-bottom:max(16px,env(safe-area-inset-bottom,0px))}
+.sheet{background:var(--surface);border-radius:14px;padding:20px 22px;width:100%;max-width:560px;max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto;box-shadow:0 20px 50px rgba(15,23,42,.3)}
+.sheet header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+.sheet h2{font-size:17px}
+.x{border:1px solid var(--line);background:var(--surface);border-radius:8px;width:36px;height:36px;font-size:18px;color:var(--muted)}
+.field{margin:14px 0}
+.field>label,.lbl{display:block;font-weight:600;font-size:12.5px;color:var(--ink);margin-bottom:6px}
+select,input[type=number],input[type=text]{border:1px solid var(--fieldline);background:var(--surface);border-radius:8px;padding:9px 11px;min-height:42px;max-width:100%}
+select:focus,input:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px rgba(31,58,95,.14)}
+input[type=number]{width:130px}
+.hint{color:var(--muted);font-size:12.5px;margin:6px 0 0}
+.note{background:var(--soft);border-radius:8px;padding:10px 14px;font-size:13.5px;margin:12px 0}
+.note.bad{background:var(--bad-bg);color:var(--bad);font-weight:500}.note.warn{background:var(--warn-bg);color:var(--warn)}
+.rates{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13.5px}
+.rates input{width:96px;text-align:right}
+.rates .miss{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad)}
+.log{font-size:13px;color:var(--muted);margin:0;padding-left:16px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--surface);padding:11px 16px;border-radius:8px;z-index:70;font-size:13.5px;max-width:min(92vw,520px);box-shadow:var(--shadow)}
+.check{display:flex;gap:8px;align-items:center;padding:5px 0;font-size:13.5px}
+.check input{width:18px;height:18px;accent-color:var(--brand)}
+.sel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-end}
+.flt{display:flex;flex-direction:column;gap:4px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;flex:1 1 140px;min-width:0}
+.flt select{min-height:38px;padding:6px 9px;font-size:13.5px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:500;width:100%}
+.togs{display:flex;gap:16px;flex-wrap:wrap;flex:1 1 100%}
+.pisum{border-left:4px solid var(--gold)}
+.kanban{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:10px;overflow-x:auto;padding-bottom:8px;align-items:start;scroll-snap-type:x proximity}
+.kcol{background:var(--soft);border:1px solid var(--line);border-radius:12px;min-height:160px;scroll-snap-align:start;display:flex;flex-direction:column}
+.khead{padding:10px 12px;border-bottom:1px solid var(--line);border-top:4px solid var(--line);border-radius:12px 12px 0 0;display:flex;flex-direction:column;gap:1px;background:var(--surface)}
+.khead.k-wb{border-top-color:var(--wb)}.khead.k-cr{border-top-color:var(--cr)}.khead.k-fl{border-top-color:var(--fl)}
+.khead b{font-size:13px;color:var(--ink)}.khead span{font-size:12px;color:var(--muted)}
+.kbody{padding:8px;display:flex;flex-direction:column;gap:8px}
+.kcard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 10px;box-shadow:0 1px 2px rgba(20,33,61,.05);font-size:13px}
+.kcard.flag{border-left:4px solid var(--bad)}
+.ksku{margin-top:2px;font-weight:600;color:var(--ink);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.kfig{display:flex;justify-content:space-between;gap:8px;margin-top:6px;color:var(--muted);font-variant-numeric:tabular-nums}
+.kfig .bad{color:var(--bad);font-weight:700}
+.kpi{margin-top:6px;font-size:12px;display:flex;gap:4px;flex-wrap:wrap}
+.kpi span:not(.sub){background:var(--brand-soft);color:var(--brand);border-radius:6px;padding:1px 6px;font-weight:600}
+.kpi span.od{background:var(--bad-bg);color:var(--bad)}
+.kst{margin-top:6px;font-size:12px;color:var(--muted);font-weight:600}.kst.warn{color:var(--warn)}
+.seg2{display:inline-flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg2 button{border:0;background:none;padding:7px 14px;border-radius:7px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg2 button[aria-selected=true]{background:var(--ink);color:var(--surface)}
+.kanban.main{grid-auto-columns:minmax(240px,1fr)}
+.kcard.pool{border-style:dashed;background:var(--warn-bg)}
+.kst.late{color:var(--bad)}
+.form{padding:18px 20px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 18px;margin-bottom:6px}
+.f{display:flex;flex-direction:column;gap:6px;min-width:0}.f label{font-weight:600;font-size:12.5px;color:var(--ink)}.f .hint{margin:0}
+.f input,.f select{width:100%}
+.ro{display:flex;flex-wrap:wrap;gap:10px 22px;background:var(--soft);border-radius:10px;padding:10px 14px;margin:12px 0;font-size:13.5px;color:var(--ink)}
+.ro small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.grid{border:1px solid var(--line);border-radius:10px;margin:14px 0;overflow:hidden}
+.grid .ghead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:10px 14px;background:var(--soft);border-bottom:1px solid var(--line)}
+.grid .ghead b{font-size:13.5px;color:var(--ink)}
+.grid table td{padding:7px 10px}.grid table th{padding:8px 10px}
+.grid select{min-height:36px;padding:5px 8px;min-width:150px}
+.grid input[type=number]{min-height:36px;padding:5px 8px;text-align:right}
+.grid>.btn{margin:8px 12px 10px}
+.x.sm{width:30px;height:30px;font-size:15px}
+.stats.sm{margin:10px 0}
+.ffoot{display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--line);margin:16px -20px -18px;padding:12px 20px;background:var(--soft);border-radius:0 0 12px 12px}
+input[type=date]{border:1px solid var(--fieldline);background:var(--surface);border-radius:8px;padding:9px 11px;min-height:42px}
+.ghead2{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.ghead2 b{color:var(--ink);font-size:14px}
+.ffoot2{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--line);background:var(--soft)}
+.ffoot2:empty{display:none}
+.link-btn{border:0;background:none;color:var(--brand);font-weight:600;padding:4px 0;margin:0 0 10px}
+.od2{color:var(--bad);font-weight:600}
+.kempty{color:var(--muted);font-size:12.5px;padding:6px 4px}
+.upds{display:flex;gap:4px;overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px;margin-bottom:16px}
+.upds button{border:0;background:none;padding:8px 12px;border-radius:7px;font-weight:600;font-size:13px;color:var(--muted);white-space:nowrap;flex:none}
+.upds button[aria-selected=true]{background:var(--brand);color:#fff}
+.upds .n{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--brand-soft);color:var(--brand);font-size:11px;line-height:17px;margin-left:4px}
+.upds button[aria-selected=true] .n{background:rgba(255,255,255,.22);color:#fff}
+input.tin{width:110px;min-height:34px;padding:5px 8px;text-align:right}
+.lotno.sm{font-size:13.5px}
+td input[type=checkbox],th input[type=checkbox]{width:18px;height:18px;accent-color:var(--brand)}
+
+:root[data-density="compact"] td{padding-top:6px;padding-bottom:6px}:root[data-density="compact"] th{padding-top:7px;padding-bottom:7px}:root[data-density="compact"] .card{padding:10px 12px}:root[data-density="compact"] .kcard{padding:7px 9px}
+.setgrid{display:grid;gap:14px}
+.setrow{display:grid;grid-template-columns:minmax(140px,220px) 1fr;gap:10px 18px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.setrow:last-child{border-bottom:0}
+.setrow .lb{font-weight:600;color:var(--ink)}.setrow .lb small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatch{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:var(--surface);font-size:13.5px}
+.swatch i{width:22px;height:22px;border-radius:6px;display:block;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.swatch[aria-pressed=true]{border-color:var(--hl);box-shadow:0 0 0 2px var(--brand-soft)}
+@media (max-width:760px){.setrow{grid-template-columns:1fr}.tright .nm{display:none}.titles .t1{font-size:19px}.titles .t2{letter-spacing:.2em}
+.top .wrap{flex-wrap:wrap;row-gap:10px}.tright{width:100%;justify-content:space-between;gap:8px}.tright .pill{order:0}.tright .rseg{order:1}.tright .me{order:2;margin-left:auto}
+.me select{max-width:130px;font-size:12.5px}.avatar{width:32px;height:32px;font-size:12.5px}
+.navbar #nav button{padding:11px 12px}.tabbar button{padding:10px 12px}
+.demostrip{font-size:12px}.demostrip .wrap{padding-top:5px;padding-bottom:5px;gap:4px 10px;flex-wrap:nowrap}.demostrip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.demostrip .btn{min-height:28px;padding:3px 10px;font-size:12px;flex:none}
+h2{font-size:21px}main.wrap{padding-top:16px}
+th,td{padding-left:10px;padding-right:10px}td{font-size:13.5px}}
+@media (max-width:760px){.wrap{padding-left:14px;padding-right:14px}.titles .t1{font-size:15px}.titles .t2{font-size:11px}.mark{width:44px;height:44px}.navbar #nav button{padding:12px 11px;font-size:13px}.me select{max-width:150px}.toast{left:12px;right:12px;transform:none;max-width:none}.sheet{padding:18px 16px}}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:pop .16s ease-out}@keyframes pop{from{transform:translateY(8px);opacity:.7}}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+'use strict';
+const KEY='kksk-pp-demo-v6';
+const LOGO='data:image/png;base64,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';
+const REG={E:'Erode',A:'Ambur'};
+const ROLES={
+  super:{label:'Super Admin',who:'Arin',both:1,plan:1,floor:1,approve:1,admin:1,superA:1},
+  admin:{label:'Admin',who:'Admin (demo)',both:1,plan:1,floor:1,approve:1,admin:1},
+  approver:{label:'Approver',who:'Approver (demo)',both:1,approve:1},
+  planner_E:{label:'Planner, Erode',who:'Erode Planner (demo)',region:'E',plan:1},
+  planner_A:{label:'Planner, Ambur',who:'Ambur Planner (demo)',region:'A',plan:1},
+  floor_E:{label:'Floor Team, Erode',who:'Erode Floor (demo)',region:'E',floor:1},
+  floor_A:{label:'Floor Team, Ambur',who:'Ambur Floor (demo)',region:'A',floor:1},
+  planner:{label:'Planner',who:'Planner',both:1,plan:1},
+  floor:{label:'Floor Team',who:'Floor Team',both:1,floor:1}
+};
+const RK=['cs','cq','fs','tw','fq'];
+const RL={cs:'Crust shortage',cq:'Crust QC reject',fs:'Finishing shortage',tw:'Trimming wastage',fq:'FL QC reject'};
+const ISSUE={
+  wet_blue:{l:'Wet blue',entry:'under_issue',st:RK},
+  fungus_wet_blue:{l:'Fungus wet blue',entry:'under_issue',st:RK},
+  wet_white:{l:'Wet white',entry:'under_issue',st:RK},
+  wet_blue_split:{l:'Wet blue split',entry:'under_issue',st:RK},
+  wet_white_split:{l:'Wet white split',entry:'under_issue',st:RK},
+  redye:{l:'Redye',entry:'under_issue',st:RK},
+  crust:{l:'Crust',entry:'crust',st:['fs','tw','fq']},
+  finished:{l:'Finished leather',entry:'packing',st:[]}
+};
+const STAGES=[
+  {k:'under_issue',l:'Under Issue',c:'wb'},{k:'wf1',l:'Wet Finishing 1',c:'wb'},{k:'dyeing',l:'Dyeing',c:'wb'},
+  {k:'wf2',l:'Wet Finishing 2',c:'cr'},{k:'hooking',l:'Hooking',c:'cr'},{k:'crust',l:'Crust Stock',c:'cr'},
+  {k:'finishing',l:'Finishing',c:'fl'},{k:'fl_ready',l:'FL Ready for Inspection',c:'fl'},{k:'packing',l:'Packing & Dispatch',c:'fl'},{k:'closed',l:'Closed',c:'fl'}
+];
+const UPD=[['issue','Issue Update'],['wf1','WF1 Update'],['dye','Dye Update'],['wf2','WF2 Update'],['crust','Crust Update'],['qc','Crust QC Update'],['finishing','Finishing in / out Update'],['fld','FLD Measurement'],['closing','Lot Closing Update']];
+const updFor=l=>l.stage==='crust'?(l.crustQC==='Yes'&&!l.qcDate?'qc':'finishing'):UPD_FOR[l.stage];
+const UPD_FOR={under_issue:'issue',wf1:'wf1',dyeing:'dye',wf2:'wf2',hooking:'crust',crust:'finishing',finishing:'finishing',fl_ready:'fld',packing:'closing'};
+const SI=k=>STAGES.findIndex(s=>s.k===k);
+const ISSUERS=['Ashok','Jaffar','Anwar','Aspar','Ganesh'];
+const GRADES=['A','B','C','D','TR'];
+const SIZES=['Below 10','10 - 15','15 - 18','18 - 26','26 - 36','36 Above','Others'];
+const STOCK={excess_fl:'Excess finished',excess_crust:'Excess crust',reject_crust:'Reject crust',reject_fl:'Reject finished'};
+
+/* ---------- dates ---------- */
+const istToday=()=>new Date(Date.now()+5.5*36e5).toISOString().slice(0,10);
+const addDays=(s,n)=>{const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const dow=s=>new Date(s+'T00:00:00Z').getUTCDay();
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const fd=s=>{if(!s)return'';const d=new Date(s+'T00:00:00Z');return String(d.getUTCDate()).padStart(2,'0')+'-'+MON[d.getUTCMonth()]+'-'+String(d.getUTCFullYear()).slice(2)};
+const fdl=s=>DOW[dow(s)]+' '+fd(s);
+function lastCons(t){let d=t;for(let i=0;i<8;i++){if(dow(d)===3||dow(d)===6)return d;d=addDays(d,-1)}return t}
+function nextCons(t){let d=addDays(t,1);for(let i=0;i<8;i++){if(dow(d)===3||dow(d)===6)return d;d=addDays(d,1)}return d}
+const T=istToday();
+
+/* ---------- helpers ---------- */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const n0=x=>Math.round(+x||0).toLocaleString('en-IN');
+const p1=x=>(Math.round((+x||0)*10)/10).toString();
+const num=v=>{const x=parseFloat(String(v??'').replace(/,/g,''));return isFinite(x)?x:null};
+const band=q=>q<=500?25:q<=10000?50:q<=50000?300:500;
+const target=o=>o.qty+band(o.qty);
+const minOk=o=>o.qty-band(o.qty);
+
+/* ---------- state ---------- */
+let S=null, UI={sheet:null,open:{}}, toastT=null;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function load(){try{const r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.v===6)return s}}catch(e){}return null}
+const R=()=>ROLES[S.role];
+const region=()=>R().region||S.region;
+const skuOf=c=>S.skus.find(s=>s.code===c);
+const lotOf=id=>S.lots.find(l=>l.id===id);
+function audit(action,detail){S.audit.unshift({at:new Date().toISOString(),by:R().label,action,detail});if(S.audit.length>300)S.audit.length=300}
+function wetTypes(s){if(s.tannage==='chrome')return s.type==='suede'?['wet_blue_split']:['wet_blue','fungus_wet_blue'];return s.type==='suede'?['wet_white_split']:['wet_white']}
+function issueTypes(s){return [...wetTypes(s),'crust','finished']}
+function skuName(s){return s.article+', '+s.colour+', '+s.substance}
+
+/* ---------- seed ---------- */
+function seed(){
+  const st={v:6,entries:[],wf1Other:[],role:'super',region:'E',tab:'orders',skus:[],orders:[],lots:[],stock:[],approvals:[],poolMoves:[],rates:{},hist:[],counters:{},cons:{last:lastCons(T)},audit:[],seq:1};
+  S=st;
+  st.skus=[
+    {code:'MIL-BLK-12',article:'Milano',colour:'Black',substance:'1.2–1.4 mm',tannage:'chrome',type:'upper',soldAs:'finished',drum:3400,tol:8,swatch:'SW-114'},
+    {code:'MIL-TAN-12',article:'Milano',colour:'Tan',substance:'1.2–1.4 mm',tannage:'chrome',type:'upper',soldAs:'finished',drum:3400,tol:8,swatch:'SW-131'},
+    {code:'VEL-GRY-10',article:'Velour',colour:'Grey',substance:'1.0–1.2 mm',tannage:'chrome',type:'suede',soldAs:'both',drum:2500,tol:10,swatch:'SW-207'},
+    {code:'ECO-NAT-08',article:'Eco lining',colour:'Natural',substance:'0.8–1.0 mm',tannage:'chrome-free',type:'lining',soldAs:'crust',drum:3500,tol:6,swatch:'SW-310'},
+    {code:'ECO-SND-10',article:'Eco suede',colour:'Sand',substance:'1.0–1.2 mm',tannage:'chrome-free',type:'suede',soldAs:'finished',drum:2500,tol:10,swatch:'SW-322'}
+  ];
+  st.rates={
+    'MIL-BLK-12|wet_blue':{cs:20,cq:0,fs:1,tw:3,fq:4},
+    'MIL-BLK-12|redye':{cs:10,cq:0,fs:1,tw:3,fq:4},
+    'MIL-BLK-12|crust':{fs:1,tw:3,fq:4},
+    'MIL-TAN-12|wet_blue':{cs:19},
+    'VEL-GRY-10|wet_blue_split':{cs:24,cq:2,fs:1,tw:2,fq:3},
+    'VEL-GRY-10|crust':{fs:1,tw:2,fq:3},
+    'ECO-NAT-08|wet_white':{cs:18,cq:0,fs:1,tw:2,fq:2},
+    'ECO-NAT-08|crust':{fs:1,tw:2,fq:2}
+  };
+  const hv=[[21.4,1.2,0.9,2.7,3.8],[20.6,0.8,1.1,2.9,4.1],[21.9,1.4,1.0,2.6,3.6],[20.2,0.9,1.2,3.0,4.0],[21.1,1.1,0.8,2.8,3.9],[22.0,1.3,1.0,2.7,3.7],[20.8,1.0,1.1,2.9,4.2],[21.5,0.7,0.9,2.8,3.8],[20.9,1.2,1.0,3.1,4.0]];
+  hv.forEach((v,i)=>st.hist.push({sku:'MIL-BLK-12',type:'wet_blue',date:addDays(T,-20-i*9),qty:2700,r:{cs:v[0],cq:v[1],fs:v[2],tw:v[3],fq:v[4]}}));
+  [[24.8,2.2,1.0,2.1,3.2],[23.6,1.8,1.1,1.9,2.9]].forEach((v,i)=>st.hist.push({sku:'VEL-GRY-10',type:'wet_blue_split',date:addDays(T,-30-i*12),qty:3000,r:{cs:v[0],cq:v[1],fs:v[2],tw:v[3],fq:v[4]}}));
+  const O=(pi,cust,brand,sku,qty,due,place,pooled=true)=>st.orders.push({id:'o'+(st.seq++),pi,cust,brand,sku,qty,due:addDays(T,due),place,pooled,dispatched:0,arrived:addDays(T,pooled?-6:0)});
+  O('PI-2611/1','Stride Footwear','Trailmark','MIL-BLK-12',3000,6,'E');
+  O('PI-2611/2','Arcadia Shoes','Arcadia Kids','MIL-BLK-12',2500,12,'E');
+  O('PI-2614/1','Kessler Schuh','Feldweg','MIL-BLK-12',1800,20,'E');
+  O('PI-2615/1','Brenta Calzature','Riva','MIL-TAN-12',4200,18,'E');
+  O('PI-2590/4','Nordlicht Leder','Polarstern','VEL-GRY-10',400,-2,'E');
+  O('PI-2602/3','Nordlicht Leder','Polarstern','VEL-GRY-10',6500,15,'E');
+  O('PI-2617/1','Stride Footwear','Trailmark','VEL-GRY-10',450,25,'E');
+  O('PI-2598/2','Arcadia Shoes','Arcadia Kids','ECO-NAT-08',2200,4,'A');
+  O('PI-2612/1','Kessler Schuh','Feldweg','ECO-NAT-08',12000,30,'A');
+  O('PI-2619/1','Brenta Calzature','Riva','ECO-SND-10',3000,35,'A');
+  O('PI-2620/1','Arcadia Shoes','Arcadia Kids','MIL-BLK-12',900,28,'E',false);
+  const mk=(sku,reg,type,date,out,stage,m)=>{const r={...st.rates[sku+'|'+type]};const l=makeLot({sku,region:reg,type,kind:'bulk',date:addDays(T,date),out,rates:r,rateSrc:'Default values'});l.stage=stage;Object.assign(l.m,m||{});l.log=[{at:l.date,t:'Planned and issued'}];return l};
+  const meas=(l,cs,fld)=>{l.m.crust=Math.round(l.issue*(1-cs));l.m.takenCrust=l.m.crust;if(fld)l.m.fld=Math.round(l.m.takenCrust*0.99)};
+  const a=mk('MIL-BLK-12','E','wet_blue',-7,2500,'packing');meas(a,0.26,true);
+  a.log.push({at:addDays(T,-3),t:'Crust measured '+n0(a.m.crust)+', no crust QC reject'},{at:addDays(T,-1),t:'FLD measured '+n0(a.m.fld)});
+  {const x=mk('MIL-BLK-12','E','wet_blue',-6,2500,'dyeing');x.sammedDate=addDays(T,-4);x.shavedDate=addDays(T,-3)}
+  mk('MIL-BLK-12','E','wet_blue',-3,2450,'wf1');
+  mk('VEL-GRY-10','E','wet_blue_split',-5,1750,'dyeing');
+  const c=mk('VEL-GRY-10','E','wet_blue_split',-4,1750,'wf2');c.sammedDate=addDays(T,-3);c.shavedDate=addDays(T,-2);c.dyedDate=addDays(T,-1);
+  const b=mk('ECO-NAT-08','A','wet_white',-7,2250,'packing');meas(b,0.17,true);
+  mk('ECO-NAT-08','A','wet_white',-5,2400,'hooking');
+  mk('ECO-NAT-08','A','wet_white',-1,2400,'under_issue');
+  meas(mk('ECO-NAT-08','A','wet_white',-6,2400,'crust'),0.18);
+  meas(mk('ECO-NAT-08','A','wet_white',-6,2400,'finishing'),0.19);
+  meas(mk('ECO-NAT-08','A','wet_white',-6,2400,'fl_ready'),0.18);
+  mk('VEL-GRY-10','E','wet_blue_split',-6,1750,'hooking');
+  const ad=(d,n)=>{const x=addDays(d,n);return x>T?T:x};
+  st.lots.forEach(l=>{if(l.stage!=='under_issue'&&ISSUE[l.type].entry==='under_issue'){setIssued(l,ad(l.date,1));l.m0=Math.round(l.issue/1.1);l.issuedBy='Ashok';l.m.issuePcs=Math.round(l.issue/22);
+    if(SI(l.stage)>=SI('dyeing')){l.sammedDate=l.sammedDate||ad(l.date,2);l.shavedDate=l.shavedDate||ad(l.date,3)}
+    if(SI(l.stage)>=SI('wf2')&&!l.dyedDate)l.dyedDate=ad(l.date,4);
+    if(SI(l.stage)>=SI('hooking')){l.dyeSammedDate=ad(l.date,5);l.dyeSetDate=ad(l.date,5);l.vacDate=ad(l.date,6)}
+    if(l.m.crust){l.crustDate=ad(l.date,8);l.crustQC='No';if(SI(l.stage)>SI('crust'))l.qcDate=l.crustDate;l.m.crustPcs=Math.round(l.m.issuePcs*0.97);l.m.takenCrustPcs=l.m.crustPcs}
+    if(SI(l.stage)>=SI('finishing'))l.finInDate=ad(l.date,9);
+    if(SI(l.stage)>=SI('fl_ready'))l.finOutDate=ad(l.date,10);
+    if(l.m.fld){l.fldDate=ad(l.date,11);l.m.fldPcs=l.m.takenCrustPcs}}
+    if(l.stage==='wf1')l.sammedDate=addDays(T,-1)});
+  st.lots.filter(l=>l.stage==='crust').forEach(l=>l.crustQC='Yes');
+  {const a0=st.lots.find(l=>l.m.fld&&l.region==='E');if(a0)st.entries.push({id:'e'+(st.seq++),kind:'fld',region:'E',date:a0.fldDate,at:a0.fldDate,sku:a0.sku,lotIds:[a0.id],totals:{meas:a0.m.fld,pcs:a0.m.fldPcs},per:{}})}
+  st.stock.push({id:'s'+(st.seq++),sku:'MIL-BLK-12',region:'E',kind:'reject_crust',qty:120,date:addDays(T,-9)});
+  st.stock.push({id:'s'+(st.seq++),sku:'VEL-GRY-10',region:'E',kind:'excess_fl',qty:85,date:addDays(T,-12)});
+  st.stock.push({id:'s'+(st.seq++),sku:'ECO-NAT-08',region:'A',kind:'reject_fl',qty:60,date:addDays(T,-8)});
+  c.status='cancel_requested';
+  st.approvals.push({id:'ap'+(st.seq++),kind:'cancel',lotId:c.id,by:'Planner, Erode',reason:'Customer changed colour on the Nordlicht order',at:addDays(T,-1),status:'pending'});
+  st.approvals.push({id:'ap'+(st.seq++),kind:'movePool',sku:'VEL-GRY-10',from:'E',to:'A',qty:1750,by:'Planner, Erode',reason:'Erode drums full this week',at:T,status:'pending'});
+  st.audit=[{at:new Date().toISOString(),by:'System',action:'Demo data loaded',detail:''}];
+  return st;
+}
+
+/* ---------- rates ---------- */
+const defRates=(sku,type)=>S.rates[sku+'|'+type]||null;
+function histFor(sku,type){
+  const h=S.hist.filter(x=>x.sku===sku&&x.type===type).sort((a,b)=>b.date.localeCompare(a.date));
+  const total=h.reduce((s,x)=>s+x.qty,0);
+  if(total<=20000)return{total,rates:null};
+  let acc=0;const w={};let sum=0;
+  for(const x of h){const take=Math.min(x.qty,20000-acc);if(take<=0)break;for(const k of RK)if(x.r[k]!=null)w[k]=(w[k]||0)+x.r[k]*take;sum+=take;acc+=take}
+  const rates={};for(const k of RK)if(w[k]!=null)rates[k]=Math.round(w[k]/sum*100)/100;
+  return{total,rates};
+}
+const siblings=c=>{const s=skuOf(c);return S.skus.filter(x=>x.code!==c&&x.article===s.article&&x.substance===s.substance)};
+const yf=(type,r)=>ISSUE[type].st.reduce((p,k)=>p*(1-(+r[k]||0)/100),1);
+const missingKeys=(type,r)=>ISSUE[type].st.filter(k=>!r||r[k]===''||r[k]==null||num(r[k])==null);
+
+/* ---------- lots ---------- */
+function nextNo(prefix,date){const mm=date.slice(5,7),yy=date.slice(2,4),k=prefix+'|'+mm+yy;S.counters[k]=(S.counters[k]||0)+1;return prefix+'-'+String(S.counters[k]).padStart(3,'0')+'/'+mm+'/'+yy}
+function makeLot({sku,region,type,kind,date,out,issue,rates,rateSrc}){
+  const f=yf(type,rates);
+  if(issue==null)issue=Math.round(out/f);
+  if(out==null)out=Math.round(issue*f);
+  const l={id:'l'+(S.seq++),no:nextNo((kind==='sample'?'S':'B')+region,date),sku,issueRegion:region,region,type,kind,date,plannedOut:Math.round(out),issue:Math.round(issue),rates,rateSrc,stage:ISSUE[type].entry,m:{},status:'active',log:[{at:date,t:'Planned and issued as '+ISSUE[type].l}]};
+  if(type==='crust'){l.m.crust=l.issue;l.m.takenCrust=l.issue}
+  if(type==='finished'){l.m.takenFL=l.issue;l.m.rejectFL=0}
+  S.lots.push(l);return l;
+}
+function proj(l){
+  const r=l.rates||{},m=l.m,f=k=>(+r[k]||0)/100;
+  if(l.type==='finished'){const t=m.takenFL??l.issue;return{tfl:t,ffl:t}}
+  let crust,tc;
+  if(l.type==='crust'){crust=l.issue;tc=l.issue}else{crust=m.crust??l.issue*(1-f('cs'));tc=m.takenCrust??crust*(1-f('cq'))}
+  const fld=m.fld??tc*(1-f('fs'));
+  const ffl=m.takenFL!=null?m.takenFL+(m.rejectFL||0):fld*(1-f('tw'));
+  const tfl=m.takenFL??ffl*(1-f('fq'));
+  return{crust,tc,fld,ffl,tfl};
+}
+const liveLots=()=>S.lots.filter(l=>l.status!=='cancelled');
+const openLots=()=>S.lots.filter(l=>(l.status==='active'||l.status==='cancel_requested')&&l.stage!=='closed');
+
+/* ---------- coverage: earliest due → furthest-along lot ---------- */
+function coverage(){
+  const res={},skuShort={};
+  for(const s of S.skus){
+    const orders=S.orders.filter(o=>o.sku===s.code&&o.pooled).sort((a,b)=>a.due.localeCompare(b.due));
+    const lots=openLots().filter(l=>l.sku===s.code).sort((a,b)=>SI(b.stage)-SI(a.stage)||a.date.localeCompare(b.date));
+    const sup=lots.map(l=>({l,proj:proj(l).tfl,plan:l.plannedOut}));
+    const runP=sup.map(x=>x.proj),runL=sup.map(x=>x.plan);
+    for(const o of orders){
+      const need=Math.max(0,target(o)-o.dispatched);
+      let gotP=0,gotL=0;const from=[];
+      for(let i=0;i<sup.length&&gotP<need;i++){const t=Math.min(runP[i],need-gotP);if(t>0.5){runP[i]-=t;gotP+=t;from.push({no:sup[i].l.no,qty:t})}}
+      for(let i=0;i<sup.length&&gotL<need;i++){const t=Math.min(runL[i],need-gotL);if(t>0){runL[i]-=t;gotL+=t}}
+      const cov=o.dispatched+gotP,covL=o.dispatched+gotL,min=minOk(o);
+      let st,short=0;
+      if(o.dispatched>=min)st='dispatched';
+      else if(cov>=min)st='covered';
+      else if(covL>=min){st='shortfall';short=min-cov}
+      else if(covL>o.dispatched)st='under';
+      else st='none';
+      res[o.id]={cov,covL,from,st,short};
+      if(st==='shortfall'){(skuShort[s.code]=skuShort[s.code]||{qty:0,orders:[],lots:[]});skuShort[s.code].qty+=short;skuShort[s.code].orders.push(o)}
+    }
+    if(skuShort[s.code])skuShort[s.code].lots=lots.map(l=>({l,d:proj(l).tfl-l.plannedOut})).filter(x=>x.d<-0.5).sort((a,b)=>a.d-b.d);
+  }
+  return{res,skuShort};
+}
+
+/* ---------- pools ---------- */
+function pools(reg){
+  const out=[];
+  for(const s of S.skus){
+    const all=S.orders.filter(o=>o.sku===s.code&&o.place===reg&&o.pooled);
+    const os=all.filter(o=>o.dispatched<minOk(o));
+    const base=all.reduce((t,o)=>t+target(o),0);
+    const mi=S.poolMoves.filter(m=>m.sku===s.code&&m.to===reg).reduce((t,m)=>t+m.qty,0);
+    const mo=S.poolMoves.filter(m=>m.sku===s.code&&m.from===reg).reduce((t,m)=>t+m.qty,0);
+    const planned=liveLots().filter(l=>l.sku===s.code&&l.issueRegion===reg&&l.stage!=='closed').reduce((t,l)=>t+l.plannedOut,0)
+      +S.lots.filter(l=>l.sku===s.code&&l.issueRegion===reg&&l.stage==='closed').reduce((t,l)=>t+(l.m.dispatch||0),0);
+    const tgt=base+mi-mo;
+    if(!os.length&&!mi&&!planned)continue;
+    const waiting=S.orders.filter(o=>o.sku===s.code&&o.place===reg&&!o.pooled);
+    out.push({s,orders:os,tgt,mi,mo,planned,unplanned:Math.max(0,Math.round(tgt-planned)),due:os.length?os.map(o=>o.due).sort()[0]:'9999',waiting});
+  }
+  return out.sort((a,b)=>a.due.localeCompare(b.due));
+}
+function poolUnplanned(sku,reg){const p=pools(reg).find(x=>x.s.code===sku);return p?p.unplanned:0}
+
+/* ---------- render ---------- */
+const app=document.getElementById('app');
+function chipFor(st){return{dispatched:'<span class="chip ok">Dispatched</span>',covered:'<span class="chip ok">Covered</span>',shortfall:'<span class="chip bad">Shortfall</span>',under:'<span class="chip warn">Under-planned</span>',none:'<span class="chip">Not planned</span>',waiting:'<span class="chip">Waits for next pooling</span>'}[st]||''}
+function typeChip(t){const c=t==='crust'?'cr':t==='finished'?'fl':'wb';return '<span class="chip '+c+'">'+esc(ISSUE[t].l)+'</span>'}
+function strip(l){const i=SI(l.stage);let h='<div class="strip" aria-hidden="true">';for(let k=0;k<9;k++){const s=STAGES[k];h+='<i class="'+(k<=i?'on ':'')+s.c+(k===i&&l.stage!=='closed'?' now':'')+'"></i>'}return h+'</div>'}
+function pendingCount(){const r=R();return S.approvals.filter(a=>a.status==='pending'&&(r.approve||false)).length}
+
+const TABS=[['orders','Orders'],['pool','Order Pool'],['lots','Lot Tracking'],['entry','Add Lot Data'],['costing','Add Costing Data'],['stock','Stock'],['approvals','Approvals'],['masters','Masters'],['settings','My Settings']];
+const HEADS=[['orders','Orders',['orders','pool']],['lots','Lots',['lots','entry','costing']],['stock','Stock',['stock']],['approvals','Approvals',['approvals']],['masters','Masters',['masters']],['settings','Settings',['settings']]];
+const ACCENTS=[['green','KKSK Green','#10281F','#009256'],['ocean','Ocean Blue','#0F2A3D','#0A84C1'],['indigo','Indigo','#1E1B4B','#4F46E5'],['plum','Plum','#3B0A2E','#A21CAF'],['terracotta','Terracotta','#3A1A0E','#C2410C'],['charcoal','Charcoal','#1F2328','#4B5563']];
+function prefs(){return S.prefs||(S.prefs={mode:'auto',accent:'green',size:100,density:'comfortable'})}
+function applyPrefs(){const p=prefs(),r=document.documentElement;if(p.mode==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',p.mode);if(p.accent==='green')r.removeAttribute('data-accent');else r.setAttribute('data-accent',p.accent);r.setAttribute('data-density',p.density);document.body.style.zoom=p.size===100?'':String(p.size/100)}
+function headCount(k){if(k==='orders'){return pools(region()).filter(p=>p.unplanned>0).length}if(k==='lots'){return UPD.reduce((t,[u])=>t+pendingLots(u).length,0)}if(k==='approvals')return pendingCount();return 0}
+const initials=n=>n.replace(/\(.*?\)/g,'').trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+function render(){
+  const r=R();applyPrefs();
+  if(!TABS.some(t=>t[0]===S.tab))S.tab='orders';
+  const head=HEADS.find(x=>x[2].includes(S.tab));
+  let h='<header class="top"><div class="wrap"><div class="mark"><img alt="KKSK" src="'+LOGO+'"></div><div class="titles"><div class="t1">Production Planning</div><div class="t2">KKSK Group</div></div><div class="tright">';
+  if(r.admin)h+='<button class="pill demo" data-act="pill" title="Switch between Demo and Live">DEMO</button>';
+  h+=(r.both?'<div class="rseg" role="group" aria-label="Plant">'+['E','A'].map(k=>'<button data-act="region" data-v="'+k+'" aria-pressed="'+(S.region===k)+'">'+REG[k]+'</button>').join('')+'</div>':'<span class="rseg static">'+REG[r.region]+'</span>');
+  h+='<div class="me"><span class="avatar" aria-hidden="true">'+esc(initials(r.who))+'</span><div><div class="nm">'+esc(r.who)+'</div>'+(window.PP_ME&&window.PP_ME.super?'<select id="role" data-act="role" aria-label="View as">'+Object.entries(ROLES).filter(([k])=>k!=='planner'&&k!=='floor').map(([k,v])=>'<option value="'+k+'"'+(k===S.role?' selected':'')+'>'+(k==='super'?'Super Admin (you)':'View as '+esc(v.label))+'</option>').join('')+'</select>':'<div style="font-size:12px;color:var(--muted)">'+esc(r.label)+'</div>')+'</div></div>'+(window.PP_ME&&window.PP_ME.apps>1?'<a href="../" class="btn small ghost" style="text-decoration:none" title="All KKSK apps">All Apps</a>':'')+'<button class="btn small ghost" data-act="signout">Sign Out</button></div></div></header>';
+  h+='<nav class="navbar" aria-label="Sections"><div class="wrap" id="nav">'+HEADS.map(([k,l,tabs])=>{const c=headCount(k);return '<button data-act="tab" data-v="'+tabs[0]+'"'+(head[0]===k?' aria-current="page"':'')+'>'+l+(c?'<span class="count'+(k==='approvals'?' alert':'')+'">'+c+'</span>':'')+'</button>'}).join('')+'</div></nav>';
+  if(head[2].length>1)h+='<div class="tabbar"><div class="wrap">'+head[2].map(k=>'<button data-act="tab" data-v="'+k+'"'+(S.tab===k?' aria-current="page"':'')+'>'+TABS.find(t=>t[0]===k)[1]+'</button>').join('')+'</div></div>';
+  h+='<div class="demostrip"><div class="wrap"><b>DEMO MODE</b><span>Sample data only. Nothing here reaches Zoho or live planning.</span>'+(r.admin?'<button class="btn small ghost" data-act="reset">Reset Demo</button>':'')+'</div></div>';
+  h+='<main class="wrap">'+({orders:vOrders,pool:vCons,lots:vLots,entry:vEntry,costing:vCosting,stock:vStock,approvals:vApprovals,masters:vMasters,settings:vSettings}[S.tab])()+'</main>';
+  if(UI.sheet)h+='<div class="sheet-back" data-act="closeBack"><div class="sheet" role="dialog" aria-modal="true" aria-label="'+esc(UI.sheet.title||'')+'">'+sheetHTML()+'</div></div>';
+  app.innerHTML=h;
+}
+function vSettings(){
+  const p=prefs(),r=R();
+  const seg=(k,opts)=>'<div class="seg2">'+opts.map(([v,l])=>'<button data-act="pref" data-k="'+k+'" data-v="'+v+'" aria-selected="'+(String(p[k])===String(v))+'">'+l+'</button>').join('')+'</div>';
+  let h='<div class="sechead"><div class="grow"><h2>My Settings</h2><div class="sub">These follow your login to every device. Prints and Excel downloads keep the standard KKSK format whatever you choose here.</div></div></div><div class="card form"><div class="setgrid">';
+  h+='<div class="setrow"><div class="lb">Mode</div>'+seg('mode',[['light','Light'],['dark','Dark'],['auto','Match Device']])+'</div>';
+  h+='<div class="setrow"><div class="lb">Colour<small>Menu bar, buttons and highlights</small></div><div class="swatches">'+ACCENTS.map(([k,l,b,c])=>'<button class="swatch" data-act="pref" data-k="accent" data-v="'+k+'" aria-pressed="'+(p.accent===k)+'"><i style="background:linear-gradient(135deg,'+b+' 50%,'+c+' 50%)"></i>'+l+'</button>').join('')+'</div></div>';
+  h+='<div class="setrow"><div class="lb">Text Size</div>'+seg('size',[[90,'Small'],[100,'Standard'],[110,'Large'],[120,'Extra Large']])+'</div>';
+  h+='<div class="setrow"><div class="lb">Tables</div>'+seg('density',[['comfortable','Comfortable'],['compact','Compact']])+'</div>';
+  h+='<div class="setrow"><div class="lb">Signed In As</div><div>'+esc(r.who)+', '+esc(r.label)+(r.region?' ('+REG[r.region]+' only)':' (both plants)')+'<p class="hint">In the live app this is where you change your password and sign out.</p></div></div>';
+  return h+'</div></div>';
+}
+
+/* consolidation */
+function vCons(){
+  const reg=region(),r=R(),cov=coverage();
+  const ps=pools(reg);
+  let h='<div class="sechead"><div class="grow"><h2>Order Pool, '+REG[reg]+'</h2><div class="sub">Open orders pooled by SKU, earliest due first. Pooled automatically every Wednesday and Saturday at 8:00 AM. Last pooled '+fdl(S.cons.last)+', next '+fdl(nextCons(S.cons.last))+'.</div></div>'+(r.admin?'<button class="btn small ghost" data-act="runCons">Pool Orders Now</button>':'')+'</div>';
+  if(!ps.length)return h+'<div class="empty">No open orders for '+REG[reg]+'.</div>';
+  for(const p of ps){
+    const sh=cov.skuShort[p.s.code],showShort=sh&&sh.orders.some(o=>o.place===reg);
+    h+='<div class="card'+(showShort?' flag':'')+'"><div class="row"><span class="sku">'+esc(p.s.code)+'</span><span class="sub">'+esc(skuName(p.s))+'</span><span class="spacer"></span>'+(showShort?'<span class="chip bad">Short '+n0(sh.qty)+' sq ft</span>':p.unplanned>0?'<span class="chip warn">'+n0(p.unplanned)+' sq ft to plan</span>':'<span class="chip ok">Fully planned</span>')+'</div>';
+    h+='<div class="sub">Swatch '+esc(p.s.swatch)+'. '+p.orders.length+' order'+(p.orders.length===1?'':'s')+(p.orders.length?', earliest due '+fd(p.due):'')+'. Drum '+n0(p.s.drum)+' sq ft ±'+p.s.tol+'%.</div>';
+    h+='<div class="figs"><div class="fig"><small>To make</small><b>'+n0(p.tgt)+'</b></div><div class="fig"><small>Planned</small><b>'+n0(p.planned)+'</b></div><div class="fig"><small>Unplanned</small><b>'+n0(p.unplanned)+'</b></div>'+(p.mi||p.mo?'<div class="fig"><small>Moved '+(p.mi?'in':'out')+'</small><b>'+n0(p.mi||p.mo)+'</b></div>':'')+'</div>';
+    if(showShort){
+      h+='<div class="drill"><h4>Shortfall of '+n0(sh.qty)+' sq ft below the accepted minimum</h4><div>Orders affected:</div><ul>'+sh.orders.map(o=>'<li>'+esc(o.pi)+', '+esc(o.cust)+', due '+fd(o.due)+': short '+n0(cov.res[o.id].short)+'</li>').join('')+'</ul><div>Lots running below plan:</div><ul>'+(sh.lots.length?sh.lots.map(x=>'<li><a href="#" data-act="lot" data-id="'+x.l.id+'">'+esc(x.l.no)+'</a>: projected '+n0(proj(x.l).tfl)+' against '+n0(x.l.plannedOut)+' planned ('+n0(x.d)+')</li>').join(''):'<li>None; the plan itself is short.</li>')+'</ul></div>';
+    }
+    if(p.waiting.length)h+='<div class="note">'+p.waiting.length+' new order'+(p.waiting.length>1?'s':'')+' ('+p.waiting.map(o=>esc(o.pi)+', '+n0(o.qty)).join('; ')+') will join at the next pooling because this pool was fully planned when '+(p.waiting.length>1?'they':'it')+' arrived.</div>';
+    h+='<div class="row" style="margin-top:10px">';
+    if(r.plan&&p.unplanned>0)h+='<button class="btn small" data-act="plan" data-sku="'+p.s.code+'">Plan Lots</button>';
+    if(r.plan&&p.unplanned>0)h+='<button class="btn small ghost" data-act="movePool" data-sku="'+p.s.code+'">Move quantity to '+REG[reg==='E'?'A':'E']+'</button>';
+    h+='</div></div>';
+  }
+  return h;
+}
+
+/* orders */
+function vOrders(){
+  const reg=region(),r=R(),cov=coverage();
+  const os=S.orders.filter(o=>o.place===reg).sort((a,b)=>a.due.localeCompare(b.due));
+  let h='<div class="sechead"><div><h2>Orders, '+REG[reg]+'</h2><div class="sub">Every line item, soonest due first. Read-only copy of Zoho Creator.</div></div>'+(r.admin?'<button class="btn small ghost" data-act="newOrder">Simulate New Order From Zoho</button>':'')+'</div>';
+  if(!os.length)return h+'<div class="empty">No orders.</div>';
+  h+='<div class="card tbl tscroll"><table><thead><tr><th>Due</th><th>PI line</th><th>Customer</th><th>SKU</th><th class="num">Order</th><th class="num">Accepted</th><th class="num">Projected</th><th>Status</th></tr></thead><tbody>';
+  for(const o of os){const c=cov.res[o.id],b=band(o.qty);
+    h+='<tr><td>'+fd(o.due)+'</td><td>'+esc(o.pi)+'</td><td>'+esc(o.cust)+'</td><td>'+esc(o.sku)+'</td><td class="num">'+n0(o.qty)+'</td><td class="num">'+n0(o.qty-b)+'–'+n0(o.qty+b)+'</td><td class="num">'+(o.pooled?n0(c.cov):'')+'</td><td>'+(o.pooled?chipFor(c.st):chipFor('waiting'))+(o.dispatched?' <span class="sub">'+n0(o.dispatched)+' sent</span>':'')+'</td></tr>'}
+  h+='</tbody></table></div><p class="hint">Accepted range: up to 500 ±25, 501–10,000 ±50, 10,001–50,000 ±300, above 50,000 ±500 sq ft. Planning aims for the top of the range.</p>';
+  return h;
+}
+
+/* lot tracking (kanban) */
+const crustDays=sku=>skuOf(sku).type==='lining'?8:10;
+function setIssued(l,date){l.issueDate=date;if(SI(l.stage)<=SI('hooking')||ISSUE[l.type].entry==='under_issue')l.crustDL=addDays(date,crustDays(l.sku))}
+const crustLate=l=>l.crustDL&&!l.m.crust&&l.crustDL<T;
+const MAIN=[{k:'issue',l:'Under Issue',c:'wb',st:['under_issue']},{k:'dye',l:'Dye Section',c:'wb',st:['wf1','dyeing','wf2','hooking']},{k:'crust',l:'Crust Ready',c:'cr',st:['crust']},{k:'fin',l:'Finishing',c:'fl',st:['finishing','fl_ready']},{k:'qc',l:'QC & Packing',c:'fl',st:['packing']}];
+const MAINSUB={crust:l=>l.crustQC==='Yes'&&!l.qcDate?'Waiting for crust QC':(l.qcDate&&l.crustQC==='Yes'?'Crust QC done':'Crust ready'),wf1:l=>l.splitDate?'WF1: split':l.sammedDate?'WF1: sammed':'WF1: waiting for sammying',dyeing:()=>'Ready to dye',wf2:l=>l.dyeSetDate?'WF2: dye set':l.dyeSammedDate?'WF2: dye sammed':'WF2: dyed',hooking:()=>'Vacuum drying / hooking',fl_ready:()=>'Finished, waiting for FLD'};
+const freeCancel=l=>SI(l.stage)<SI('wf2');
+function lotOrders(){const cov=coverage(),m={};for(const o of S.orders){const c=cov.res[o.id];if(!c)continue;for(const f of c.from)(m[f.no]=m[f.no]||[]).push(o)}return{m,cov}}
+const isOverdue=o=>o.due<T&&o.dispatched<minOk(o);
+function kCard(l,ords,cov){
+  const p=proj(l),d=p.tfl-l.plannedOut,bad=d<-0.5;
+  const short=ords.some(o=>cov.res[o.id]&&cov.res[o.id].st==='shortfall');
+  return '<div class="kcard'+(bad||short?' flag':'')+'"><div class="row"><a href="#" class="lotno" data-act="lot" data-id="'+l.id+'">'+esc(l.no)+'</a>'+(l.kind==='sample'?'<span class="chip">Sample</span>':'')+'</div>'
+   +'<div class="ksku">'+esc(l.sku)+' '+typeChip(l.type)+'</div>'
+   +'<div class="kfig"><span>Plan '+n0(l.plannedOut)+'</span><span class="'+(bad?'bad':'')+'">Proj '+n0(p.tfl)+'</span></div>'
+   +(ords.length?'<div class="kpi">'+ords.slice(0,3).map(o=>'<span class="'+(isOverdue(o)?'od':'')+'">'+esc(o.pi)+'</span>').join(' ')+(ords.length>3?' +'+(ords.length-3):'')+'</div>':'<div class="kpi sub">No order matched</div>')
+   +(MAINSUB[l.stage]?'<div class="kst">'+MAINSUB[l.stage](l)+'</div>':'')
+   +(l.crustDL&&!l.crustDate?'<div class="kst'+(crustLate(l)?' late':'')+'">Crust due '+fd(l.crustDL)+(crustLate(l)?', late':'')+'</div>':'')
+   +(l.crustDate&&l.crustDL?'<div class="kst">Crust '+(l.crustDate<=l.crustDL?'on time':'late')+' (DDP '+(l.crustDate<=l.crustDL?100:0)+')</div>':'')
+   +(l.status==='cancel_requested'?'<div class="kst warn">Cancellation pending</div>':'')
+   +(l.region!==l.issueRegion?'<div class="kst">Moved from '+REG[l.issueRegion]+'</div>':'')
+   +'</div>';
+}
+function vLots(){
+  const reg=region(),F=UI.f||(UI.f={}),{m,cov}=lotOrders();
+  const base=openLots().filter(l=>l.region===reg);
+  const ordsOf=l=>m[l.no]||[];
+  // option lists, from what is actually on the board
+  const unpl=pools(reg).filter(p=>p.unplanned>0);
+  const allOrds=[...new Set([...base.flatMap(ordsOf),...unpl.flatMap(p=>p.orders)])];
+  const uniq=a=>[...new Set(a.filter(Boolean))].sort();
+  const opts={pi:uniq(allOrds.map(o=>o.pi)),brand:uniq(allOrds.map(o=>o.brand)),factory:uniq(allOrds.map(o=>o.cust)),article:uniq([...base.map(l=>skuOf(l.sku).article),...unpl.map(p=>p.s.article)]),sku:uniq([...base.map(l=>l.sku),...unpl.map(p=>p.s.code)]),itype:uniq(base.map(l=>l.type)),kind:uniq(base.map(l=>l.kind))};
+  const ordFilter=o=>(!F.pi||o.pi===F.pi)&&(!F.brand||o.brand===F.brand)&&(!F.factory||o.cust===F.factory)&&(!F.open||o.dispatched<minOk(o))&&(!F.overdue||isOverdue(o))&&(!F.short||(cov.res[o.id]&&cov.res[o.id].st==='shortfall'));
+  const ordActive=F.pi||F.brand||F.factory||F.open||F.overdue||F.short;
+  const ls=base.filter(l=>(!F.article||skuOf(l.sku).article===F.article)&&(!F.sku||l.sku===F.sku)&&(!F.itype||l.type===F.itype)&&(!F.kind||l.kind===F.kind)&&(!ordActive||ordsOf(l).some(ordFilter)));
+  const sel=(k,label,list,fmt)=>'<label class="flt"><span>'+label+'</span><select data-f="'+k+'"><option value="">All</option>'+list.map(v=>'<option value="'+esc(v)+'"'+(F[k]===v?' selected':'')+'>'+esc(fmt?fmt(v):v)+'</option>').join('')+'</select></label>';
+  const tog=(k,label)=>'<label class="check"><input type="checkbox" data-f="'+k+'"'+(F[k]?' checked':'')+'> '+label+'</label>';
+  const nAct=Object.values(F).filter(Boolean).length;
+  let h='<div class="sechead"><div class="grow"><h2>Lot Tracking, '+REG[reg]+'</h2><div class="sub">Every open lot by stage. Filter by order, brand, factory or article; choose a PI number to see where its lots are.</div></div>'+(nAct?'<button class="btn small ghost" data-act="clearF">Clear Filters ('+nAct+')</button>':'')+'</div>';
+  h+='<div class="card filters">'+sel('pi','PI Number',opts.pi)+sel('brand','Brand',opts.brand)+sel('factory','Factory',opts.factory)+sel('article','Article',opts.article)+sel('sku','SKU',opts.sku)+sel('itype','Issue Type',opts.itype,v=>ISSUE[v].l)+sel('kind','Lot Type',opts.kind,v=>v==='sample'?'Sample':'Bulk')
+    +'<div class="togs">'+tog('open','Open Orders')+tog('overdue','Overdue Orders')+tog('short','Shortfall Only')+'</div></div>';
+  if(F.pi){const o=S.orders.find(x=>x.pi===F.pi);if(o){const c=cov.res[o.id],b=band(o.qty);h+='<div class="card pisum"><div class="row"><b>'+esc(o.pi)+'</b><span class="sub">'+esc(o.cust)+', '+esc(o.brand)+', '+esc(o.sku)+'</span><span class="spacer"></span>'+chipFor(c?c.st:'none')+(isOverdue(o)?' <span class="chip bad">Overdue</span>':'')+'</div><div class="figs"><div class="fig"><small>Order</small><b>'+n0(o.qty)+'</b></div><div class="fig"><small>Accepted</small><b>'+n0(o.qty-b)+'–'+n0(o.qty+b)+'</b></div><div class="fig"><small>Projected</small><b>'+n0(c?c.cov:0)+'</b></div><div class="fig"><small>Dispatched</small><b>'+n0(o.dispatched)+'</b></div><div class="fig"><small>Due</small><b>'+fd(o.due)+'</b></div></div></div>'}}
+  const kv=UI.kview||'main';
+  h+='<div class="row" style="margin:0 0 12px"><div class="seg2" role="tablist"><button role="tab" data-act="kview" data-v="main" aria-selected="'+(kv==='main')+'">Main View</button><button role="tab" data-act="kview" data-v="stage" aria-selected="'+(kv==='stage')+'">Stage View</button></div></div>';
+  if(kv==='main'){
+    const ps=pools(reg).filter(p=>p.unplanned>0&&(!F.article||p.s.article===F.article)&&(!F.sku||p.s.code===F.sku)&&!F.itype&&!F.kind&&(!ordActive||p.orders.some(ordFilter)));
+    h+='<div class="kanban main">';
+    for(const sec of MAIN){
+      const col=ls.filter(l=>sec.st.includes(l.stage));
+      const pc=sec.k==='issue'?ps:[];
+      const sum=col.reduce((t,l)=>t+proj(l).tfl,0)+pc.reduce((t,p)=>t+p.unplanned,0);
+      h+='<section class="kcol"><header class="khead k-'+sec.c+'"><b>'+sec.l+'</b><span>'+col.length+' lot'+(col.length===1?'':'s')+(pc.length?' + '+pc.length+' to plan':'')+(sum?', '+n0(sum)+' sq ft':'')+'</span></header><div class="kbody">'
+        +pc.map(p=>'<div class="kcard pool"><div class="row"><b class="sku">'+esc(p.s.code)+'</b><span class="chip warn">Not planned</span></div><div class="kfig"><span>To plan '+n0(p.unplanned)+' sq ft</span></div><div class="kpi">'+p.orders.slice(0,3).map(o=>'<span class="'+(isOverdue(o)?'od':'')+'">'+esc(o.pi)+'</span>').join(' ')+(p.orders.length>3?' +'+(p.orders.length-3):'')+'</div>'+(R().plan?'<button class="btn small ghost" style="margin-top:8px" data-act="plan" data-sku="'+p.s.code+'">Plan Lots</button>':'')+'</div>').join('')
+        +(col.length?col.map(l=>kCard(l,ordsOf(l),cov)).join(''):(pc.length?'':'<div class="kempty">None</div>'))+'</div></section>';
+    }
+    return h+'</div><p class="hint">Under Issue also shows order quantity not yet planned into lots. Projected sq ft is the finished leather each lot is expected to give. PI numbers in red are overdue.</p>';
+  }
+  h+='<div class="kanban">';
+  for(const st of STAGES.slice(0,9)){
+    const col=ls.filter(l=>l.stage===st.k);
+    const sum=col.reduce((t,l)=>t+proj(l).tfl,0);
+    h+='<section class="kcol"><header class="khead k-'+st.c+'"><b>'+st.l+'</b><span>'+col.length+(col.length?', '+n0(sum)+' sq ft':'')+'</span></header><div class="kbody">'+(col.length?col.map(l=>kCard(l,ordsOf(l),cov)).join(''):'<div class="kempty">None</div>')+'</div></section>';
+  }
+  h+='</div><p class="hint">Projected sq ft is the finished leather each lot is expected to give, updated at every stage. PI numbers in red are overdue.</p>';
+  return h;
+}
+
+/* add lot data */
+function lotsAt(reg,stage){return openLots().filter(x=>x.region===reg&&x.stage===stage&&x.status==='active')}
+function pickTable(rows,cols,extra){
+  const P=UI.pick||(UI.pick={});
+  return '<div class="card tbl tscroll"><table><thead><tr><th style="width:36px"><input type="checkbox" data-pickall="'+rows.map(l=>l.id).join(',')+'" aria-label="Select all"'+(rows.length&&rows.every(l=>P[l.id])?' checked':'')+'></th><th>Lot</th><th>SKU</th>'+cols.map(c=>'<th'+(c[2]?' class="num"':'')+'>'+c[0]+'</th>').join('')+'</tr></thead><tbody>'
+   +rows.map(l=>'<tr><td><input type="checkbox" data-pick="'+l.id+'"'+(P[l.id]?' checked':'')+' aria-label="Select '+esc(l.no)+'"></td><td><a href="#" class="lotno" data-act="lot" data-id="'+l.id+'">'+esc(l.no)+'</a></td><td>'+esc(l.sku)+'</td>'+cols.map(c=>'<td'+(c[2]?' class="num"':'')+'>'+c[1](l)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'+(extra||'');
+}
+function picked(rows){const P=UI.pick||{};return rows.filter(l=>P[l.id])}
+function groupTable(rows,act,label){
+  const by={};rows.forEach(x=>(by[x.sku]=by[x.sku]||[]).push(x));
+  return '<div class="card tbl tscroll"><table><thead><tr><th>SKU</th><th>Lots waiting</th><th></th></tr></thead><tbody>'+Object.entries(by).map(([sku,arr])=>'<tr><td class="sku">'+esc(sku)+'</td><td>'+arr.map(x=>'<a href="#" class="lotno sm" data-act="lot" data-id="'+x.id+'">'+esc(x.no)+'</a>').join(', ')+'</td><td class="num"><button class="btn small" data-act="'+act+'" data-sku="'+sku+'">'+label+'</button></td></tr>').join('')+'</tbody></table></div>';
+}
+const WIN=7;
+const within7=d=>d&&d<=T&&d>=addDays(T,-WIN);
+const editable=e=>e.at>=addDays(T,-WIN);
+const QTYK=['issue','crust','qc','fld','closing'];
+const MULTI=['wf1','dye','wf2','qc','finishing','fld','closing'];
+const SKUFIRST=['qc','fld','closing'];
+const artTh=l=>{const s=skuOf(l.sku);return s.article+' - '+s.substance};
+const finOK=l=>l.crustQC!=='Yes'||!!l.qcDate;
+function curQty(l){const m=l.m;return Math.round(m.takenFL??m.fld??m.takenCrust??m.crust??l.issue)}
+function curPcs(l){const m=l.m;return m.takenPcs??m.fldPcs??m.takenCrustPcs??m.crustPcs??m.issuePcs??0}
+function FM(k){const F=UI.fm||(UI.fm={});if(!F[k])F[k]=newForm(k);return F[k]}
+function newForm(k){const b={date:T};
+  if(k==='issue')return{...b,by:'',lot:'',qc:'No',rows:[{grade:'',size:'',pcs:'',m0:''}]};
+  if(k==='wf1')return{...b,g:{sam:[],spl:[],shv:[]},other:[]};
+  if(k==='dye')return{...b,rows:[]};
+  if(k==='wf2')return{...b,g:{dsam:[],dset:[],vac:[]}};
+  if(k==='crust')return{...b,lot:'',meas:'',pcs:''};
+  if(k==='finishing')return{...b,mode:'in',rows:[]};
+  if(k==='qc')return{...b,sku:'',taken:'',takenP:'',rej:'',rejP:'',sel:{}};
+  if(k==='fld')return{...b,sku:'',meas:'',pcs:'',sel:{}};
+  if(k==='closing')return{...b,sku:'',taken:'',takenP:'',rej:'',rejP:'',disp:'',dispP:'',sel:{}};
+}
+function setPath(path,v){const parts=path.split('.');let o=UI.fm;for(let i=0;i<parts.length-1;i++)o=o[parts[i]];o[parts[parts.length-1]]=v}
+const inp=(path,val,type,attrs)=>'<input type="'+(type||'number')+'" class="field-in" data-fp="'+path+'" value="'+esc(val??'')+'"'+(attrs||'')+'>';
+const fld=(label,html,hint)=>'<div class="f"><label>'+label+'</label>'+html+(hint?'<span class="hint">'+hint+'</span>':'')+'</div>';
+const selF=(path,val,opts,ph,dis)=>'<select data-fp="'+path+'"'+(dis?' disabled':'')+'><option value="">'+(ph||'Choose')+'</option>'+opts.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o];return '<option value="'+esc(v)+'"'+(String(val)===String(v)?' selected':'')+'>'+esc(l)+'</option>'}).join('')+'</select>';
+const dateF=(path,val,dis)=>'<input type="date" data-fp="'+path+'" value="'+esc(val)+'" max="'+T+'" min="'+addDays(T,-WIN)+'"'+(dis?' disabled':'')+'>';
+const STG={issue:'under_issue',wf1:'wf1',dye:'dyeing',wf2:'wf2',crust:'hooking',qc:'crust',fld:'fl_ready',closing:'packing'};
+function pendingLots(k){const reg=region();
+  if(k==='qc')return lotsAt(reg,'crust').filter(l=>!l.qcDate&&l.type!=='crust');
+  if(k==='finishing')return[...lotsAt(reg,'crust').filter(finOK),...lotsAt(reg,'finishing')];
+  return lotsAt(reg,STG[k])}
+function eligible(k,g){const reg=region();
+  if(k==='wf1'){const ls=lotsAt(reg,'wf1');if(g==='sam')return ls.filter(l=>!l.sammedDate);if(g==='spl')return ls.filter(l=>l.sammedDate&&!l.splitDate);return ls.filter(l=>l.sammedDate)}
+  if(k==='wf2'){const ls=lotsAt(reg,'wf2');if(g==='dsam')return ls.filter(l=>!l.dyeSammedDate);if(g==='dset')return ls.filter(l=>l.dyeSammedDate&&!l.dyeSetDate);return ls.filter(l=>l.dyeSetDate)}
+  if(k==='finishing')return g==='in'?lotsAt(reg,'crust').filter(finOK):lotsAt(reg,'finishing');
+  return lotsAt(reg,STG[k])}
+function lotGrid(k,g,rows,title,qtyLabel,extraCols){
+  const el=eligible(k,g);
+  let h='<div class="grid"><div class="ghead"><b>'+title+'</b><span class="hint">'+el.length+' lot'+(el.length===1?'':'s')+' can be added</span></div><div class="tscroll"><table><thead><tr><th>S. No.</th><th>Lot ID</th><th>Article - Thickness</th><th>Colour</th>'+(extraCols?'<th>Type of Article</th>':'')+'<th>Type of Lot</th>'+(qtyLabel?'<th class="num">'+qtyLabel+'</th>':'')+'<th></th></tr></thead><tbody>';
+  const base=k+'.'+(g&&k!=='finishing'?'g.'+g+'.':'rows.');
+  rows.forEach((r,i)=>{const l=r.lot?lotOf(r.lot):null;const used=rows.filter((x,j)=>j!==i).map(x=>x.lot);
+    h+='<tr><td>'+(i+1)+'</td><td>'+selF(base+i+'.lot',r.lot,el.filter(x=>!used.includes(x.id)||x.id===r.lot).map(x=>[x.id,x.no]),'Choose lot')+'</td><td>'+(l?esc(artTh(l)):'')+'</td><td>'+(l?esc(skuOf(l.sku).colour):'')+'</td>'+(extraCols?'<td>'+(l?esc(cap(skuOf(l.sku).type)):'')+'</td>':'')+'<td>'+(l?(l.kind==='sample'?'Sample':'Bulk'):'')+'</td>'+(qtyLabel?'<td class="num">'+inp(base+i+'.qty',r.qty,'number',' style="width:100px"')+'</td>':'')+'<td class="num"><button class="x sm" data-act="delRow" data-g="'+base+i+'" aria-label="Remove row">×</button></td></tr>'});
+  if(!rows.length)h+='<tr><td colspan="8" class="sub">No rows.</td></tr>';
+  return h+'</tbody></table></div><button class="btn small ghost" data-act="addRow" data-g="'+base.slice(0,-1)+'"'+(el.length>rows.length?'':' disabled')+'>Add Row</button></div>';
+}
+const cap=x=>x?x[0].toUpperCase()+x.slice(1):'';
+function totalsLine(rows){const ls=rows.map(r=>r.lot&&lotOf(r.lot)).filter(Boolean);const b=rows.filter(r=>r.lot&&lotOf(r.lot).kind!=='sample'),sm=rows.filter(r=>r.lot&&lotOf(r.lot).kind==='sample');const q=a=>a.reduce((t,r)=>t+(num(r.qty)||0),0);
+  return '<div class="stats sm"><div class="fig"><small>Total lots</small><b>'+ls.length+'</b></div><div class="fig"><small>Total quantity</small><b>'+n0(q(rows))+'</b></div><div class="fig"><small>Bulk lots / qty</small><b>'+b.length+' / '+n0(q(b))+'</b></div><div class="fig"><small>Sample lots / qty</small><b>'+sm.length+' / '+n0(q(sm))+'</b></div></div>'}
+function skuChoices(k){const by={};pendingLots(k).forEach(l=>by[l.sku]=(by[l.sku]||0)+1);return Object.entries(by).map(([x,n])=>[x,x+' ('+n+' lot'+(n>1?'s':'')+')'])}
+function lotStatus(l){if(MAINSUB[l.stage])return MAINSUB[l.stage](l);return STAGES[SI(l.stage)].l}
+
+/* list scene */
+function pendingHTML(u){
+  const ls=pendingLots(u),P=(UI.psel=UI.psel||{})[u]||(UI.psel[u]={});
+  const multi=MULTI.includes(u);
+  let h='<div class="card tbl"><div class="ghead2"><b>'+(ls.length?ls.length+' lot'+(ls.length===1?'':'s')+' pending':'No lots pending')+'</b>'+(SKUFIRST.includes(u)?'<span class="hint">Lots are updated one SKU at a time</span>':'')+'</div>';
+  if(ls.length){
+    h+='<div class="tscroll"><table><thead><tr>'+(multi?'<th style="width:36px"></th>':'')+'<th>Lot ID</th><th>SKU</th><th>Article - Thickness</th><th>Colour</th><th>Type of Lot</th><th>Status</th><th class="num">Quantity</th><th class="num">Pieces</th><th>'+(u==='issue'?'Planned':'Crust due')+'</th><th></th></tr></thead><tbody>'
+     +ls.map(l=>{const s=skuOf(l.sku);return '<tr>'+(multi?'<td><input type="checkbox" data-psel="'+u+'.'+l.id+'"'+(P[l.id]?' checked':'')+' aria-label="Select '+esc(l.no)+'"></td>':'')+'<td><a href="#" class="lotno sm" data-act="lot" data-id="'+l.id+'">'+esc(l.no)+'</a></td><td>'+esc(l.sku)+'</td><td>'+esc(artTh(l))+'</td><td>'+esc(s.colour)+'</td><td>'+(l.kind==='sample'?'Sample':'Bulk')+'</td><td>'+esc(lotStatus(l))+'</td><td class="num">'+n0(curQty(l))+'</td><td class="num">'+(curPcs(l)?n0(curPcs(l)):'')+'</td><td>'+(u==='issue'?fd(l.date):l.crustDL&&!l.crustDate?'<span class="'+(crustLate(l)?'od2':'')+'">'+fd(l.crustDL)+'</span>':'')+'</td><td class="num"><button class="btn small" data-act="goForm" data-k="'+u+'" data-id="'+l.id+'">Update</button></td></tr>'}).join('')+'</tbody></table></div>';
+  }
+  h+='<div class="ffoot2">';
+  if(multi&&ls.length)h+='<span class="hint">'+Object.values(P).filter(Boolean).length+' selected</span><button class="btn" data-act="goSel" data-k="'+u+'"'+(Object.values(P).some(Boolean)?'':' disabled')+'>Update Selected</button>';
+  if(u==='wf1')h+='<button class="btn ghost" data-act="goOther">Add Other WF1 Work (No Lot)</button>';
+  if(u==='crust'&&false)h+='';
+  h+='</div></div>';
+  if(u==='crust')h+='<p class="hint">Lots marked "Crust QC required" at issue go to Crust QC Update before finishing.</p>';
+  return h;
+}
+function entrySummary(e){const t=e.totals||{};
+  if(e.kind==='issue')return 'M0 '+n0(t.m0)+', M10 '+n0(t.m10)+', '+n0(t.pcs)+' pcs';
+  if(e.kind==='crust')return n0(t.meas)+' sq ft, '+n0(t.pcs)+' pcs';
+  if(e.kind==='qc')return 'Taken '+n0(t.taken)+' / '+n0(t.takenP)+' pcs, reject '+n0(t.rej)+' / '+n0(t.rejP)+' pcs';
+  if(e.kind==='fld')return n0(t.meas)+' sq ft, '+n0(t.pcs)+' pcs';
+  return 'Taken '+n0(t.taken)+', reject '+n0(t.rej)+', dispatched '+n0(t.disp)}
+function recentHTML(u){
+  const es=(S.entries||[]).filter(e=>e.kind===u&&e.region===region()).sort((a,b)=>b.at.localeCompare(a.at)||b.id.localeCompare(a.id)).slice(0,12);
+  let h='<h3 class="sec">Recent Entries</h3>';
+  if(u==='wf1'){const o=(S.wf1Other||[]).filter(x=>x.region===region()).slice(-8).reverse();h+='<div class="card tbl tscroll"><table><thead><tr><th>Date</th><th>Work</th><th class="num">Quantity</th><th>Remarks</th></tr></thead><tbody>'+(o.length?o.map(x=>'<tr><td>'+fd(x.date)+'</td><td>'+esc(x.op)+' (no lot)</td><td class="num">'+n0(x.qty)+'</td><td>'+esc(x.remark)+'</td></tr>').join(''):'<tr><td colspan="4" class="sub">No WF1 work without a lot yet.</td></tr>')+'</tbody></table></div>';return h}
+  if(!QTYK.includes(u))return '';
+  h+='<div class="card tbl tscroll"><table><thead><tr><th>Date</th><th>Lots</th><th>Quantities</th><th>Entered</th><th></th></tr></thead><tbody>'
+   +(es.length?es.map(e=>'<tr><td>'+fd(e.date)+'</td><td>'+e.lotIds.map(id=>esc(lotOf(id).no)).join(', ')+'</td><td>'+entrySummary(e)+'</td><td>'+fd(e.at)+'</td><td class="num">'+(editable(e)?'<button class="btn small ghost" data-act="editEntry" data-id="'+e.id+'">Edit Quantities</button>':'<span class="hint">Locked</span>')+'</td></tr>').join(''):'<tr><td colspan="5" class="sub">No entries yet.</td></tr>')+'</tbody></table></div><p class="hint">Quantities can be corrected for 7 days after entry. A correction changes only this stage; later stages keep what was recorded.</p>';
+  return h;
+}
+
+/* form scene */
+function formHTML(u){
+  const f=FM(u),ed=!!f.editId,foot=(act,label)=>'<div class="ffoot"><button class="btn ghost" data-act="backList">Cancel</button><button class="btn" data-act="'+act+'">'+(ed?'Save Corrected Quantities':label)+'</button></div>';
+  let h=(ed?'<div class="note warn">Correcting the entry of '+fd(f.date)+'. Only quantities can change, and later stages are not touched.</div>':'')+'<div class="card form">';
+  if(u==='issue'){const el=ed?[lotOf(f.lot)]:eligible('issue');const l=f.lot?lotOf(f.lot):null;
+    h+='<div class="fgrid">'+fld('Issued Date',dateF('issue.date',f.date,ed))+fld('Issued By',selF('issue.by',f.by,ISSUERS,'Choose',ed))+fld('Lot ID',selF('issue.lot',f.lot,el.map(x=>[x.id,x.no+' ('+x.sku+')']),'Choose lot',ed))+fld('Crust QC Required?','<div class="seg2">'+['Yes','No'].map(v=>'<button data-act="setv" data-fp="issue.qc" data-v="'+v+'" aria-selected="'+(f.qc===v)+'"'+(ed?' disabled':'')+'>'+v+'</button>').join('')+'</div>')+'</div>';
+    if(l){const s=skuOf(l.sku);h+='<div class="ro"><span><small>Article - Thickness</small>'+esc(artTh(l))+'</span><span><small>Colour</small>'+esc(s.colour)+'</span><span><small>Issue As</small>'+ISSUE[l.type].l+'</span><span><small>Type of Lot</small>'+(l.kind==='sample'?'Sample':'Bulk')+'</span><span><small>Planned Date</small>'+fd(l.date)+'</span><span><small>Planned Quantity (M10)</small>'+n0(l.plannedIssue||l.issue)+'</span><span><small>Crust-ready deadline</small>'+fd(addDays(f.date,crustDays(l.sku)))+'</span></div>'}
+    h+='<div class="grid"><div class="ghead"><b>Pieces and Measurement Calculator</b><span class="hint">Enter M0; M10 is M0 + 10%</span></div><div class="tscroll"><table><thead><tr><th>S. No.</th><th>Grade</th><th>Size Range</th><th class="num">Pieces</th><th class="num">M0</th><th class="num">M10</th><th></th></tr></thead><tbody>'
+      +f.rows.map((rw,i)=>'<tr><td>'+(i+1)+'</td><td>'+selF('issue.rows.'+i+'.grade',rw.grade,GRADES,'Grade')+'</td><td>'+selF('issue.rows.'+i+'.size',rw.size,SIZES,'Size')+'</td><td class="num">'+inp('issue.rows.'+i+'.pcs',rw.pcs,'number',' style="width:90px"')+'</td><td class="num">'+inp('issue.rows.'+i+'.m0',rw.m0,'number',' style="width:100px"')+'</td><td class="num">'+n0((num(rw.m0)||0)*1.1)+'</td><td class="num"><button class="x sm" data-act="delRow" data-g="issue.rows.'+i+'" aria-label="Remove row">×</button></td></tr>').join('')
+      +'</tbody></table></div><button class="btn small ghost" data-act="addRow" data-g="issue.rows">Add Row</button></div>';
+    const m0=f.rows.reduce((t,x)=>t+(num(x.m0)||0),0),pc=f.rows.reduce((t,x)=>t+(num(x.pcs)||0),0);
+    h+='<div class="stats sm"><div class="fig"><small>M0 Issued Quantity</small><b>'+n0(m0)+'</b></div><div class="fig"><small>M10 Issued Quantity</small><b>'+n0(m0*1.1)+'</b></div><div class="fig"><small>Issued Pieces</small><b>'+n0(pc)+'</b></div></div>'+foot('subIssue','Submit Issue');
+  }
+  if(u==='wf1'){h+='<div class="fgrid">'+fld('Date of Operation',dateF('wf1.date',f.date))+'</div>'+lotGrid('wf1','sam',f.g.sam,'Lots Sammed','Quantity')+lotGrid('wf1','spl',f.g.spl,'Lots Split','Quantity')+lotGrid('wf1','shv',f.g.shv,'Lots Shaved','Quantity');
+    h+='<div class="grid"><div class="ghead"><b>Other WF1 work (no lot number)</b><span class="hint">Wet blue processed to preserve or convert, outside any lot</span></div><div class="tscroll"><table><thead><tr><th>S. No.</th><th>Work</th><th class="num">Quantity</th><th>Remarks</th><th></th></tr></thead><tbody>'
+      +(f.other.length?f.other.map((o,i)=>'<tr><td>'+(i+1)+'</td><td>'+selF('wf1.other.'+i+'.op',o.op,['Sammed','Split','Shaved'],'Work')+'</td><td class="num">'+inp('wf1.other.'+i+'.qty',o.qty,'number',' style="width:100px"')+'</td><td>'+inp('wf1.other.'+i+'.remark',o.remark,'text',' style="min-width:160px"')+'</td><td class="num"><button class="x sm" data-act="delRow" data-g="wf1.other.'+i+'" aria-label="Remove row">×</button></td></tr>').join(''):'<tr><td colspan="5" class="sub">No rows.</td></tr>')
+      +'</tbody></table></div><button class="btn small ghost" data-act="addRow" data-g="wf1.other">Add Row</button></div><p class="hint">Shaved lots move to Ready to dye.</p>'+foot('subWF1','Submit WF1 Update')}
+  if(u==='dye'){h+='<div class="fgrid">'+fld('Dyed Date',dateF('dye.date',f.date))+'</div>'+lotGrid('dye',null,f.rows,'Lots Dyed','Quantity',true)+totalsLine(f.rows)+'<p class="hint">Dyed lots move to Wet Finishing 2. From here, cancelling a lot needs an approver.</p>'+foot('subDye','Submit Dye Update')}
+  if(u==='wf2'){h+='<div class="fgrid">'+fld('Date of Operation',dateF('wf2.date',f.date))+'</div>'+lotGrid('wf2','dsam',f.g.dsam,'Lots Dye Sammed','Quantity')+lotGrid('wf2','dset',f.g.dset,'Lots Dye Set','Quantity')+lotGrid('wf2','vac',f.g.vac,'Lots Vacuumed','Quantity')+'<p class="hint">Vacuumed lots move to Hooking.</p>'+foot('subWF2','Submit WF2 Update')}
+  if(u==='crust'){const el=ed?[lotOf(f.lot)]:eligible('crust');const l=f.lot?lotOf(f.lot):null;
+    h+='<div class="fgrid">'+fld('Lot ID',selF('crust.lot',f.lot,el.map(x=>[x.id,x.no+' ('+x.sku+')']),'Choose lot',ed))+fld('Crust Ready Date',dateF('crust.date',f.date,ed))+fld('Crust Measurement',inp('crust.meas',f.meas))+fld('Crust Pieces',inp('crust.pcs',f.pcs))+'</div>';
+    if(l){const v=num(f.meas),pc=num(f.pcs);const late=f.date>l.crustDL;h+='<div class="ro"><span><small>Article - Thickness</small>'+esc(artTh(l))+'</span><span><small>Colour</small>'+esc(skuOf(l.sku).colour)+'</span><span><small>Issued Date</small>'+fd(l.issueDate)+'</span><span><small>Issued Measurement</small>'+n0(l.issue)+'</span><span><small>Issued Pieces</small>'+n0(l.m.issuePcs)+'</span><span><small>Dyed Date</small>'+fd(l.dyedDate)+'</span><span><small>Crust Ready Deadline</small>'+fd(l.crustDL)+'</span><span><small>Crust QC Required?</small>'+(l.crustQC||'No')+'</span>'
+      +(v?'<span><small>Crust Shortage</small>'+p1((l.issue-v)/l.issue*100)+'%</span><span><small>Area Difference</small>'+n0(l.issue-v)+'</span>':'')+(pc?'<span><small>Piece Difference</small>'+n0((l.m.issuePcs||0)-pc)+'</span>':'')+'<span><small>DDP Score</small>'+(late?'0 (late)':'100')+'</span></div>'}
+    h+=foot('subCrust','Submit Crust Update')}
+  if(u==='finishing'){h+='<div class="seg2" style="margin-bottom:12px">'+[['in','Finishing In'],['out','Finishing Out']].map(([v,lb])=>'<button data-act="setv" data-fp="finishing.mode" data-v="'+v+'" aria-selected="'+(f.mode===v)+'">'+lb+'</button>').join('')+'</div>';
+    h+='<div class="fgrid">'+fld(f.mode==='in'?'Finishing In Date':'Finishing Out Date',dateF('finishing.date',f.date))+'</div>'+lotGrid('finishing',f.mode,f.rows,f.mode==='in'?'Lots Taken for Finishing':'Lots Finished')+'<p class="hint">'+(f.mode==='in'?'Lots move from Crust Ready to Finishing. Lots still waiting for crust QC are not listed.':'Lots move to FL ready, waiting for FLD measurement.')+'</p>'+foot('subFin',f.mode==='in'?'Submit Finishing In':'Submit Finishing Out')}
+  if(SKUFIRST.includes(u)){const P=u;
+    h+='<div class="fgrid">'+fld({qc:'Crust QC Date',fld:'FLD Measurement Date',closing:'Closing Date'}[u],dateF(P+'.date',f.date,ed))+fld('SKU',selF(P+'.sku',f.sku,ed?[[f.sku,f.sku]]:skuChoices(u),'Choose SKU first',ed))+'</div>';
+    if(!f.sku)h+='<div class="empty">Choose the SKU. Its lots '+({qc:'in Crust Ready',fld:'finished out and waiting for FLD',closing:'in QC & Packing'}[u])+' will then be listed for you to select.</div>';
+    else{
+      h+=splitGrid(u,f);
+      h+='<div class="fgrid">';
+      if(u==='qc')h+=fld('Taken Crust Measurement',inp('qc.taken',f.taken))+fld('Taken Crust Pieces',inp('qc.takenP',f.takenP))+fld('Reject Crust Measurement',inp('qc.rej',f.rej))+fld('Reject Crust Pieces',inp('qc.rejP',f.rejP));
+      if(u==='fld')h+=fld('FLD Measurement',inp('fld.meas',f.meas))+fld('FL Ready Pieces',inp('fld.pcs',f.pcs));
+      if(u==='closing')h+=fld('Taken Measurement',inp('closing.taken',f.taken))+fld('Taken Pieces',inp('closing.takenP',f.takenP))+fld('Reject Measurement',inp('closing.rej',f.rej))+fld('Reject Pieces',inp('closing.rejP',f.rejP))+fld('Dispatch Measurement',inp('closing.disp',f.disp),'Open order needs: '+n0(closingNeed(f.sku)+(ed?(S.entries.find(e=>e.id===f.editId).totals.disp||0):0)))+fld('Dispatch Pieces',inp('closing.dispP',f.dispP));
+      h+='</div>'+splitSummary(u,f);
+    }
+    h+=foot({qc:'subQC',fld:'subFLD',closing:'subClose'}[u],{qc:'Submit Crust QC',fld:'Submit FLD Update',closing:'Submit Lot Closing'}[u]);
+  }
+  return h+'</div>';
+}
+function splitLots(u,f){
+  if(f.editId)return f.lotIds.map(lotOf);
+  return pendingLots(u).filter(l=>l.sku===f.sku);
+}
+function splitCalc(u,f){
+  const ls=splitLots(u,f).filter(l=>f.sel[l.id]);
+  if(!ls.length)return{ls,err:'Select at least one lot.'};
+  if(u==='qc'){const w=ls.map(l=>l.m.crust),W=w.reduce((a,b)=>a+b,0),wp=ls.map(l=>l.m.crustPcs||0),WP=wp.reduce((a,b)=>a+b,0);
+    const tk=num(f.taken)||0,rj=num(f.rej)||0,tp=num(f.takenP)||0,rp=num(f.rejP)||0;
+    const rows=ls.map((l,i)=>({l,in:w[i],inP:wp[i],taken:tk*w[i]/W,reject:rj*w[i]/W,takenP:WP?tp*wp[i]/WP:tp/ls.length,rejectP:WP?rp*wp[i]/WP:rp/ls.length}));
+    return{ls,rows,W,WP,err:tk+rj>W+0.5?'Taken plus reject can\'t exceed the lots\' crust measurement ('+n0(W)+').':''}}
+  if(u==='fld'){const w=ls.map(l=>l.m.takenCrust),W=w.reduce((a,b)=>a+b,0),wp=ls.map(l=>l.m.takenCrustPcs||0),WP=wp.reduce((a,b)=>a+b,0);const M=num(f.meas)||0,PC=num(f.pcs)||0;
+    const rows=ls.map((l,i)=>({l,in:w[i],inP:wp[i],fld:M*w[i]/W,pcs:WP?PC*wp[i]/WP:PC/ls.length}));
+    return{ls,rows,W,WP,err:M>W?'FLD measurement can\'t exceed the lots\' taken crust ('+n0(W)+').':''}}
+  const tr=ls.filter(l=>l.type!=='finished'),flx=ls.filter(l=>l.type==='finished');
+  const w=tr.map(l=>l.m.fld),W=w.reduce((a,b)=>a+b,0),wp=tr.map(l=>l.m.fldPcs||0),WP=wp.reduce((a,b)=>a+b,0);
+  const tk=num(f.taken)||0,rj=num(f.rej)||0,tp=num(f.takenP)||0,rp=num(f.rejP)||0,d=num(f.disp)||0,dp=num(f.dispP)||0;
+  const rows=[...tr.map((l,i)=>({l,in:w[i],inP:wp[i],taken:tk*w[i]/W,reject:rj*w[i]/W,takenP:WP?tp*wp[i]/WP:tp/tr.length,rejectP:WP?rp*wp[i]/WP:rp/tr.length})),...flx.map(l=>({l,in:l.issue,inP:l.m.issuePcs||0,taken:l.issue,reject:0,takenP:l.m.issuePcs||0,rejectP:0}))];
+  const TK=rows.reduce((a,r)=>a+r.taken,0),TKP=rows.reduce((a,r)=>a+r.takenP,0);
+  rows.forEach(r=>{r.dispatch=TK?d*r.taken/TK:0;r.dispatchP=TKP?dp*r.takenP/TKP:0;r.excess=r.taken-r.dispatch;r.excessP=r.takenP-r.dispatchP});
+  const need=closingNeed(f.sku)+(f.editId?(S.entries.find(e=>e.id===f.editId).totals.disp||0):0);
+  let err='';if(tr.length&&tk+rj>W+0.5)err='Taken plus reject can\'t exceed the lots\' FLD measurement ('+n0(W)+').';else if(d>TK+0.5)err='Dispatch can\'t exceed taken ('+n0(TK)+').';else if(d>need+0.5)err='Only '+n0(need)+' sq ft is still needed by open orders; keep the rest as excess.';
+  return{ls,rows,W,WP,TK,err};
+}
+function splitGrid(u,f){
+  const all=splitLots(u,f),ed=!!f.editId;
+  const c=splitCalc(u,f);const by={};(c.rows||[]).forEach(r=>by[r.l.id]=r);
+  const hd={qc:'<th class="num">Crust Measurement</th><th class="num">Crust Pieces</th><th class="num">Taken Crust</th><th class="num">Taken Pcs</th><th class="num">Reject Crust</th><th class="num">Reject Pcs</th>',fld:'<th class="num">Taken Crust</th><th class="num">Crust Pieces</th><th class="num">FLD Measurement</th><th class="num">FL Ready Pieces</th>',closing:'<th class="num">FL Measurement</th><th class="num">FL Pieces</th><th class="num">Taken FL</th><th class="num">Reject FL</th><th class="num">Dispatch</th><th class="num">Excess</th>'}[u];
+  let h='<div class="grid"><div class="ghead"><b>'+{qc:'Crust Lots Assorted',fld:'Lots Measured',closing:'Lots Closed'}[u]+'</b><span class="hint">'+(ed?'Lots in this entry':'Select the lots, then enter the totals below')+'</span></div><div class="tscroll"><table><thead><tr><th></th><th>S. No.</th><th>Lot ID</th><th>Article - Thickness</th><th>Colour</th><th>Type of Article</th><th>Type of Lot</th>'+hd+'</tr></thead><tbody>';
+  if(!all.length)h+='<tr><td colspan="13" class="sub">No lots of this SKU are waiting.</td></tr>';
+  all.forEach((l,i)=>{const r=by[l.id],s=skuOf(l.sku);h+='<tr><td><input type="checkbox" data-fsel="'+u+'.'+l.id+'"'+(f.sel[l.id]?' checked':'')+(ed?' disabled':'')+' aria-label="Select '+esc(l.no)+'"></td><td>'+(i+1)+'</td><td>'+esc(l.no)+'</td><td>'+esc(artTh(l))+'</td><td>'+esc(s.colour)+'</td><td>'+esc(cap(s.type))+'</td><td>'+(l.kind==='sample'?'Sample':'Bulk')+'</td>'
+   +(u==='qc'?'<td class="num">'+n0(l.m.crust)+'</td><td class="num">'+n0(l.m.crustPcs)+'</td><td class="num">'+(r?n0(r.taken):'')+'</td><td class="num">'+(r?n0(r.takenP):'')+'</td><td class="num">'+(r?n0(r.reject):'')+'</td><td class="num">'+(r?n0(r.rejectP):'')+'</td>'
+    :u==='fld'?'<td class="num">'+n0(l.m.takenCrust)+'</td><td class="num">'+n0(l.m.takenCrustPcs)+'</td><td class="num">'+(r?n0(r.fld):'')+'</td><td class="num">'+(r?n0(r.pcs):'')+'</td>'
+    :'<td class="num">'+n0(l.type==='finished'?l.issue:l.m.fld)+'</td><td class="num">'+n0(l.type==='finished'?l.m.issuePcs:l.m.fldPcs)+'</td><td class="num">'+(r?n0(r.taken):'')+'</td><td class="num">'+(r?n0(r.reject):'')+'</td><td class="num">'+(r?n0(r.dispatch):'')+'</td><td class="num">'+(r?n0(r.excess):'')+'</td>')+'</tr>'});
+  return h+'</tbody></table></div></div>';
+}
+function splitSummary(u,f){
+  const c=splitCalc(u,f);if(!c.rows)return '';
+  let h='<div class="stats sm">';
+  if(u==='qc'){const tk=num(f.taken)||0,rj=num(f.rej)||0;h+='<div class="fig"><small>No. of Lots Assorted</small><b>'+c.rows.length+'</b></div><div class="fig"><small>Total Crust Measurement</small><b>'+n0(c.W)+'</b></div><div class="fig"><small>Total Crust Pieces</small><b>'+n0(c.WP)+'</b></div><div class="fig"><small>QC Measurement</small><b>'+n0(tk+rj)+'</b></div><div class="fig"><small>Crust Rejection</small><b>'+(tk+rj?p1(rj/(tk+rj)*100)+'%':'')+'</b></div>'}
+  if(u==='fld'){const M=num(f.meas)||0,PC=num(f.pcs)||0;h+='<div class="fig"><small>No. of Lots Measured</small><b>'+c.rows.length+'</b></div><div class="fig"><small>Total Crust Measurement</small><b>'+n0(c.W)+'</b></div><div class="fig"><small>Total Crust Pieces</small><b>'+n0(c.WP)+'</b></div><div class="fig"><small>Piece Difference</small><b>'+(PC?n0(c.WP-PC):'')+'</b></div><div class="fig"><small>Finishing Shortage</small><b>'+(M?p1((c.W-M)/c.W*100)+'%':'')+'</b></div>'}
+  if(u==='closing'){const tk=num(f.taken)||0,rj=num(f.rej)||0,fin=tk+rj;h+='<div class="fig"><small>No. of Lots Closed</small><b>'+c.rows.length+'</b></div><div class="fig"><small>Total FL Measurement</small><b>'+n0(c.W)+'</b></div><div class="fig"><small>Trimming Wastage</small><b>'+(c.W&&fin?p1((c.W-fin)/c.W*100)+'%':'')+'</b></div><div class="fig"><small>Final Rejection</small><b>'+(fin?p1(rj/fin*100)+'%':'')+'</b></div><div class="fig"><small>Excess Measurement</small><b>'+n0((c.TK||0)-(num(f.disp)||0))+'</b></div><div class="fig"><small>Excess Pieces</small><b>'+n0((num(f.takenP)||0)-(num(f.dispP)||0))+'</b></div>'}
+  h+='</div>';if(c.err)h+='<div class="note bad">'+esc(c.err)+'</div>';return h;
+}
+
+function vEntry(){
+  const reg=region(),r=R(),can=r.floor||r.plan;
+  const u=UI.upd||(UI.upd='issue');const sc=(UI.scene=UI.scene||{})[u]||'list';
+  const cnt={};UPD.forEach(([k])=>cnt[k]=pendingLots(k).length);
+  let h='<div class="sechead"><div class="grow"><h2>Add Lot Data, '+REG[reg]+'</h2><div class="sub">Pick a lot and press Update. Dates can be today or up to 7 days back.</div></div></div>';
+  h+='<div class="upds" role="tablist">'+UPD.map(([k,l])=>'<button role="tab" data-act="upd" data-v="'+k+'" aria-selected="'+(u===k)+'">'+l+(cnt[k]?' <span class="n">'+cnt[k]+'</span>':'')+'</button>').join('')+'</div>';
+  if(!can)return h+pendingHTML(u).replace(/<button class="btn small" data-act="goForm"[^>]*>Update<\/button>/g,'')+'<p class="hint">Your login can view lots but not add lot data.</p>';
+  if(sc==='form')return h+'<button class="link-btn" data-act="backList">← Back to Pending Lots</button>'+formHTML(u);
+  return h+pendingHTML(u)+recentHTML(u);
+}
+function goForm(u,ids,opts){
+  const f=newForm(u);UI.fm=UI.fm||{};UI.scene=UI.scene||{};
+  const ls=ids.map(lotOf).filter(Boolean);
+  if(u==='issue'||u==='crust')f.lot=ls[0]?ls[0].id:'';
+  if(u==='wf1')ls.forEach(l=>(l.sammedDate?f.g.shv:f.g.sam).push({lot:l.id,qty:String(curQty(l))}));
+  if(u==='dye')ls.forEach(l=>f.rows.push({lot:l.id,qty:String(curQty(l))}));
+  if(u==='wf2')ls.forEach(l=>(l.dyeSetDate?f.g.vac:l.dyeSammedDate?f.g.dset:f.g.dsam).push({lot:l.id,qty:String(curQty(l))}));
+  if(u==='finishing'){const m=ls[0]&&ls[0].stage==='finishing'?'out':'in';f.mode=m;ls.filter(l=>(m==='in')===(l.stage==='crust')).forEach(l=>f.rows.push({lot:l.id}))}
+  if(SKUFIRST.includes(u)&&ls.length){const sk=ls[0].sku;if(ls.some(l=>l.sku!==sk)){toast('Select lots of one SKU at a time.');return}f.sku=sk;ls.forEach(l=>f.sel[l.id]=true)}
+  if(opts&&opts.other)f.other.push({op:'Sammed',qty:'',remark:''});
+  UI.fm[u]=f;UI.scene[u]='form';render();try{window.scrollTo(0,0)}catch(e){}
+}
+function editEntry(id){
+  const e=S.entries.find(x=>x.id===id);if(!e||!editable(e))return toast('This entry is locked.');
+  const u=e.kind,f=newForm(u),t=e.totals;f.editId=id;f.date=e.date;f.lotIds=e.lotIds.slice();
+  if(u==='issue'){const l=lotOf(e.lotIds[0]);f.lot=l.id;f.by=l.issuedBy||'';f.qc=l.crustQC||'No';f.rows=(t.rows||[]).map(x=>({...x}))}
+  if(u==='crust'){f.lot=e.lotIds[0];f.meas=String(t.meas);f.pcs=String(t.pcs)}
+  if(SKUFIRST.includes(u)){f.sku=e.sku;e.lotIds.forEach(x=>f.sel[x]=true);for(const k in t)f[k]=String(t[k])}
+  UI.fm[u]=f;UI.upd=u;(UI.scene=UI.scene||{})[u]='form';render();
+}
+function lotRows(arr){return arr.filter(r=>r.lot).map(r=>({l:lotOf(r.lot),qty:num(r.qty)}))}
+function submitForm(u){
+  const f=FM(u);const fail=m=>{toast(m);return false};const ed=f.editId?S.entries.find(e=>e.id===f.editId):null;
+  if(!ed&&!within7(f.date))return fail('Date must be today or within the last 7 days.');
+  if(ed&&!editable(ed))return fail('This entry is older than 7 days and can no longer be corrected.');
+  const record=(ls,totals,per)=>{if(ed){ed.totals=totals;ed.per=per||{};ed.editedAt=T}else S.entries.push({id:'e'+(S.seq++),kind:u,region:region(),date:f.date,at:T,sku:f.sku||ls[0].sku,lotIds:ls.map(l=>l.id),totals,per:per||{}})};
+  const done=(msg,ls)=>{audit(msg,ls.map(l=>l.no).join(', '));UI.fm[u]=newForm(u);UI.scene[u]='list';UI.psel&&(UI.psel[u]={});save();toast(msg+': '+ls.map(l=>l.no).join(', '));render();return true};
+  if(u==='issue'){const l=f.lot&&lotOf(f.lot);if(!f.by)return fail('Choose who issued the lot.');if(!l)return fail('Choose a lot.');
+    const rows=f.rows.filter(x=>num(x.m0)>0);if(!rows.length)return fail('Enter at least one M0 measurement.');if(rows.some(x=>!(num(x.pcs)>0)))return fail('Enter pieces for every row.');
+    const m0=rows.reduce((t,x)=>t+num(x.m0),0),m10=Math.round(m0*1.1),pc=rows.reduce((t,x)=>t+num(x.pcs),0);
+    if(!ed){l.plannedIssue=l.issue;setIssued(l,f.date);l.stage=l.type==='redye'?'dyeing':'wf1';l.issuedBy=f.by;l.crustQC=f.qc}
+    l.log.push({at:T,t:(ed?'Issue corrected: ':'Issued by '+f.by+': ')+'M0 '+n0(m0)+', M10 '+n0(m10)+', '+n0(pc)+' pieces'+(!ed&&f.qc==='Yes'?', crust QC required':'')});
+    l.m0=m0;l.issue=m10;l.m.issuePcs=pc;l.issueRows=rows;record([l],{m0,m10,pcs:pc,rows:rows.map(x=>({...x}))});return done(ed?'Issue corrected':'Issued',[l])}
+  if(u==='wf1'||u==='wf2'){const G=f.g,keys=u==='wf1'?[['sam','sammedDate','Sammed'],['spl','splitDate','Split'],['shv','shavedDate','Shaved']]:[['dsam','dyeSammedDate','Dye sammed'],['dset','dyeSetDate','Dye set'],['vac','vacDate','Vacuumed']];
+    const all=[];for(const [g,fld2,lb] of keys){for(const {l,qty} of lotRows(G[g])){l[fld2]=f.date;(l.ops=l.ops||{})[g]=qty;l.log.push({at:f.date,t:lb+(qty?' ('+n0(qty)+')':'')});if(g==='shv')l.stage='dyeing';if(g==='vac')l.stage='hooking';all.push(l)}}
+    let oth=0;if(u==='wf1'){const ok=f.other.filter(o=>o.op&&num(o.qty)>0);if(f.other.some(o=>(o.op||o.qty)&&!(o.op&&num(o.qty)>0)))return fail('Each other WF1 row needs the work and a quantity.');ok.forEach(o=>{S.wf1Other.push({date:f.date,op:o.op,qty:num(o.qty),remark:o.remark||'',region:region()});oth++});if(oth)audit('Other WF1 work',oth+' row(s) without lot')}
+    if(!all.length&&!oth)return fail('Add at least one lot or one other WF1 row.');
+    if(!all.length){UI.fm[u]=newForm(u);UI.scene[u]='list';save();toast('Other WF1 work saved');render();return true}
+    return done(u==='wf1'?'WF1 update saved':'WF2 update saved',[...new Set(all)])}
+  if(u==='dye'){const rs=lotRows(f.rows);if(!rs.length)return fail('Add at least one lot.');rs.forEach(({l,qty})=>{l.dyedDate=f.date;l.stage='wf2';l.log.push({at:f.date,t:'Dyed'+(qty?' ('+n0(qty)+')':'')})});return done('Dye update saved',rs.map(x=>x.l))}
+  if(u==='crust'){const l=f.lot&&lotOf(f.lot);if(!l)return fail('Choose a lot.');const v=num(f.meas),pc=num(f.pcs);
+    if(!(v>0)||!(pc>0))return fail('Enter crust measurement and pieces.');if(v>l.issue)return fail('Crust can\'t exceed the issued measurement ('+n0(l.issue)+').');
+    l.m.crust=v;l.m.crustPcs=pc;if(!l.qcDate){l.m.takenCrust=v;l.m.takenCrustPcs=pc}
+    if(!ed){l.crustDate=f.date;l.stage='crust'}
+    l.log.push({at:T,t:(ed?'Crust corrected: ':'Crust ready: ')+n0(v)+' sq ft, '+n0(pc)+' pieces'+(ed?'':', DDP '+(f.date<=l.crustDL?100:0))});record([l],{meas:v,pcs:pc});return done(ed?'Crust corrected':'Crust update saved',[l])}
+  if(u==='finishing'){const rs=lotRows(f.rows);if(!rs.length)return fail('Add at least one lot.');rs.forEach(({l})=>{if(f.mode==='in'){l.finInDate=f.date;l.stage='finishing';l.log.push({at:f.date,t:'Finishing in'})}else{l.finOutDate=f.date;l.stage='fl_ready';l.log.push({at:f.date,t:'Finishing out'})}});return done(f.mode==='in'?'Finishing in saved':'Finishing out saved',rs.map(x=>x.l))}
+  if(SKUFIRST.includes(u)){if(!f.sku)return fail('Choose the SKU first.');const c=splitCalc(u,f);if(c.err)return fail(c.err);
+    if(u==='qc'){if(!(num(f.taken)>0))return fail('Enter the taken crust measurement.');const per={};
+      c.rows.forEach(r=>{const l=r.l,old=ed&&ed.per[l.id];if(old&&old.rej)addStock(l.sku,l.region,'reject_crust',-old.rej);l.m.takenCrust=Math.round(r.taken);l.m.takenCrustPcs=Math.round(r.takenP);l.m.rejectCrust=Math.round(r.reject);l.m.rejectCrustPcs=Math.round(r.rejectP);if(!ed)l.qcDate=f.date;
+        if(r.reject>0.5)addStock(l.sku,l.region,'reject_crust',r.reject);per[l.id]={rej:r.reject};l.log.push({at:T,t:(ed?'Crust QC corrected: ':'Crust QC: ')+'taken '+n0(r.taken)+', reject '+n0(r.reject)})});
+      record(c.ls,{taken:num(f.taken)||0,takenP:num(f.takenP)||0,rej:num(f.rej)||0,rejP:num(f.rejP)||0},per);return done(ed?'Crust QC corrected':'Crust QC saved',c.ls)}
+    if(u==='fld'){if(!(num(f.meas)>0)||!(num(f.pcs)>0))return fail('Enter FLD measurement and FL ready pieces.');
+      c.rows.forEach(r=>{const l=r.l;l.m.fld=Math.round(r.fld);l.m.fldPcs=Math.round(r.pcs);if(!ed){l.fldDate=f.date;l.stage='packing'}l.log.push({at:T,t:(ed?'FLD corrected: ':'FLD measured ')+n0(r.fld)+' sq ft, '+n0(r.pcs)+' pieces'+(c.rows.length>1&&!ed?' (measured with '+(c.rows.length-1)+' other lot'+(c.rows.length>2?'s':'')+')':'')})});
+      record(c.ls,{meas:num(f.meas),pcs:num(f.pcs)});return done(ed?'FLD corrected':'FLD update saved',c.ls)}
+    const per={};
+    c.rows.forEach(r=>{const l=r.l,old=ed&&ed.per[l.id];if(old){if(old.rej)addStock(l.sku,l.region,'reject_fl',-old.rej);if(old.exc)addStock(l.sku,l.region,'excess_fl',-old.exc)}
+      l.m.takenFL=Math.round(r.taken);l.m.rejectFL=Math.round(r.reject);l.m.takenPcs=Math.round(r.takenP);l.m.rejectPcs=Math.round(r.rejectP);l.m.dispatch=Math.round(r.dispatch);l.m.dispatchPcs=Math.round(r.dispatchP);if(!ed){l.closeDate=f.date;l.stage='closed';l.status='closed'}
+      l.log.push({at:T,t:(ed?'Closing corrected: ':'Closed: ')+'taken '+n0(r.taken)+', reject '+n0(r.reject)+', dispatched '+n0(r.dispatch)+(r.excess>0.5?', excess '+n0(r.excess):'')});if(r.reject>0.5)addStock(l.sku,l.region,'reject_fl',r.reject);if(r.excess>0.5)addStock(l.sku,l.region,'excess_fl',r.excess);per[l.id]={rej:r.reject,exc:r.excess};pushHist(l)});
+    const D=c.rows.reduce((t,r)=>t+r.dispatch,0);if(ed){const delta=D-(ed.totals.disp||0);if(delta>0)allocate(f.sku,delta);else if(delta<0)unallocate(f.sku,-delta)}else allocate(f.sku,D);
+    record(c.ls,{taken:num(f.taken)||0,takenP:num(f.takenP)||0,rej:num(f.rej)||0,rejP:num(f.rejP)||0,disp:num(f.disp)||0,dispP:num(f.dispP)||0},per);return done(ed?'Closing corrected':'Lots closed',c.ls)}
+}
+
+/* costing */
+function vCosting(){
+  return '<div class="sechead"><div class="grow"><h2>Add Costing Data</h2><div class="sub">Costing entries for lots will be recorded here.</div></div></div><div class="empty">This screen is waiting on its definition: which costs are entered (chemicals, labour, power, rawhide), whether per lot or per stage, and who enters them.</div>';
+}
+
+/* stock */
+function vStock(){
+  const reg=region(),r=R();
+  const ss=S.stock.filter(s=>s.region===reg&&s.qty>0.5);
+  let h='<div class="sechead"><div><h2>Stock, '+REG[reg]+'</h2><div class="sub">Excess and reject leather. Reissuing starts a new lot with no link to where it came from.</div></div></div>';
+  if(!ss.length)return h+'<div class="empty">No stock in '+REG[reg]+'.</div>';
+  h+='<div class="card tbl tscroll"><table><thead><tr><th>SKU</th><th>Kind</th><th class="num">Sq ft</th><th>Since</th><th></th></tr></thead><tbody>';
+  for(const s of ss)h+='<tr><td>'+esc(s.sku)+'</td><td>'+STOCK[s.kind]+'</td><td class="num">'+n0(s.qty)+'</td><td>'+fd(s.date)+'</td><td>'+(r.plan?'<button class="btn small ghost" data-act="reissue" data-id="'+s.id+'">Reissue</button>':'')+'</td></tr>';
+  return h+'</tbody></table></div>';
+}
+
+/* approvals */
+function apText(a){
+  if(a.kind==='cancel'){const l=lotOf(a.lotId);return 'Cancel lot '+esc(l?l.no:'')+' ('+esc(l?l.sku:'')+', at '+esc(l?STAGES[SI(l.stage)].l.toLowerCase():'')+')'}
+  if(a.kind==='moveLot'){const l=lotOf(a.lotId);return 'Move lot '+esc(l?l.no:'')+' from '+REG[a.from]+' to '+REG[a.to]}
+  return 'Move '+n0(a.qty)+' sq ft of '+esc(a.sku)+' from the '+REG[a.from]+' order pool to '+REG[a.to]+'\'s';
+}
+function vApprovals(){
+  const r=R();
+  const pend=S.approvals.filter(a=>a.status==='pending'),done=S.approvals.filter(a=>a.status!=='pending').slice(0,12);
+  let h='<div class="sechead"><div><h2>Approvals</h2><div class="sub">Cancellations after dyeing and moves between Erode and Ambur. Approved by admins and cross-region approvers.</div></div></div>';
+  if(!pend.length)h+='<div class="empty">Nothing waiting for approval.</div>';
+  for(const a of pend){h+='<div class="card"><div><b>'+apText(a)+'</b></div><div class="sub">Asked by '+esc(a.by)+', '+fd(a.at)+(a.reason?'. Reason: '+esc(a.reason):'')+'</div>'+(r.approve?'<div class="row" style="margin-top:10px"><button class="btn small" data-act="approve" data-id="'+a.id+'">Approve</button><button class="btn small ghost" data-act="refuse" data-id="'+a.id+'">Refuse</button></div>':'<div class="hint">Waiting for an approver.</div>')+'</div>'}
+  if(done.length)h+='<h3 style="margin:18px 0 8px">Decided</h3>'+done.map(a=>'<div class="card"><div>'+apText(a)+'</div><div class="sub">'+(a.status==='approved'?'Approved':'Refused')+' by '+esc(a.decidedBy)+'</div></div>').join('');
+  h+='<h3 style="margin:18px 0 8px">Activity log</h3><div class="card"><ul class="log">'+S.audit.slice(0,25).map(x=>'<li>'+esc(x.by)+': '+esc(x.action)+(x.detail?', '+esc(x.detail):'')+'</li>').join('')+'</ul></div>';
+  return h;
+}
+
+/* rates */
+function vRatesBody(){
+  const r=R();
+  let h='<h3 class="sec">Yield rates</h3><p class="sub" style="margin:-4px 0 12px">Per SKU and issue type. History takes over once closed lots pass 20,000 sq ft, using the latest 20,000.</p>';
+  for(const s of S.skus){
+    h+='<div class="card"><div class="row"><span class="sku">'+esc(s.code)+'</span><span class="sub">'+esc(skuName(s))+', '+(s.tannage==='chrome'?'chrome':'chrome-free')+' '+s.type+', sold as '+({finished:'finished leather',crust:'crust',both:'crust or finished'}[s.soldAs])+'</span><span class="spacer"></span>'+(r.plan?'<button class="btn small ghost" data-act="editRates" data-sku="'+s.code+'">Edit Defaults</button>':'')+'</div><div class="tscroll"><table style="margin-top:8px"><thead><tr><th>Issue type</th><th>Set</th>'+RK.map(k=>'<th class="num">'+RL[k]+' %</th>').join('')+'</tr></thead><tbody>';
+    let rows=0;
+    for(const t of [...wetTypes(s),'redye','crust']){
+      const d=defRates(s.code,t),hi=histFor(s.code,t);
+      if(d){rows++;h+='<tr><td>'+ISSUE[t].l+'</td><td>Default</td>'+RK.map(k=>'<td class="num">'+(ISSUE[t].st.includes(k)?(d[k]!=null?p1(d[k]):'<span class="chip bad">missing</span>'):'')+'</td>').join('')+'</tr>'}
+      if(hi.total){rows++;h+='<tr><td>'+ISSUE[t].l+'</td><td>History, '+n0(hi.total)+' sq ft'+(hi.rates?'':' (below 20,000)')+'</td>'+RK.map(k=>'<td class="num">'+(hi.rates&&hi.rates[k]!=null?p1(hi.rates[k]):'')+'</td>').join('')+'</tr>'}
+    }
+    if(!rows)h+='<tr><td colspan="7" class="sub">No rates yet. The planner enters them when planning the first lot.</td></tr>';
+    h+='</tbody></table></div></div>';
+  }
+  return h;
+}
+
+/* masters */
+function vMasters(){
+  let h='<div class="sechead"><div class="grow"><h2>Masters</h2><div class="sub">SKUs come from Zoho Creator and are read-only here. Yield rates are kept in this app.</div></div></div>';
+  h+='<h3 class="sec">SKUs</h3><div class="card tbl tscroll"><table><thead><tr><th>SKU</th><th>Article</th><th>Colour</th><th>Substance</th><th>Tannage</th><th>Type</th><th>Wet-end issue</th><th>Sold as</th><th class="num">Drum, sq ft</th><th>Swatch</th></tr></thead><tbody>'+S.skus.map(s=>'<tr><td class="sku">'+esc(s.code)+'</td><td>'+esc(s.article)+'</td><td>'+esc(s.colour)+'</td><td>'+esc(s.substance)+'</td><td>'+(s.tannage==='chrome'?'Chrome':'Chrome-free')+'</td><td>'+esc(s.type[0].toUpperCase()+s.type.slice(1))+'</td><td>'+wetTypes(s).map(t=>ISSUE[t].l).join(' or ')+'</td><td>'+({finished:'Finished leather',crust:'Crust',both:'Crust or finished'}[s.soldAs])+'</td><td class="num">'+n0(s.drum)+' ±'+s.tol+'%</td><td>'+esc(s.swatch)+'</td></tr>').join('')+'</tbody></table></div>';
+  return h+vRatesBody();
+}
+/* ---------- sheets ---------- */
+function openSheet(s){UI.sheet=s;render();const f=app.querySelector('.sheet input,.sheet select');if(f&&s.focus!==false)try{f.focus({preventScroll:true})}catch(e){}}
+function closeSheet(){UI.sheet=null;render()}
+function sheetHTML(){
+  const s=UI.sheet;
+  let h='<header><div><h2>'+esc(s.title)+'</h2>'+(s.subtitle?'<div class="sub">'+s.subtitle+'</div>':'')+'</div><button class="x" data-act="close" aria-label="Close">×</button></header>';
+  return h+({plan:shPlan,lot:shLot,measure:shMeasure,crust:shCrust,move:shMove,reason:shReason,editRates:shEditRates}[s.type])(s);
+}
+
+/* rate panel shared by planning and reissue */
+function rateInit(s){
+  const d=defRates(s.sku,s.itype),hi=histFor(s.sku,s.itype);
+  s.noDefault=!d;s.src=hi.rates?'hist':d?'default':'custom';s.fill='';s.saveDef=false;rateApply(s);
+}
+function rateOpts(s){
+  const d=defRates(s.sku,s.itype),hi=histFor(s.sku,s.itype),o=[];
+  if(hi.rates)o.push(['hist','History: latest 20,000 of '+n0(hi.total)+' sq ft']);
+  if(d)o.push(['default','Default values'+(missingKeys(s.itype,d).length?' (incomplete)':'')]);
+  for(const x of siblings(s.sku))if(defRates(x.code,s.itype))o.push(['copy:'+x.code,'Copy from '+x.code+' ('+x.colour+')']);
+  o.push(['custom','New values for this lot only']);
+  return o;
+}
+function rateApply(s){
+  if(s.src==='custom'&&s.r)return;
+  let b={};
+  if(s.src==='hist')b={...histFor(s.sku,s.itype).rates};
+  else if(s.src==='default')b={...(defRates(s.sku,s.itype)||{})};
+  else if(s.src.startsWith('copy:'))b={...(defRates(s.src.slice(5),s.itype)||{})};
+  if(s.fill){const f=defRates(s.fill,s.itype)||{};for(const k of ISSUE[s.itype].st)if(b[k]==null&&f[k]!=null)b[k]=f[k]}
+  s.r={};for(const k of ISSUE[s.itype].st)s.r[k]=b[k]!=null?String(b[k]):'';
+}
+function rateHTML(s){
+  const st=ISSUE[s.itype].st;if(!st.length)return '<div class="note">Finished leather goes straight to lot closing, so no yield rates apply.</div>';
+  const miss=missingKeys(s.itype,s.r);
+  let h='<div class="field"><label for="src">Yield rates</label><select id="src" data-act="src">'+rateOpts(s).map(([v,l])=>'<option value="'+v+'"'+(v===s.src?' selected':'')+'>'+esc(l)+'</option>').join('')+'</select></div>';
+  const fills=siblings(s.sku).filter(x=>{const d=defRates(x.code,s.itype);return d&&miss.some(k=>d[k]!=null)});
+  if(miss.length&&fills.length)h+='<div class="field"><label for="fill">Fill missing stages from the same article and substance</label><select id="fill" data-act="fill"><option value="">Choose a SKU</option>'+fills.map(x=>'<option value="'+x.code+'"'+(s.fill===x.code?' selected':'')+'>'+x.code+' ('+esc(x.colour)+')</option>').join('')+'</select></div>';
+  h+='<div class="rates">'+st.map(k=>'<label for="r_'+k+'">'+RL[k]+' %</label><input type="number" inputmode="decimal" step="0.1" min="0" max="99" id="r_'+k+'" data-rk="'+k+'" value="'+esc(s.r[k])+'"'+(s.r[k]===''?' class="miss"':'')+'>').join('')+'</div>';
+  if(s.noDefault)h+='<p class="hint">This SKU has no default for '+ISSUE[s.itype].l.toLowerCase()+' yet. The values you enter become its default.</p>';
+  else if(s.src==='custom')h+='<label class="check sub"><input type="checkbox" data-act="saveDef"'+(s.saveDef?' checked':'')+'> Also save these as the SKU\'s default</label>';
+  h+='<p class="hint">Zero is fine for a stage that usually doesn\'t happen, such as crust QC. If it happens anyway, the real loss still counts.</p>';
+  return h;
+}
+function rateReady(s){return !ISSUE[s.itype].st.length||(!missingKeys(s.itype,s.r).length&&ISSUE[s.itype].st.every(k=>num(s.r[k])>=0&&num(s.r[k])<100))}
+function rateObj(s){const o={};for(const k of ISSUE[s.itype].st)o[k]=num(s.r[k]);return o}
+function rateSrcLabel(s){const o=rateOpts(s).find(x=>x[0]===s.src);return o?o[1]:'Custom'}
+
+/* plan sheet */
+function startPlan(sku,stockId){
+  const st=stockId?S.stock.find(x=>x.id===stockId):null;
+  const s=skuOf(sku),reg=region();
+  const sh={type:'plan',title:st?'Reissue '+STOCK[st.kind].toLowerCase():'Plan Lots',subtitle:esc(sku)+', '+esc(skuName(s))+', '+REG[st?st.region:reg],sku,reg:st?st.region:reg,stockId,kind:'bulk',date:T};
+  if(st){sh.itype=st.kind==='excess_fl'?'finished':st.kind==='excess_crust'?'crust':'crust';sh.n=1;sh.issueFixed=st.qty}
+  else{sh.itype=wetTypes(s)[0];sh.unplanned=poolUnplanned(sku,reg)}
+  rateInit(sh);planDefaults(sh);openSheet(sh);
+}
+function planDefaults(sh){
+  if(sh.stockId)return;
+  const s=skuOf(sh.sku);const f=rateReady(sh)?yf(sh.itype,rateObj(sh)):0.75;
+  const issueTot=sh.unplanned/f;sh.n=Math.max(1,Math.ceil(issueTot/s.drum));sh.out=Math.round(sh.unplanned/sh.n);
+}
+function shPlan(sh){
+  const s=skuOf(sh.sku),st=sh.stockId?S.stock.find(x=>x.id===sh.stockId):null;
+  let h='';
+  if(st)h+='<div class="note">'+n0(st.qty)+' sq ft of '+STOCK[st.kind].toLowerCase()+'. The new lot has no link to the lot this came from.</div>';
+  else h+='<div class="note"><b>'+n0(sh.unplanned)+' sq ft</b> still to plan in this pool. Drum capacity '+n0(s.drum)+' sq ft ±'+s.tol+'%.</div>';
+  const types=st?(st.kind==='excess_fl'?['finished']:st.kind==='excess_crust'?['crust']:['crust','redye']):issueTypes(s);
+  h+='<div class="field"><label for="itype">Issue as</label><select id="itype" data-act="itype">'+types.map(t=>'<option value="'+t+'"'+(t===sh.itype?' selected':'')+'>'+ISSUE[t].l+'</option>').join('')+'</select>'+(st?'':'<p class="hint">Wet-end options follow the article: '+(s.tannage==='chrome'?'chrome':'chrome-free')+' '+s.type+'.</p>')+'</div>';
+  if(!st)h+='<div class="row"><div class="field"><label for="kind">Lot type</label><select id="kind" data-act="kind"><option value="bulk"'+(sh.kind==='bulk'?' selected':'')+'>Bulk (B)</option><option value="sample"'+(sh.kind==='sample'?' selected':'')+'>Sample (S)</option></select></div>';
+  else h+='<div class="row">';
+  h+='<div class="field"><label for="pdate">Planning day</label><select id="pdate" data-act="pdate">'+[0,-1,-2].map(d=>{const v=addDays(T,d);return '<option value="'+v+'"'+(v===sh.date?' selected':'')+'>'+(d===0?'Today, ':'')+fdl(v)+'</option>'}).join('')+'</select></div></div>';
+  if(!st)h+='<p class="hint" style="margin-top:-6px">Today, or up to two days back. Future days can\'t be planned.</p>';
+  h+=rateHTML(sh);
+  if(!st)h+='<div class="row"><div class="field"><label for="n">Number of lots</label><input type="number" id="n" data-k="n" min="1" max="20" value="'+sh.n+'"></div><div class="field"><label for="out">Planned output per lot, sq ft</label><input type="number" id="out" data-k="out" min="1" value="'+sh.out+'"></div></div>';
+  h+='<div id="calc">'+planCalc(sh)+'</div>';
+  h+='<div class="row" style="margin-top:14px"><span class="spacer"></span><button class="btn ghost" data-act="close">Cancel</button><button class="btn" data-act="doPlan" id="doPlan"'+(planOK(sh)?'':' disabled')+'>'+(st?'Reissue as new lot':'Plan '+sh.n+' lot'+(sh.n>1?'s':''))+'</button></div>';
+  return h;
+}
+function planOK(sh){if(!rateReady(sh))return false;if(sh.stockId)return true;return sh.n>=1&&sh.out>0}
+function planCalc(sh){
+  const s=skuOf(sh.sku);
+  if(!rateReady(sh))return '<div class="note bad">Enter every stage rate before planning.</div>';
+  const f=yf(sh.itype,rateObj(sh));
+  const prefix=(sh.kind==='sample'?'S':'B')+sh.reg;
+  const mm=sh.date.slice(5,7),yy=sh.date.slice(2,4),c=S.counters[prefix+'|'+mm+yy]||0;
+  if(sh.stockId){const iss=sh.issueFixed,out=iss*f;return '<div class="note">Issue '+n0(iss)+' sq ft as '+ISSUE[sh.itype].l.toLowerCase()+', expected output '+n0(out)+' sq ft of finished leather (overall yield '+p1(f*100)+'%). Lot number '+prefix+'-'+String(c+1).padStart(3,'0')+'/'+mm+'/'+yy+'.</div>'}
+  const iss=sh.out/f,lo=s.drum*(1-s.tol/100),hi=s.drum*(1+s.tol/100);
+  let h='<div class="note">Each lot issues <b>'+n0(iss)+' sq ft</b> of '+ISSUE[sh.itype].l.toLowerCase()+' to give '+n0(sh.out)+' sq ft (overall yield '+p1(f*100)+'%). Lot numbers '+prefix+'-'+String(c+1).padStart(3,'0')+(sh.n>1?' to '+String(c+sh.n).padStart(3,'0'):'')+'/'+mm+'/'+yy+'.</div>';
+  if(sh.itype!=='finished'&&(iss>hi||iss<lo))h+='<div class="note warn">'+n0(iss)+' sq ft is outside the drum range of '+n0(lo)+'–'+n0(hi)+'. Adjust the number of lots.</div>';
+  const tot=sh.n*sh.out;if(tot>sh.unplanned+1)h+='<div class="note warn">This plans '+n0(tot)+' sq ft, '+n0(tot-sh.unplanned)+' more than the pool needs.</div>';
+  return h;
+}
+function doPlan(){
+  const sh=UI.sheet;if(!planOK(sh))return;
+  const rates=rateObj(sh),key=sh.sku+'|'+sh.itype;
+  if(ISSUE[sh.itype].st.length&&(sh.noDefault||sh.saveDef)){S.rates[key]={...(S.rates[key]||{}),...rates};audit('Saved default rates',sh.sku+', '+ISSUE[sh.itype].l)}
+  const src=sh.noDefault?'New default values':rateSrcLabel(sh);
+  const made=[];
+  if(sh.stockId){const st=S.stock.find(x=>x.id===sh.stockId);const l=makeLot({sku:sh.sku,region:sh.reg,type:sh.itype,kind:'bulk',date:sh.date,issue:st.qty,rates,rateSrc:src});l.log[0].t+=' from '+STOCK[st.kind].toLowerCase()+' stock';st.qty=0;made.push(l.no)}
+  else for(let i=0;i<sh.n;i++)made.push(makeLot({sku:sh.sku,region:sh.reg,type:sh.itype,kind:sh.kind,date:sh.date,out:sh.out,rates,rateSrc:src}).no);
+  audit(sh.stockId?'Reissued stock':'Planned lots',made.join(', '));
+  UI.sheet=null;save();toast((made.length>1?'Planned ':'Created ')+made.join(', '));render();
+}
+
+/* lot sheet */
+function shLot(sh){
+  const l=lotOf(sh.id),r=R(),p=proj(l),i=SI(l.stage),m=l.m;
+  let h=strip(l)+'<div class="stage">'+esc(STAGES[i].l)+(MAINSUB[l.stage]?' ('+MAINSUB[l.stage](l)+')':'')+'. Issued '+n0(l.issue)+' sq ft as '+ISSUE[l.type].l.toLowerCase()+' on '+fd(l.date)+'. Rates: '+esc(l.rateSrc)+'.</div>';
+  h+='<div class="figs"><div class="fig"><small>Planned output</small><b>'+n0(l.plannedOut)+'</b></div><div class="fig"><small>Projected output</small><b class="'+(p.tfl<l.plannedOut-0.5?'bad':'ok')+'">'+n0(p.tfl)+'</b></div><div class="fig"><small>Gap</small><b class="'+(p.tfl<l.plannedOut-0.5?'bad':'')+'">'+n0(p.tfl-l.plannedOut)+'</b></div></div>';
+  if(l.issueDate)h+='<p class="hint">Issued '+fd(l.issueDate)+(l.m0?' (M0 '+n0(l.m0)+', M10 '+n0(l.issue)+')':'')+'. '+(l.crustDL?'Crust-ready deadline '+fd(l.crustDL)+(l.crustDate?', crust ready '+fd(l.crustDate)+', DDP '+(l.crustDate<=l.crustDL?100:0):crustLate(l)?', overdue':'')+'.':'')+'</p>';
+  const {m:lo}=lotOrders();const ords=lo[l.no]||[];
+  if(ords.length)h+='<p class="hint">Currently covering '+ords.map(o=>esc(o.pi)+' (due '+fd(o.due)+')').join(', ')+'.</p>';
+  const rows=[];const rr=l.rates||{};
+  rows.push(['Issued (M10)','',l.issueDate?l.issue:null,l.issue,m.issuePcs]);
+  if(!['crust','finished'].includes(l.type)){rows.push(['Crust','cs',m.crust,p.crust,m.crustPcs]);rows.push(['Taken crust','cq',m.takenCrust,p.tc,m.takenCrustPcs])}
+  if(l.type!=='finished'){rows.push(['FLD','fs',m.fld,p.fld,m.fldPcs]);rows.push(['Final FL (taken + reject)','tw',m.takenFL!=null&&l.stage==='closed'?m.takenFL+(m.rejectFL||0):null,p.ffl])}
+  rows.push(['Taken FL','fq',l.stage==='closed'||l.type==='finished'?m.takenFL:null,p.tfl,m.takenPcs]);
+  h+='<div class="tscroll"><table style="margin-top:12px"><thead><tr><th>Measurement</th><th class="num">Rate %</th><th class="num">Actual</th><th class="num">Expected</th><th class="num">Pieces</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+x[0]+'</td><td class="num">'+(x[1]&&rr[x[1]]!=null&&ISSUE[l.type].st.includes(x[1])?p1(rr[x[1]]):'')+'</td><td class="num">'+(x[2]!=null?n0(x[2]):'')+'</td><td class="num">'+(x[2]==null?n0(x[3]):'')+'</td><td class="num">'+(x[4]!=null&&x[2]!=null?n0(x[4]):'')+'</td></tr>').join('')+(m.dispatch!=null?'<tr><td>Dispatched</td><td></td><td class="num">'+n0(m.dispatch)+'</td><td></td><td class="num">'+n0(m.dispatchPcs)+'</td></tr>':'')+'</tbody></table></div>';
+  if(l.status==='active'&&l.stage!=='closed'){
+    h+='<div class="row" style="margin-top:12px">';
+    if(r.floor||r.plan)h+='<button class="btn small" data-act="gotoUpd" data-v="'+updFor(l)+'" data-id="'+l.id+'">Open '+UPD.find(x=>x[0]===updFor(l))[1]+'</button>';
+    if(r.plan||r.admin)h+='<button class="btn small ghost" data-act="moveLot">Move to '+REG[l.region==='E'?'A':'E']+'</button>';
+    if(r.plan||r.admin)h+='<button class="btn small danger" data-act="cancelLot">'+(freeCancel(l)?'Cancel Lot':'Ask to Cancel')+'</button>';
+    h+='</div>';
+    if(!freeCancel(l)&&(r.plan||r.admin))h+='<p class="hint">This lot has been dyed, so cancelling needs an approver.</p>';
+  }
+  if(l.status==='cancel_requested')h+='<div class="note warn">Cancellation is waiting for an approver.</div>';
+  h+='<h3 style="margin:16px 0 6px">History</h3><ul class="log">'+l.log.map(x=>'<li>'+fd(x.at)+': '+esc(x.t)+'</li>').join('')+'</ul>';
+  return h;
+}
+
+/* crust update (one lot) */
+function shCrust(sh){const l=lotOf(sh.id),p=proj(l);return '<div class="row"><div class="field"><label for="cm">Crust measurement, sq ft</label><input type="number" id="cm" data-k="cm" value="'+esc(sh.cm??'')+'" placeholder="About '+n0(p.crust)+'"></div><div class="field"><label for="cr">Reject crust at QC, sq ft</label><input type="number" id="cr" data-k="cr" value="'+esc(sh.cr??'0')+'"></div></div><p class="hint" style="margin-top:-6px">Issued '+n0(l.issue)+' sq ft. Leave reject at 0 if no crust QC was done; any reject goes to reject crust stock.</p><div id="calc">'+crustCalc(sh)+'</div><div class="row"><span class="spacer"></span><button class="btn ghost" data-act="close">Cancel</button><button class="btn" data-act="doCrust">Save, move to Crust Stock</button></div>'}
+function crustCalc(sh){const l=lotOf(sh.id),v=num(sh.cm),rj=num(sh.cr)||0;if(v==null)return '';if(v>l.issue)return '<div class="note bad">Crust can\'t exceed the issued quantity.</div>';if(rj>v)return '<div class="note bad">Reject can\'t exceed the crust measured.</div>';return '<div class="note">Crust shortage '+p1((l.issue-v)/l.issue*100)+'% (expected '+p1(l.rates.cs)+'%). Crust QC reject '+p1(rj/v*100)+'% (expected '+p1(l.rates.cq)+'%). Taken crust '+n0(v-rj)+' sq ft.</div>'}
+function doCrust(){const sh=UI.sheet,l=lotOf(sh.id),v=num(sh.cm),rj=num(sh.cr)||0;if(v==null||v<=0||v>l.issue||rj<0||rj>v)return toast('Check the crust figures');l.m.crust=v;l.m.takenCrust=v-rj;l.stage='crust';l.crustDate=T;l.log.push({at:T,t:'Crust measured '+n0(v)+(rj?', '+n0(rj)+' rejected at QC':', no crust QC reject')});if(rj)addStock(l.sku,l.region,'reject_crust',rj);audit('Crust update',l.no+', '+n0(v));UI.sheet=null;save();toast(l.no+' moved to Crust Stock');render()}
+
+/* FLD and lot closing (one or several lots of one SKU) */
+const INW={fl_ready:l=>l.m.takenCrust,packing:l=>l.type==='finished'?l.m.takenFL:l.m.fld};
+function startMeasure(stage,sku,ids){
+  const reg=region();
+  const ls=lotsAt(reg,stage).filter(x=>x.sku===sku&&x.status==='active');
+  const sel={};ls.forEach(x=>sel[x.id]=ids?ids.includes(x.id):true);
+  const sh={type:'measure',title:stage==='fl_ready'?'FLD Measurement':'Lot Closing Update',subtitle:esc(sku)+', '+REG[reg],stage,sku,sel,v:{}};
+  openSheet(sh);
+}
+function closingNeed(sku){return S.orders.filter(o=>o.sku===sku&&o.pooled).reduce((t,o)=>t+Math.max(0,target(o)-o.dispatched),0)}
+function selLots(sh){return Object.entries(sh.sel).filter(e=>e[1]).map(e=>lotOf(e[0]))}
+function shMeasure(sh){
+  const ls=Object.keys(sh.sel).map(lotOf);
+  let h='<div class="lbl">Lots measured together</div>'+ls.map(l=>'<label class="check"><input type="checkbox" data-sel="'+l.id+'"'+(sh.sel[l.id]?' checked':'')+'> '+esc(l.no)+' <span class="sub">'+(sh.stage==='fl_ready'?'taken crust ':l.type==='finished'?'issued as FL ':'FLD ')+n0(INW[sh.stage](l))+' sq ft</span></label>').join('');
+  const f=(k,l,hint)=>'<div class="field"><label for="m_'+k+'">'+l+'</label><input type="number" id="m_'+k+'" data-mv="'+k+'" value="'+esc(sh.v[k]??'')+'">'+(hint?'<p class="hint">'+hint+'</p>':'')+'</div>';
+  if(sh.stage==='fl_ready')h+=f('fld','FLD measurement, sq ft (total)');
+  if(sh.stage==='packing'){
+    if(selLots(sh).some(l=>l.type!=='finished'))h+='<div class="row">'+f('taken','Taken FL, sq ft (total)')+f('reject','Reject FL, sq ft (total)')+'</div><p class="hint" style="margin-top:-6px">Final FL is taken plus reject; trimming wastage is FLD minus final FL. Lots issued as finished leather count their issue as taken.</p>';
+    h+=f('dispatch','Dispatch quantity, sq ft (total)','Sent against orders automatically, earliest due date first. Open order needs for this SKU: '+n0(closingNeed(sh.sku))+' sq ft.');
+  }
+  h+='<div id="calc">'+measureCalc(sh)+'</div><div class="row" style="margin-top:12px"><span class="spacer"></span><button class="btn ghost" data-act="close">Cancel</button><button class="btn" data-act="doMeasure">Save</button></div>';
+  return h;
+}
+function measureSplit(sh){
+  const ls=selLots(sh);if(!ls.length)return{err:'Pick at least one lot.'};
+  const v=k=>num(sh.v[k]);
+  if(sh.stage==='fl_ready'){const w=ls.map(INW.fl_ready),W=w.reduce((a,b)=>a+b,0),f=v('fld');if(f==null||f<=0)return{err:''};if(f>W)return{err:'FLD can\'t exceed taken crust ('+n0(W)+').'};return{rows:ls.map((l,i)=>({l,fld:f*w[i]/W}))}}
+  const tr=ls.filter(l=>l.type!=='finished'),fl=ls.filter(l=>l.type==='finished');
+  const wf=tr.map(l=>l.m.fld),WF=wf.reduce((a,b)=>a+b,0);
+  let t=0,rj=0;
+  if(tr.length){t=v('taken');rj=v('reject');if(t==null||rj==null||t<0||rj<0)return{err:''};if(t+rj>WF+0.5)return{err:'Taken plus reject can\'t exceed FLD ('+n0(WF)+').'}}
+  const rows=[...tr.map((l,i)=>({l,taken:t*wf[i]/WF,reject:rj*wf[i]/WF})),...fl.map(l=>({l,taken:l.m.takenFL,reject:0}))];
+  const TK=rows.reduce((a,r)=>a+r.taken,0),d=v('dispatch');
+  if(d==null||d<0)return{err:''};if(d>TK+0.5)return{err:'Dispatch can\'t exceed taken FL ('+n0(TK)+').'};
+  const need=closingNeed(sh.sku);if(d>need+0.5)return{err:'Only '+n0(need)+' sq ft is still needed by open orders; keep the rest as excess stock.'};
+  rows.forEach(r=>{r.dispatch=TK?d*r.taken/TK:0;r.excess=r.taken-r.dispatch});
+  return{rows};
+}
+function measureCalc(sh){
+  const s=measureSplit(sh);if(s.err)return '<div class="note bad">'+esc(s.err)+'</div>';if(!s.rows)return '';
+  const cols=sh.stage==='fl_ready'?[['fld','FLD']]:[['taken','Taken FL'],['reject','Reject FL'],['dispatch','Dispatch'],['excess','To excess']];
+  return '<div class="tscroll"><table><thead><tr><th>Lot</th>'+cols.map(c=>'<th class="num">'+c[1]+'</th>').join('')+'</tr></thead><tbody>'+s.rows.map(r=>'<tr><td>'+esc(r.l.no)+'</td>'+cols.map(c=>'<td class="num">'+n0(r[c[0]])+'</td>').join('')+'</tr>').join('')+'</tbody></table></div><p class="hint">Split by each lot\'s input to this stage.</p>';
+}
+function doMeasure(){
+  const sh=UI.sheet,s=measureSplit(sh);
+  if(!s.rows){toast(s.err||'Fill in the figures first');return}
+  const nos=s.rows.map(r=>r.l.no).join(', ');
+  for(const r of s.rows){const l=r.l;
+    if(sh.stage==='fl_ready'){l.m.fld=Math.round(r.fld);l.stage='packing';l.log.push({at:T,t:'FLD measured '+n0(r.fld)+(s.rows.length>1?' (combined)':'')})}
+    else{l.m.takenFL=Math.round(r.taken);l.m.rejectFL=Math.round(r.reject);l.m.dispatch=Math.round(r.dispatch);l.stage='closed';l.status='closed';
+      l.log.push({at:T,t:'Closed: taken '+n0(r.taken)+', reject '+n0(r.reject)+', dispatched '+n0(r.dispatch)+(r.excess>0.5?', '+n0(r.excess)+' to excess stock':'')});
+      if(r.reject>0.5)addStock(l.sku,l.region,'reject_fl',r.reject);if(r.excess>0.5)addStock(l.sku,l.region,'excess_fl',r.excess);pushHist(l)}
+  }
+  if(sh.stage==='packing')allocate(sh.sku,s.rows.reduce((t,r)=>t+r.dispatch,0));
+  audit(sh.title+' recorded',nos);
+  UI.sheet=null;save();toast('Saved for '+nos);render();
+}
+function addStock(sku,reg,kind,q){const e=S.stock.find(x=>x.sku===sku&&x.region===reg&&x.kind===kind&&x.qty>0);if(e){e.qty=Math.max(0,e.qty+q);if(q>0)e.date=T}else if(q>0)S.stock.push({id:'s'+(S.seq++),sku,region:reg,kind,qty:q,date:T})}
+function unallocate(sku,q){for(const o of S.orders.filter(o=>o.sku===sku&&o.pooled&&o.dispatched>0).sort((a,b)=>b.due.localeCompare(a.due))){if(q<=0.5)break;const t=Math.min(o.dispatched,q);o.dispatched-=t;q-=t}}
+function allocate(sku,q){for(const o of S.orders.filter(o=>o.sku===sku&&o.pooled).sort((a,b)=>a.due.localeCompare(b.due))){if(q<=0.5)break;const need=Math.max(0,target(o)-o.dispatched),t=Math.min(need,q);o.dispatched+=t;q-=t}}
+function pushHist(l){
+  if(l.type==='finished')return;const m=l.m,r={};
+  const ffl=m.takenFL+(m.rejectFL||0);
+  if(l.type!=='crust'){r.cs=(l.issue-m.crust)/l.issue*100;r.cq=(m.crust-m.takenCrust)/m.crust*100}
+  r.fs=(m.takenCrust-m.fld)/m.takenCrust*100;r.tw=(m.fld-ffl)/m.fld*100;r.fq=(m.rejectFL||0)/ffl*100;
+  for(const k in r)r[k]=Math.round(r[k]*100)/100;
+  S.hist=S.hist.filter(h=>h.lot!==l.id);S.hist.push({lot:l.id,sku:l.sku,type:l.type,date:T,qty:l.plannedOut,r});
+}
+
+/* move / reason */
+function shMove(sh){return '<div class="field"><label for="mq">Quantity to move, sq ft</label><input type="number" id="mq" data-k="qty" value="'+esc(sh.qty)+'" max="'+sh.max+'"><p class="hint">Up to '+n0(sh.max)+' sq ft not yet planned. It joins '+REG[sh.to]+'\'s order pool and is planned there with '+REG[sh.to]+' lot numbers.</p></div><div class="field"><label for="why">Reason</label><input type="text" id="why" data-k="reason" value="'+esc(sh.reason||'')+'"></div><div class="row"><span class="spacer"></span><button class="btn ghost" data-act="close">Cancel</button><button class="btn" data-act="doMove">Send for Approval</button></div>'}
+function shReason(sh){return '<p>'+esc(sh.text)+'</p><div class="field"><label for="why">Reason</label><input type="text" id="why" data-k="reason" value="'+esc(sh.reason||'')+'"></div><div class="row"><span class="spacer"></span><button class="btn ghost" data-act="close">Back</button><button class="btn" data-act="doReason">Send for Approval</button></div>'}
+
+/* edit default rates */
+function shEditRates(sh){
+  const s=skuOf(sh.sku);
+  let h='<p class="hint" style="margin-top:0">Defaults are used until closed lots for a SKU and issue type pass 20,000 sq ft. History never overwrites them.</p>';
+  for(const t of [...wetTypes(s),'redye','crust']){h+='<h3 style="margin:14px 0 6px">'+ISSUE[t].l+'</h3><div class="rates">'+ISSUE[t].st.map(k=>'<label for="e_'+t+k+'">'+RL[k]+' %</label><input type="number" step="0.1" min="0" max="99" id="e_'+t+k+'" data-er="'+t+'|'+k+'" value="'+esc(sh.v[t][k]??'')+'">').join('')+'</div>'}
+  return h+'<div class="row" style="margin-top:14px"><span class="spacer"></span><button class="btn ghost" data-act="close">Cancel</button><button class="btn" data-act="doEditRates">Save Defaults</button></div>';
+}
+
+/* ---------- actions ---------- */
+function toast(t){let el=document.querySelector('.toast');if(!el){el=document.createElement('div');el.className='toast';el.setAttribute('role','status');document.body.appendChild(el)}el.textContent=t;clearTimeout(toastT);toastT=setTimeout(()=>el.remove(),2600)}
+function moveLots(ls,to,msg){for(const l of ls){l.stage=to;l.log.push({at:T,t:msg})}audit(msg,ls.map(l=>l.no).join(', '));UI.pick={};save();toast(msg+': '+ls.map(l=>l.no).join(', '));render()}
+function pickedAt(stage){return picked(lotsAt(region(),stage))}
+function openLot(id){const l=lotOf(id);UI.sheet={type:'lot',id,title:'Lot '+l.no,subtitle:esc(l.sku)+', '+esc(skuName(skuOf(l.sku)))+', '+REG[l.region]};render()}
+function runCons(){S.orders.forEach(o=>o.pooled=true);S.cons.last=T;audit('Orders pooled','all open orders pooled by SKU');save();toast('Orders pooled by SKU');render()}
+function newOrder(){
+  const reg=region(),opts=S.skus.filter(s=>S.orders.some(o=>o.sku===s.code&&o.place===reg));const s=opts[Math.floor(Math.random()*opts.length)]||S.skus[0];
+  const qty=[350,800,1200,2600,4800][Math.floor(Math.random()*5)];
+  const room=poolUnplanned(s.code,reg)>0;
+  const o={id:'o'+(S.seq++),pi:'PI-'+(2630+Math.floor(Math.random()*60))+'/1',cust:['Stride Footwear','Arcadia Shoes','Kessler Schuh','Nordlicht Leder'][Math.floor(Math.random()*4)],brand:'',sku:s.code,qty,due:addDays(T,10+Math.floor(Math.random()*30)),place:reg,pooled:room,dispatched:0,arrived:T};
+  S.orders.push(o);audit('New order from Zoho',o.pi+', '+s.code+', '+n0(qty));save();
+  toast(room?o.pi+' joined the '+s.code+' pool today':o.pi+' waits for the next pooling; the '+s.code+' pool is fully planned');render();
+}
+function decide(id,ok){
+  const a=S.approvals.find(x=>x.id===id);if(!a)return;a.status=ok?'approved':'refused';a.decidedBy=R().label;
+  if(a.kind==='cancel'){const l=lotOf(a.lotId);if(ok){l.status='cancelled';l.log.push({at:T,t:'Cancelled with approval. Number '+l.no+' is retired.'})}else{l.status='active';l.log.push({at:T,t:'Cancellation refused'})}}
+  if(a.kind==='moveLot'&&ok){const l=lotOf(a.lotId);l.region=a.to;l.log.push({at:T,t:'Moved from '+REG[a.from]+' to '+REG[a.to]+'; number unchanged'})}
+  if(a.kind==='movePool'&&ok){const room=poolUnplanned(a.sku,a.from);const q=Math.min(a.qty,room);S.poolMoves.push({sku:a.sku,from:a.from,to:a.to,qty:q})}
+  audit(ok?'Approved':'Refused',apText(a).replace(/<[^>]+>/g,''));save();toast(ok?'Approved':'Refused');render();
+}
+
+app.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]');if(!t)return;
+  const a=t.dataset.act;
+  if(a==='closeBack'){if(e.target===t)closeSheet();return}
+  if(t.tagName==='A')e.preventDefault();
+  if(['role','src','fill','itype','kind','pdate','showAll','saveDef'].includes(a))return;
+  const r=R(),sh=UI.sheet;
+  switch(a){
+    case 'tab':S.tab=t.dataset.v;UI.sheet=null;save();render();try{window.scrollTo(0,0)}catch(e){}break;
+    case 'region':S.region=t.dataset.v;save();render();break;
+    case 'reset':if(confirm('Reset the demo to its starting data?')){seed();save();UI.sheet=null;render();toast('Demo reset')}break;
+    case 'close':closeSheet();break;
+    case 'runCons':runCons();break;
+    case 'newOrder':newOrder();break;
+    case 'plan':startPlan(t.dataset.sku);break;
+    case 'reissue':{const st=S.stock.find(x=>x.id===t.dataset.id);startPlan(st.sku,st.id);break}
+    case 'doPlan':doPlan();break;
+    case 'lot':openLot(t.dataset.id);break;
+    case 'crust':{const l=lotOf(t.dataset.id);UI.sheet={type:'crust',id:l.id,title:'Crust Update',subtitle:esc(l.no)+', '+esc(l.sku)};render();break}
+    case 'doCrust':doCrust();break;
+    case 'doMeasure':doMeasure();break;
+    case 'upd':UI.upd=t.dataset.v;render();break;
+    case 'pref':{const p=prefs();const k=t.dataset.k;p[k]=k==='size'?+t.dataset.v:t.dataset.v;save();render();break}
+    case 'signout':window.bvSupabase.auth.signOut();break;
+    case 'pill':toast('Live data appears in the real app connected to Supabase. This demo always runs on sample data.');break;
+    case 'goForm':goForm(t.dataset.k,[t.dataset.id]);break;
+    case 'goSel':{const P=(UI.psel||{})[t.dataset.k]||{};goForm(t.dataset.k,Object.keys(P).filter(k=>P[k]&&lotOf(k)));break}
+    case 'goOther':goForm('wf1',[],{other:true});break;
+    case 'backList':(UI.scene=UI.scene||{})[UI.upd]='list';UI.fm[UI.upd]=newForm(UI.upd);render();break;
+    case 'editEntry':editEntry(t.dataset.id);break;
+    case 'subQC':submitForm('qc');break;
+    case 'addRow':{const parts=t.dataset.g.split('.');let o=UI.fm;for(const x of parts)o=o[x];o.push(parts[0]==='issue'?{grade:'',size:'',pcs:'',m0:''}:parts[1]==='other'?{op:'Sammed',qty:'',remark:''}:{lot:'',qty:''});render();break}
+    case 'delRow':{const parts=t.dataset.g.split('.');const i=+parts.pop();let o=UI.fm;for(const x of parts)o=o[x];o.splice(i,1);render();break}
+    case 'setv':{setPath(t.dataset.fp,t.dataset.v);if(t.dataset.fp==='finishing.mode')UI.fm.finishing.rows=[];render();break}
+    case 'resetForm':{const m=UI.fm[UI.upd]&&UI.fm[UI.upd].mode;UI.fm[UI.upd]=newForm(UI.upd);if(m)UI.fm[UI.upd].mode=m;render();break}
+    case 'subIssue':submitForm('issue');break;case 'subWF1':submitForm('wf1');break;case 'subDye':submitForm('dye');break;case 'subWF2':submitForm('wf2');break;case 'subCrust':submitForm('crust');break;case 'subFin':submitForm('finishing');break;case 'subFLD':submitForm('fld');break;case 'subClose':submitForm('closing');break;
+    case 'gotoUpd':UI.upd=t.dataset.v;UI.sheet=null;S.tab='entry';save();if(t.dataset.id){goForm(t.dataset.v,[t.dataset.id]);break}S.tab='entry';save();render();break;
+    case 'kview':UI.kview=t.dataset.v;render();break;
+    case 'clearF':UI.f={};render();break;
+    case 'movePool':{const reg=region();UI.sheet={type:'move',title:'Move Quantity to '+REG[reg==='E'?'A':'E'],subtitle:esc(t.dataset.sku),sku:t.dataset.sku,from:reg,to:reg==='E'?'A':'E',max:poolUnplanned(t.dataset.sku,reg),qty:poolUnplanned(t.dataset.sku,reg)};render();break}
+    case 'doMove':{const q=num(sh.qty);if(!q||q<=0||q>sh.max)return toast('Enter up to '+n0(sh.max)+' sq ft');S.approvals.push({id:'ap'+(S.seq++),kind:'movePool',sku:sh.sku,from:sh.from,to:sh.to,qty:q,by:r.label,reason:sh.reason||'',at:T,status:'pending'});audit('Asked to move quantity',sh.sku+', '+n0(q));UI.sheet=null;save();toast('Sent for approval');render();break}
+    case 'moveLot':{const l=lotOf(sh.id);UI.sheet={type:'reason',title:'Move '+l.no+' to '+REG[l.region==='E'?'A':'E'],text:'The lot keeps its number. Once approved it shows on '+REG[l.region==='E'?'A':'E']+'\'s screens only.',next:{kind:'moveLot',lotId:l.id,from:l.region,to:l.region==='E'?'A':'E'}};render();break}
+    case 'cancelLot':{const l=lotOf(sh.id);if(freeCancel(l)){if(confirm('Cancel '+l.no+'? This is permanent and the number is not reused.')){l.status='cancelled';l.log.push({at:T,t:'Cancelled before dyeing. Number '+l.no+' is retired.'});audit('Lot cancelled',l.no);save();toast(l.no+' cancelled');closeSheet()}}else{UI.sheet={type:'reason',title:'Ask to cancel '+l.no,text:'This lot has been dyed, so an approver must confirm. A cancelled lot is permanent and its number is never reused.',next:{kind:'cancel',lotId:l.id}};render()}break}
+    case 'doReason':{const nx=sh.next;S.approvals.push({id:'ap'+(S.seq++),...nx,by:r.label,reason:sh.reason||'',at:T,status:'pending'});if(nx.kind==='cancel')lotOf(nx.lotId).status='cancel_requested';audit(nx.kind==='cancel'?'Asked to cancel':'Asked to move lot',lotOf(nx.lotId).no);UI.sheet=null;save();toast('Sent for approval');render();break}
+    case 'approve':decide(t.dataset.id,true);break;
+    case 'refuse':decide(t.dataset.id,false);break;
+    case 'editRates':{const s=skuOf(t.dataset.sku),v={};for(const ty of [...wetTypes(s),'redye','crust']){const d=defRates(s.code,ty)||{};v[ty]={};for(const k of ISSUE[ty].st)v[ty][k]=d[k]!=null?String(d[k]):''}UI.sheet={type:'editRates',title:'Default rates',subtitle:esc(s.code),sku:s.code,v};render();break}
+    case 'doEditRates':{for(const ty in sh.v){const o={};let any=false;for(const k in sh.v[ty]){const x=num(sh.v[ty][k]);if(x!=null){o[k]=x;any=true}}const key=sh.sku+'|'+ty;if(any)S.rates[key]=o;else delete S.rates[key]}audit('Edited default rates',sh.sku);UI.sheet=null;save();toast('Defaults saved');render();break}
+  }
+});
+app.addEventListener('change',e=>{
+  const t=e.target,a=t.dataset.act,sh=UI.sheet;
+  if(a==='role'){S.role=t.value;S.viewAs=t.value!=='super';const r=ROLES[S.role];if(r.region)S.region=r.region;UI.sheet=null;save();render();return}
+  if(a==='showAll'){UI.showAll=t.checked;render();return}
+  if(t.dataset.fp){setPath(t.dataset.fp,t.value);const p=t.dataset.fp;if(/\.lot$/.test(p)&&t.value){const q=p.replace(/\.lot$/,'.qty');const parts=q.split('.');let o=UI.fm;for(let i=0;i<parts.length-1;i++)o=o[parts[i]];if(o&&'qty' in o&&!o.qty)o.qty=String(curQty(lotOf(t.value)))}if(/\.sku$/.test(p)){const f=FM(p.split('.')[0]);f.sel={}}render();return}
+  if(t.dataset.psel){const [u,id]=t.dataset.psel.split('.');(UI.psel=UI.psel||{});(UI.psel[u]=UI.psel[u]||{})[id]=t.checked;render();return}
+  if(t.dataset.fsel){const [u,id]=t.dataset.fsel.split('.');FM(u).sel[id]=t.checked;render();return}
+  if(t.dataset.f){(UI.f=UI.f||{})[t.dataset.f]=t.type==='checkbox'?t.checked:t.value;render();return}
+  if(t.dataset.pick){(UI.pick=UI.pick||{})[t.dataset.pick]=t.checked;render();return}
+  if(t.dataset.pickall!==undefined){UI.pick=UI.pick||{};t.dataset.pickall.split(',').filter(Boolean).forEach(id=>UI.pick[id]=t.checked);render();return}
+  if(!sh)return;
+  if(a==='itype'){sh.itype=t.value;rateInit(sh);planDefaults(sh);render();return}
+  if(a==='src'){sh.src=t.value;sh.fill='';sh.r=null;rateApply(sh);if(!sh.stockId)planDefaults(sh);render();return}
+  if(a==='fill'){sh.fill=t.value;const keep=sh.src;rateApply(sh);sh.src=keep;planDefaults(sh);render();return}
+  if(a==='kind'){sh.kind=t.value;render();return}
+  if(a==='pdate'){sh.date=t.value;render();return}
+  if(a==='saveDef'){sh.saveDef=t.checked;return}
+  if(t.dataset.sel){sh.sel[t.dataset.sel]=t.checked;render();return}
+});
+app.addEventListener('input',e=>{
+  const t=e.target,sh=UI.sheet;
+  if(t.dataset.fp&&(t.type==='number'||t.type==='text')){setPath(t.dataset.fp,t.value);return}
+  if(t.dataset.iq){(UI.iq=UI.iq||{})[t.dataset.iq]=t.value;const e=document.getElementById('m10_'+t.dataset.iq);if(e)e.textContent=n0(Math.round((num(t.value)||0)*1.1));return}
+  if(!sh)return;
+  const calc=()=>{const c=document.getElementById('calc');if(!c)return;
+    if(sh.type==='plan'){c.innerHTML=planCalc(sh);const b=document.getElementById('doPlan');if(b){b.disabled=!planOK(sh);if(!sh.stockId)b.textContent='Plan '+sh.n+' lot'+(sh.n>1?'s':'')}}
+    if(sh.type==='measure')c.innerHTML=measureCalc(sh);
+    if(sh.type==='crust')c.innerHTML=crustCalc(sh)};
+  if(t.dataset.rk){sh.r[t.dataset.rk]=t.value;t.classList.toggle('miss',t.value==='');if(sh.src!=='custom'){sh.src='custom';const sel=document.getElementById('src');if(sel)sel.value='custom';if(!sh.noDefault){const box=app.querySelector('[data-act=saveDef]');if(!box){const p=document.createElement('label');p.className='check sub';p.innerHTML='<input type="checkbox" data-act="saveDef"> Also save these as the SKU\'s default';t.closest('.rates').after(p)}}}calc();return}
+  if(t.dataset.mv){sh.v[t.dataset.mv]=t.value;calc();return}
+  if(t.dataset.er){const [ty,k]=t.dataset.er.split('|');sh.v[ty][k]=t.value;return}
+  if(t.dataset.k){const k=t.dataset.k;sh[k]=(k==='n'||k==='out')?Math.max(0,Math.round(num(t.value)||0)):t.value;calc()}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&UI.sheet)closeSheet()});
+
+/* ---------- boot ---------- */
+window.__ppStart=function(me){
+  S=load();if(!S){seed();save()}
+  const key=me.role==='super_admin'?'super':me.role==='admin'?'admin':me.role==='approver'?'approver':me.region?me.role+'_'+me.region:me.role;
+  if(!ROLES[key]){app.innerHTML='<main class="wrap"><div class="empty">Your Production Planning role is not recognised. Ask an admin.</div></main>';return}
+  if(!(me.super&&S.role&&ROLES[S.role]&&S.viewAs))S.role=key;
+  ROLES[key].who=me.name||ROLES[key].who;
+  if(ROLES[S.role].region)S.region=ROLES[S.role].region;
+  window.__pp={get S(){return S},render,coverage,pools,proj,histFor,seed};
+  render();
+};
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var app = document.getElementById("app");
+  function stop(msg) { app.innerHTML = '<main class="wrap" style="padding-top:40px"><div class="empty">' + msg + ' <a href="../">Back to KKSK Group</a></div></main>'; }
+  app.innerHTML = '<main class="wrap" style="padding-top:40px"><div class="empty">Opening Production Planning\u2026</div></main>';
+  window.bvPortal().then(function (p) {
+    var pp = p.apps && p.apps.pp;
+    if (!pp) { location.replace("../"); return; }
+    return window.bvSupabase.auth.getSession().then(function (r) {
+      var tok = r.data && r.data.session && r.data.session.access_token;
+      return fetch(window.PP_CONFIG.url + "/functions/v1/kksk-handover", { method: "POST", headers: { Authorization: "Bearer " + tok, apikey: window.PP_CONFIG.key } });
+    }).then(function (res) { return res.json().then(function (j) { if (!res.ok) throw j; return j; }); }).then(function (h) {
+      /* The KKSK-Production session, for the real tables (Zoho orders and lots). */
+      window.ppDb = window.supabase.createClient(window.PP_CONFIG.url, window.PP_CONFIG.key, { auth: { persistSession: false, autoRefreshToken: true } });
+      return window.ppDb.auth.setSession({ access_token: h.access_token, refresh_token: h.refresh_token }).then(function () {
+        var apps = (p.apps.bv ? 1 : 0) + (p.apps.pp ? 1 : 0);
+        window.PP_ME = { name: p.name || h.user.name, email: p.email, role: h.user.role, region: h.user.region, super: !!p.super, admin: !!p.admin, apps: apps };
+        window.__ppStart(window.PP_ME);
+      });
+    });
+  }).catch(function (e) { stop((e && e.message) || "Production Planning couldn't be opened. Check the connection and reload."); });
+})();
+</script>
+</body>
+</html>

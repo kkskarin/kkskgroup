@@ -1,5 +1,23 @@
 # KKSK Group
 
+## KKSK Group: one sign-in, several apps
+
+| Path | What | Supabase project |
+| --- | --- | --- |
+| `/` (`web/index.html`, `web/portal.js`) | KKSK Group home: sign-in, then a tile per app (straight into the app when a person has only one) | KKSK Group |
+| `/bills/` (`web/bills/index.html`) | Bills & Vouchers | KKSK Group |
+| `/production/` (`web/production/index.html`) | Production Planning (still on sample data in the browser; moving to the real tables next) | KKSK-Production, through the hand-over |
+
+- **Access per app** is set on each person (Settings › Users › Apps): Bills & Vouchers on/off, and a Production Planning
+  role (Approver, Planner, Floor Team) with a region (Erode, Ambur, or both). Admins and Super Admins get every app.
+  `app_portal()` in KKSK Group answers what a signed-in person may open.
+- **Super Admins** are managed by Super Admins in Settings › Users › Super Admins. Someone added becomes a Super Admin
+  once they sign in with that confirmed email. The last one cannot be removed.
+- **KKSK-Production** keeps its Zoho functions and secrets as they are. People never sign in there: the
+  `kksk-handover` Edge Function checks the KKSK Group sign-in (`app_portal`), keeps `pp_users` in step with the role
+  and region given in KKSK Group, and returns a KKSK-Production session. Its source and the security changes made to
+  that project are kept in `production/supabase/` (not linked to the GitHub integration; `supabase/` is KKSK Group).
+
 ## Bills & Vouchers Accounting (`web/`)
 
 The Bills & Vouchers app, moved off claude.ai so it runs as its own website on Supabase.

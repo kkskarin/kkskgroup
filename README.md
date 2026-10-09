@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | `/` (`web/index.html`, `web/portal.js`) | KKSK Group home: sign-in, then a tile per app (straight into the app when a person has only one) | KKSK Group |
 | `/bills/` (`web/bills/index.html`) | Bills & Vouchers | KKSK Group |
-| `/production/` (`web/production/index.html`) | Production Planning (still on sample data in the browser; moving to the real tables next) | KKSK-Production, through the hand-over |
+| `/production/` (`web/production/index.html`) | Production Planning (Live on the KKSK-Production tables; Demo sample for admins) | KKSK-Production, through the hand-over |
 
 - **Access per app** is set on each person (Settings › Users › Apps): Bills & Vouchers on/off, and a Production Planning
   role (Approver, Planner, Floor Team) with a region (Erode, Ambur, or both). Admins and Super Admins get every app.
@@ -17,6 +17,11 @@
   `kksk-handover` Edge Function checks the KKSK Group sign-in (`app_portal`), keeps `pp_users` in step with the role
   and region given in KKSK Group, and returns a KKSK-Production session. Its source and the security changes made to
   that project are kept in `production/supabase/` (not linked to the GitHub integration; `supabase/` is KKSK Group).
+- **Production Planning Live / Demo.** Live reads Zoho orders (`pp_orders`) and the `pp_*` tables and writes every change
+  back (`web/production/live.js`): lots (numbers come from the database), lot data entries, approvals, stock moves,
+  pooling, dispatch counted against orders, default rates and other WF1 work. Screens refresh when someone else saves.
+  Admins and Super Admins can switch to Demo with the LIVE / DEMO pill: sample data kept in that browser only, never
+  written to the database. Everyone else is always on Live.
 
 ## Bills & Vouchers Accounting (`web/`)
 

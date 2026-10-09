@@ -11,6 +11,7 @@
 window.PP_CONFIG = { url: "https://rutrnzxcjtvakllvzpkw.supabase.co", key: "sb_publishable_PLot4SdLiaQLyJVKVznBEQ_rTT5f9co" };</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script src="../supabase-runtime.js"></script>
+<script src="live.js"></script>
 <link rel="stylesheet" href="../auth.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -290,7 +291,8 @@ const minOk=o=>o.qty-band(o.qty);
 
 /* ---------- state ---------- */
 let S=null, UI={sheet:null,open:{}}, toastT=null;
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const LIVE=()=>!!(window.PPLive&&window.PPLive.on);
+function save(){if(LIVE()){window.PPLive.saveUI(S);window.PPLive.sync(S);return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function load(){try{const r=localStorage.getItem(KEY);if(r){const s=JSON.parse(r);if(s&&s.v===6)return s}}catch(e){}return null}
 const R=()=>ROLES[S.role];
 const region=()=>R().region||S.region;
@@ -299,7 +301,7 @@ const lotOf=id=>S.lots.find(l=>l.id===id);
 function audit(action,detail){S.audit.unshift({at:new Date().toISOString(),by:R().label,action,detail});if(S.audit.length>300)S.audit.length=300}
 function wetTypes(s){if(s.tannage==='chrome')return s.type==='suede'?['wet_blue_split']:['wet_blue','fungus_wet_blue'];return s.type==='suede'?['wet_white_split']:['wet_white']}
 function issueTypes(s){return [...wetTypes(s),'crust','finished']}
-function skuName(s){return s.article+', '+s.colour+', '+s.substance}
+function skuName(s){return [s.article,s.colour,s.substance].filter(Boolean).join(', ')}
 
 /* ---------- seed ---------- */
 function seed(){
@@ -390,12 +392,12 @@ const yf=(type,r)=>ISSUE[type].st.reduce((p,k)=>p*(1-(+r[k]||0)/100),1);
 const missingKeys=(type,r)=>ISSUE[type].st.filter(k=>!r||r[k]===''||r[k]==null||num(r[k])==null);
 
 /* ---------- lots ---------- */
-function nextNo(prefix,date){const mm=date.slice(5,7),yy=date.slice(2,4),k=prefix+'|'+mm+yy;S.counters[k]=(S.counters[k]||0)+1;return prefix+'-'+String(S.counters[k]).padStart(3,'0')+'/'+mm+'/'+yy}
+function nextNo(prefix,date){const mm=date.slice(5,7),yy=date.slice(2,4),k=prefix+'|'+mm+yy;if(LIVE())return prefix+'-…/'+mm+'/'+yy;S.counters[k]=(S.counters[k]||0)+1;return prefix+'-'+String(S.counters[k]).padStart(3,'0')+'/'+mm+'/'+yy}
 function makeLot({sku,region,type,kind,date,out,issue,rates,rateSrc}){
   const f=yf(type,rates);
   if(issue==null)issue=Math.round(out/f);
   if(out==null)out=Math.round(issue*f);
-  const l={id:'l'+(S.seq++),no:nextNo((kind==='sample'?'S':'B')+region,date),sku,issueRegion:region,region,type,kind,date,plannedOut:Math.round(out),issue:Math.round(issue),rates,rateSrc,stage:ISSUE[type].entry,m:{},status:'active',log:[{at:date,t:'Planned and issued as '+ISSUE[type].l}]};
+  const l={id:LIVE()?crypto.randomUUID():'l'+(S.seq++),no:nextNo((kind==='sample'?'S':'B')+region,date),sku,issueRegion:region,region,type,kind,date,plannedOut:Math.round(out),issue:Math.round(issue),rates,rateSrc,stage:ISSUE[type].entry,m:{},status:'active',log:[{at:date,t:'Planned and issued as '+ISSUE[type].l}]};
   if(type==='crust'){l.m.crust=l.issue;l.m.takenCrust=l.issue}
   if(type==='finished'){l.m.takenFL=l.issue;l.m.rejectFL=0}
   S.lots.push(l);return l;
@@ -480,12 +482,12 @@ function render(){
   if(!TABS.some(t=>t[0]===S.tab))S.tab='orders';
   const head=HEADS.find(x=>x[2].includes(S.tab));
   let h='<header class="top"><div class="wrap"><div class="mark"><img alt="KKSK" src="'+LOGO+'"></div><div class="titles"><div class="t1">Production Planning</div><div class="t2">KKSK Group</div></div><div class="tright">';
-  if(r.admin)h+='<button class="pill demo" data-act="pill" title="Switch between Demo and Live">DEMO</button>';
+  if(window.PP_ME&&(window.PP_ME.admin||window.PP_ME.super))h+=LIVE()?'<button class="pill" data-act="pill" title="Switch to Demo (sample data in this browser)">LIVE</button>':'<button class="pill demo" data-act="pill" title="Switch to Live">DEMO</button>';
   h+=(r.both?'<div class="rseg" role="group" aria-label="Plant">'+['E','A'].map(k=>'<button data-act="region" data-v="'+k+'" aria-pressed="'+(S.region===k)+'">'+REG[k]+'</button>').join('')+'</div>':'<span class="rseg static">'+REG[r.region]+'</span>');
   h+='<div class="me"><span class="avatar" aria-hidden="true">'+esc(initials(r.who))+'</span><div><div class="nm">'+esc(r.who)+'</div>'+(window.PP_ME&&window.PP_ME.super?'<select id="role" data-act="role" aria-label="View as">'+Object.entries(ROLES).filter(([k])=>k!=='planner'&&k!=='floor').map(([k,v])=>'<option value="'+k+'"'+(k===S.role?' selected':'')+'>'+(k==='super'?'Super Admin (you)':'View as '+esc(v.label))+'</option>').join('')+'</select>':'<div style="font-size:12px;color:var(--muted)">'+esc(r.label)+'</div>')+'</div></div>'+(window.PP_ME&&window.PP_ME.apps>1?'<a href="../" class="btn small ghost" style="text-decoration:none" title="All KKSK apps">All Apps</a>':'')+'<button class="btn small ghost" data-act="signout">Sign Out</button></div></div></header>';
   h+='<nav class="navbar" aria-label="Sections"><div class="wrap" id="nav">'+HEADS.map(([k,l,tabs])=>{const c=headCount(k);return '<button data-act="tab" data-v="'+tabs[0]+'"'+(head[0]===k?' aria-current="page"':'')+'>'+l+(c?'<span class="count'+(k==='approvals'?' alert':'')+'">'+c+'</span>':'')+'</button>'}).join('')+'</div></nav>';
   if(head[2].length>1)h+='<div class="tabbar"><div class="wrap">'+head[2].map(k=>'<button data-act="tab" data-v="'+k+'"'+(S.tab===k?' aria-current="page"':'')+'>'+TABS.find(t=>t[0]===k)[1]+'</button>').join('')+'</div></div>';
-  h+='<div class="demostrip"><div class="wrap"><b>DEMO MODE</b><span>Sample data only. Nothing here reaches Zoho or live planning.</span>'+(r.admin?'<button class="btn small ghost" data-act="reset">Reset Demo</button>':'')+'</div></div>';
+  if(!LIVE())h+='<div class="demostrip"><div class="wrap"><b>DEMO MODE</b><span>Sample data in this browser only. Nothing here reaches Zoho or live planning.</span>'+(r.admin?'<button class="btn small ghost" data-act="reset">Reset Demo</button>':'')+'<button class="btn small ghost" data-act="pill">Back to Live</button></div></div>';
   h+='<main class="wrap">'+({orders:vOrders,pool:vCons,lots:vLots,entry:vEntry,costing:vCosting,stock:vStock,approvals:vApprovals,masters:vMasters,settings:vSettings}[S.tab])()+'</main>';
   if(UI.sheet)h+='<div class="sheet-back" data-act="closeBack"><div class="sheet" role="dialog" aria-modal="true" aria-label="'+esc(UI.sheet.title||'')+'">'+sheetHTML()+'</div></div>';
   app.innerHTML=h;
@@ -529,7 +531,7 @@ function vCons(){
 function vOrders(){
   const reg=region(),r=R(),cov=coverage();
   const os=S.orders.filter(o=>o.place===reg).sort((a,b)=>a.due.localeCompare(b.due));
-  let h='<div class="sechead"><div><h2>Orders, '+REG[reg]+'</h2><div class="sub">Every line item, soonest due first. Read-only copy of Zoho Creator.</div></div>'+(r.admin?'<button class="btn small ghost" data-act="newOrder">Simulate New Order From Zoho</button>':'')+'</div>';
+  let h='<div class="sechead"><div><h2>Orders, '+REG[reg]+'</h2><div class="sub">Every line item, soonest due first. Read-only copy of Zoho Creator.</div></div>'+(r.admin&&!LIVE()?'<button class="btn small ghost" data-act="newOrder">Simulate New Order From Zoho</button>':'')+'</div>';
   if(!os.length)return h+'<div class="empty">No orders.</div>';
   h+='<div class="card tbl tscroll"><table><thead><tr><th>Due</th><th>PI line</th><th>Customer</th><th>SKU</th><th class="num">Order</th><th class="num">Accepted</th><th class="num">Projected</th><th>Status</th></tr></thead><tbody>';
   for(const o of os){const c=cov.res[o.id],b=band(o.qty);
@@ -1015,7 +1017,7 @@ function doPlan(){
   if(ISSUE[sh.itype].st.length&&(sh.noDefault||sh.saveDef)){S.rates[key]={...(S.rates[key]||{}),...rates};audit('Saved default rates',sh.sku+', '+ISSUE[sh.itype].l)}
   const src=sh.noDefault?'New default values':rateSrcLabel(sh);
   const made=[];
-  if(sh.stockId){const st=S.stock.find(x=>x.id===sh.stockId);const l=makeLot({sku:sh.sku,region:sh.reg,type:sh.itype,kind:'bulk',date:sh.date,issue:st.qty,rates,rateSrc:src});l.log[0].t+=' from '+STOCK[st.kind].toLowerCase()+' stock';st.qty=0;made.push(l.no)}
+  if(sh.stockId){const st=S.stock.find(x=>x.id===sh.stockId);const l=makeLot({sku:sh.sku,region:sh.reg,type:sh.itype,kind:'bulk',date:sh.date,issue:st.qty,rates,rateSrc:src});l.fromStock=st.kind;l.log[0].t+=' from '+STOCK[st.kind].toLowerCase()+' stock';st.qty=0;made.push(l.no)}
   else for(let i=0;i<sh.n;i++)made.push(makeLot({sku:sh.sku,region:sh.reg,type:sh.itype,kind:sh.kind,date:sh.date,out:sh.out,rates,rateSrc:src}).no);
   audit(sh.stockId?'Reissued stock':'Planned lots',made.join(', '));
   UI.sheet=null;save();toast((made.length>1?'Planned ':'Created ')+made.join(', '));render();
@@ -1166,10 +1168,10 @@ app.addEventListener('click',e=>{
   switch(a){
     case 'tab':S.tab=t.dataset.v;UI.sheet=null;save();render();try{window.scrollTo(0,0)}catch(e){}break;
     case 'region':S.region=t.dataset.v;save();render();break;
-    case 'reset':if(confirm('Reset the demo to its starting data?')){seed();save();UI.sheet=null;render();toast('Demo reset')}break;
+    case 'reset':if(!LIVE()&&confirm('Reset the demo to its starting data?')){seed();save();UI.sheet=null;render();toast('Demo reset')}break;
     case 'close':closeSheet();break;
     case 'runCons':runCons();break;
-    case 'newOrder':newOrder();break;
+    case 'newOrder':if(!LIVE())newOrder();break;
     case 'plan':startPlan(t.dataset.sku);break;
     case 'reissue':{const st=S.stock.find(x=>x.id===t.dataset.id);startPlan(st.sku,st.id);break}
     case 'doPlan':doPlan();break;
@@ -1180,7 +1182,7 @@ app.addEventListener('click',e=>{
     case 'upd':UI.upd=t.dataset.v;render();break;
     case 'pref':{const p=prefs();const k=t.dataset.k;p[k]=k==='size'?+t.dataset.v:t.dataset.v;save();render();break}
     case 'signout':window.bvSupabase.auth.signOut();break;
-    case 'pill':toast('Live data appears in the real app connected to Supabase. This demo always runs on sample data.');break;
+    case 'pill':if(window.PPLive&&window.PP_ME&&(window.PP_ME.admin||window.PP_ME.super))window.PPLive.toggle();break;
     case 'goForm':goForm(t.dataset.k,[t.dataset.id]);break;
     case 'goSel':{const P=(UI.psel||{})[t.dataset.k]||{};goForm(t.dataset.k,Object.keys(P).filter(k=>P[k]&&lotOf(k)));break}
     case 'goOther':goForm('wf1',[],{other:true});break;
@@ -1243,14 +1245,28 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&UI.sheet)closeSheet
 
 /* ---------- boot ---------- */
 window.__ppStart=function(me){
-  S=load();if(!S){seed();save()}
   const key=me.role==='super_admin'?'super':me.role==='admin'?'admin':me.role==='approver'?'approver':me.region?me.role+'_'+me.region:me.role;
   if(!ROLES[key]){app.innerHTML='<main class="wrap"><div class="empty">Your Production Planning role is not recognised. Ask an admin.</div></main>';return}
-  if(!(me.super&&S.role&&ROLES[S.role]&&S.viewAs))S.role=key;
   ROLES[key].who=me.name||ROLES[key].who;
-  if(ROLES[S.role].region)S.region=ROLES[S.role].region;
-  window.__pp={get S(){return S},render,coverage,pools,proj,histFor,seed};
-  render();
+  const begin=()=>{
+    if(!(me.super&&S.role&&ROLES[S.role]&&S.viewAs))S.role=key;
+    if(ROLES[S.role].region)S.region=ROLES[S.role].region;
+    window.__pp={get S(){return S},render,coverage,pools,proj,histFor,seed};
+    render();
+  };
+  const L=window.PPLive;
+  if(!L||L.mode(me)==='demo'){S=load();if(!S){seed();save()}begin();return}
+  /* Live: the KKSK-Production tables. */
+  const fresh=()=>{const st={v:6,entries:[],wf1Other:[],role:key,region:me.region||'E',tab:'orders',skus:[],orders:[],lots:[],stock:[],approvals:[],poolMoves:[],rates:{},hist:[],counters:{},cons:{last:lastCons(T)},audit:[],seq:1};return L.restoreUI(st,me)};
+  const keep=()=>({role:S.role,viewAs:S.viewAs,region:S.region,tab:S.tab,prefs:S.prefs,seq:S.seq});
+  L.load(me,fresh()).then(st=>{S=st;begin();
+    L.watch((what,info)=>{
+      if(what==='busy')return !!UI.sheet;
+      if(what==='lots'){toast((info.length>1?'Lot numbers ':'Lot number ')+info.join(', '));render();return}
+      if(what==='error'){toast('Not saved: '+info+'. Showing the latest saved data.')}
+      const k=keep();return L.load(me,Object.assign(fresh(),k)).then(st2=>{S=st2;render()},()=>toast('Couldn\'t refresh. Check the connection.'));
+    });
+  },e=>{app.innerHTML='<main class="wrap" style="padding-top:40px"><div class="empty">Live data couldn\'t be loaded ('+esc((e&&e.message)||'connection')+'). Reload the page'+(me.admin||me.super?', or switch to <button class="btn small ghost" onclick="PPLive.toggle()">Demo</button>':'')+'.</div></main>'});
 };
 })();
 </script>

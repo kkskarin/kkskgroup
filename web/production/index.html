@@ -238,6 +238,7 @@ th,td{padding-left:10px;padding-right:10px}td{font-size:13.5px}}
   .me select{max-width:none;flex:1;font-size:13px}
   .rseg button{padding:5px 10px}
 }
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 16px}
 </style>
 </head>
 <body>
@@ -487,38 +488,144 @@ function typeChip(t){const c=t==='crust'?'cr':t==='finished'?'fl':'wb';return '<
 function strip(l){const i=SI(l.stage);let h='<div class="strip" aria-hidden="true">';for(let k=0;k<9;k++){const s=STAGES[k];h+='<i class="'+(k<=i?'on ':'')+s.c+(k===i&&l.stage!=='closed'?' now':'')+'"></i>'}return h+'</div>'}
 function pendingCount(){const r=R();return S.approvals.filter(a=>a.status==='pending'&&(r.approve||false)).length}
 
-const TABS=[['orders','Orders'],['pool','Order Pool'],['lots','Lot Tracking'],['entry','Add Lot Data'],['costing','Add Costing Data'],['stock','Stock'],['approvals','Approvals'],['masters','Masters'],['settings','My Settings']];
-const HEADS=[['orders','Orders',['orders','pool']],['lots','Lots',['lots','entry','costing']],['stock','Stock',['stock']],['approvals','Approvals',['approvals']],['masters','Masters',['masters']],['settings','Settings',['settings']]];
+const TABS=[['orders','Orders'],['pool','Order Pool'],['lots','Lot Tracking'],['entry','Add Lot Data'],['costing','Add Costing Data'],['stock','Stock'],['approvals','Approvals'],['masters','Masters'],['users','Users'],['changelog','Change Log'],['data','Data & Archive'],['settings','Personalise']];
+const HEADS=[['orders','Orders',['orders','pool']],['lots','Lots',['lots','entry','costing']],['stock','Stock',['stock']],['approvals','Approvals',['approvals']],['masters','Masters',['masters']],['settings','Settings',['users','changelog','data','settings']]];
+/* Users, Change Log and Data & Archive are for admins; Personalise is for everyone. */
+const ADMIN_TABS={users:1,changelog:1,data:1};
+const tabOk=k=>!ADMIN_TABS[k]||!!R().admin;
+const headTabs=hd=>hd[2].filter(tabOk);
 const ACCENTS=[['green','KKSK Green','#10281F','#009256'],['ocean','Ocean Blue','#0F2A3D','#0A84C1'],['indigo','Indigo','#1E1B4B','#4F46E5'],['plum','Plum','#3B0A2E','#A21CAF'],['terracotta','Terracotta','#3A1A0E','#C2410C'],['charcoal','Charcoal','#1F2328','#4B5563']];
 function prefs(){return S.prefs||(S.prefs={mode:'auto',accent:'green',size:100,density:'comfortable'})}
+/* Personalise is shared with every KKSK app: the same record (prefs/<login> in KKSK Group) and the same copy in this browser. */
+const toShared=p=>({theme:p.mode==='auto'?'system':p.mode,accent:p.accent||'green',text:String(p.size||100),density:p.density==='compact'?'compact':'comfy',avatar:p.avatar||''});
+const fromShared=x=>({mode:x.theme==='system'?'auto':(x.theme==='dark'?'dark':'light'),accent:x.accent||'green',size:Number(x.text)||100,density:x.density==='compact'?'compact':'comfortable',avatar:x.avatar||''});
+const PK=id=>'bv_prefs_'+(id||'last');
+function prefsLocal(id){try{const j=JSON.parse(localStorage.getItem(PK(id))||'null');return j&&typeof j==='object'?j:null}catch(e){return null}}
+function prefsKeep(x){const id=window.PP_ME&&window.PP_ME.uid;try{if(id)localStorage.setItem(PK(id),JSON.stringify(x));localStorage.setItem(PK(),JSON.stringify(Object.assign({},x,{avatar:''})))}catch(e){}}
+let PDOC=null;
+function prefsStart(){
+  const id=window.PP_ME&&window.PP_ME.uid;const loc=prefsLocal(id)||prefsLocal();if(loc)S.prefs=fromShared(loc);
+  if(!id||!window.claude)return;
+  window.claude.use('db').then(db=>{if(!db)return;PDOC=db.doc('prefs/'+id);PDOC.onSnapshot(d=>{const x=d&&d.exists?d.data():null;if(!x)return;S.prefs=fromShared(x);prefsKeep(x);render()},()=>{})},()=>{});
+}
+function savePrefs(msg){
+  const x=Object.assign(toShared(prefs()),{updatedAt:Date.now()});prefsKeep(x);render();
+  if(!PDOC)return;PDOC.set(x).then(()=>{if(msg)toast(msg)},()=>toast('Saved in this browser only. Check the connection.'));
+}
 function applyPrefs(){const p=prefs(),r=document.documentElement;if(p.mode==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',p.mode);if(p.accent==='green')r.removeAttribute('data-accent');else r.setAttribute('data-accent',p.accent);r.setAttribute('data-density',p.density);document.body.style.zoom=p.size===100?'':String(p.size/100)}
 function headCount(k){if(k==='orders'){return pools(region()).filter(p=>p.unplanned>0).length}if(k==='lots'){return UPD.reduce((t,[u])=>t+pendingLots(u).length,0)}if(k==='approvals')return pendingCount();return 0}
 const initials=n=>n.replace(/\(.*?\)/g,'').trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
 function render(){
   const r=R();applyPrefs();
-  if(!TABS.some(t=>t[0]===S.tab))S.tab='orders';
+  if(!TABS.some(t=>t[0]===S.tab)||!tabOk(S.tab))S.tab='orders';
   const head=HEADS.find(x=>x[2].includes(S.tab));
   let h='<header class="top"><div class="wrap"><div class="mark"><img alt="KKSK" src="'+LOGO+'"></div><div class="titles"><div class="t1">Production Planning</div><div class="t2">KKSK Group</div></div><div class="tright">';
   if(window.PP_ME&&(window.PP_ME.admin||window.PP_ME.super))h+=LIVE()?'<button class="pill" data-act="pill" title="Switch to Demo (sample data in this browser)">LIVE</button>':'<button class="pill demo" data-act="pill" title="Switch to Live">DEMO</button>';
   h+=(r.both?'<div class="rseg" role="group" aria-label="Plant">'+['E','A'].map(k=>'<button data-act="region" data-v="'+k+'" aria-pressed="'+(S.region===k)+'">'+REG[k]+'</button>').join('')+'</div>':'<span class="rseg static">'+REG[r.region]+'</span>');
-  h+='<div class="me"><span class="avatar" aria-hidden="true">'+esc(initials(r.who))+'</span><div><div class="nm">'+esc(r.who)+'</div>'+(window.PP_ME&&window.PP_ME.super?'<select id="role" data-act="role" aria-label="View as">'+Object.entries(ROLES).filter(([k])=>k!=='planner'&&k!=='floor').map(([k,v])=>'<option value="'+k+'"'+(k===S.role?' selected':'')+'>'+(k==='super'?'Super Admin (you)':'View as '+esc(v.label))+'</option>').join('')+'</select>':'<div style="font-size:12px;color:var(--muted)">'+esc(r.label)+'</div>')+'</div></div>'+(window.PP_ME&&window.PP_ME.apps>1?'<a href="../" class="btn small ghost hbtn" style="text-decoration:none" title="All KKSK apps">All Apps</a>':'')+'<button class="btn small ghost hbtn" data-act="signout">Sign Out</button></div></div></header>';
-  h+='<nav class="navbar" aria-label="Sections"><div class="wrap" id="nav">'+HEADS.map(([k,l,tabs])=>{const c=headCount(k);return '<button data-act="tab" data-v="'+tabs[0]+'"'+(head[0]===k?' aria-current="page"':'')+'>'+l+(c?'<span class="count'+(k==='approvals'?' alert':'')+'">'+c+'</span>':'')+'</button>'}).join('')+'</div></nav>';
-  if(head[2].length>1)h+='<div class="tabbar"><div class="wrap">'+head[2].map(k=>'<button data-act="tab" data-v="'+k+'"'+(S.tab===k?' aria-current="page"':'')+'>'+TABS.find(t=>t[0]===k)[1]+'</button>').join('')+'</div></div>';
+  h+='<div class="me">'+(prefs().avatar?'<img class="avatar" alt="" src="'+esc(prefs().avatar)+'" style="object-fit:cover">':'<span class="avatar" aria-hidden="true">'+esc(initials(r.who))+'</span>')+'<div><div class="nm">'+esc(r.who)+'</div>'+(window.PP_ME&&window.PP_ME.super?'<select id="role" data-act="role" aria-label="View as">'+Object.entries(ROLES).filter(([k])=>k!=='planner'&&k!=='floor').map(([k,v])=>'<option value="'+k+'"'+(k===S.role?' selected':'')+'>'+(k==='super'?'Super Admin (you)':'View as '+esc(v.label))+'</option>').join('')+'</select>':'<div style="font-size:12px;color:var(--muted)">'+esc(r.label)+'</div>')+'</div></div>'+(window.PP_ME&&window.PP_ME.apps>1?'<a href="../" class="btn small ghost hbtn" style="text-decoration:none" title="All KKSK apps">All Apps</a>':'')+'<button class="btn small ghost hbtn" data-act="signout">Sign Out</button></div></div></header>';
+  h+='<nav class="navbar" aria-label="Sections"><div class="wrap" id="nav">'+HEADS.map(([k,l,tabs0])=>{const c=headCount(k),tabs=tabs0.filter(tabOk);return '<button data-act="tab" data-v="'+tabs[0]+'"'+(head[0]===k?' aria-current="page"':'')+'>'+l+(c?'<span class="count'+(k==='approvals'?' alert':'')+'">'+c+'</span>':'')+'</button>'}).join('')+'</div></nav>';
+  if(headTabs(head).length>1)h+='<div class="tabbar"><div class="wrap">'+headTabs(head).map(k=>'<button data-act="tab" data-v="'+k+'"'+(S.tab===k?' aria-current="page"':'')+'>'+TABS.find(t=>t[0]===k)[1]+'</button>').join('')+'</div></div>';
   if(!LIVE())h+='<div class="demostrip"><div class="wrap"><b>DEMO MODE</b><span>Sample data in this browser only. Nothing here reaches Zoho or live planning.</span>'+(r.admin?'<button class="btn small ghost" data-act="reset">Reset Demo</button>':'')+'<button class="btn small ghost" data-act="pill">Back to Live</button></div></div>';
-  h+='<main class="wrap">'+({orders:vOrders,pool:vCons,lots:vLots,entry:vEntry,costing:vCosting,stock:vStock,approvals:vApprovals,masters:vMasters,settings:vSettings}[S.tab])()+'</main>';
+  h+='<main class="wrap">'+({orders:vOrders,pool:vCons,lots:vLots,entry:vEntry,costing:vCosting,stock:vStock,approvals:vApprovals,masters:vMasters,users:vUsers,changelog:vChangeLog,data:vData,settings:vSettings}[S.tab])()+'</main>';
   if(UI.sheet)h+='<div class="sheet-back" data-act="closeBack"><div class="sheet" role="dialog" aria-modal="true" aria-label="'+esc(UI.sheet.title||'')+'">'+sheetHTML()+'</div></div>';
   app.innerHTML=h;
 }
 function vSettings(){
   const p=prefs(),r=R();
   const seg=(k,opts)=>'<div class="seg2">'+opts.map(([v,l])=>'<button data-act="pref" data-k="'+k+'" data-v="'+v+'" aria-selected="'+(String(p[k])===String(v))+'">'+l+'</button>').join('')+'</div>';
-  let h='<div class="sechead"><div class="grow"><h2>My Settings</h2><div class="sub">These follow your login to every device. Prints and Excel downloads keep the standard KKSK format whatever you choose here.</div></div></div><div class="card form"><div class="setgrid">';
+  let h='<div class="sechead"><div class="grow"><h2>Personalise</h2><div class="sub">Your picture, how the apps look for you, and your password. Saved to your login, so they follow you to every device and every KKSK app. Prints and Excel downloads keep the standard KKSK format whatever you choose here.</div></div></div>';
+  h+='<div class="card form"><h3 style="margin:0 0 12px">Profile</h3><div class="row" style="gap:14px;align-items:center">'+(p.avatar?'<img alt="Your profile picture" src="'+esc(p.avatar)+'" style="width:72px;height:72px;border-radius:50%;object-fit:cover">':'<span class="avatar" style="width:72px;height:72px;font-size:24px" aria-hidden="true">'+esc(initials(r.who))+'</span>')+'<div><b>'+esc(r.who)+'</b><div class="sub">'+esc((window.PP_ME&&window.PP_ME.email)||'')+'</div><div class="row" style="margin-top:8px"><button class="btn small ghost" data-act="picAdd">'+(p.avatar?'Change Picture':'Add a Picture')+'</button>'+(p.avatar?'<button class="btn small ghost" data-act="picRemove">Remove</button>':'')+'</div><input type="file" id="picFile" accept="image/*" hidden></div></div></div>';
+  h+='<div class="card form"><h3 style="margin:0 0 4px">Appearance</h3><div class="setgrid">';
   h+='<div class="setrow"><div class="lb">Mode</div>'+seg('mode',[['light','Light'],['dark','Dark'],['auto','Match Device']])+'</div>';
   h+='<div class="setrow"><div class="lb">Colour<small>Menu bar, buttons and highlights</small></div><div class="swatches">'+ACCENTS.map(([k,l,b,c])=>'<button class="swatch" data-act="pref" data-k="accent" data-v="'+k+'" aria-pressed="'+(p.accent===k)+'"><i style="background:linear-gradient(135deg,'+b+' 50%,'+c+' 50%)"></i>'+l+'</button>').join('')+'</div></div>';
   h+='<div class="setrow"><div class="lb">Text Size</div>'+seg('size',[[90,'Small'],[100,'Standard'],[110,'Large'],[120,'Extra Large']])+'</div>';
   h+='<div class="setrow"><div class="lb">Tables</div>'+seg('density',[['comfortable','Comfortable'],['compact','Compact']])+'</div>';
-  h+='<div class="setrow"><div class="lb">Signed In As</div><div>'+esc(r.who)+', '+esc(r.label)+(r.region?' ('+REG[r.region]+' only)':' (both plants)')+'<p class="hint">In the live app this is where you change your password and sign out.</p></div></div>';
-  return h+'</div></div>';
+  h+='</div></div>';
+  h+='<div class="card form"><h3 style="margin:0 0 12px">Password</h3><div class="field"><label for="pwNew">New Password</label><input type="password" id="pwNew" autocomplete="new-password" maxlength="72"><p class="hint">At least 8 characters.</p></div><div class="field"><label for="pwAgain">Type It Again</label><input type="password" id="pwAgain" autocomplete="new-password" maxlength="72"></div><div class="row"><button class="btn" data-act="pwSave">Change Password</button><button class="btn ghost" data-act="signout">Sign Out</button></div></div>';
+  h+='<p class="hint">Signed in as '+esc(r.label)+(r.region?' ('+REG[r.region]+' only)':' (both plants)')+'.</p>';
+  return h;
+}
+function changePw(){
+  const a=document.getElementById('pwNew').value,b=document.getElementById('pwAgain').value;
+  if(a.length<8)return toast('Use at least 8 characters.');if(a!==b)return toast('The two passwords don\'t match.');
+  if(!window.bvAccount)return toast('Not available here.');
+  window.bvAccount.changeMyPassword(a).then(()=>{toast('Password changed. Use it the next time you sign in.');render()},e=>toast((e&&e.message)||'The password couldn\'t be changed.'));
+}
+/* A picture becomes a 256 × 256 square, centred. */
+function avatarFrom(file){return new Promise((res,rej)=>{if(!file||!/^image\//.test(file.type||''))return rej();const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const z=Math.min(im.naturalWidth,im.naturalHeight),cv=document.createElement('canvas');cv.width=cv.height=256;cv.getContext('2d').drawImage(im,(im.naturalWidth-z)/2,(im.naturalHeight-z)/2,z,z,0,0,256,256);URL.revokeObjectURL(u);res(cv.toDataURL('image/jpeg',0.86))};im.onerror=()=>{URL.revokeObjectURL(u);rej()};im.src=u})}
+
+/* ---------- Settings › Users (admins): the same people as every KKSK app; here, who may use Production Planning ---------- */
+const PPR={approver:'Approver',planner:'Planner',floor:'Floor Team'};
+let PEOPLE=null;
+function loadPeople(){
+  if(!window.claude)return;PEOPLE=PEOPLE||{loading:true,users:[],admins:{}};
+  window.claude.use('db').then(db=>Promise.all([db.collection('users').get(),db.collection('admins').get()])).then(([us,ad])=>{
+    const admins={};ad.docs.forEach(d=>{const x=d.data();if(x.active!==false)admins[d.id]=x});
+    PEOPLE={users:us.docs.map(d=>Object.assign({id:d.id},d.data())),admins};render();
+  },e=>{PEOPLE={error:(e&&e.message)||'The list couldn\'t be loaded.',users:[],admins:{}};render()});
+}
+function vUsers(){
+  let h='<div class="sechead"><div class="grow"><h2>Users</h2><div class="sub">The same people as Bills &amp; Vouchers: one KKSK Group login each. Set who may use Production Planning, as what and for which plant. Admins and Super Admins always have every app. Companies and Bills &amp; Vouchers responsibilities are set in Bills &amp; Vouchers.</div></div>'+(window.bvAccount?'<button class="btn small" data-act="uAdd">'+(UI.uadd?'Close':'Add Person With Login')+'</button>':'')+'</div>';
+  if(UI.uadd){const a=UI.uadd;h+='<div class="card form"><h3 style="margin:0 0 10px">Add Person With Login</h3><div class="grid2"><div class="field"><label for="ua_name">Name</label><input id="ua_name" data-ua="name" value="'+esc(a.name)+'" maxlength="60"></div><div class="field"><label for="ua_mail">Login Email</label><input id="ua_mail" type="email" data-ua="mail" value="'+esc(a.mail)+'" maxlength="120"></div><div class="field"><label for="ua_pw">Password</label><input id="ua_pw" data-ua="pw" value="'+esc(a.pw)+'" maxlength="72" autocomplete="new-password"><p class="hint">At least 8 characters. Give it to them; they can change it under Personalise.</p></div><div class="field"><label for="ua_role">Production Planning</label><select id="ua_role" data-ua="role">'+Object.entries(PPR).map(([k,l])=>'<option value="'+k+'"'+(a.role===k?' selected':'')+'>'+l+'</option>').join('')+'</select></div><div class="field"><label for="ua_reg">Plant</label><select id="ua_reg" data-ua="region"><option value="E"'+(a.region==='E'?' selected':'')+'>Erode</option><option value="A"'+(a.region==='A'?' selected':'')+'>Ambur</option><option value=""'+(!a.region?' selected':'')+'>Both</option></select></div></div><p class="hint">They get Production Planning only. To give them Bills &amp; Vouchers too, edit them in Bills &amp; Vouchers › Settings › Users.</p><div class="row"><span class="spacer"></span><button class="btn" data-act="uAddSave">Add Person</button></div></div>'}
+  if(!PEOPLE){loadPeople();return h+'<div class="empty">Loading people…</div>'}
+  if(PEOPLE.loading)return h+'<div class="empty">Loading people…</div>';
+  if(PEOPLE.error)return h+'<div class="empty">'+esc(PEOPLE.error)+'</div>';
+  const ad=PEOPLE.admins,rows=[...Object.keys(ad).map(id=>({id,name:ad[id].name,email:ad[id].email,admin:1})),...PEOPLE.users.filter(u=>!ad[u.id])].sort((a,b)=>(!!b.admin-!!a.admin)||((a.active===false)-(b.active===false))||String(a.name||'').localeCompare(String(b.name||'')));
+  h+='<div class="card tbl tscroll"><table><thead><tr><th>Name</th><th>Bills &amp; Vouchers</th><th>Production Planning</th><th>Plant</th><th>Status</th><th></th></tr></thead><tbody>';
+  for(const u of rows){
+    if(u.admin){h+='<tr><td><b>'+esc(u.name||'')+'</b><div class="sub">'+esc(u.email||'')+'</div></td><td>Yes</td><td>Admin</td><td>Both</td><td><span class="chip ok">Admin, all apps</span></td><td></td></tr>';continue}
+    const ap=u.apps||{},pp=ap.pp||{},off=u.active===false,id=esc(u.id);
+    h+='<tr><td><b>'+esc(u.name||'')+'</b><div class="sub">'+esc(u.email||(u.unlinked?'No login yet':''))+'</div></td><td>'+(ap.bv===false?'No':'Yes')+'</td><td><select data-ur="'+id+'" aria-label="Production Planning for '+esc(u.name||'')+'"><option value="">No access</option>'+Object.entries(PPR).map(([k,l])=>'<option value="'+k+'"'+(pp.role===k?' selected':'')+'>'+l+'</option>').join('')+'</select></td><td><select data-ug="'+id+'" aria-label="Plant"><option value="E"'+(pp.region==='E'?' selected':'')+'>Erode</option><option value="A"'+(pp.region==='A'?' selected':'')+'>Ambur</option><option value=""'+(pp.role&&!pp.region?' selected':'')+'>Both</option></select></td><td><span class="chip '+(off?'':'ok')+'">'+(off?'Deactivated':'Active')+'</span></td><td style="white-space:nowrap"><button class="btn small" data-act="uSave" data-id="'+id+'">Save</button> <button class="btn small ghost" data-act="uToggle" data-id="'+id+'">'+(off?'Activate':'Deactivate')+'</button></td></tr>'}
+  return h+'</tbody></table></div>';
+}
+function peopleDb(){return window.claude.use('db')}
+function saveAccess(id){
+  const u=PEOPLE.users.find(x=>x.id===id);if(!u)return;
+  const role=app.querySelector('[data-ur="'+id+'"]').value,reg=app.querySelector('[data-ug="'+id+'"]').value;
+  if(!role&&(u.apps||{}).bv===false)return toast(u.name+' would have no app. Deactivate them instead.');
+  const apps=Object.assign({},u.apps||{},{bv:(u.apps||{}).bv!==false,pp:role?{role,region:reg||null}:null});
+  peopleDb().then(db=>db.doc('users/'+id).update({apps,updatedAt:Date.now()})).then(()=>{u.apps=apps;toast('Saved for '+u.name+'. It applies the next time they open Production Planning.');render()},e=>toast((e&&e.message)||'Couldn\'t save.'));
+}
+function toggleActive(id){
+  const u=PEOPLE.users.find(x=>x.id===id);if(!u)return;const on=u.active===false;
+  if(!on&&!confirm('Deactivate '+u.name+'? They can no longer open any KKSK app.'))return;
+  peopleDb().then(db=>db.doc('users/'+id).update({active:on,updatedAt:Date.now()})).then(()=>{u.active=on;toast(u.name+(on?' is active again.':' is deactivated.'));render()},e=>toast((e&&e.message)||'Couldn\'t save.'));
+}
+function addPerson(){
+  const a=UI.uadd,name=a.name.trim(),mail=a.mail.trim().toLowerCase();
+  if(!name)return toast('Enter their name.');if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail))return toast('Enter a valid email address.');if(a.pw.length<8)return toast('The password needs at least 8 characters.');
+  const now=Date.now(),me=(window.PP_ME&&window.PP_ME.uid)||'';
+  window.bvAccount.createLogin(mail,a.pw,name).then(r=>peopleDb().then(db=>db.doc('users/'+r.uid).set({name,email:r.email||mail,active:true,companyIds:[],roles:{},jobRoles:[],apps:{bv:false,pp:{role:a.role,region:a.region||null}},loginBy:me,by:me,createdAt:now,approvedAt:now,updatedAt:now}))).then(()=>{toast(name+' can now sign in with '+mail+' and the password you set.');UI.uadd=null;PEOPLE=null;render()},e=>toast((e&&e.message)||'The login couldn\'t be made.'));
+}
+
+/* ---------- Settings › Change Log (admins) ---------- */
+function vChangeLog(){
+  let h='<div class="sechead"><div class="grow"><h2>Change Log</h2><div class="sub">'+(LIVE()?'Every change saved to Production Planning, newest first (latest 300).':'Changes made in this Demo, newest first.')+'</div></div></div>';
+  if(!S.audit.length)return h+'<div class="empty">No changes yet.</div>';
+  const when=x=>{const d=new Date(x.at);return isNaN(d)?esc(x.at):fd(new Date(d.getTime()+5.5*36e5).toISOString().slice(0,10))+' '+new Date(d.getTime()+5.5*36e5).toISOString().slice(11,16)};
+  return h+'<div class="card tbl tscroll"><table><thead><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr></thead><tbody>'+S.audit.map(x=>'<tr><td style="white-space:nowrap">'+when(x)+'</td><td>'+esc(x.by)+'</td><td>'+esc(x.action)+'</td><td>'+esc(x.detail||'')+'</td></tr>').join('')+'</tbody></table></div>';
+}
+
+/* ---------- Settings › Data & Archive (admins) ---------- */
+function vData(){
+  const open=S.lots.filter(l=>l.status!=='cancelled'&&l.stage!=='closed').length,closed=S.lots.filter(l=>l.stage==='closed').length,cx=S.lots.filter(l=>l.status==='cancelled').length;
+  const rows=[['Orders from Zoho',S.orders.length],['Lots in progress',open],['Lots closed',closed],['Lots cancelled',cx],['Lot data entries',S.entries.length],['Approvals',S.approvals.length],['Stock lines',S.stock.filter(x=>x.qty>0.5).length],['SKUs',S.skus.length]];
+  let h='<div class="sechead"><div class="grow"><h2>Data &amp; Archive</h2><div class="sub">'+(LIVE()?'What Production Planning holds in KKSK-Production, and a full backup as an Excel file. Nothing is archived or deleted: closed and cancelled lots stay for history and actual yield rates.':'What this Demo holds in this browser.')+'</div></div><button class="btn small" data-act="backup">Download Backup (Excel)</button></div>';
+  return h+'<div class="card tbl tscroll"><table><thead><tr><th>What</th><th class="num">Records</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+r[0]+'</td><td class="num">'+n0(r[1])+'</td></tr>').join('')+'</tbody></table></div>';
+}
+let XLSXP=null;
+function xlsxLib(){return XLSXP||(XLSXP=new Promise((res,rej)=>{if(window.XLSX)return res(window.XLSX);const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';sc.onload=()=>res(window.XLSX);sc.onerror=()=>{XLSXP=null;rej()};document.head.appendChild(sc)}))}
+function downloadBackup(){
+  xlsxLib().then(X=>{
+    const wb=X.utils.book_new(),add=(name,rows)=>X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(rows),name);
+    add('Lots',[['Lot','SKU','Plant (issued)','Plant (now)','Type','Kind','Planned','Planned output','Issue','Stage','Status','Issued','Crust','Taken crust','FLD','Taken FL','Reject FL','Dispatched']].concat(S.lots.map(l=>[l.no,l.sku,REG[l.issueRegion],REG[l.region],ISSUE[l.type]?ISSUE[l.type].l:l.type,l.kind,l.date,l.plannedOut,l.issue,(STAGES[SI(l.stage)]||{}).l||l.stage,l.status,l.issueDate||'',l.m.crust??'',l.m.takenCrust??'',l.m.fld??'',l.m.takenFL??'',l.m.rejectFL??'',l.m.dispatch??''])));
+    add('Lot Data',[['Date','Update','Plant','SKU','Lots','Figures']].concat(S.entries.map(e=>[e.date,e.kind,REG[e.region],e.sku||'',e.lotIds.map(id=>(lotOf(id)||{}).no||id).join(', '),JSON.stringify(e.totals||{})])));
+    add('Orders',[['PI line','Customer','SKU','Plant','Due','Order','Dispatched','Pooled']].concat(S.orders.map(o=>[o.pi,o.cust,o.sku,REG[o.place],o.due,o.qty,o.dispatched,o.pooled?'Yes':'No'])));
+    add('Stock',[['SKU','Plant','Kind','Quantity']].concat(S.stock.filter(x=>x.qty>0.5).map(x=>[x.sku,REG[x.region],STOCK[x.kind]||x.kind,x.qty])));
+    add('Approvals',[['Asked','By','What','Status','Decided by','Reason']].concat(S.approvals.map(a=>[a.at,a.by,apText(a).replace(/<[^>]+>/g,''),a.status,a.decidedBy||'',a.reason||''])));
+    add('Change Log',[['When','Who','What','Detail']].concat(S.audit.map(x=>[x.at,x.by,x.action,x.detail||''])));
+    X.writeFile(wb,'Production Planning backup '+T+(LIVE()?'':' (demo)')+'.xlsx');
+  },()=>toast('The Excel maker couldn\'t load. Check the connection.'));
 }
 
 /* consolidation */
@@ -1197,7 +1304,15 @@ app.addEventListener('click',e=>{
     case 'doCrust':doCrust();break;
     case 'doMeasure':doMeasure();break;
     case 'upd':UI.upd=t.dataset.v;render();break;
-    case 'pref':{const p=prefs();const k=t.dataset.k;p[k]=k==='size'?+t.dataset.v:t.dataset.v;save();render();break}
+    case 'pref':{const p=prefs();const k=t.dataset.k;p[k]=k==='size'?+t.dataset.v:t.dataset.v;savePrefs();break}
+    case 'picRemove':prefs().avatar='';savePrefs('Profile picture removed.');break;
+    case 'picAdd':document.getElementById('picFile').click();break;
+    case 'pwSave':changePw();break;
+    case 'uAdd':UI.uadd=UI.uadd?null:{name:'',mail:'',pw:'',role:'planner',region:'E'};render();break;
+    case 'uAddSave':addPerson();break;
+    case 'uSave':saveAccess(t.dataset.id);break;
+    case 'uToggle':toggleActive(t.dataset.id);break;
+    case 'backup':downloadBackup();break;
     case 'signout':window.bvSupabase.auth.signOut();break;
     case 'pill':if(window.PPLive&&window.PP_ME&&(window.PP_ME.admin||window.PP_ME.super))window.PPLive.toggle();break;
     case 'goForm':goForm(t.dataset.k,[t.dataset.id]);break;
@@ -1229,6 +1344,9 @@ app.addEventListener('change',e=>{
   const t=e.target,a=t.dataset.act,sh=UI.sheet;
   if(a==='role'){S.role=t.value;S.viewAs=t.value!=='super';const r=ROLES[S.role];if(r.region)S.region=r.region;UI.sheet=null;save();render();return}
   if(a==='showAll'){UI.showAll=t.checked;render();return}
+  if(t.id==='picFile'){const f=t.files&&t.files[0];if(f)avatarFrom(f).then(d=>{prefs().avatar=d;savePrefs('Profile picture saved.')},()=>toast('Choose a photo (JPG, PNG or WebP).'));return}
+  if(t.dataset.ua){UI.uadd[t.dataset.ua]=t.value;return}
+  if(t.dataset.ur||t.dataset.ug)return;
   if(t.dataset.fp){setPath(t.dataset.fp,t.value);const p=t.dataset.fp;if(/\.lot$/.test(p)&&t.value){const q=p.replace(/\.lot$/,'.qty');const parts=q.split('.');let o=UI.fm;for(let i=0;i<parts.length-1;i++)o=o[parts[i]];if(o&&'qty' in o&&!o.qty)o.qty=String(curQty(lotOf(t.value)))}if(/\.sku$/.test(p)){const f=FM(p.split('.')[0]);f.sel={}}render();return}
   if(t.dataset.psel){const [u,id]=t.dataset.psel.split('.');(UI.psel=UI.psel||{});(UI.psel[u]=UI.psel[u]||{})[id]=t.checked;render();return}
   if(t.dataset.fsel){const [u,id]=t.dataset.fsel.split('.');FM(u).sel[id]=t.checked;render();return}
@@ -1247,6 +1365,7 @@ app.addEventListener('change',e=>{
 app.addEventListener('input',e=>{
   const t=e.target,sh=UI.sheet;
   if(t.dataset.fp&&(t.type==='number'||t.type==='text')){setPath(t.dataset.fp,t.value);return}
+  if(t.dataset.ua&&UI.uadd){UI.uadd[t.dataset.ua]=t.value;return}
   if(t.dataset.iq){(UI.iq=UI.iq||{})[t.dataset.iq]=t.value;const e=document.getElementById('m10_'+t.dataset.iq);if(e)e.textContent=n0(Math.round((num(t.value)||0)*1.1));return}
   if(!sh)return;
   const calc=()=>{const c=document.getElementById('calc');if(!c)return;
@@ -1269,6 +1388,7 @@ window.__ppStart=function(me){
     if(!(me.super&&S.role&&ROLES[S.role]&&S.viewAs))S.role=key;
     if(ROLES[S.role].region)S.region=ROLES[S.role].region;
     window.__pp={get S(){return S},render,coverage,pools,proj,histFor,seed};
+    prefsStart();
     render();
   };
   const L=window.PPLive;
@@ -1304,7 +1424,7 @@ window.__ppStart=function(me){
       window.ppDb = window.supabase.createClient(window.PP_CONFIG.url, window.PP_CONFIG.key, { auth: { persistSession: false, autoRefreshToken: true } });
       return window.ppDb.auth.setSession({ access_token: h.access_token, refresh_token: h.refresh_token }).then(function () {
         var apps = (p.apps.bv ? 1 : 0) + (p.apps.pp ? 1 : 0);
-        window.PP_ME = { name: p.name || h.user.name, email: p.email, role: h.user.role, region: h.user.region, super: !!p.super, admin: !!p.admin, apps: apps };
+        window.PP_ME = { uid: p.uid, name: p.name || h.user.name, email: p.email, role: h.user.role, region: h.user.region, super: !!p.super, admin: !!p.admin, apps: apps };
         window.__ppStart(window.PP_ME);
       });
     });

@@ -22,6 +22,10 @@
   pooling, dispatch counted against orders, default rates and other WF1 work. Screens refresh when someone else saves.
   Admins and Super Admins can switch to Demo with the LIVE / DEMO pill: sample data kept in that browser only, never
   written to the database. Everyone else is always on Live.
+- **Settings in both apps**: Users, Change Log, Data & Archive (admins) and Personalise (everyone); Companies is in
+  Bills & Vouchers only. Users are the same KKSK Group people in both; Production Planning's Users tab sets who may use it,
+  as what and for which plant, and can add a person with a Production Planning-only login. Personalise (picture, look,
+  password) is saved per login in KKSK Group (`prefs/<uid>`) and shared by every app.
 
 ## Bills & Vouchers Accounting (`web/`)
 
@@ -82,7 +86,7 @@ provides the same calls, so the app code did not need rewriting:
   are kept apart by a `demo__` prefix. Everything entered before the switch existed is Demo.
 - **Bill files** are kept in the private `bill-files` Storage bucket (`live/` or `demo/` folder). The accountant sees
   the file beside the form with page, zoom, fit, rotate and drag. Bills typed in by hand can attach a file.
-- **Settings** (everyone): My Settings has light/dark/device mode, a colour, text size, table density, a
+- **Settings** (everyone): Personalise (shared by every KKSK app, saved to the login) has light/dark/device mode, a colour, text size, table density, a
   profile picture shown at the top, and Change Password. Admins also see Companies, Users, Change Log and Data &
   Archive there. PDFs and Excel always keep the standard KKSK format.
 - **Admins** are added only by the Super Admin (Settings › Users › Add Admin), with a login or without one

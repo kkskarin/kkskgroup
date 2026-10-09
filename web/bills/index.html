@@ -1161,7 +1161,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   </section>
 
   <section id="secPrefs" hidden>
-    <div class="head"><div class="grow"><h2>My Settings</h2><p class="sub">How the app looks for you, your picture and your password. These follow your login on every device.</p></div></div>
+    <div class="head"><div class="grow"><h2>Personalise</h2><p class="sub">Your picture, how the apps look for you, and your password. Saved to your login, so they follow you to every device and every KKSK app.</p></div></div>
     <div id="prefBody" class="pgrid"></div>
   </section>
   <section id="secTxn" hidden>
@@ -1332,7 +1332,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
   var VIEWS = ["secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secApr", "secArch"];
-  /* ================= Settings › My Settings: appearance, colour, text size, density, password, profile picture =================
+  /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
   var ACCENTS = [["green", "KKSK Green", "#009256"], ["ocean", "Ocean Blue", "#0A84C1"], ["indigo", "Indigo", "#4F46E5"], ["plum", "Plum", "#A21CAF"], ["terracotta", "Terracotta", "#C2410C"], ["charcoal", "Charcoal", "#4B5563"]];
@@ -1359,7 +1359,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     S.prefsSub = S.rawDb.doc("prefs/" + id).onSnapshot(function (d) {
       var p = d && d.exists ? d.data() || {} : null; if (!p) return;
       applyPrefs(p); try { localStorage.setItem(prefKey(id), JSON.stringify(p)); localStorage.setItem(prefKey(), JSON.stringify(Object.assign({}, p, { avatar: "" }))); } catch (e) {}
-      if (S.tab === "My Settings" && !$("secPrefs").hidden) renderPrefs();
+      if (S.tab === "Personalise" && !$("secPrefs").hidden) renderPrefs();
     }, function () {});
   }
   function savePrefs(patch, msg) {
@@ -1444,7 +1444,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     { h: "Vouchers", tabs: [["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Vouchers CR"], ["Cash Advance", "Cash Advance"]] },
     { h: "Accounts", tabs: [["Accounts", "To Account"], ["Ledger Books", "Ledger Books"]] },
     { h: "Payments", tabs: [["Payment Planning", "Payment Planning", true], ["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] },
-    { h: "Settings", tabs: [["Companies", "Companies", true], ["Users", "Users", true], ["Change Log", "Change Log", true], ["Archive", "Data & Archive", true], ["My Settings", "My Settings"]] }
+    { h: "Settings", tabs: [["Companies", "Companies", true], ["Users", "Users", true], ["Change Log", "Change Log", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] }
   ];
   var HOME_TAB = "Transactions", LAST_IN = {};
   var DATA_TABS = ["Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
@@ -1457,7 +1457,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {
       var fo = finOnly();
-      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "My Settings") return true; if (fo && !FIN_TABS[t[0]]) return false; return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (t[0] === "Bills" && canDo("adv")) : nonAcct())); })
+      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (fo && !FIN_TABS[t[0]]) return false; return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (t[0] === "Bills" && canDo("adv")) : nonAcct())); })
         /* The financier's Reports: Payables first, then Payments (Transactions showing payments only). */
         .map(function (t) { return fo && t[0] === "Transactions" ? [t[0], "Payments"] : t; }).sort(function (x, y) { return fo ? (x[0] === "Payables" ? -1 : y[0] === "Payables" ? 1 : 0) : 0; }) };
     }).filter(function (g) { return g.tabs.length; });
@@ -1514,7 +1514,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (S.tab === "Bills" && t !== "Bills") { readCard(); doSave(); }
     S.tab = t; var gg = groupOf(t); if (gg) LAST_IN[gg.h] = t;
     S.editing = null; S.userEditing = null; S.stmtId = null; VE.id = null; CK.viewId = null; VC.viewId = null; VH.id = null; renderNav();
-    if (t === "My Settings" && groupOf(t)) { renderPrefs(); show("secPrefs"); return; }
+    if (t === "Personalise" && groupOf(t)) { renderPrefs(); show("secPrefs"); return; }
     if (!S.isAdmin && !S.blLoaded) { show("vLoading"); return; }
     if (lockedNow()) { renderLock(); show("secLock"); return; }
     if (groupOf(t) === null) { t = S.tab = homeTab(); renderNav(); }
@@ -1537,7 +1537,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       else { renderPlanning(); show("secPlanPay"); }
       return;
     }
-    if (t === "My Settings") { renderPrefs(); show("secPrefs"); return; }
+    if (t === "Personalise") { renderPrefs(); show("secPrefs"); return; }
     if (t === "Users" && S.isAdmin) { renderUsers(); renderSupers(); show("secUsers"); }
     else if (t === "Change Log" && S.isAdmin) { auditSub(); renderAudit(); show("secAudit"); }
     else if (t === "Archive" && S.isAdmin) { if (dataReady()) { renderArchive(); show("secArch"); } else show("vLoading"); }

@@ -10,7 +10,7 @@
   var ROLE_PP = { super_admin: "Super Admin", admin: "Admin", approver: "Approver", planner: "Planner", floor: "Floor Team" };
   var REGION = { E: "Erode", A: "Ambur" };
 
-  /* The look a person chose in My Settings, kept in this browser by the apps. */
+  /* The look a person chose in Personalise, kept in this browser by the apps. */
   try {
     var pr = JSON.parse(localStorage.getItem("bv_prefs_last") || "null");
     if (pr) {

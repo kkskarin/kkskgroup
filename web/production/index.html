@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Production Planning</title>
-<link rel="icon" type="image/png" href="../favicon.png"><link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<script src="../textsize.js"></script><link rel="icon" type="image/png" href="../favicon.png"><link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <script src="../config.js"></script>
 <script>window.BV_APP = "pp"; window.BV_HOME = "../";
 /* KKSK-Production: Zoho orders and production tables. Public address and publishable key only. */
@@ -512,7 +512,7 @@ function savePrefs(msg){
   const x=Object.assign(toShared(prefs()),{updatedAt:Date.now()});prefsKeep(x);render();
   if(!PDOC)return;PDOC.set(x).then(()=>{if(msg)toast(msg)},()=>toast('Saved in this browser only. Check the connection.'));
 }
-function applyPrefs(){const p=prefs(),r=document.documentElement;if(p.mode==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',p.mode);if(p.accent==='green')r.removeAttribute('data-accent');else r.setAttribute('data-accent',p.accent);r.setAttribute('data-density',p.density);document.body.style.zoom=p.size===100?'':String(p.size/100)}
+function applyPrefs(){const p=prefs(),r=document.documentElement;if(p.mode==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',p.mode);if(p.accent==='green')r.removeAttribute('data-accent');else r.setAttribute('data-accent',p.accent);r.setAttribute('data-density',p.density);if(window.kkskTextSize)window.kkskTextSize((p.size||100)/100);else document.body.style.zoom=p.size===100?'':String(p.size/100)}
 function headCount(k){if(k==='orders'){return pools(region()).filter(p=>p.unplanned>0).length}if(k==='lots'){return UPD.reduce((t,[u])=>t+pendingLots(u).length,0)}if(k==='approvals')return pendingCount();return 0}
 const initials=n=>n.replace(/\(.*?\)/g,'').trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
 function render(){

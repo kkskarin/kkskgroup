@@ -221,6 +221,23 @@ h2{font-size:21px}main.wrap{padding-top:16px}
 th,td{padding-left:10px;padding-right:10px}td{font-size:13.5px}}
 @media (max-width:760px){.wrap{padding-left:14px;padding-right:14px}.titles .t1{font-size:15px}.titles .t2{font-size:11px}.mark{width:44px;height:44px}.navbar #nav button{padding:12px 11px;font-size:13px}.me select{max-width:150px}.toast{left:12px;right:12px;transform:none;max-width:none}.sheet{padding:18px 16px}}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:pop .16s ease-out}@keyframes pop{from{transform:translateY(8px);opacity:.7}}}
+
+/* Tables scroll sideways inside their card; the page itself never gets wider than the screen. */
+.card.tbl.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.tscroll table{min-width:max-content}
+#app{max-width:100vw;overflow-x:clip}
+.hbtn{white-space:nowrap}
+@media (max-width:760px){
+  .top .wrap{flex-wrap:wrap;row-gap:8px}
+  .tright{width:100%;flex-wrap:wrap;justify-content:flex-start;gap:8px}
+  .tright .pill{order:0}
+  .tright .rseg{order:1}
+  .tright .hbtn{order:2;min-height:30px;padding:4px 10px;font-size:12.5px}
+  .tright .rseg{margin-right:auto}
+  .tright .me{order:3;width:100%;margin-left:0}
+  .me select{max-width:none;flex:1;font-size:13px}
+  .rseg button{padding:5px 10px}
+}
 </style>
 </head>
 <body>
@@ -484,7 +501,7 @@ function render(){
   let h='<header class="top"><div class="wrap"><div class="mark"><img alt="KKSK" src="'+LOGO+'"></div><div class="titles"><div class="t1">Production Planning</div><div class="t2">KKSK Group</div></div><div class="tright">';
   if(window.PP_ME&&(window.PP_ME.admin||window.PP_ME.super))h+=LIVE()?'<button class="pill" data-act="pill" title="Switch to Demo (sample data in this browser)">LIVE</button>':'<button class="pill demo" data-act="pill" title="Switch to Live">DEMO</button>';
   h+=(r.both?'<div class="rseg" role="group" aria-label="Plant">'+['E','A'].map(k=>'<button data-act="region" data-v="'+k+'" aria-pressed="'+(S.region===k)+'">'+REG[k]+'</button>').join('')+'</div>':'<span class="rseg static">'+REG[r.region]+'</span>');
-  h+='<div class="me"><span class="avatar" aria-hidden="true">'+esc(initials(r.who))+'</span><div><div class="nm">'+esc(r.who)+'</div>'+(window.PP_ME&&window.PP_ME.super?'<select id="role" data-act="role" aria-label="View as">'+Object.entries(ROLES).filter(([k])=>k!=='planner'&&k!=='floor').map(([k,v])=>'<option value="'+k+'"'+(k===S.role?' selected':'')+'>'+(k==='super'?'Super Admin (you)':'View as '+esc(v.label))+'</option>').join('')+'</select>':'<div style="font-size:12px;color:var(--muted)">'+esc(r.label)+'</div>')+'</div></div>'+(window.PP_ME&&window.PP_ME.apps>1?'<a href="../" class="btn small ghost" style="text-decoration:none" title="All KKSK apps">All Apps</a>':'')+'<button class="btn small ghost" data-act="signout">Sign Out</button></div></div></header>';
+  h+='<div class="me"><span class="avatar" aria-hidden="true">'+esc(initials(r.who))+'</span><div><div class="nm">'+esc(r.who)+'</div>'+(window.PP_ME&&window.PP_ME.super?'<select id="role" data-act="role" aria-label="View as">'+Object.entries(ROLES).filter(([k])=>k!=='planner'&&k!=='floor').map(([k,v])=>'<option value="'+k+'"'+(k===S.role?' selected':'')+'>'+(k==='super'?'Super Admin (you)':'View as '+esc(v.label))+'</option>').join('')+'</select>':'<div style="font-size:12px;color:var(--muted)">'+esc(r.label)+'</div>')+'</div></div>'+(window.PP_ME&&window.PP_ME.apps>1?'<a href="../" class="btn small ghost hbtn" style="text-decoration:none" title="All KKSK apps">All Apps</a>':'')+'<button class="btn small ghost hbtn" data-act="signout">Sign Out</button></div></div></header>';
   h+='<nav class="navbar" aria-label="Sections"><div class="wrap" id="nav">'+HEADS.map(([k,l,tabs])=>{const c=headCount(k);return '<button data-act="tab" data-v="'+tabs[0]+'"'+(head[0]===k?' aria-current="page"':'')+'>'+l+(c?'<span class="count'+(k==='approvals'?' alert':'')+'">'+c+'</span>':'')+'</button>'}).join('')+'</div></nav>';
   if(head[2].length>1)h+='<div class="tabbar"><div class="wrap">'+head[2].map(k=>'<button data-act="tab" data-v="'+k+'"'+(S.tab===k?' aria-current="page"':'')+'>'+TABS.find(t=>t[0]===k)[1]+'</button>').join('')+'</div></div>';
   if(!LIVE())h+='<div class="demostrip"><div class="wrap"><b>DEMO MODE</b><span>Sample data in this browser only. Nothing here reaches Zoho or live planning.</span>'+(r.admin?'<button class="btn small ghost" data-act="reset">Reset Demo</button>':'')+'<button class="btn small ghost" data-act="pill">Back to Live</button></div></div>';

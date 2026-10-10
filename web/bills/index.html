@@ -757,7 +757,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <div id="lgmList"></div>
   </section>
   <section id="secAcct" hidden>
-    <div class="head"><div class="grow"><h2>To Account</h2><p class="sub">Every submitted bill and voucher comes here first. Check the ledgers, enter the TDS and approve it; only then can it go into a checking report. Postpone it to come back later, or send it back with a note.</p></div></div>
+    <div class="head"><div class="grow"><h2>To Account</h2><p class="sub">Every submitted bill and voucher comes here first. Check the ledgers and approve it; only then can it go into a checking report. Postpone it to come back later, or send it back with a note.</p></div></div>
     <div class="filters">
       <div class="seg" role="tablist" aria-label="Show"><button type="button" role="tab" id="acSideB" aria-selected="true">Bills <span id="acNB"></span></button><button type="button" role="tab" id="acSideV" aria-selected="false">Vouchers <span id="acNV"></span></button></div>
       <select class="field" id="acSt" aria-label="Status"><option value="pending">Waiting</option><option value="held">Postponed by me</option><option value="back">Sent back</option><option value="approved">Approved</option><option value="all">All</option></select>
@@ -960,7 +960,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secChecks" hidden>
     <div class="head">
-      <div><h2>Bills Checking Report</h2><p class="sub">Bills CR (bill checking report): one vendor, one company, one preparer. Only bills the accountant has approved can go in, with the TDS the accountant entered; it is then printed, approved on paper, and sent for payment. A vendor's bills can't go into a report until its opening balance for that company is captured.</p></div>
+      <div><h2>Bills Checking Report</h2><p class="sub">Bills CR (bill checking report): one vendor, one company, one preparer. Only bills the accountant has approved can go in. It is then printed, and the admin approves it for payment, bill by bill. A vendor's bills can't go into a report until its opening balance for that company is captured.</p></div>
       <span class="grow"></span>
       <select class="field" id="ckCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
@@ -1129,7 +1129,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secVcr" hidden>
     <div class="head">
-      <div><h2>Vouchers Checking Report</h2><p class="sub">One report per person who paid the vouchers. Pick the companies and vouchers to include; the TDS is added up from each voucher. It is then printed, approved on paper and sent for payment.</p></div>
+      <div><h2>Vouchers Checking Report</h2><p class="sub">One report per person who paid the vouchers. Pick the companies and vouchers to include. It is then printed, approved on paper and sent for payment.</p></div>
       <span class="grow"></span>
       <select class="field" id="vcCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
@@ -1206,7 +1206,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   </section>
   <section id="secPayables" hidden>
     <div class="head">
-      <div class="grow"><h2>Payables</h2><p class="sub">What is still owed to vendors after TDS, payments, discounts and advances: unpaid bills and opening balances, with the AP ageing by vendor. Bills count by bill date in the date filter.</p></div>
+      <div class="grow"><h2>Payables</h2><p class="sub">What is still owed to vendors after payments, discounts, notes and advances: unpaid bills and opening balances, with the AP ageing by vendor. Bills count by bill date in the date filter.</p></div>
       <div class="acts2"><button class="btn" id="pyXls" type="button">Download Excel</button><button class="btn primary" id="pyPdf" type="button">Download PDF</button></div>
     </div>
     <div class="filters" id="pyFilt"></div>
@@ -1232,7 +1232,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   </section>
   <section id="secApr" hidden>
     <div class="head">
-      <div><h2>Advances Checking Report</h2><p class="sub">Advance CR (advance planning report): one for each instalment of a proforma or import, with no GST or TDS. Generate it when it falls due, or earlier when the payment needs to go sooner. It is then printed, approved on paper and sent for payment.</p></div>
+      <div><h2>Advances Checking Report</h2><p class="sub">Advance CR (advance planning report): one for each instalment of a proforma or import, with no GST. Generate it when it falls due, or earlier when the payment needs to go sooner. It is then printed, approved on paper and sent for payment.</p></div>
       <span class="grow"></span>
       <select class="field" id="apCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
@@ -1685,7 +1685,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ================= responsibilities: who does which step for which company ================= */
   /* Job roles every user must have. Each suggests the steps it usually does; the admin can still change the ticks. */
-  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Checks every bill and voucher: ledgers, TDS and approval; keeps the ledgers"], ["financier", "Financier", "Pays out: Payment Entry"]];
+  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Checks every bill and voucher: ledgers and approval; keeps the ledgers"], ["financier", "Financier", "Pays out: Payment Entry"]];
   var JOB_STEPS = { purchaser: ["bills", "bcr", "adv", "vouchers", "vcr", "cash"], accountant: ["acct"], financier: ["txn"] };
   function jobChecks(box, sel) {
     sel = sel || []; box.textContent = "";
@@ -2610,7 +2610,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function advPaid(aid, inst) { var s = 0; txList().forEach(function (t) { if (t.advanceId === aid && t.kind === "payment" && (inst == null || t.inst === inst)) s += Number(t.amount) || 0; }); return round2(s); }
   function advPaidInr(aid) { return advPaid(aid); }
   function billSent(b) { var ck = checkOf(b); return !!ck && stageOf(ck.r) === "payment"; }
+  /* TDS is not used: every bill counts at its full total. */
   function tdsShares() {
+    return {};
     var m = {};
     Object.keys(S.reports).forEach(function (k) {
       var r = S.reports[k]; if (r.kind === "inst" || r.billTds || !tdsSet(r)) return;
@@ -4086,7 +4088,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Total amount", cls: "r num", cell: function (b, td) {
           td.appendChild(el("b", null, bm(b, b.total))); sub(td, bm(b, b.taxable) + " + GST " + bm(b, b.gstAmt));
           if (b.landed) sub(td, "Landed: taxable " + money(b.landed.taxable) + " + GST " + money(b.landed.gst), "color:var(--brand);font-weight:600");
-          if (b.acct === "approved" && b.tds != null) sub(td, "TDS " + tdsText(b.tds, b.currency) + (b.tdsSection ? " · " + b.tdsSection : "")); } },
+          } },
       { label: "Submitted", cls: "num", cell: function (b, td) {
           var d = b.submittedAt ? Math.max(0, daysBetween(ymdOfMs(b.submittedAt), t)) : 0;
           td.appendChild(el("span", { class: d > 7 ? "late" : "" }, d === 0 ? "Today" : d === 1 ? "Yesterday" : d + " days ago")); } },
@@ -4200,7 +4202,6 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Company", kind: "co", sort: function (cid) { return coLabel(cid); }, cell: function (cid, td) { td.appendChild(el("b", null, coLabel(cid))); } },
       { label: "Opening balance", cls: "r num", sort: function (cid) { var r = ledger(cid, v.id); return r.opening ? r.opening.balance : null; }, desc: true, cell: function (cid, td) { var r = ledger(cid, v.id); txt(td, r.opening ? lm(cid, r.opening.balance) : "Not captured"); } },
       { label: "Bills", cls: "r num", sort: function (cid) { return ledger(cid, v.id).billTotal; }, desc: true, cell: function (cid, td) { var r = ledger(cid, v.id); txt(td, lm(cid, r.billTotal)); sub(td, plural(r.bills.length, "bill")); } },
-      { label: "TDS", cls: "r num", sort: function (cid) { return ledger(cid, v.id).tds; }, desc: true, cell: function (cid, td) { var r = ledger(cid, v.id); txt(td, r.tds ? "(" + lm(cid, r.tds) + ")" : lm(cid, 0)); } },
       { label: "Payments", cls: "r num", sort: function (cid) { return ledger(cid, v.id).paid; }, desc: true, cell: function (cid, td) { var r = ledger(cid, v.id); txt(td, lm(cid, r.paid)); if (r.advance) sub(td, "Advance held " + lm(cid, r.advance)); } },
       { label: "Discounts", cls: "r num", sort: function (cid) { return ledger(cid, v.id).disc; }, desc: true, cell: function (cid, td) { txt(td, lm(cid, ledger(cid, v.id).disc)); } },
       { label: "Outstanding", cls: "r num", sort: function (cid) { return ledger(cid, v.id).outstanding; }, desc: true, cell: function (cid, td) { td.appendChild(el("b", null, lm(cid, ledger(cid, v.id).outstanding))); } },
@@ -4393,17 +4394,17 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       facts: [["Vendor", v.name], [v.type === "overseas" ? "Country" : "GSTIN", v.type === "overseas" ? v.country || "Overseas" : v.gstin || (v.type === "registered" ? "Not given" : "Not registered")], ["Terms", v.termDays != null ? plural(v.termDays, "day") : "Not set"], ["Bill period", periodText(r.periodFrom, r.periodTo)]] });
     var T = { tx: 0, g: 0, t: 0, d: 0 };
     var body2 = bills.map(function (b, i) {
-      var d = hasTds ? billInfo(b).tds || Number(b.tds) || 0 : Number(b.tds) || 0;
+      var d = 0;
       T.tx += Number(b.taxable) || 0; T.g += Number(b.gstAmt) || 0; T.t += Number(b.total) || 0; T.d += d;
-      return [cC(String(i + 1)), cB(b.billNo || ""), fmtDate(b.billDate), fmtDate(b.dueDate), b.narration || "", cR(M(b.taxable)), cR(M(b.gstAmt)), cR(d ? "(" + M(d) + ")" : "0"), cR(M((Number(b.total) || 0) - d), true)];
+      return [cC(String(i + 1)), cB(b.billNo || ""), fmtDate(b.billDate), fmtDate(b.dueDate), b.narration || "", cR(M(b.taxable)), cR(M(b.gstAmt)), cR(M(Number(b.total) || 0), true)];
     });
-    y2 = P.table(y2, ["#", "Bill no.", "Bill date", "Due", "Description", { content: "Taxable", styles: { halign: "right" } }, { content: "GST", styles: { halign: "right" } }, { content: "TDS", styles: { halign: "right" } }, { content: "Total", styles: { halign: "right" } }], body2,
-      { foot: [cFoot("Total, " + plural(bills.length, "bill") + " (" + cur + ")", 5), cFoot(M(T.tx), 1, "right"), cFoot(M(T.g), 1, "right"), cFoot(T.d ? "(" + M(T.d) + ")" : "0", 1, "right"), cFoot(M(T.t - T.d), 1, "right")],
-        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 58 }, 2: { cellWidth: 50 }, 3: { cellWidth: 50 }, 5: { cellWidth: 52 }, 6: { cellWidth: 46 }, 7: { cellWidth: 44 }, 8: { cellWidth: 56 } } });
+    y2 = P.table(y2, ["#", "Bill no.", "Bill date", "Due", "Description", { content: "Taxable", styles: { halign: "right" } }, { content: "GST", styles: { halign: "right" } }, { content: "Total", styles: { halign: "right" } }], body2,
+      { foot: [cFoot("Total, " + plural(bills.length, "bill") + " (" + cur + ")", 5), cFoot(M(T.tx), 1, "right"), cFoot(M(T.g), 1, "right"), cFoot(M(T.t), 1, "right")],
+        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 58 }, 2: { cellWidth: 50 }, 3: { cellWidth: 50 }, 5: { cellWidth: 56 }, 6: { cellWidth: 50 }, 7: { cellWidth: 60 } } });
     var tdsN = Number(r.tds) || 0;
-    var rows = [["Taxable amount", CM(T.tx)], ["GST", CM(T.g)], ["Total amount", CM(r.total)], ["TDS", hasTds ? (tdsN ? "(" + CM(tdsN) + ")" : CM(0)) : "Not entered"]];
+    var rows = [["Taxable amount", CM(T.tx)], ["GST", CM(T.g)], ["Total amount", CM(r.total)]];
     if (adv) rows.push(["Less advance already paid", "(" + CM(adv) + ")"]);
-    rows.push(["Total payable", hasTds ? CM(payableOf(r)) : "After TDS"]);
+    rows.push(["Total payable", CM(payableOf(r))]);
     P.mark(P.net(y2 + 4, rows));
     P.finish([["Prepared by", pnm(r.preparedBy)], ["Cashier receipt date", ""], ["Approver sign", crApprovers(r)]], (r.no || "") + " · " + v.name);
     return doc;
@@ -4418,11 +4419,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var c = S.companies[cid] || { name: "" }, vs = vcrVouchers(r, cid), bc = (r.byCo || {})[cid] || vcrSums(vs);
       if (y > 700) { doc.addPage(); y = 56; }
       y = P.section(c.name, y + 6, plural(vs.length, "voucher"));
-      y = P.table(y, ["#", "Voucher", "Date", "Paid to · description", "From", { content: "TDS", styles: { halign: "right" } }, { content: "Total", styles: { halign: "right" } }],
-        vs.map(function (v, i) { return [cC(String(i + 1)), cB(v.voucherNo || ""), fmtDate(v.voucherDate), (v.payee || "") + (v.narration ? " · " + v.narration : ""), v.settle ? "Advance" : "By Financier", cR(Number(v.tds) ? "(" + amt(v.tds) + ")" : "0"), cR(amt((Number(v.total) || 0) - (Number(v.tds) || 0)), true)]; }),
-        { foot: [cFoot((c.shortName || c.name) + " total", 5), cFoot(bc.tds ? "(" + amt(bc.tds) + ")" : "0", 1, "right"), cFoot(amt((bc.total || 0) - (bc.tds || 0)), 1, "right")], columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 54 }, 2: { cellWidth: 50 }, 4: { cellWidth: 62 }, 5: { cellWidth: 44 }, 6: { cellWidth: 56 } } }) + 4;
+      y = P.table(y, ["#", "Voucher", "Date", "Paid to · description", "From", { content: "Total", styles: { halign: "right" } }],
+        vs.map(function (v, i) { return [cC(String(i + 1)), cB(v.voucherNo || ""), fmtDate(v.voucherDate), (v.payee || "") + (v.narration ? " · " + v.narration : ""), v.settle ? "Advance" : "By Financier", cR(amt(Number(v.total) || 0), true)]; }),
+        { foot: [cFoot((c.shortName || c.name) + " total", 5), cFoot(amt(bc.total || 0), 1, "right")], columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 54 }, 2: { cellWidth: 50 }, 4: { cellWidth: 62 }, 5: { cellWidth: 60 } } }) + 4;
     });
-    P.mark(P.net(y, [["Total amount, " + plural((r.voucherIds || []).length, "voucher"), money(r.total)], ["TDS", r.tds ? "(" + money(r.tds) + ")" : money(0)], ["Total payable", money((r.total || 0) - (r.tds || 0))], ["Settled from cash advance", r.settled ? "(" + money(r.settled) + ")" : money(0)], ["Payment \u2013 By Financier", money(r.toPay)]]));
+    P.mark(P.net(y, [["Total amount, " + plural((r.voucherIds || []).length, "voucher"), money(r.total)], ["Total payable", money(r.total || 0)], ["Settled from cash advance", r.settled ? "(" + money(r.settled) + ")" : money(0)], ["Payment \u2013 By Financier", money(r.toPay)]]));
     P.finish([["Prepared by", pnm(r.preparedBy)], ["Cashier receipt date", ""], ["Approver sign", crApprovers(r)]], (r.no || "") + " · " + pnm(r.preparedBy));
     return doc;
   }
@@ -4439,20 +4440,20 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var all = { t: {}, d: {}, nb: 0, nv: 0, vt: 0 };
       D.cos.forEach(function (x) { Object.keys(x.t.total).forEach(function (k) { curAdd(all.t, k, x.t.total[k]); }); Object.keys(x.t.tds).forEach(function (k) { curAdd(all.d, k, x.t.tds[k]); }); all.nb += x.bills.length; all.nv += x.vchs.length; all.vt += x.t.vTotal; });
       var y = P.head({ logo: one ? one.logo : groupLogo(), name: one ? one.name : "KKSK Group", sub: kind + " bills report · Internal", big: yr ? R.label : mon ? R.long : fmtDate(R.from) + " to " + fmtDate(R.to), bigSub: fmtDate(R.from) + " to " + fmtDate(R.to) + (yr ? "" : " · " + msText("tx", true)) + " · Generated " + fmtDate(todayYmd()) + " by " + preparedByText(),
-        facts: [["Bills", all.nb + " · " + curSum(all.t)], ["Bills TDS", curSum(all.d)], ["Cash vouchers", all.nv + " · " + money(round2(all.vt))], ["Companies", String(D.cos.length)]] });
+        facts: [["Bills", all.nb + " · " + curSum(all.t)], ["Cash vouchers", all.nv + " · " + money(round2(all.vt))], ["Companies", String(D.cos.length)]] });
       if (D.cos.length > 1) {
         y = P.section("Summary", y + 2);
-        y = P.table(y, ["Company", { content: "Bills", styles: { halign: "right" } }, { content: "Bills total", styles: { halign: "right" } }, { content: "TDS", styles: { halign: "right" } }, { content: "Vouchers", styles: { halign: "right" } }, { content: "Vouchers total", styles: { halign: "right" } }],
-          D.cos.map(function (x) { return [cB(x.c.shortName || x.c.name), cR(String(x.bills.length)), cR(curSum(x.t.total)), cR("(" + curSum(x.t.tds) + ")"), cR(String(x.vchs.length)), cR(money(x.t.vTotal))]; }),
-          { foot: [cFoot("All companies"), cFoot(String(all.nb), 1, "right"), cFoot(curSum(all.t), 1, "right"), cFoot("(" + curSum(all.d) + ")", 1, "right"), cFoot(String(all.nv), 1, "right"), cFoot(money(round2(all.vt)), 1, "right")] }) + 6;
+        y = P.table(y, ["Company", { content: "Bills", styles: { halign: "right" } }, { content: "Bills total", styles: { halign: "right" } }, { content: "Vouchers", styles: { halign: "right" } }, { content: "Vouchers total", styles: { halign: "right" } }],
+          D.cos.map(function (x) { return [cB(x.c.shortName || x.c.name), cR(String(x.bills.length)), cR(curSum(x.t.total)), cR(String(x.vchs.length)), cR(money(x.t.vTotal))]; }),
+          { foot: [cFoot("All companies"), cFoot(String(all.nb), 1, "right"), cFoot(curSum(all.t), 1, "right"), cFoot(String(all.nv), 1, "right"), cFoot(money(round2(all.vt)), 1, "right")] }) + 6;
       }
       D.cos.forEach(function (x) {
         if (x.bills.length) {
           if (y > 700) { doc.addPage(); y = 56; }
           y = P.section(x.c.name + " · bills", y + 8, plural(x.bills.length, "bill"));
-          y = P.table(y, ["Date", "Bill no.", "Vendor · description", { content: "Total", styles: { halign: "right" } }, { content: "TDS", styles: { halign: "right" } }, "Status"],
-            x.bills.map(function (b) { var inf = billInfo(b); return [fmtDate(b.billDate), cB(b.billNo || ""), vendorLabelOfBill(b) + (b.narration ? " · " + b.narration : ""), cR(bm(b, b.total), true), cR(inf.tds ? "(" + amt(inf.tds) + ")" : "-"), billStatus(b).t.replace(" · ", "\n")]; }),
-            { foot: [cFoot((x.c.shortName || x.c.name) + " bills total", 3), cFoot(curSum(x.t.total), 1, "right"), cFoot("(" + curSum(x.t.tds) + ")", 1, "right"), cFoot("")], columnStyles: { 0: { cellWidth: 48 }, 1: { cellWidth: 56 }, 3: { cellWidth: 62 }, 4: { cellWidth: 44 }, 5: { cellWidth: 92, fontSize: 6.8 } } });
+          y = P.table(y, ["Date", "Bill no.", "Vendor · description", { content: "Total", styles: { halign: "right" } }, "Status"],
+            x.bills.map(function (b) { var inf = billInfo(b); return [fmtDate(b.billDate), cB(b.billNo || ""), vendorLabelOfBill(b) + (b.narration ? " · " + b.narration : ""), cR(bm(b, b.total), true), billStatus(b).t.replace(" · ", "\n")]; }),
+            { foot: [cFoot((x.c.shortName || x.c.name) + " bills total", 3), cFoot(curSum(x.t.total), 1, "right"), cFoot("")], columnStyles: { 0: { cellWidth: 48 }, 1: { cellWidth: 56 }, 3: { cellWidth: 62 }, 4: { cellWidth: 100, fontSize: 6.8 } } });
         }
         if (x.vchs.length) {
           if (y > 700) { doc.addPage(); y = 56; }
@@ -4588,7 +4589,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       else if (r.opening) body.push([r.opening.setAt ? fmtDate(ymdOfMs(r.opening.setAt)) : "", cB("Opening balance"), r.opening.overdue ? "Of which overdue " + amt(r.opening.overdue) : "", "", "", "", cR(amt(bal), true)]);
       ev.forEach(function (e) { bal = round2(bal + e.bill - e.tds - e.paid); billNet += e.bill - e.tds; paidAll += e.paid; sb += e.bill; st += e.tds; body.push([fmtDate(e.d), e.p, e.ref, cR(e.bill ? amt(e.bill) : ""), cR(e.tds ? "(" + amt(e.tds) + ")" : ""), cR(e.paid ? amt(e.paid) : ""), cR(bal < 0 ? "(" + amt(-bal) + ") credit" : amt(bal))]); });
       var y = P.head({ logo: c.logo, name: c.name, sub: "Vendor statement", big: v.name, bigSub: (from ? fmtDate(from) + " to " + fmtDate(t) : "As on " + fmtDate(t)) + (v.gstin ? " · GSTIN " + v.gstin : v.country ? " · " + v.country : ""),
-        facts: [[from ? "Opening, " + fmtDate(from) : "Opening balance", from || r.opening ? curMoney(cur, opBal) : "Not captured"], ["Bills, after TDS", curMoney(cur, round2(billNet))], ["Paid and discounted", curMoney(cur, round2(paidAll))], ["Outstanding", curMoney(cur, r.outstanding)]] });
+        facts: [[from ? "Opening, " + fmtDate(from) : "Opening balance", from || r.opening ? curMoney(cur, opBal) : "Not captured"], ["Bills", curMoney(cur, round2(billNet))], ["Paid and discounted", curMoney(cur, round2(paidAll))], ["Outstanding", curMoney(cur, r.outstanding)]] });
       y = P.table(y, ["Date", "Particulars", "Payment ref.", { content: "Bill", styles: { halign: "right" } }, { content: "TDS", styles: { halign: "right" } }, { content: "Paid", styles: { halign: "right" } }, { content: "Balance", styles: { halign: "right" } }], body,
         { foot: [cFoot("Totals (" + cur + ")", 3), cFoot(amt(sb), 1, "right"), cFoot(st ? "(" + amt(st) + ")" : "0", 1, "right"), cFoot(amt(paidAll), 1, "right"), cFoot(amt(bal), 1, "right")], columnStyles: { 0: { cellWidth: 50 }, 3: { cellWidth: 56 }, 4: { cellWidth: 46 }, 5: { cellWidth: 56 }, 6: { cellWidth: 66 } } });
       if (y > 690) { doc.addPage(); y = 56; }
@@ -4629,13 +4630,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var CK = { cid: null, vid: null, sel: {}, busy: false, viewId: null, arm: "", sig: "", draftId: null };
   var STAGE = { draft: "Draft", tds: "Needs TDS", generated: "Generated", printed: "Printed", payment: "Sent for payment" };
   var STAGE_ORDER = { draft: 0, tds: 1, generated: 2, printed: 3, payment: 4 };
-  function stageOf(r) { return STAGE[r.stage] ? r.stage : (r.tds == null ? "tds" : "generated"); }
+  function stageOf(r) { return r.stage === "tds" ? "generated" : STAGE[r.stage] ? r.stage : "generated"; }
   /* Once a report is printed it leaves the team's view; only the admin sees it from then on. */
   function teamSees(r) { var s = stageOf(r); return S.isAdmin || s === "draft" || s === "tds" || s === "generated"; }
   /* In the report lists the admin sees a report once it is generated for approval; drafts stay with the team. */
   function listSees(r) { return S.isAdmin ? STAGE_ORDER[stageOf(r)] >= 2 : teamSees(r); }
-  function tdsSet(r) { var s = stageOf(r); return r.tds != null && s !== "tds" && s !== "draft"; }
-  function payableOf(r) { return r.kind === "inst" ? round2(Number(r.total) || 0) : round2((Number(r.total) || 0) - (Number(r.tds) || 0) - advAdjOf(r)); }
+  function tdsSet(r) { return stageOf(r) !== "draft"; }
+  function payableOf(r) { return r.kind === "inst" ? round2(Number(r.total) || 0) : round2((Number(r.total) || 0) - advAdjOf(r)); }
   function tdsText(n, cur) { n = Number(n) || 0; return n > 0 ? "(" + curMoney(cur, n) + ")" : curMoney(cur, 0); }
   function stageTag(r) { var s = stageOf(r); return el("span", { class: "tag stg s-" + s }, STAGE[s]); }
   function draftFor(cid, vid, prep) { var ks = Object.keys(S.reports); for (var i = 0; i < ks.length; i++) { var r = S.reports[ks[i]]; if (r.kind !== "vcr" && r.companyId === cid && r.vendorId === vid && stageOf(r) === "draft" && (!r.preparedById || r.preparedById === prep)) return r; } return null; }
@@ -4719,7 +4720,6 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Stage", sort: function (r) { return STAGE_ORDER[stageOf(r)]; }, cell: function (r, td) { td.appendChild(stageTag(r)); } },
       { label: "Vendor", cls: "wcol", sort: function (r) { var v = S.vendors[r.vendorId]; return v ? v.name : ""; }, cell: function (r, td) { var v = S.vendors[r.vendorId]; td.appendChild(el("b", null, v ? v.name : "")); sub(td, coLabel(r.companyId) + " \u00B7 " + (r.kind === "inst" ? (r.advKind === "import" ? "import" : "proforma") + " instalment " + ((r.inst || 0) + 1) : plural((r.billIds || []).length, "bill"))); } },
       { label: "Total amount", cls: "r num", sort: function (r) { return r.total || 0; }, desc: true, cell: function (r, td) { txt(td, repMoney(r, r.total)); } },
-      { label: "TDS", cls: "r num", sort: function (r) { return tdsSet(r) ? r.tds : -1; }, desc: true, cell: function (r, td) { txt(td, r.kind === "inst" ? "N/A" : tdsSet(r) ? tdsText(r.tds, r.currency) : ""); } },
       { label: "Total payable", cls: "r num", sort: function (r) { return tdsSet(r) ? payableOf(r) : -1; }, desc: true, cell: function (r, td) { if (tdsSet(r)) td.appendChild(el("b", null, repMoney(r, payableOf(r)))); var ad = advAdjOf(r); if (ad) sub(td, "After advance " + repMoney(r, ad)); } },
       { label: "Prepared by", who: function (r) { return r.preparedBy; }, sort: function (r) { return pnm(r.preparedBy); }, cell: function (r, td) { txt(td, pnm(r.preparedBy)); } },
       { label: "", kind: "act", cls: "r", cell: function (r, td) {
@@ -4753,8 +4753,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (CK.draftId && (!d || stageOf(d) !== "draft")) { backToChecks(); return; }
     var bills = newCheckBills(); CK.sig = bills.map(function (b) { return b.id; }).join();
     $("cnTitle").textContent = d ? "Draft " + d.no : "New Bills CR";
-    $("cnSub").textContent = d ? "This report was reversed to draft. Bills submitted since for this vendor are listed and ticked; untick any to leave for later. The TDS is added up from each bill."
-      : "Untick any bill to leave it for a later report. The TDS is added up from each bill.";
+    $("cnSub").textContent = d ? "This report was reversed to draft. Bills submitted since for this vendor are listed and ticked; untick any to leave for later."
+      : "Untick any bill to leave it for a later report.";
     var box = $("cnBills");
     if (!bills.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "These bills were just put in a report by someone else. Go back to see what is still waiting.")); updateNewCheck(); return; }
     sortTable(box, "cnBills", [
@@ -4768,7 +4768,6 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Taxable", cls: "r num", sort: function (b) { return b.taxable || 0; }, desc: true, cell: function (b, td) { txt(td, bm(b, b.taxable)); } },
       { label: "GST", cls: "r num", sort: function (b) { return b.gstAmt || 0; }, desc: true, cell: function (b, td) { txt(td, bm(b, b.gstAmt)); } },
       { label: "Total amount", cls: "r num", sort: function (b) { return b.total || 0; }, desc: true, cell: function (b, td) { td.appendChild(el("b", null, bm(b, b.total))); } },
-      { label: "TDS", cls: "r num", sort: function (b) { return b.tds == null ? -1 : b.tds; }, desc: true, cell: function (b, td) { if (b.tds == null) { var n = el("span", { class: "needs" }); n.appendChild(warnIcon("Missing")); n.appendChild(document.createTextNode(" Not entered")); td.appendChild(n); } else txt(td, tdsText(b.tds, b.currency)); } },
       { label: "Waiting", cls: "num", sort: function (b) { return -(b.submittedAt || 0); }, desc: true, cell: function (b, td) { var dd = daysSince(b.submittedAt); td.appendChild(el("span", { class: dd > 7 ? "late" : "" }, dd ? plural(dd, "day") : "Today")); } }
     ], bills, { sortIndex: 2, sortDir: 1, rowClass: function (b) { return CK.sel[b.id] ? "" : "skip"; },
       foot: function () { var tf = el("tfoot"), tr = el("tr", { id: "cnFoot" }); tf.appendChild(tr); return tf; } });
@@ -4784,7 +4783,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (f) {
       f.textContent = "";
       var l = el("td", { colspan: "4", class: "c-co" }); l.appendChild(el("b", null, "Total of " + plural(sel.length, "selected bill"))); f.appendChild(l);
-      [["Taxable", t.taxable, false], ["GST", t.gst, false], ["Total amount", t.total, true], ["TDS", sel.reduce(function (a, b) { return a + (Number(b.tds) || 0); }, 0), false]].forEach(function (k) { var td = el("td", { class: "r num", "data-label": k[0] }); td.appendChild(el(k[2] ? "b" : "span", null, curMoney(billsCur(sel), k[1]))); f.appendChild(td); });
+      [["Taxable", t.taxable, false], ["GST", t.gst, false], ["Total amount", t.total, true]].forEach(function (k) { var td = el("td", { class: "r num", "data-label": k[0] }); td.appendChild(el(k[2] ? "b" : "span", null, curMoney(billsCur(sel), k[1]))); f.appendChild(td); });
       f.appendChild(el("td"));
     }
     $("cnCreate").disabled = !sel.length || CK.busy;
@@ -4849,9 +4848,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var bills = selectedBills(); if (!bills.length) { toast("Tick at least one bill."); return; }
     var t = sumBills(bills), cur = billsCur(bills);
     if (bills.some(function (b) { return (b.currency || "INR") !== cur; })) { toast("These bills are in different currencies. Put each currency in its own report."); return; }
-    var miss = bills.filter(function (b) { return b.tds == null; });
+    var miss = [];
     if (miss.length) { toast("Bill " + miss.map(function (b) { return b.billNo; }).join(", ") + (miss.length > 1 ? " have" : " has") + " no TDS yet. The accountant enters it under Accounts, To Account; then generate."); return; }
-    saveGenerated(bills, round2(bills.reduce(function (a, b) { return a + (Number(b.tds) || 0); }, 0)));
+    saveGenerated(bills, 0);
   }
   function saveGenerated(bills, tds) {
     var v = S.vendors[CK.vid], c = S.companies[CK.cid]; if (!v || !c || CK.busy) return;
@@ -4860,7 +4859,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (d) {
       id = d.id; doc = Object.assign({}, d); delete doc.id;
       Object.assign(doc, { billIds: bills.map(function (b) { return b.id; }), taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to,
-        tds: tds, payable: round2(t.total - tds), stage: "generated", generatedAt: now, generatedBy: meId(), log: (d.log || []).concat([logEntry("generated", "TDS " + tdsText(tds, billsCur(bills)))]), currency: billsCur(bills), billTds: true,
+        tds: tds, payable: round2(t.total - tds), stage: "generated", generatedAt: now, generatedBy: meId(), log: (d.log || []).concat([logEntry("generated")]), currency: billsCur(bills), billTds: true,
         preparedById: CK.prep || "", preparedBy: prepName(bills[0]) || d.preparedBy || "" });
     } else {
       /* Numbers run through the financial year (April to March) for each company and restart at 01 the next year.
@@ -4875,7 +4874,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       id = newId("r");
       doc = { no: serialNo(code + "-BCR", seq, day, fy), seq: seq, fy: fy, companyId: CK.cid, vendorId: CK.vid, billIds: bills.map(function (b) { return b.id; }),
         taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to, checkDate: day, preparedBy: prepName(bills[0]) || preparedByText(), preparedById: CK.prep || "", billTds: true, createdAt: now, createdBy: meId(),
-        tds: tds, payable: round2(t.total - tds), stage: "generated", generatedAt: now, generatedBy: meId(), log: [logEntry("generated", "TDS " + tdsText(tds, billsCur(bills)))], currency: billsCur(bills) };
+        tds: tds, payable: round2(t.total - tds), stage: "generated", generatedAt: now, generatedBy: meId(), log: [logEntry("generated")], currency: billsCur(bills) };
     }
     CK.busy = true; $("cnCreate").disabled = true;
     retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () {
@@ -4914,7 +4913,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       [["Taxable", r.taxable, false], ["GST", r.gst, false], ["Total amount", r.total, true]].forEach(function (k) { var td = el("td", { class: "r num", "data-label": k[0] }); td.appendChild(el(k[2] ? "b" : "span", null, repMoney(r, k[1]))); tr.appendChild(td); });
       return tf; } });
     var hasTds = tdsSet(r);
-    var adv = advAdjOf(r), pb = [["Total amount", repMoney(r, r.total), ""], ["TDS", hasTds ? tdsText(r.tds, r.currency) : "Not entered", ""]];
+    var adv = advAdjOf(r), pb = [["Total amount", repMoney(r, r.total), ""]];
     if (adv) pb.push(["Advance already paid", "(" + repMoney(r, adv) + ")", "Instalments against the proforma"]);
     pb.push(["Total payable", hasTds ? repMoney(r, payableOf(r)) : "\u2014", "", "pay"]);
     statBoxes($("cvPay"), pb);
@@ -4935,7 +4934,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Total amount", cls: "r num", cell: function (b, td) { td.appendChild(el("b", null, repMoney(r, b.total))); } }
     ], rows, { sortIndex: -1 });
     var paid = a ? advPaid(a.id, r.inst) : 0;
-    statBoxes($("cvPay"), [["Total amount", repMoney(r, r.total), ""], ["TDS", "Not applicable", ""], ["Paid so far", repMoney(r, paid), ""], ["Total payable", repMoney(r, r.total), "", "pay"]]);
+    statBoxes($("cvPay"), [["Total amount", repMoney(r, r.total), ""], ["Paid so far", repMoney(r, paid), ""], ["Total payable", repMoney(r, r.total), "", "pay"]]);
     $("cvNote").textContent = a ? "" : "The proforma or import this instalment belongs to can't be found. It may have been deleted.";
     renderActions(r);
   }
@@ -4961,7 +4960,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (s === "draft") {
       actBtn(box, "Choose bills and generate", "primary", function () { openDraft(r.id); });
       actBtn(box, "Cancel report", "danger", function () { cancelReport(r); }, "Click again to delete this report");
-      hint.textContent = "Reversed to draft. Add newly submitted bills for this vendor or untick any, then generate with TDS.";
+      hint.textContent = "Reversed to draft. Add newly submitted bills for this vendor or untick any, then generate it again.";
     } else if (s === "tds") {
       actBtn(box, "Enter TDS and generate", "primary", function () { askTds(Number(r.total) || 0, r.tds, "TDS for " + r.no, "Generate report", function (n) { setStage(r, "generated", { tds: n, payable: round2((Number(r.total) || 0) - n), generatedAt: Date.now(), generatedBy: meId() }, "TDS " + tdsText(n, r.currency)); }, r.currency); });
       actBtn(box, "Reverse to draft", "", function () { setStage(r, "draft", { tds: null, payable: null }); }, "Click again to reverse to draft");
@@ -4971,17 +4970,15 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (S.downloads) actBtn(box, "Download PDF to print", "primary", function (b) { downloadReport(r.id, b); });
       if (admin) {
         actBtn(box, "Process payment", "primary", function () { setStage(r, "payment"); }, "Click again to send for payment");
-        if (r.billTds) actBtn(box, "Reverse to draft", "", function () { setStage(r, "draft", { tds: null, payable: null }); }, "Click again to reverse to draft");
-        else actBtn(box, "Reverse to TDS", "", function () { setStage(r, "tds"); }, "Click again to reverse");
+        actBtn(box, "Reverse to draft", "", function () { setStage(r, "draft", { tds: null, payable: null }); }, "Click again to reverse to draft");
         actBtn(box, "Cancel report", "danger", function () { cancelReport(r); }, "Click again to delete this report");
         hint.textContent = "Locked for the team. Process Payment sends it to Payment Planning straight away, printed or not.";
       } else { actBtn(box, "Cancel report", "danger", function () { cancelReport(r); }, "Click again to delete this report"); hint.textContent = "Locked. Download it to print; it then leaves your list and goes to the admin. Cancel it if a bill needs changing; its bills go back to waiting."; }
     } else if (s === "printed" && admin) {
       if (S.downloads) actBtn(box, "Download PDF", "", function (b) { downloadReport(r.id, b); });
       actBtn(box, "Process payment", "primary", function () { setStage(r, "payment"); }, "Click again to send for payment");
-      if (r.billTds) actBtn(box, "Reverse to draft", "", function () { setStage(r, "draft", { tds: null, payable: null }); }, "Click again to reverse to draft");
-      else actBtn(box, "Reverse to TDS", "", function () { setStage(r, "tds"); }, "Click again to reverse");
-      hint.textContent = r.billTds ? "Printed. Reverse it to draft to change its bills or their TDS, or send it for payment." : "Printed. Reverse it to let the team re-enter the TDS, or send it for payment.";
+      actBtn(box, "Reverse to draft", "", function () { setStage(r, "draft", { tds: null, payable: null }); }, "Click again to reverse to draft");
+      hint.textContent = "Printed. Reverse it to draft to change its bills, or approve it for payment.";
     } else if (s === "payment") {
       if (S.downloads) actBtn(box, "Download PDF", "", function (b) { downloadReport(r.id, b); });
       if (admin && !inLockedPlan(r.id)) actBtn(box, "Undo process payment", "", function () { setStage(r, "printed"); }, "Click again to undo");
@@ -6557,7 +6554,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Bill", kind: "co", sort: function (r) { return r.date; }, cell: function (r, td) { td.appendChild(el("b", { class: "mono" }, r.no)); sub(td, fmtDate(r.date) + " · " + coLabel(r.cid)); } },
       { label: "Vendor", cls: "desc", sort: function (r) { return r.ven; }, cell: function (r, td) { td.appendChild(el("b", null, r.ven)); if (r.x.narration) sub(td, r.x.narration); } },
       { label: "Due", sort: function (r) { return r.due || "9999"; }, cell: function (r, td) { txt(td, r.due ? fmtDate(r.due) : "Not set"); if (r.late > 0) sub(td, plural(r.late, "day") + " overdue", "color:var(--bad);font-weight:600"); else if (r.due) sub(td, r.late === 0 ? "Due today" : "In " + plural(-r.late, "day")); } },
-      { label: "Bill total", cls: "r num", sort: function (r) { return r.total; }, desc: true, cell: function (r, td) { txt(td, curMoney(r.cur, r.total)); if (r.tds) sub(td, "TDS " + curMoney(r.cur, r.tds)); } },
+      { label: "Bill total", cls: "r num", sort: function (r) { return r.total; }, desc: true, cell: function (r, td) { txt(td, curMoney(r.cur, r.total)); } },
       { label: "Balance", cls: "r num", sort: function (r) { return r.rem; }, desc: true, cell: function (r, td) { td.appendChild(el("b", null, curMoney(r.cur, r.rem))); if (r.paid > 0.004) sub(td, "Paid " + curMoney(r.cur, r.paid)); } },
       { label: "Where it is", sort: function (r) { return r.step; }, cell: function (r, td) { td.appendChild(el("span", { class: "tag stg " + r.cls }, r.step)); if (r.ref) sub(td, r.ref); } },
       { label: "Prepared by", who: function (r) { return r.prepName; }, sort: function (r) { return r.prepName; }, cell: function (r, td) { txt(td, pnm(r.prepName) || "-"); } },
@@ -6571,8 +6568,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var agCols = [{ h: "Vendor", w: 32 }, { h: "Company", w: 10 }, { h: "Currency", w: 9 }, { h: "Outstanding", t: "money", w: 14, sum: true }].concat(AGE_COLS.map(function (a) { return { h: a[1], t: "money", w: 13, sum: true }; })).concat([{ h: "Opening overdue", t: "money", w: 14, sum: true }]);
     xlDownload(btn, "Payables " + fmtDate(todayYmd()) + ".xlsx", [
       { name: "AP ageing", title: "Payables · AP ageing by vendor", sub: sub0, cols: agCols, rows: ag.map(function (g) { return [g.ven, coLabel(g.cid), g.cur, g.out].concat(AGE_COLS.map(function (a) { return g[a[0]]; })).concat([g.opOd]); }) },
-      { name: "Unpaid bills", title: "Payables · unpaid bills and opening balances", sub: sub0, rows: rows.map(function (r) { return [r.no, r.date || null, r.due || null, coLabel(r.cid), r.ven, r.cur, r.total, r.tds, r.paid, r.rem, r.late > 0 && r.kind === "bill" ? r.late : null, r.step, pnm(r.prepName), r.apprName]; }),
-        cols: [{ h: "Bill no.", w: 18 }, { h: "Bill date", t: "date", w: 12 }, { h: "Due date", t: "date", w: 12 }, { h: "Company", w: 10 }, { h: "Vendor", w: 30 }, { h: "Currency", w: 9 }, { h: "Bill total", t: "money", w: 14, sum: true }, { h: "TDS", t: "money", w: 12, sum: true }, { h: "Paid", t: "money", w: 13, sum: true }, { h: "Balance", t: "money", w: 14, sum: true }, { h: "Days overdue", t: "int", w: 10 }, { h: "Where it is", w: 34 }, { h: "Prepared by", w: 18 }, { h: "Approver", w: 18 }] }
+      { name: "Unpaid bills", title: "Payables · unpaid bills and opening balances", sub: sub0, rows: rows.map(function (r) { return [r.no, r.date || null, r.due || null, coLabel(r.cid), r.ven, r.cur, r.total, r.paid, r.rem, r.late > 0 && r.kind === "bill" ? r.late : null, r.step, pnm(r.prepName), r.apprName]; }),
+        cols: [{ h: "Bill no.", w: 18 }, { h: "Bill date", t: "date", w: 12 }, { h: "Due date", t: "date", w: 12 }, { h: "Company", w: 10 }, { h: "Vendor", w: 30 }, { h: "Currency", w: 9 }, { h: "Bill total", t: "money", w: 14, sum: true }, { h: "Paid", t: "money", w: 13, sum: true }, { h: "Balance", t: "money", w: 14, sum: true }, { h: "Days overdue", t: "int", w: 10 }, { h: "Where it is", w: 34 }, { h: "Prepared by", w: 18 }, { h: "Approver", w: 18 }] }
     ]);
   }
   function downloadPayablesPdf(btn) {
@@ -6734,9 +6731,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!es.length) { toast("Nothing is posted in this period."); return; }
     es.sort(function (a, b) { return ledCmp(S.ledgers[a.lg] || {}, S.ledgers[b.lg] || {}) || natCmp(a.d, b.d); });
     var book = { bills: "Bills", proformas: "Proforma and import tax bills", vouchers: "Vouchers" }[BK.side];
-    var rows = es.map(function (e) { var l = S.ledgers[e.lg] || {}; return [l.main || "", l.sub || "", ledName(e.lg) || "Unknown ledger", e.d, coLabel(e.cid), e.no || "", e.type || "", e.who || "", e.what || "", e.prep || "", e.amt, e.tds || 0, e.sec || ""]; });
+    var rows = es.map(function (e) { var l = S.ledgers[e.lg] || {}; return [l.main || "", l.sub || "", ledName(e.lg) || "Unknown ledger", e.d, coLabel(e.cid), e.no || "", e.type || "", e.who || "", e.what || "", e.prep || "", e.amt]; });
     xlDownload(btn, "Ledger book - " + book + " " + fmtDate(fr || todayYmd()) + " to " + fmtDate(to || todayYmd()) + ".xlsx", [{ name: book, title: "Ledger book · " + book + (lg ? " · " + ledName(lg) : ""), sub: (co ? coLabel(co) : "All companies") + " · " + (fr ? fmtDate(fr) : "Start") + " to " + (to ? fmtDate(to) : "today") + " · Generated " + fmtDate(todayYmd()), rows: rows,
-      cols: [{ h: "Main group", w: 16 }, { h: "Sub group", w: 24 }, { h: "Ledger", w: 30 }, { h: "Date", t: "date", w: 12 }, { h: "Company", w: 10 }, { h: "No.", w: 18 }, { h: "Type", w: 14 }, { h: BK.side === "vouchers" ? "Paid to" : "Vendor", w: 26 }, { h: "Description", w: 36 }, { h: "Prepared by", w: 18 }, { h: "Amount", t: "money", w: 14, sum: true }, { h: "TDS", t: "money", w: 12, sum: true }, { h: "TDS section", w: 11 }] }]);
+      cols: [{ h: "Main group", w: 16 }, { h: "Sub group", w: 24 }, { h: "Ledger", w: 30 }, { h: "Date", t: "date", w: 12 }, { h: "Company", w: 10 }, { h: "No.", w: 18 }, { h: "Type", w: 14 }, { h: BK.side === "vouchers" ? "Paid to" : "Vendor", w: 26 }, { h: "Description", w: 36 }, { h: "Prepared by", w: 18 }, { h: "Amount", t: "money", w: 14, sum: true }] }]);
   }
   function downloadVendorsXls(btn) {
     var idx = lidx(), cos = sorted().filter(function (c) { return c.active !== false && (S.isAdmin || canSee(c.id)); }), rows = [];
@@ -7378,7 +7375,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function vcrList() { return Object.keys(S.reports).map(function (k) { return S.reports[k]; }).filter(function (r) { return r.kind === "vcr"; }); }
   /* Which voucher checking report a voucher is in. */
   function vcrOf(vid) { var rs = vcrList(); for (var i = 0; i < rs.length; i++) if ((rs[i].voucherIds || []).indexOf(vid) >= 0) return rs[i]; return null; }
-  function vPayable(v) { return round2((Number(v.total) || 0) - (Number(v.tds) || 0)); }
+  function vPayable(v) { return round2(Number(v.total) || 0); }
   function openingOf(uid, cid) { var b = S.balances[uid], o = b && b.openings && b.openings[cid]; return o == null ? null : Number(o) || 0; }
   /* Settled vouchers come off a person's cash only once the admin approves them; until then they are pending,
      and new settled vouchers are checked against what is free after the pending ones. */
@@ -7616,7 +7613,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (old && vcrOf(old.id)) { toast("This voucher was just put in a report. It can't be changed now."); backToVch(); return; }
     var lines = D.lines.map(function (x) { return { d: sentenceFix(x.d.trim()), amt: round2(num(x.amt)), lg: x.lg }; });
     D.voucherDate = old && old.voucherDate ? old.voucherDate : todayYmd(); /* a voucher is dated the day it is entered */
-    var tds = old ? Number(old.tds) || 0 : 0;
+    var tds = 0;
     var lmap = {}, lorder = []; lines.forEach(function (x) { if (lmap[x.lg] == null) { lmap[x.lg] = 0; lorder.push(x.lg); } lmap[x.lg] = round2(lmap[x.lg] + x.amt); });
     /* A new voucher, or one moved to another company, takes the next number in that company's series. */
     var vn = !old || old.companyId !== D.companyId || !old.voucherNo ? nextVoucherNo(D.companyId, D.voucherDate) : { no: old.voucherNo, seq: old.voucherSeq || null, fy: old.voucherFy || fyOf(D.voucherDate) };
@@ -7799,7 +7796,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function vcrSort(a, b) { return natCmp(a.voucherNo, b.voucherNo) || natCmp(a.voucherDate, b.voucherDate) || (Number(a.total) || 0) - (Number(b.total) || 0); }
   function vcrSums(vs) {
     var t = { total: 0, tds: 0, payable: 0, settled: 0, toPay: 0, from: "", to: "" };
-    vs.forEach(function (v) { var p = vPayable(v); t.total += Number(v.total) || 0; t.tds += Number(v.tds) || 0; t.payable += p; if (v.settle) t.settled += p; else t.toPay += p; if (!t.from || v.voucherDate < t.from) t.from = v.voucherDate; if (!t.to || v.voucherDate > t.to) t.to = v.voucherDate; });
+    vs.forEach(function (v) { var p = vPayable(v); t.total += Number(v.total) || 0; t.payable += p; if (v.settle) t.settled += p; else t.toPay += p; if (!t.from || v.voucherDate < t.from) t.from = v.voucherDate; if (!t.to || v.voucherDate > t.to) t.to = v.voucherDate; });
     ["total", "tds", "payable", "settled", "toPay"].forEach(function (k) { t[k] = round2(t[k]); }); return t;
   }
   function vcrTeamSees(r) { return S.isAdmin || stageOf(r) === "generated"; }
@@ -7832,7 +7829,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Report number", kind: "co", sort: function (r) { return Number(String(r.fy || "00").slice(0, 2)) * 10000 + (r.seq || 0); }, desc: true, cell: function (r, td) { td.appendChild(el("b", { class: "mono" }, r.no || "")); sub(td, fmtDay(r.createdAt)); } },
       { label: "Stage", sort: function (r) { return STAGE_ORDER[stageOf(r)]; }, cell: function (r, td) { td.appendChild(stageTag(r)); } },
       { label: "Prepared by", who: function (r) { return r.preparedBy; }, sort: function (r) { return r.preparedBy; }, cell: function (r, td) { txt(td, pnm(r.preparedBy)); sub(td, (r.companyIds || []).map(coLabel).join(", ")); } },
-      { label: "Total amount", cls: "r num", sort: function (r) { return r.total || 0; }, desc: true, cell: function (r, td) { txt(td, money(r.total)); sub(td, "TDS " + tdsText(r.tds, "INR")); } },
+      { label: "Total amount", cls: "r num", sort: function (r) { return r.total || 0; }, desc: true, cell: function (r, td) { txt(td, money(r.total)); } },
       { label: "By Financier", cls: "r num", sort: function (r) { return r.toPay || 0; }, desc: true, cell: function (r, td) { td.appendChild(el("b", null, money(r.toPay))); if (r.settled) sub(td, money(r.settled) + " settled from advance"); } },
       { label: "", kind: "act", cls: "r", cell: function (r, td) { var b = el("button", { class: "btn sm" }, "Open"); b.addEventListener("click", function () { openVcr(r.id); }); td.appendChild(b); } }
     ], reps, { sortIndex: 0, sortDir: -1 });
@@ -7858,7 +7855,6 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         { label: "Voucher date", cls: "num", cell: function (v, td) { txt(td, fmtDate(v.voucherDate)); } },
         { label: "Paid to", cls: "desc", cell: function (v, td) { td.appendChild(el("b", null, v.payee || "")); sub(td, v.narration || ""); } },
         { label: "Total amount", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(v.total))); } },
-        { label: "TDS", cls: "r num", cell: function (v, td) { txt(td, tdsText(v.tds, "INR")); } },
         { label: "Payment", cell: function (v, td) { td.appendChild(el("span", { class: "tag stg " + (v.settle ? "s-printed" : "s-generated") }, v.settle ? "Cash advance" : "By Financier")); } }
       ], vs, { sortIndex: -1, rowClass: function (v) { return VC.sel[v.id] && VC.cos[v.companyId] ? "" : "skip"; } });
     });
@@ -7868,7 +7864,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function updVcrNew() {
     var all = vcrNewList(), sel = vcrPicked(), t = vcrSums(sel);
     Array.prototype.forEach.call(document.querySelectorAll("#vnBox .vninc"), function (i) { var tr = i.closest("tr"), v = S.vouchers[i.getAttribute("data-id")]; if (tr && v) tr.classList.toggle("skip", !(i.checked && VC.cos[v.companyId])); i.disabled = v && !VC.cos[v.companyId]; });
-    statBoxes($("vnStats"), [whoStat(["Prepared by", pnm(all[0] && (all[0].preparedByName || prepName(all[0]))) || "Not recorded", ""]), ["Vouchers", sel.length + " of " + all.length, ""], ["Total amount", money(t.total), ""], ["TDS", tdsText(t.tds, "INR"), ""], ["By Financier", money(t.toPay), t.settled ? money(t.settled) + " settled from advance" : ""]]);
+    statBoxes($("vnStats"), [whoStat(["Prepared by", pnm(all[0] && (all[0].preparedByName || prepName(all[0]))) || "Not recorded", ""]), ["Vouchers", sel.length + " of " + all.length, ""], ["Total amount", money(t.total), ""], ["By Financier", money(t.toPay), t.settled ? money(t.settled) + " settled from advance" : ""]]);
     $("vnCreate").disabled = !sel.length || VC.busy;
   }
   function createVcr() {
@@ -7881,7 +7877,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     cos.forEach(function (cid) { var s = vcrSums(vs.filter(function (v) { return v.companyId === cid; })); byCo[cid] = { total: s.total, tds: s.tds, payable: s.payable, settled: s.settled, toPay: s.toPay }; });
     var id = newId("r"), doc = { kind: "vcr", no: serialNo("VCR", seq, day, fy), seq: seq, fy: fy, voucherIds: vs.map(function (v) { return v.id; }), companyIds: cos, byCo: byCo,
       preparedById: VC.prep, preparedBy: pnm(vs[0].preparedByName || prepName(vs[0])), total: t.total, tds: t.tds, payable: t.payable, settled: t.settled, toPay: t.toPay,
-      periodFrom: t.from, periodTo: t.to, checkDate: day, currency: "INR", stage: "generated", createdAt: now, createdBy: meId(), generatedAt: now, generatedBy: meId(), log: [logEntry("generated", "TDS " + tdsText(t.tds, "INR"))] };
+      periodFrom: t.from, periodTo: t.to, checkDate: day, currency: "INR", stage: "generated", createdAt: now, createdBy: meId(), generatedAt: now, generatedBy: meId(), log: [logEntry("generated")] };
     VC.busy = true; $("vnCreate").disabled = true;
     retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () {
       S.reports[id] = Object.assign({ id: id }, doc); invalidate(); renderNav(); toast("Vouchers CR " + doc.no + " generated."); openVcr(id);
@@ -7908,14 +7904,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         { label: "Voucher date", cls: "num", cell: function (v, td) { txt(td, fmtDate(v.voucherDate)); } },
         { label: "Paid to", cls: "desc", cell: function (v, td) { td.appendChild(el("b", null, v.payee || "")); sub(td, v.narration || ""); } },
         { label: "Total amount", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(v.total))); } },
-        { label: "TDS", cls: "r num", cell: function (v, td) { txt(td, tdsText(v.tds, "INR")); } },
         { label: "Payment", cell: function (v, td) { txt(td, v.settle ? "Cash advance" : "By Financier"); } }
       ], vs, { sortIndex: -1, foot: function () {
         var tf = el("tfoot"), tr = el("tr"), l = el("td", { colspan: "4", class: "c-co" }); l.appendChild(el("b", null, "Total for " + (c.shortName || c.name))); tr.appendChild(l);
-        var a = el("td", { class: "r num" }); a.appendChild(el("b", null, money(bc.total))); tr.appendChild(a); tr.appendChild(el("td", { class: "r num" }, tdsText(bc.tds, "INR")));
+        var a = el("td", { class: "r num" }); a.appendChild(el("b", null, money(bc.total))); tr.appendChild(a);
         tr.appendChild(el("td", null, bc.settled ? money(bc.settled) + " settled" : "")); tf.appendChild(tr); return tf; } });
     });
-    statBoxes($("vvPay"), [["Total amount", money(r.total), ""], ["TDS", tdsText(r.tds, "INR"), ""], ["Total payable", money(r.payable), ""], ["Settled from advance", money(r.settled), ""], ["By Financier", money(r.toPay), "", "hi"]]);
+    statBoxes($("vvPay"), [["Total amount", money(r.total), ""], ["Total payable", money(r.payable), ""], ["Settled from advance", money(r.settled), ""], ["By Financier", money(r.toPay), "", "hi"]]);
     var acts = $("vvActs"), hint = $("vvHint"); acts.textContent = ""; hint.textContent = "";
     if (s === "generated") {
       if (S.downloads) actBtn(acts, "Download PDF to print", "primary", function (b) { downloadVcr(r.id, b); });
@@ -7960,7 +7955,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
           cell: function (v, td) { var i = el("input", { type: "checkbox", "aria-label": "Approve voucher " + v.voucherNo }); i.checked = !!VA.sel[v.id]; i.addEventListener("change", function () { VA.sel[v.id] = i.checked; renderVcrApprove(); }); td.appendChild(i); } },
         { label: "Voucher", kind: "co", cell: function (v, td) { td.appendChild(el("b", { class: "mono" }, v.voucherNo)); sub(td, fmtDate(v.voucherDate) + " · " + coLabel(v.companyId)); } },
         { label: "Paid to", cls: "desc", cell: function (v, td) { td.appendChild(el("b", null, v.payee || "")); sub(td, v.narration || ""); } },
-        { label: "Payable", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(vPayable(v)))); if (Number(v.tds)) sub(td, "After TDS " + money(v.tds)); } },
+        { label: "Payable", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(vPayable(v)))); } },
         { label: "Decision", cls: "wcol", cell: function (v, td) {
             if (VA.sel[v.id]) { td.appendChild(el("span", { class: "tag stg s-payment" }, "Approve")); return; }
             var s = el("select", { class: "field sm", "aria-label": "Why voucher " + v.voucherNo + " is sent back" }); fillSelect(s, [["", "Send back: choose a reason"]].concat(SEND_BACK), VA.why[v.id] || "");
@@ -9034,7 +9029,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: isB ? "Vendor" : "Paid to", cls: "desc", cell: function (x, td) { td.appendChild(el("b", null, isB ? vendorLabelOfBill(x) : x.payee || "")); sub(td, isB ? x.narration || "" : (x.vtype || "Type not set") + (x.gstApp === "RCM" ? " · RCM" : "") + " · " + (x.narration || "")); } },
       { label: "Prepared by", who: function (x) { return pnm(x.preparedByName) || userLabel(prepOf(x)); }, cell: function (x, td) { txt(td, pnm(x.preparedByName) || userLabel(prepOf(x)) || ""); var d = personDept(prepOf(x)); if (d) sub(td, d); } },
       { label: isB ? "Taxable" : "Total", cls: "r num", sort: function (x) { return Number(isB ? x.taxable : x.total) || 0; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, isB ? bm(x, x.taxable) : money(x.total))); if (isB) sub(td, "Total " + bm(x, x.total)); } },
-      { label: "Ledger", cell: function (x, td) { txt(td, ledText(x.ledgers) || "Not chosen"); if (x.tds != null && x.acct === "approved") sub(td, "TDS " + money(x.tds) + (x.tdsSection ? " · " + x.tdsSection : "")); } },
+      { label: "Ledger", cell: function (x, td) { txt(td, ledText(x.ledgers) || "Not chosen"); } },
       { label: "Status", cell: function (x, td) { var l = acctLabel(x); td.appendChild(el("span", { class: "tag stg " + l[1] }, l[0])); if (x.acctNote && x.acct !== "approved") sub(td, x.acctNote); } },
       { label: "", kind: "act", cls: "r", cell: function (x, td) { var o = el("button", { class: "btn sm primary" }, "Open"); o.addEventListener("click", function () { openAcct(isB ? "bill" : "voucher", x.id); }); td.appendChild(o); } }
     ], rows, { sortIndex: 0, limit: AC.limit });
@@ -9089,9 +9084,6 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var eo = { id: "aoLed", lines: D.lines, max: isB ? MAX_LED.bill : MAX_LED.voucher, cid: function () { return x.companyId; }, base: function () { return D.base; }, baseLabel: isB ? "taxable amount" : "total", suggest: isB ? function () { return suggestBill(x, x.companyId, x.vendorId, D.base); } : null };
     lf.appendChild(ledEditor(eo)); lf.appendChild(el("span", { class: "hint" }, isB ? "Up to 4 ledgers. The amounts must add up to the taxable amount, " + amt2(D.base) + "." : "Up to 2 ledgers. The amounts must add up to the total, " + amt2(D.base) + ".")); lf.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" }));
     var lw = el("div", { class: "form", style: "margin-top:12px" }); lw.appendChild(lf); f.insertBefore(lw, det);
-    var ti = inp("aoTds", D.tds, { inputmode: "decimal", class: "field num" }); ti.disabled = locked; ti.addEventListener("input", function () { D.tds = ti.value; }); ti.addEventListener("blur", function () { if (num(ti.value) != null) ti.value = fmtInput(ti.value); });
-    form.appendChild(fld("TDS" + (isB && x.currency && x.currency !== "INR" ? " (" + x.currency + ")" : " (₹)"), ti, "Enter 0 if none is deducted."));
-    var ts = el("select", { class: "field", id: "aoSec" }); fillSelect(ts, [["", "No TDS"]].concat(TDS_SECTIONS), D.sec); ts.disabled = locked; ts.addEventListener("change", function () { D.sec = ts.value; }); form.appendChild(fld("TDS section", ts));
     f.appendChild(form);
     if (locked) Array.prototype.forEach.call(f.querySelectorAll("#aoLed select, #aoLed input, #aoLed button"), function (b0) { b0.disabled = true; });
     var acts = $("aoActs"); acts.textContent = "";
@@ -9105,8 +9097,6 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function acctCheck() {
     var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, errs = [];
     var le = ledCheck(D.lines, D.base, x.companyId, AC.kind === "bill" ? MAX_LED.bill : MAX_LED.voucher); if (le) errs.push(["aoLed", le]);
-    var t = num(D.tds); if (!String(D.tds).trim()) errs.push(["aoTds", "Enter the TDS. Enter 0 if none is deducted."]); else if (t == null || t < 0) errs.push(["aoTds", "Enter the TDS as a number, 0 or more."]); else if (t > (Number(AC.kind === "bill" ? (x.fcTaxable != null ? x.fcTaxable + (x.fcGst || 0) : x.total) : x.total) || 0)) errs.push(["aoTds", "TDS can't be more than the total."]);
-    if (t > 0 && !D.sec) errs.push(["aoSec", "Choose the TDS section."]);
     if (AC.kind === "voucher" && !D.vtype) errs.push(["aoType", "Choose the type of voucher."]);
     if (AC.kind === "voucher" && D.vtype && D.vtype !== "Cash Voucher" && D.gstApp === "RCM" && !D.gstRate) errs.push(["aoRate", "Choose the GST rate."]);
     return errs;
@@ -9116,7 +9106,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (AC.busy) return;
     errClear($("aoBody")); var errs = acctCheck();
     if (errs.length) { errs.forEach(function (e) { errOn(e[0], e[1]); }); var f0 = $(errs[0][0]); if (f0 && f0.scrollIntoView) f0.scrollIntoView({ block: "center" }); return; }
-    var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, tds = round2(num(D.tds)), up = Object.assign({ acct: "approved", acctNote: "", ledgers: ledLinesOut(D.lines), tds: tds, tdsSection: tds > 0 ? D.sec : "" }, acctWho());
+    var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, tds = 0, up = Object.assign({ acct: "approved", acctNote: "", ledgers: ledLinesOut(D.lines), tds: 0, tdsSection: "" }, acctWho());
     if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher"; up.vtype = D.vtype; up.gstApp = oth ? D.gstApp : "N/A"; up.gstRate = oth && D.gstApp === "RCM" ? Number(D.gstRate) : null; up.taxable = Number(x.total) || 0; up.payable = round2((Number(x.total) || 0) - tds); }
     var col = AC.kind === "bill" ? "bills" : "vouchers", was = x.acct === "approved";
     AC.busy = true; btn.disabled = true;
@@ -9177,7 +9167,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var es = bookEntries(BK.side, co.value, fr, to), box = $("bkList"); box.textContent = "";
     if (lg.value) {
       var rows = es.filter(function (e) { return e.lg === lg.value; }), tot = rows.reduce(function (s0, e) { return s0 + e.amt; }, 0), tt = rows.reduce(function (s0, e) { return s0 + e.tds; }, 0);
-      statBoxes($("bkStats"), [["Entries", String(rows.length), ""], ["Amount", money(tot), ""], ["TDS", money(tt), ""]]);
+      statBoxes($("bkStats"), [["Entries", String(rows.length), ""], ["Amount", money(tot), ""]]);
       if (!rows.length) { box.appendChild(el("div", { class: "card empty" }, "Nothing posted to this ledger in this period.")); return; }
       var w = el("div", { class: "card list scroll" }); box.appendChild(w);
       sortTable(w, "bk_one", [
@@ -9186,7 +9176,6 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         { label: BK.side === "vouchers" ? "Paid to" : "Vendor", cls: "desc", cell: function (e, td) { td.appendChild(el("b", null, e.who)); sub(td, e.what); } },
         { label: "Prepared by", cell: function (e, td) { txt(td, e.prep || ""); } },
         { label: "Amount", cls: "r num", sort: function (e) { return e.amt; }, desc: true, cell: function (e, td) { td.appendChild(el("b", null, money(e.amt))); } },
-        { label: "TDS", cls: "r num", cell: function (e, td) { txt(td, e.tds ? money(e.tds) : "-"); if (e.sec && e.tds) sub(td, e.sec); } }
       ], rows, { sortIndex: 0, desc: true });
       return;
     }
@@ -9206,7 +9195,6 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
           { label: "Ledger", kind: "co", cell: function (l, td) { var b0 = el("button", { class: "link-btn", type: "button" }, l.name); b0.addEventListener("click", function () { if (!S.ledgers[l.id]) return; $("bkLed").value = l.id; renderBooks(); }); td.appendChild(b0); } },
           { label: "Entries", cls: "r num", cell: function (l, td) { txt(td, String(per[l.id].n)); } },
           { label: "Amount", cls: "r num", sort: function (l) { return per[l.id].amt; }, desc: true, cell: function (l, td) { td.appendChild(el("b", null, money(per[l.id].amt))); } },
-          { label: "TDS", cls: "r num", cell: function (l, td) { txt(td, per[l.id].tds ? money(per[l.id].tds) : "-"); } }
         ], subs[sb], { sortIndex: 2 });
       });
     });
@@ -9276,7 +9264,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     doc.setFillColor(FILL[0], FILL[1], FILL[2]); doc.rect(X, y, W, 6.5, "F");
     lab("#", X + cN / 2, y + 4.3, { align: "center" }); lab("Description", xD + 3, y + 4.3); lab("Ledger", xL + 3, y + 4.3); lab("Amount (₹)", R - 3, y + 4.3, { align: "right" });
     y += 6.5; hl(X, R, y);
-    var lines = (v.lines && v.lines.length ? v.lines : [{ d: v.narration || "", amt: v.total }]).slice(0, 5), tds = Number(v.tds) || 0;
+    var lines = (v.lines && v.lines.length ? v.lines : [{ d: v.narration || "", amt: v.total }]).slice(0, 5), tds = 0;
     var area = taxTable ? 22 : 30, rH = Math.min(11, area / Math.max(lines.length, 2)), y0 = y;
     lines.forEach(function (ln, i) {
       var ly = y + i * rH, base = ly + rH / 2 + 1.2, lgName = (ln.lg && ledName(ln.lg)) || (i === 0 ? ledText(v.ledgers) : "") || "-";

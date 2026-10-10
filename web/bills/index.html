@@ -3020,7 +3020,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         return pdf.getPage(i).then(function (pg) {
           return pg.getTextContent().then(function (tc) {
             texts.push(tc.items.map(function (it) { return (it.str || "") + (it.hasEOL ? "\n" : " "); }).join(""));
-            if (i > 4) return;
+            if (i > 8) return;
             return renderPdfCanvas(pg, 3000).then(function (cv) { pages.push(cv); });
           });
         });
@@ -3076,10 +3076,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       : p.images.length ? "Its page images are attached." + (p.text ? " Some text pulled from the PDF is below, but it may be incomplete or garbled; trust the images." : "") : "The text pulled from the PDF is below.") + " " + imagesNote(p);
     return [
       "You are reading one uploaded file for an Indian company's purchase records. Today is " + todayYmd() + ".",
-      "The file should hold exactly one supplier bill (a tax invoice, bill of supply, proforma invoice or similar). " + src,
+      "The file may hold one supplier bill or several (tax invoices, bills of supply or similar), from the same supplier or different suppliers. Find every separate bill and read each one on its own. " + src,
       "",
       "Rules:",
-      "- bills_in_file: how many separate bills the file holds. Count distinct bill numbers. Several pages of one bill count as 1. Original, duplicate and triplicate copies of the same bill count as 1. Delivery challans, e-way bills or receipts attached to a bill don't count.",
+      "- bills: one object per separate bill, in the order they appear. A separate bill has its own bill number (and usually its own supplier block and total). Several pages of one bill are one bill. Original, duplicate and triplicate copies of the same bill are one bill: read it once. Delivery challans, e-way bills or receipts attached to a bill are not bills.",
+      "- pages: for each bill, the page numbers of the file it is on, starting at 1.",
+      "- Every rule below applies to each bill on its own: its own supplier, buyer, number, date, amounts, items and confidence.",
       "- Read as much as you can. Partial answers are wanted: fill every field you can make out and use null only for what you truly cannot read. If a figure is unclear but likely, give your best reading and say which in notes.",
       "- readable: false only if the file shows no bill at all (blank, or a different kind of document). A hard-to-read bill is still readable: true.",
       "- The vendor is the seller or supplier who issued the bill. The company is the buyer the bill is made out to (Bill to, Buyer, Billed to). Never swap them.",
@@ -3099,8 +3101,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       "- items: every line of the bill's item table, in order, as {\"description\", \"hsn\", \"qty\", \"unit\", \"rate\", \"discount\", \"taxable\", \"gst_pct\", \"amount\"}. Numbers plain; null for anything not printed or unreadable. Copy the description as printed (translate into English in brackets if it is not English). [] if the bill has no item table.",
       "- items_note: one or two sentences on anything you are unsure of in the items (which lines, which figures), or an empty string.",
       "",
-      "Reply with only this JSON object:",
-      '{"bills_in_file":1,"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}',
+      "Reply with only this JSON object (bills holds one object per bill):",
+      '{"bills":[{"pages":[1],"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}]}',
       "",
       "COMPANIES: " + JSON.stringify(cos),
       "",
@@ -3244,8 +3246,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       });
     }).then(function (res) {
       if (!res || typeof res !== "object") throw { kind: "failed", manual: true };
-      var n = Math.round(Number(res.bills_in_file) || 1);
-      if (n > 1) throw { kind: "multi", n: n };
+      var list = Array.isArray(res.bills) ? res.bills.filter(function (x) { return x && typeof x === "object"; }) : [res];
+      if (list.length > 1) return saveSplit(it, list);
+      res = list[0] || {};
       var d = linkInto(docFromResult(res, it), it.link);
       var empty = nothingRead(d); d.ex.aiMarks = billAiMarks(d);
       if (empty && res.readable === false && !(it.prep.previews || []).length) throw { kind: "blank", manual: true };
@@ -3270,6 +3273,33 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (!it.manual && it.prep) { it.prep.previews.forEach(function (u) { URL.revokeObjectURL(u); }); it.prep = null; }
       if (!it.manual) it.orig = null;
     });
+  }
+  /* A file holding several bills: each becomes its own bill, with the pages it is on. The whole file is kept with each. */
+  function saveSplit(it, list) {
+    var prev = (it.prep && it.prep.previews) || [], made = [], dups = 0, total = list.length;
+    var job = Promise.resolve();
+    list.forEach(function (res, k) {
+      job = job.then(function () {
+        var pages = (Array.isArray(res.pages) ? res.pages : []).map(function (x) { return Math.round(Number(x)); }).filter(function (x) { return x >= 1; });
+        var d = linkInto(docFromResult(res, it), it.link);
+        d.ex.aiMarks = billAiMarks(d); d.ex.pages = pages; d.ex.ofBills = total; d.ex.splitNo = k + 1;
+        if (pages.length) d.ex.notes = ((d.ex.notes ? d.ex.notes + " " : "") + "Page" + (pages.length > 1 ? "s " : " ") + pages.join(", ") + " of " + (it.name || "the file") + ".").trim();
+        var id = newId("b");
+        return retry(function () { return S.db.doc("bills/" + id).set(d); }).then(function () {
+          S.bills[id] = Object.assign({ id: id }, d); invalidate();
+          var pv = pages.length ? pages.map(function (pg) { return prev[pg - 1]; }).filter(Boolean) : [];
+          S.previews[id] = pv.length ? pv : prev.slice(); storePreviews(id, S.previews[id]);
+          if (it.orig) keepFile(id, it.orig);
+          if (findDuplicate(draftFrom(S.bills[id]), S.bills[id])) dups++;
+          made.push((d.billNo || "bill " + (k + 1)) + (pages.length ? " (page" + (pages.length > 1 ? "s " : " ") + pages.join(", ") + ")" : ""));
+        });
+      });
+    });
+    return job.then(function () {
+      it.prep = null; it.orig = null; it.state = "ok"; it.dup = dups > 0;
+      it.msg = "Split into " + total + " bills: " + made.join(", ") + (dups ? ". " + (dups === 1 ? "1 may be a duplicate" : dups + " may be duplicates") + "; check before submitting." : ".");
+      onData();
+    }, function (e) { throw { kind: "save", e: e }; });
   }
   function renderLog() {
     var box = $("bLog"); if (!box) return;

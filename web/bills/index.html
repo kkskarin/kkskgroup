@@ -899,10 +899,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secBills" hidden>
     <div class="head">
-      <div><h2>Enter Bills</h2><p class="sub">Upload bills to read them, check each one, then submit it. Files are only read to fill in the details and are never kept.</p></div>
+      <div><h2>Enter Bills</h2><p class="sub">Every bill is uploaded and its file is kept with it. Check each one, fill in or correct the details, then submit it.</p></div>
       <span class="grow"></span>
       <div class="acts2">
-        <button class="btn" id="bManual">Enter a bill by hand</button>
         <button class="btn primary" id="bUpload">Upload bills (up to 15)</button>
       </div>
       <input type="file" id="bFiles" multiple accept="application/pdf,.pdf,image/jpeg,image/png,image/webp" hidden>
@@ -3219,21 +3218,34 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     files = Array.prototype.slice.call(files || []); if (!files.length) return;
     var busy = B.pending.length + B.running, room = MAX_SCAN - busy;
     if (files.length > room) { var m = "Up to " + MAX_SCAN + " bills can be read at a time." + (busy ? " " + busy + " are still being read, so choose up to " + Math.max(room, 0) + " now." : " Choose up to " + MAX_SCAN + " files."); toast(m); window.alert(m); return; }
-    if (!S.sample || B.aiOff) { toast("Bills can't be read here. Enter them by hand."); return; }
     if (B.log.length && !B.pending.length && !B.running) B.log = [];
     var link = takeLink();
     files.forEach(function (f) { var it = { name: f.name || "File", file: f, orig: f, state: "wait", msg: "Waiting", link: link }; B.log.push(it); B.pending.push(it); });
     renderLog(); pump();
   }
   function pump() {
-    if (B.aiOff) { B.pending.forEach(function (it) { it.state = "bad"; it.msg = REJECT[B.aiOff]; it.file = null; }); B.pending = []; renderLog(); return; }
     while (B.running < 2 && B.pending.length) {
       var it = B.pending.shift(); B.running++;
       readOne(it).then(function () { B.running--; renderLog(); pump(); });
     }
   }
+  /* A file that couldn't be read still becomes a bill: blank details, the file kept, for the purchaser to fill in. */
+  function addFromFile(it) {
+    var id = newId("b"), now = Date.now();
+    var d = { status: "draft", ownerId: meId(), uploadedBy: meId(), uploadedAt: now, updatedAt: now, source: "file", fileName: str(it.name, 160),
+      companyId: null, vendorId: null, vendorNew: { name: "", gstin: "", pan: "", type: "", termDays: null }, billNo: "", billDate: "", currency: "INR", fxRate: null, fcTaxable: null, fcGst: null, fcTotal: null, taxable: null, gstAmt: null, gstPct: null, total: null,
+      termDays: null, termChoice: "", updateVendorTerm: false, narration: "", ex: {} };
+    linkInto(d, it.link);
+    return retry(function () { return S.db.doc("bills/" + id).set(d); }).then(function () {
+      S.bills[id] = Object.assign({ id: id }, d); invalidate();
+      if (it.prep) { if ((it.prep.previews || []).length) { S.previews[id] = it.prep.previews; storePreviews(id, S.previews[id]); } it.prep = null; }
+      if (it.orig) { keepFile(id, it.orig); it.orig = null; }
+      it.state = "ok"; it.msg = "Added to your list"; it.manual = false; onData();
+    }, function (e) { it.state = "bad"; it.msg = "Not saved: " + explain(e) + " Upload this file again."; it.manual = false; it.orig = null; dropPrep(it); });
+  }
   function readOne(it) {
     it.state = "run"; it.msg = "Reading"; renderLog();
+    if (!S.sample || B.aiOff) return addFromFile(it);
     return prepFile(it.file).then(function (p) {
       it.prep = p; it.file = null;
       return S.sample.json(buildPrompt(p), { images: p.images.length ? p.images : undefined, modelTier: p.scanned ? "default" : "quick" }).catch(function (e) {
@@ -3260,12 +3272,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         var dup = findDuplicate(draftFrom(S.bills[id]), S.bills[id]);
         it.state = "ok"; it.dup = !!dup;
         it.msg = dup ? "Added, but bill " + dup.billNo + " from this vendor " + (dup.status === "done" ? "was already submitted on " + fmtDay(dup.submittedAt) : "is already waiting in " + (dup.ownerId === meId() ? "your list" : "someone else's list")) + ". Check before submitting."
-          : empty ? "Added. Nothing could be read clearly; type the details in while looking at the image." : keyMissing(S.bills[id]) ? "Added. Some details need typing in." : "Added to your list";
+          : "Added to your list";
         if (dup) toast("Possible duplicate: bill " + dup.billNo + " from this vendor already exists.");
         onData();
       }, function (e) { throw { kind: "save", e: e }; });
     }).catch(function (e) {
       e = e || {};
+      if (it.orig && { off: 1, limit: 1, noimg: 1, failed: 1, blank: 1, busy: 1, open: 1, lib: 1 }[e.kind]) return addFromFile(it);
       it.state = "bad"; it.file = null;
       it.msg = e.kind === "multi" ? "This file holds " + e.n + " bills. Put each bill in its own file and upload them again."
         : e.kind === "save" ? "Read, but not saved: " + explain(e.e) : REJECT[e.kind] || REJECT.failed;
@@ -3637,9 +3650,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function buildCard(b) {
     var D = B.D, card = el("article", { class: "card bcard", "aria-label": "Bill being checked" });
     var head = el("div", { class: "bc-head" }), ht = el("div", { class: "grow" });
-    ht.appendChild(el("b", null, b.fileName ? b.fileName : "Bill entered by hand"));
+    ht.appendChild(el("b", null, b.fileName ? b.fileName : "Bill"));
     if (b.advanceId && S.advances[b.advanceId]) { var la = S.advances[b.advanceId]; ht.appendChild(el("span", { class: "ln", style: "color:var(--brand-text);font-weight:600" }, "Final bill for " + (la.kind === "import" ? "import " : "proforma ") + (la.piNo || "") + ". It attaches itself when submitted.")); }
-    ht.appendChild(el("span", { class: "ln" }, (b.source === "file" ? "Read from the file" : "Typed in by hand") + ", added " + stamp(b.uploadedAt)));
+    ht.appendChild(el("span", { class: "ln" }, (b.source === "file" ? "Uploaded" : "Typed in by hand") + ", added " + stamp(b.uploadedAt)));
     ht.appendChild(fileLine(b));
     head.appendChild(ht); head.appendChild(el("span", { class: "saved", id: "bcSaved", "aria-live": "polite" }, ""));
     card.appendChild(head);
@@ -3921,6 +3934,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     readCard(); tidyIds("bcVGstin"); B.tried = true;
     var r = updateDynamic();
     if (r.errs.length) { var f = $(r.errs[0][0]); if (f && f.focus) f.focus(); else $("bcFlags").scrollIntoView({ block: "center" }); return; }
+    if (!b.file) { var nf = el("div", { class: "flag e" }); nf.innerHTML = WARN_SVG; nf.appendChild(el("span", null, "This bill's file isn't kept yet. Attach the bill file before submitting.")); $("bcFlags").insertBefore(nf, $("bcFlags").firstChild); $("bcFlags").scrollIntoView({ block: "center" }); toast("Attach the bill file before submitting."); return; }
     B.busy = true; setCardBusy(true); clearTimeout(B.saveTimer); B.dirty = false;
     var D = B.D, doc = keepLock(draftToDoc(D), b), now = Date.now(), vid = doc.vendorId, days = r.ti.days, job = B.savePromise || Promise.resolve(), madeVendor = "";
     if (D.vendorChoice === "new") {
@@ -4073,15 +4087,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function renderBills() {
     if (!$("secBills")) return;
     pickOpen();
-    var noAi = !S.sample ? "Reading bills needs Claude, which isn't available in this view. You can still enter bills by hand."
-      : B.aiOff === "off" ? "Reading with Claude isn't set up on the server yet, so uploads can't be read. Ask the admin to add the Anthropic API key, or enter bills by hand."
-      : B.aiOff === "limit" ? "Claude's usage limit was reached. Upload the remaining bills later, or enter them by hand." : "";
-    $("bNoAi").hidden = !noAi; $("bNoAi").textContent = noAi; $("bUpload").disabled = !!noAi;
+    $("bNoAi").hidden = true; $("bUpload").disabled = false;
     renderLog();
     var q = myQueue(), open = S.openBill && S.bills[S.openBill];
     $("bQCount").textContent = q.length ? "(" + q.length + ")" : "";
     var ob = $("bOpen");
-    if (!open) { B.cardId = null; B.D = null; ob.textContent = ""; ob.appendChild(el("div", { class: "card empty" }, "Nothing to check. Upload bills, or enter one by hand.")); }
+    if (!open) { B.cardId = null; B.D = null; ob.textContent = ""; ob.appendChild(el("div", { class: "card empty" }, "Nothing to check. Upload bills to start.")); }
     else if (B.cardId !== open.id || !$("bcCo")) {
       B.cardId = open.id; B.D = draftFromBill(open); B.tried = false; B.armDiscard = false; B.touched = false; micStop(); B.vSig = sigOf(); B.cSig = myCompanyIds().join(); B.ledTouched = !!(open.ledgers || []).length; B.ledKey = ""; B.ledO = null;
       var linked = autoLink(B.D);
@@ -5618,11 +5629,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (a) {
       var bills = billList().filter(function (b) { return b.status === "done" && b.companyId === a.companyId && b.vendorId === a.vendorId && !Object.keys(S.advances).some(function (k) { return k !== a.id && S.advances[k].taxBillId === b.id; }); }).sort(function (x, y) { return natCmp(y.billDate, x.billDate); });
       var ts = el("select", { class: "field", id: "adTaxBill" }); fillSelect(ts, [["", bills.length ? "Not attached yet" : "No submitted bills from this vendor yet"]].concat(bills.map(function (b) { return [b.id, b.billNo + ", " + fmtDate(b.billDate) + ", " + money(b.total)]; })), D.taxBillId);
-      var fb = fld("Final tax bill", ts, "Once all advances are paid and the material arrives, the vendor's final bill turns this into a tax bill: the instalments paid are taken off it. Upload or type it in here, or attach one already submitted.", true);
+      var fb = fld("Final tax bill", ts, "Once all advances are paid and the material arrives, the vendor's final bill turns this into a tax bill: the instalments paid are taken off it. Upload it here, or attach one already submitted.", true);
       if (!a.taxBillId && a.status !== "closed") {
-        var fr = el("div", { class: "acts2", style: "margin-top:4px" }), ub = el("button", { class: "btn", type: "button" }, "Upload final bill"), mb = el("button", { class: "btn", type: "button" }, "Enter final bill by hand");
-        ub.addEventListener("click", function () { finalBill(a, "upload"); }); mb.addEventListener("click", function () { finalBill(a, "manual"); });
-        if (S.sample && !B.aiOff) fr.appendChild(ub); fr.appendChild(mb); fb.appendChild(fr);
+        var fr = el("div", { class: "acts2", style: "margin-top:4px" }), ub = el("button", { class: "btn", type: "button" }, "Upload final bill");
+        ub.addEventListener("click", function () { finalBill(a, "upload"); });
+        fr.appendChild(ub); fb.appendChild(fr);
       }
       var pend = billList().filter(function (b) { return b.advanceId === a.id && b.status !== "done"; })[0];
       if (pend && !a.taxBillId) fb.appendChild(el("span", { class: "needs" }, "A final bill for this is open on Enter Bills (" + (pend.billNo || "number not filled in yet") + "). Submit it there and it attaches itself here."));
@@ -9670,7 +9681,6 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("save").addEventListener("click", save); $("toggle").addEventListener("click", toggleActive);
     $("bUpload").addEventListener("click", function () { $("bFiles").click(); });
     $("bFiles").addEventListener("change", function () { var fs = this.files; startUpload(fs); this.value = ""; });
-    $("bManual").addEventListener("click", function () { createManual(null); });
     $("ckCo").addEventListener("change", renderChecks); $("ckQ").addEventListener("input", renderChecks);
     $("cnBack").addEventListener("click", backToChecks); $("cnCancel").addEventListener("click", backToChecks); $("cvBack").addEventListener("click", backToChecks);
     $("cnCreate").addEventListener("click", createReport);

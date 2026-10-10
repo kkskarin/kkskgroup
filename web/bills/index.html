@@ -784,6 +784,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <div class="stats" id="bkStats"></div>
     <div id="bkList"></div>
   </section>
+  <section id="secNotes" hidden>
+    <div class="head"><div class="grow"><h2>Debit &amp; Credit Notes</h2><p class="sub">A debit note takes off what we owe a vendor (goods returned, short supply, a lower rate agreed). A credit note adds to what we owe (an extra charge the vendor bills). Both show in the vendor statement and in what is left to pay.</p></div><div class="acts2"><button class="btn primary" id="ntAdd" type="button">Add a Note</button></div></div>
+    <div class="filters"><select class="field" id="ntCo" aria-label="Company"></select><input class="field" id="ntQ" type="search" placeholder="Search vendor, number or reason" aria-label="Search notes" autocomplete="off"></div>
+    <div class="stats" id="ntStats"></div>
+    <div class="card list scroll" id="ntList"></div>
+  </section>
   <section id="secSoon" class="panel" hidden><h2 id="soonTitle"></h2><p>App being built</p></section>
 
   <section id="secList" hidden>
@@ -1340,7 +1346,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var S = { ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secApr", "secArch"];
+  var VIEWS = ["secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1451,12 +1457,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     { h: "Bills", tabs: [["Bills", "Enter Bills"], ["Checking Report", "Bills CR"]] },
     { h: "Proformas", tabs: [["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance CR"]] },
     { h: "Vouchers", tabs: [["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Vouchers CR"], ["Cash Advance", "Cash Advance"]] },
-    { h: "Accounts", tabs: [["Accounts", "To Account"], ["Ledger Books", "Ledger Books"]] },
+    { h: "Accounts", tabs: [["Accounts", "To Account"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Books"]] },
     { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] },
     { h: "Settings", tabs: [["Companies", "Companies", true], ["Users", "Users", true], ["Change Log", "Change Log", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] }
   ];
   var HOME_TAB = "Transactions", LAST_IN = {};
-  var DATA_TABS = ["Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
+  var DATA_TABS = ["Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
   /* Admins oversee rather than enter: the entry screens (and the accountant's queue) are left out for them.
      Reports > Transactions shows every item, where it stands and who is responsible. "View as" still opens a person's screens. */
   var ADMIN_HIDE = { "Bills": 1, "Plan Advance": 1, "Imports": 1, "Cash Voucher": 1, "Accounts": 1, "Mark Transaction": 1 };
@@ -1534,6 +1540,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (t === "Advance Summary") { renderAdvSum(); show("secAdvSum"); return; }
       if (t === "Accounts") { AC.id = null; renderAcct(); show("secAcct"); return; }
       if (t === "Ledger Books") { renderBooks(); show("secBooks"); return; }
+      if (t === "Notes") { renderNotes(); show("secNotes"); return; }
       if (t === "Ledgers") { renderLedgers(); show("secLedgers"); return; }
       if (t === "Advance Report") { renderApr(); show("secApr"); return; }
       if (t === "Cash Voucher") { renderVch(); show("secVch"); return; }
@@ -1696,7 +1703,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function stepsForJobs(js) { var m = {}; (js || []).forEach(function (k) { (JOB_STEPS[k] || []).forEach(function (st) { m[st] = 1; }); }); return STEPS.map(function (s) { return s[0]; }).filter(function (k) { return m[k]; }); }
   function myJobs() { var u = S.myUser; if (u && u.jobRoles && u.jobRoles.length) return u.jobRoles; return !S.actId && S.myReq && S.myReq.jobRoles ? S.myReq.jobRoles : []; }
   var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bills CR"], ["vouchers", "Cash Vouchers"], ["vcr", "Vouchers CR"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance CR"], ["txn", "Payment Entry"]];
-  var TAB_STEP = { "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
+  var TAB_STEP = { "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
   /* A user saved before responsibilities existed does every step for their companies until the admin sets them. */
   function userHas(u, step, cid) {
     if (!u || u.active === false || (u.companyIds || []).indexOf(cid) < 0) return false;
@@ -2603,8 +2610,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!o || o.balance == null) return null;
     return { balance: Number(o.balance) || 0, overdue: Number(o.overdue) || 0, setAt: o.setAt || 0 };
   }
-  function emptyLedger(cid, vid) { return { cid: cid, vid: vid, cur: "INR", opening: null, bills: [], billTotal: 0, outstanding: 0, overdue: 0, notDue: 0, b30: 0, b60: 0, b90: 0, b90p: 0, openOd: 0, opRem: 0, opOdRem: 0, tds: 0, paid: 0, disc: 0, advance: 0, credit: 0, txs: [], advs: [] }; }
+  function emptyLedger(cid, vid) { return { cid: cid, vid: vid, cur: "INR", opening: null, bills: [], billTotal: 0, outstanding: 0, overdue: 0, notDue: 0, b30: 0, b60: 0, b90: 0, b90p: 0, openOd: 0, opRem: 0, opOdRem: 0, tds: 0, paid: 0, disc: 0, advance: 0, credit: 0, txs: [], advs: [], notes: [], dn: 0, cn: 0, cnRem: 0 }; }
   function txList() { return Object.keys(S.txns || {}).map(function (k) { return S.txns[k]; }); }
+  function noteList() { return Object.keys(S.notes || {}).map(function (k) { return S.notes[k]; }); }
   /* Every amount stays in its own currency: a vendor's bills, payments and advances are all in that vendor's currency. */
   function txInr(t) { return Number(t.amount) || 0; }
   function advPaid(aid, inst) { var s = 0; txList().forEach(function (t) { if (t.advanceId === aid && t.kind === "payment" && (inst == null || t.inst === inst)) s += Number(t.amount) || 0; }); return round2(s); }
@@ -2651,6 +2659,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (x && tb.companyId === a.companyId && tb.vendorId === a.vendorId) { var use = Math.max(0, Math.min(paid, x.net - x.adv)); x.adv = round2(x.adv + use); r.advance += round2(paid - use); }
       else r.advance += paid;
     });
+    /* Debit notes take off what is owed, like a discount; credit notes add to it. */
+    noteList().forEach(function (n) { if (!n.companyId || !n.vendorId) return; var r = slot(n.companyId, n.vendorId); r.notes.push(n); if (n.kind === "credit") r.cn += Number(n.amount) || 0; else r.dn += Number(n.amount) || 0; });
     txList().forEach(function (tx) { if (tx.advanceId || !tx.companyId || !tx.vendorId) return; var r = slot(tx.companyId, tx.vendorId); r.txs.push(tx); if (tx.kind === "discount") r.disc += txInr(tx); else r.paid += txInr(tx); });
     Object.keys(m).forEach(function (k) {
       var r = m[k], pool = 0;
@@ -2659,16 +2669,19 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       /* Each payment or discount is applied on its own, in date order, so every bill and the opening balance know how much of each settled them. */
       var op = r.opening, opOd = 0, opRest = 0, credit = 0, opPay = 0, opDisc = 0;
       if (op) { if (op.balance < 0) credit = -op.balance; else { opOd = Math.min(op.overdue, op.balance); opRest = op.balance - opOd; } }
-      var odLeft = opOd, restLeft = opRest;
+      var odLeft = opOd, restLeft = opRest, cnLeft = round2(r.cn);
       var order = r.bills.filter(billSent).concat(r.bills.filter(function (b) { return !billSent(b); }));
       order.forEach(function (b) { var x = bi[b.id]; x.pay = 0; x.disc = 0; x.left = Math.max(0, x.net - x.adv); });
       function put(x, n, kind) { var take = Math.min(n, x.left); x.left = round2(x.left - take); if (kind === "discount") x.disc = round2(x.disc + take); else x.pay = round2(x.pay + take); return n - take; }
-      r.txs.forEach(function (tx) {
+      var seq = r.txs.concat(r.notes.filter(function (q) { return q.kind !== "credit"; }).map(function (q) { return { id: "note:" + q.id, kind: "discount", amount: q.amount, date: q.date, billId: q.billId || null, createdAt: q.createdAt || 0 }; }))
+        .sort(function (a, b) { return natCmp(a.date, b.date) || (a.createdAt || 0) - (b.createdAt || 0); });
+      seq.forEach(function (tx) {
         var n = txInr(tx), kind = tx.kind, x = tx.billId && bi[tx.billId], al = [], n0;
         if (tx.billAlloc) Object.keys(tx.billAlloc).forEach(function (id) { var y = bi[id]; if (!y || n <= 0) return; n0 = n; var want = Math.min(n, Number(tx.billAlloc[id]) || 0); n = n - want + put(y, want, kind); if (n0 - n > 0.004) al.push({ billId: id, amt: round2(n0 - n) }); });
         if (x) { n0 = n; n = put(x, n, kind); if (n0 - n > 0.004) al.push({ billId: tx.billId, amt: round2(n0 - n) }); }
         var t1 = Math.min(n, odLeft); odLeft -= t1; n -= t1; var t2 = Math.min(n, restLeft); restLeft -= t2; n -= t2;
         if (t1 > 0.004) al.push({ what: "od", amt: round2(t1) }); if (t2 > 0.004) al.push({ what: "op", amt: round2(t2) });
+        var t3 = Math.min(n, cnLeft); cnLeft -= t3; n -= t3; if (t3 > 0.004) al.push({ what: "cn", amt: round2(t3) });
         if (kind === "discount") opDisc += t1 + t2; else opPay += t1 + t2;
         order.forEach(function (b) { if (n > 0) { n0 = n; n = put(bi[b.id], n, kind); if (n0 - n > 0.004) al.push({ billId: b.id, amt: round2(n0 - n) }); } });
         if (n > 0.004) al.push({ what: "credit", amt: round2(n) });
@@ -2677,7 +2690,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       });
       r.opPay = round2(opPay); r.opDisc = round2(opDisc);
       r.opOdRem = round2(odLeft); r.openOd = r.opOdRem; r.opRem = round2(odLeft + restLeft);
-      r.notDue = round2(restLeft); r.overdue = r.opOdRem;
+      r.cnRem = round2(cnLeft); r.notDue = round2(restLeft + cnLeft); r.overdue = r.opOdRem;
       order.forEach(function (b) { var x = bi[b.id]; x.paid = round2(x.pay + x.disc); x.rem = round2(x.left); });
       var pool = credit;
       r.credit = round2(Math.max(0, pool)); r.advance = round2(r.advance); r.tds = round2(r.tds);
@@ -2688,7 +2701,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         else r.notDue += rem;
       });
       /* Advances and overpayments are shown on their own, not netted into what is owed. */
-      r.outstanding = round2(r.opRem + r.bills.reduce(function (s, b) { return s + bi[b.id].rem; }, 0));
+      r.outstanding = round2(r.opRem + r.cnRem + r.bills.reduce(function (s, b) { return s + bi[b.id].rem; }, 0));
       ["overdue", "notDue", "b30", "b60", "b90", "b90p", "billTotal"].forEach(function (f) { r[f] = round2(r[f]); });
     });
     m._bi = bi; m._alloc = alloc;
@@ -4197,17 +4210,17 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var v = S.vendors[VE.id]; if (!v) return;
     var box = $("veSt"); box.textContent = "";
     function lm(cid, n) { return curMoney(ledger(cid, v.id).cur, n); }
-    var cids = myCompanyIds().filter(function (cid) { var r = ledger(cid, v.id); return r.opening || r.bills.length || r.txs.length || r.advs.length; });
+    var cids = myCompanyIds().filter(function (cid) { var r = ledger(cid, v.id); return r.opening || r.bills.length || r.txs.length || r.advs.length || r.notes.length; });
     if (!cids.length) { box.appendChild(el("div", { class: "empty" }, "Nothing to show yet. A statement appears for each company once this vendor has a bill or an opening balance there.")); return; }
     sortTable(box, "veSt", [
       { label: "Company", kind: "co", sort: function (cid) { return coLabel(cid); }, cell: function (cid, td) { td.appendChild(el("b", null, coLabel(cid))); } },
       { label: "Opening balance", cls: "r num", sort: function (cid) { var r = ledger(cid, v.id); return r.opening ? r.opening.balance : null; }, desc: true, cell: function (cid, td) { var r = ledger(cid, v.id); txt(td, r.opening ? lm(cid, r.opening.balance) : "Not captured"); } },
       { label: "Bills", cls: "r num", sort: function (cid) { return ledger(cid, v.id).billTotal; }, desc: true, cell: function (cid, td) { var r = ledger(cid, v.id); txt(td, lm(cid, r.billTotal)); sub(td, plural(r.bills.length, "bill")); } },
       { label: "Payments", cls: "r num", sort: function (cid) { return ledger(cid, v.id).paid; }, desc: true, cell: function (cid, td) { var r = ledger(cid, v.id); txt(td, lm(cid, r.paid)); if (r.advance) sub(td, "Advance held " + lm(cid, r.advance)); } },
-      { label: "Discounts", cls: "r num", sort: function (cid) { return ledger(cid, v.id).disc; }, desc: true, cell: function (cid, td) { txt(td, lm(cid, ledger(cid, v.id).disc)); } },
+      { label: "Discounts & Notes", cls: "r num", sort: function (cid) { return ledger(cid, v.id).disc; }, desc: true, cell: function (cid, td) { var r = ledger(cid, v.id); txt(td, lm(cid, r.disc)); if (r.dn) sub(td, "Debit notes " + lm(cid, r.dn)); if (r.cn) sub(td, "Credit notes + " + lm(cid, r.cn)); } },
       { label: "Outstanding", cls: "r num", sort: function (cid) { return ledger(cid, v.id).outstanding; }, desc: true, cell: function (cid, td) { td.appendChild(el("b", null, lm(cid, ledger(cid, v.id).outstanding))); } },
       { label: "Overdue", cls: "r num", sort: function (cid) { return ledger(cid, v.id).overdue; }, desc: true, cell: function (cid, td) { var o = ledger(cid, v.id).overdue; td.appendChild(el("span", { class: o > 0 ? "late" : "" }, lm(cid, o))); } },
-      { label: "", kind: "act", cls: "r", cell: function (cid, td) { if (S.downloads) { var b = el("button", { class: "btn" }, "Download statement"); b.addEventListener("click", function () { downloadStatement(v.id, cid, b); }); td.appendChild(b); } } }
+      { label: "", kind: "act", cls: "r", cell: function (cid, td) { var w = el("div", { class: "acts" }), vb = el("button", { class: "btn primary" }, "View Statement"); vb.addEventListener("click", function () { viewStatement(v.id, cid); }); w.appendChild(vb); if (S.downloads) { var b = el("button", { class: "btn" }, "PDF"); b.addEventListener("click", function () { downloadStatement(v.id, cid, b); }); w.appendChild(b); } td.appendChild(w); } }
     ], cids, { sortIndex: 0 });
     $("veStSub").textContent = S.downloads ? "One statement per company, as a PDF. Figures use what is saved, so save any changes first." : "Statements can't be downloaded in this view.";
   }
@@ -4557,6 +4570,73 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     }).then(function () { btn.disabled = false; btn.textContent = label; });
   }
 
+  /* ================= Debit & Credit Notes (accountant and admin) ================= */
+  var NT = { busy: false };
+  function noteLabel(n) { return n.kind === "credit" ? "Credit Note" : "Debit Note"; }
+  function renderNotes() {
+    var sel = $("ntCo"), cur = sel.value; fillSelect(sel, [["", "All your companies"]].concat(roleCos("acct").map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
+    var q = $("ntQ").value.trim().toLowerCase(), cid = sel.value;
+    var rows = noteList().filter(function (n) {
+      if (!canStep("acct", n.companyId) || (cid && n.companyId !== cid)) return false;
+      if (q) { var v = S.vendors[n.vendorId]; if (((v ? v.name : "") + " " + (n.no || "") + " " + (n.reason || "") + " " + noteLabel(n)).toLowerCase().indexOf(q) < 0) return false; }
+      return true;
+    }).sort(function (a, b) { return natCmp(b.date, a.date) || (b.createdAt || 0) - (a.createdAt || 0); });
+    var dn = {}, cn = {}; rows.forEach(function (n) { curAdd(n.kind === "credit" ? cn : dn, n.currency, n.amount); });
+    statBoxes($("ntStats"), [["Debit notes", curSum(dn), "Take off what is owed"], ["Credit notes", curSum(cn), "Add to what is owed"], ["Notes", String(rows.length), ""]]);
+    var box = $("ntList");
+    if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, q ? "No notes match." : "No debit or credit notes yet. Add one when a vendor's bill needs correcting.")); return; }
+    sortTable(box, "ntList", [
+      { label: "Date", cls: "num", sort: function (n) { return n.date; }, desc: true, cell: function (n, td) { txt(td, fmtDate(n.date)); } },
+      { label: "Note", kind: "co", cell: function (n, td) { td.appendChild(el("span", { class: "tag stg " + (n.kind === "credit" ? "s-tds" : "s-payment") }, noteLabel(n))); if (n.no) sub(td, n.no); } },
+      { label: "Vendor", cls: "wcol", sort: function (n) { return (S.vendors[n.vendorId] || {}).name || ""; }, cell: function (n, td) { td.appendChild(el("b", null, (S.vendors[n.vendorId] || {}).name || "")); sub(td, coLabel(n.companyId)); } },
+      { label: "Against", cell: function (n, td) { var b = n.billId && S.bills[n.billId]; txt(td, b ? "Bill " + b.billNo : "Earliest dues"); } },
+      { label: "Amount", cls: "r num", sort: function (n) { return Number(n.amount) || 0; }, desc: true, cell: function (n, td) { td.appendChild(el("b", null, (n.kind === "credit" ? "+ " : "− ") + curMoney(n.currency, n.amount))); } },
+      { label: "Reason", cls: "desc", cell: function (n, td) { txt(td, n.reason || ""); sub(td, "Entered by " + pnm(n.byName || "")); } },
+      { label: "", kind: "act", cls: "r", cell: function (n, td) {
+          if (!(S.isAdmin || (n.createdBy === meId() && within3(n.createdAt)))) return;
+          var d = el("button", { class: "btn sm danger", type: "button" }, "Delete"); d.addEventListener("click", function () { delNote(n, d); }); td.appendChild(d); } }
+    ], rows, { sortIndex: 0, sortDir: -1 });
+  }
+  function delNote(n, btn) {
+    if (btn.getAttribute("data-arm") !== "1") { btn.setAttribute("data-arm", "1"); btn.textContent = "Click again to delete"; setTimeout(function () { if (btn.isConnected) { btn.removeAttribute("data-arm"); btn.textContent = "Delete"; } }, 4000); return; }
+    retry(function () { return S.db.doc("notes/" + n.id).delete(); }).then(function () { delete S.notes[n.id]; invalidate(); renderNotes(); toast(noteLabel(n) + " deleted."); }, function (e) { toast(explain(e)); });
+  }
+  function noteForm() {
+    var cos = roleCos("acct"); if (!cos.length) return;
+    var vens = Object.keys(S.vendors).map(function (k) { return Object.assign({ id: k }, S.vendors[k]); }).filter(function (v) { return v.active !== false; }).sort(function (a, b) { return natCmp(a.name, b.name); });
+    var body = el("div", { class: "mform" });
+    var ty = el("select", { class: "field", id: "ntKind" }); fillSelect(ty, [["debit", "Debit Note: takes off what we owe"], ["credit", "Credit Note: adds to what we owe"]], "debit"); body.appendChild(fld("Type", ty));
+    var co = el("select", { class: "field", id: "ntCid" }); fillSelect(co, cos.map(function (c) { return [c.id, c.name]; }), $("ntCo").value || cos[0].id); body.appendChild(fld("Company", co));
+    var ve = el("select", { class: "field", id: "ntVid" }); fillSelect(ve, [["", "Choose the vendor"]].concat(vens.map(function (v) { return [v.id, v.name]; })), ""); body.appendChild(fld("Vendor", ve));
+    body.appendChild(fld("Date", dateBox("ntDate", todayYmd(), { min: addDays(todayYmd(), -365), max: todayYmd(), label: "Date of the note" })));
+    body.appendChild(fld("Note number", inp("ntNo", "", { maxlength: "40" }), "The number on the note, if it has one."));
+    var amf = fld("Amount", inp("ntAmt", "", { inputmode: "decimal", class: "field num" })); body.appendChild(amf);
+    var bs = el("select", { class: "field", id: "ntBill" }), bf = fld("Against", bs, "A debit note can go against one bill; otherwise it settles the earliest dues."); body.appendChild(bf);
+    body.appendChild(tidyField("Reason", tidyBox("ntWhy", "", "reason", 300)));
+    function sync() {
+      var r = ve.value ? ledger(co.value, ve.value) : null, open = r ? r.bills.filter(function (b) { return billInfo(b).rem > 0.5; }) : [];
+      fillSelect(bs, [["", "Earliest dues"]].concat(open.map(function (b) { return [b.id, "Bill " + b.billNo + ", " + fmtDate(b.billDate) + ", balance " + bm(b, billInfo(b).rem)]; })), bs.value);
+      bf.hidden = ty.value === "credit"; amf.querySelector(".lb, label").textContent = "Amount" + (r && r.cur !== "INR" ? " (" + r.cur + ")" : "");
+    }
+    [ty, co, ve].forEach(function (x) { x.addEventListener("change", sync); }); sync();
+    popForm("Add a Debit or Credit Note", "", body, "Save Note", function () {
+      errClear(body); var d = parseDate($("ntDate").value), n = num($("ntAmt").value), why = $("ntWhy").value.trim(), ok = true;
+      if (!ve.value) { errOn("ntVid", "Choose the vendor."); ok = false; }
+      if (!d) { errOn("ntDate", "Enter the date like 12-Sep-26."); ok = false; } else if (d > todayYmd()) { errOn("ntDate", "The date can't be in the future."); ok = false; }
+      if (n == null || n <= 0) { errOn("ntAmt", "Enter the amount."); ok = false; }
+      if (why.length < 4) { errOn("ntWhy", "Write the reason."); ok = false; }
+      if (!ok || NT.busy) return false;
+      var tp = tidyPending("ntWhy");
+      return (tp || Promise.resolve()).then(function () {
+        var r = ledger(co.value, ve.value), id = newId("n"), now = Date.now();
+        var doc = { kind: ty.value, companyId: co.value, vendorId: ve.value, currency: r.cur || "INR", date: d, no: $("ntNo").value.trim(), amount: round2(n), billId: ty.value === "debit" && bs.value ? bs.value : null, reason: sentenceFix($("ntWhy").value.trim()), createdAt: now, createdBy: meId(), byName: preparedByText() };
+        NT.busy = true;
+        return retry(function () { return S.db.doc("notes/" + id).set(doc); }).then(function () { S.notes = S.notes || {}; S.notes[id] = Object.assign({ id: id }, doc); invalidate(); renderNotes(); toast(noteLabel(doc) + " saved for " + S.vendors[doc.vendorId].name + "."); return true; }, function (e) { toast(explain(e)); return false; })
+          .then(function (x) { NT.busy = false; return x; });
+      });
+    });
+  }
+
   /* ---- Vendor statement: a running balance, then ageing ---- */
   /* Ask for the start date first. Everything before it is folded into the opening balance on that date. */
   function downloadStatement(vid, cid, btn) {
@@ -4570,29 +4650,57 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     f.appendChild(el("span", { class: "err", id: "stFromE", hidden: "" })); body.appendChild(f);
     popForm("Download statement", v.name + ", " + (c.shortName || c.name), body, "Download", function () { var d = parseDate($("stFrom").value) || ""; makeStatement(vid, cid, btn, d); });
   }
+  /* The statement, like a Tally ledger: Date, Particulars (Bill, Payment, Discount, Debit Note, Credit Note, Voucher), Reference No.,
+     Payable, Paid and the running balance. Anything before `from` is folded into the opening balance. */
+  function stmtBal(n) { return Math.abs(n) < 0.005 ? "0" : n < 0 ? amt(-n) + " Cr" : amt(n); }
+  function stmtData(vid, cid, from) {
+    var r = ledger(cid, vid), v = S.vendors[vid] || {}, ev = [];
+    r.bills.forEach(function (b) { var x = billInfo(b); ev.push({ d: b.billDate || "", o: 1, p: "Bill", ref: b.billNo || "", payable: Number(b.total) || 0, paid: 0 }); if (x.adv) ev.push({ d: b.billDate || "", o: 2, p: "Payment", ref: "Advance paid on the proforma, set against bill " + (b.billNo || ""), payable: 0, paid: x.adv }); });
+    r.txs.forEach(function (tx) { var m = modeInfo(tx.mode); ev.push({ d: tx.date || "", o: 3, p: tx.kind === "discount" ? "Discount" : "Payment", ref: tx.kind === "discount" ? tx.ref || "" : (m ? m[1] : "") + (tx.ref ? (m ? " · " : "") + tx.ref : ""), payable: 0, paid: txInr(tx) }); });
+    r.notes.forEach(function (n) { var cr = n.kind === "credit"; ev.push({ d: n.date || "", o: 4, p: cr ? "Credit Note" : "Debit Note", ref: n.no || "", payable: cr ? Number(n.amount) || 0 : 0, paid: cr ? 0 : Number(n.amount) || 0 }); });
+    /* Cash vouchers paid to this vendor: bought and paid on the spot. */
+    var vn = normName(v.name || "");
+    if (vn) vchList().forEach(function (x) { if (x.companyId === cid && normName(x.payee || "") === vn && acctOk(x)) { var a0 = Number(x.total) || 0; ev.push({ d: x.voucherDate || "", o: 5, p: "Voucher", ref: x.voucherNo || "", payable: a0, paid: a0 }); } });
+    ev.sort(function (a, b) { return natCmp(a.d, b.d) || a.o - b.o; });
+    var open = r.opening ? Number(r.opening.balance) || 0 : 0, openDate = "";
+    if (from) { ev = ev.filter(function (e) { if (e.d && e.d < from) { open = round2(open + e.payable - e.paid); return false; } return true; }); openDate = from; }
+    var bal = open, pay = 0, paid = 0;
+    ev.forEach(function (e) { bal = round2(bal + e.payable - e.paid); e.bal = bal; pay += e.payable; paid += e.paid; });
+    return { open: round2(open), openDate: openDate, rows: ev, payable: round2(pay), paid: round2(paid), close: round2(bal), cur: r.cur || "INR" };
+  }
+  /* On screen: the same statement, with a start date, and the PDF a click away. */
+  function viewStatement(vid, cid) {
+    var v = S.vendors[vid], c = S.companies[cid]; if (!v || !c) return;
+    var body = el("div", { class: "mform" }), fyStart = "20" + fyOf(todayYmd()).slice(0, 2) + "-04-01";
+    var f = el("div", { class: "f" }); f.appendChild(el("span", { class: "lb" }, "From")); var db0 = dateBox("svFrom", fyStart, { max: todayYmd(), clearable: true, label: "Statement from" }); f.appendChild(db0); f.appendChild(el("span", { class: "hint" }, "Clear the date to start from the very beginning.")); body.appendChild(f);
+    var tw = el("div", { class: "list scroll", style: "max-height:60vh" }); body.appendChild(tw);
+    function draw() {
+      var fi = body.querySelector("#svFrom"), from = (fi && parseDate(fi.value)) || "", D = stmtData(vid, cid, from), cur = D.cur, tb = el("table", { class: "t stmt" }), th = el("thead"), hr = el("tr");
+      [["Date", ""], ["Particulars", ""], ["Reference No.", ""], ["Payable", "r"], ["Paid", "r"], ["Balance", "r"]].forEach(function (h) { hr.appendChild(el("th", h[1] ? { class: h[1] } : null, h[0])); }); th.appendChild(hr); tb.appendChild(th);
+      var bd = el("tbody"); tb.appendChild(bd);
+      function row(cells, cls) { var tr = el("tr", cls ? { class: cls } : null); cells.forEach(function (x, i) { var td = el("td", i >= 3 ? { class: "r num" } : i === 0 ? { class: "num" } : null); if (x && x.b) td.appendChild(el("b", null, x.b)); else td.textContent = x || ""; tr.appendChild(td); }); bd.appendChild(tr); }
+      row([D.openDate ? fmtDate(D.openDate) : "", { b: from ? "Opening balance as on " + fmtDate(from) : "Opening balance" }, "", "", "", { b: stmtBal(D.open) }]);
+      D.rows.forEach(function (e) { row([fmtDate(e.d), e.p, e.ref, e.payable ? amt(e.payable) : "", e.paid ? amt(e.paid) : "", stmtBal(e.bal)]); });
+      var tf = el("tfoot"), ft = el("tr"); [{ b: "Totals (" + cur + ")" }, "", "", { b: amt(D.payable) }, { b: amt(D.paid) }, { b: stmtBal(D.close) }].forEach(function (x, i) { var td = el("td", i >= 3 ? { class: "r num" } : null); if (x && x.b) td.appendChild(el("b", null, x.b)); ft.appendChild(td); }); tf.appendChild(ft); tb.appendChild(tf);
+      tw.textContent = ""; tw.appendChild(tb);
+    }
+    db0.addEventListener("change", draw); var di = db0.querySelector("input"); if (di) di.addEventListener("change", draw);
+    draw();
+    popForm("Statement · " + v.name, (c.shortName || c.name) + " · as on " + fmtDate(todayYmd()) + ". Balance in Cr means the vendor holds that much of ours.", body, S.downloads ? "Download PDF" : "Close", function (b) { if (S.downloads) makeStatement(vid, cid, b, parseDate($("svFrom").value) || ""); });
+  }
   function makeStatement(vid, cid, btn, from) {
     var v = S.vendors[vid], c = S.companies[cid]; if (!v || !c || !S.downloads) return;
     var label = btn.textContent; btn.disabled = true; btn.textContent = "Preparing";
     loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
       var r = ledger(cid, vid), cur = r.cur, t = todayYmd(), doc = newPdf(jsPDF), P = pdfLook(doc), red = [179, 38, 30];
-      var opBal = r.opening ? Number(r.opening.balance) || 0 : 0, billNet = 0, paidAll = 0, sb = 0, st = 0;
-      /* The payment reference(s) that settled each bill, from how every payment was applied. */
-      var al = lidx()._alloc || {}, refs = {};
-      r.txs.forEach(function (tx) { (al[tx.id] || []).forEach(function (a) { if (!a.billId) return; var rf = tx.kind === "discount" ? "Discount" : tx.mode === "cash" ? "Cash" : tx.ref || ""; if (rf) (refs[a.billId] = refs[a.billId] || []).indexOf(rf) < 0 && refs[a.billId].push(rf); }); });
-      var ev = [];
-      r.bills.forEach(function (b) { var x = billInfo(b); ev.push({ d: b.billDate || "", o: 1, p: "Bill " + (b.billNo || ""), ref: (refs[b.id] || []).join(", ") || (x.rem > 0.5 ? "Not paid yet" : ""), bill: Number(b.total) || 0, tds: x.tds, paid: 0 }); if (x.adv) ev.push({ d: b.billDate || "", o: 2, p: "Advance set against bill " + (b.billNo || ""), ref: "", bill: 0, tds: 0, paid: x.adv }); });
-      r.txs.forEach(function (tx) { ev.push({ d: tx.date || "", o: 3, p: (tx.kind === "discount" ? "Discount received" : "Payment") + (tx.billId && S.bills[tx.billId] ? ", against bill " + S.bills[tx.billId].billNo : ""), ref: tx.kind === "discount" ? "" : tx.mode === "cash" ? "Cash" : tx.ref || "", bill: 0, tds: 0, paid: txInr(tx) }); });
-      ev.sort(function (a, b) { return natCmp(a.d, b.d) || a.o - b.o; });
-      var bal = opBal, body = [];
-      if (from) { ev = ev.filter(function (e) { if (e.d && e.d < from) { bal = round2(bal + e.bill - e.tds - e.paid); return false; } return true; }); opBal = bal; }
-      if (from) body.push([fmtDate(from), cB("Opening balance as on " + fmtDate(from)), "", "", "", "", cR(bal < 0 ? "(" + amt(-bal) + ") credit" : amt(bal), true)]);
-      else if (r.opening) body.push([r.opening.setAt ? fmtDate(ymdOfMs(r.opening.setAt)) : "", cB("Opening balance"), r.opening.overdue ? "Of which overdue " + amt(r.opening.overdue) : "", "", "", "", cR(amt(bal), true)]);
-      ev.forEach(function (e) { bal = round2(bal + e.bill - e.tds - e.paid); billNet += e.bill - e.tds; paidAll += e.paid; sb += e.bill; st += e.tds; body.push([fmtDate(e.d), e.p, e.ref, cR(e.bill ? amt(e.bill) : ""), cR(e.tds ? "(" + amt(e.tds) + ")" : ""), cR(e.paid ? amt(e.paid) : ""), cR(bal < 0 ? "(" + amt(-bal) + ") credit" : amt(bal))]); });
+      var D = stmtData(vid, cid, from), opBal = D.open, bal = D.close;
       var y = P.head({ logo: c.logo, name: c.name, sub: "Vendor statement", big: v.name, bigSub: (from ? fmtDate(from) + " to " + fmtDate(t) : "As on " + fmtDate(t)) + (v.gstin ? " · GSTIN " + v.gstin : v.country ? " · " + v.country : ""),
-        facts: [[from ? "Opening, " + fmtDate(from) : "Opening balance", from || r.opening ? curMoney(cur, opBal) : "Not captured"], ["Bills", curMoney(cur, round2(billNet))], ["Paid and discounted", curMoney(cur, round2(paidAll))], ["Outstanding", curMoney(cur, r.outstanding)]] });
-      y = P.table(y, ["Date", "Particulars", "Payment ref.", { content: "Bill", styles: { halign: "right" } }, { content: "TDS", styles: { halign: "right" } }, { content: "Paid", styles: { halign: "right" } }, { content: "Balance", styles: { halign: "right" } }], body,
-        { foot: [cFoot("Totals (" + cur + ")", 3), cFoot(amt(sb), 1, "right"), cFoot(st ? "(" + amt(st) + ")" : "0", 1, "right"), cFoot(amt(paidAll), 1, "right"), cFoot(amt(bal), 1, "right")], columnStyles: { 0: { cellWidth: 50 }, 3: { cellWidth: 56 }, 4: { cellWidth: 46 }, 5: { cellWidth: 56 }, 6: { cellWidth: 66 } } });
+        facts: [[from ? "Opening, " + fmtDate(from) : "Opening balance", from || r.opening ? curMoney(cur, opBal) : "Not captured"], ["Payable", curMoney(cur, D.payable)], ["Paid", curMoney(cur, D.paid)], ["Closing balance", curMoney(cur, bal)]] });
+      var body = [[D.openDate ? fmtDate(D.openDate) : "", cB(from ? "Opening balance as on " + fmtDate(from) : "Opening balance"), "", "", "", cR(stmtBal(opBal), true)]].concat(D.rows.map(function (e) {
+        return [fmtDate(e.d), e.p, e.ref, cR(e.payable ? amt(e.payable) : ""), cR(e.paid ? amt(e.paid) : ""), cR(stmtBal(e.bal))]; }));
+      y = P.table(y, ["Date", "Particulars", "Reference No.", { content: "Payable", styles: { halign: "right" } }, { content: "Paid", styles: { halign: "right" } }, { content: "Balance", styles: { halign: "right" } }], body,
+        { foot: [cFoot("Totals (" + cur + ")", 3), cFoot(amt(D.payable), 1, "right"), cFoot(amt(D.paid), 1, "right"), cFoot(stmtBal(bal), 1, "right")], columnStyles: { 0: { cellWidth: 52 }, 2: { cellWidth: 100 }, 3: { cellWidth: 64 }, 4: { cellWidth: 64 }, 5: { cellWidth: 70 } } });
       if (y > 690) { doc.addPage(); y = 56; }
       y = P.section("Ageing of what is owed", y + 16);
       y = P.table(y, ["Not due", "1 to 30 days", "31 to 60 days", "61 to 90 days", "Over 90 days", "Opening overdue", "Total"].map(function (h) { return { content: h, styles: { halign: "right" } }; }),
@@ -5908,6 +6016,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         var by = {};
         function add(bk, it) { (by[bk] = by[bk] || []).push(it); }
         if (r.opRem > 0.5) add("now", { kind: "opening", amt: r.opRem, od: r.opOdRem, due: t });
+        if (r.cnRem > 0.5) add("now", { kind: "cn", amt: r.cnRem, od: 0, due: t });
         r.bills.forEach(function (b) { var p = billPayNow(b); if (p > 0.5) add(dueBucket(b.dueDate), { kind: "bill", b: b, amt: p, due: ymdOk(b.dueDate) ? b.dueDate : t }); });
         Object.keys(by).forEach(function (bk) {
           var its = by[bk].sort(function (x, y) { return (x.kind !== "opening") - (y.kind !== "opening") || natCmp(x.due, y.due); });
@@ -5939,8 +6048,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (x.type === "vch") return ["Voucher " + x.v.voucherNo + (x.rp ? " · " + x.rp.no : ""), fmtDate(x.v.voucherDate) + " · prepared by " + (x.prep || "")];
     if (x.type === "inst") return [(x.rp ? x.rp.no + " · " : "") + instLabel(x.a, x.i).replace("Instalment ", "instalment ").replace(/ \(.*\)/, ""), (x.a.kind === "import" ? "Import " : "Proforma ") + (x.a.piNo || "") + " · due " + fmtDate(x.due)];
     var bits = [], nos = {};
-    x.items.forEach(function (it) { if (it.kind === "opening") bits.push("Opening balance " + curMoney(x.cur, it.amt)); else { bits.push("Bill " + (it.b.billNo || "") + " " + curMoney(x.cur, it.amt) + ", due " + fmtDate(it.due)); payReports(it.b).forEach(function (r) { nos[r.no] = 1; }); } });
-    return [Object.keys(nos).join(", ") || "Opening balance", bits.join(" · ")];
+    x.items.forEach(function (it) { if (it.kind === "opening") bits.push("Opening balance " + curMoney(x.cur, it.amt)); else if (it.kind === "cn") bits.push("Credit notes " + curMoney(x.cur, it.amt)); else { bits.push("Bill " + (it.b.billNo || "") + " " + curMoney(x.cur, it.amt) + ", due " + fmtDate(it.due)); payReports(it.b).forEach(function (r) { nos[r.no] = 1; }); } });
+    return [Object.keys(nos).join(", ") || (x.items[0] && x.items[0].kind === "cn" ? "Credit notes" : "Opening balance"), bits.join(" · ")];
   }
   function mkOverdue(x) {
     var t = todayYmd();
@@ -8826,6 +8935,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var m = {}; snap.docs.forEach(function (d) { var t = Object.assign({}, d.data() || {}); t.id = d.id; m[d.id] = t; });
       S.txns = m; S.tLoaded = true; invalidate(); onData();
     }, function (e) { S.tLoaded = true; onData(); toast("Payments stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
+    S.db.collection("notes").onSnapshot(function (snap) {
+      var m = {}; snap.docs.forEach(function (d) { var n = Object.assign({}, d.data() || {}); n.id = d.id; m[d.id] = n; });
+      S.notes = m; invalidate(); onData();
+    }, function () {});
     S.db.collection("vouchers").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var v = Object.assign({}, d.data() || {}); v.id = d.id; m[d.id] = v; });
       S.raw.vouchers = m; applyScope(); S.vcLoaded = true; onData();
@@ -9457,6 +9570,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (DATA_TABS.indexOf(t) >= 0 && !$("vLoading").hidden) { if (dataReady()) setTab(t); return; }
     if (t === "Archive" && S.isAdmin) { if (!$("vLoading").hidden && dataReady()) setTab(t); else if (!$("secArch").hidden && !AR.busy) renderArchive(); return; }
     if (t === "Accounts") { if (!$("secAcct").hidden) renderAcct(); else if (!$("secAcctOne").hidden && AC.id && !(AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id])) backToAcct(); return; }
+    if (t === "Notes" && !$("secNotes").hidden) { var na = document.activeElement; if (!(na && $("secNotes").contains(na) && na.tagName === "INPUT")) renderNotes(); return; }
     if (t === "Ledger Books" && !$("secBooks").hidden) { var ba = document.activeElement; if (!(ba && $("secBooks").contains(ba) && ba.tagName === "INPUT")) renderBooks(); return; }
     if (t === "Ledgers" && !$("secLedgers").hidden) { var lga = document.activeElement; if (!(lga && $("secLedgers").contains(lga) && lga.tagName === "INPUT")) renderLedgers(); return; }
     if (t === "Advance Report") { if (!$("secApr").hidden) renderApr(); else if (!$("secCheckView").hidden) renderReport(); return; }
@@ -9558,6 +9672,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("asXls").addEventListener("click", function () { downloadAdvSumXls(this); });
     $("txSt").addEventListener("change", function () { TX.status = this.value; TX.limit = 200; renderTxn(); }); $("txQ").addEventListener("input", function () { TX.limit = 200; renderTxn(); });
     $("txPdf").addEventListener("click", function () { downloadTxPdf(this); });
+    $("ntAdd").addEventListener("click", noteForm); $("ntCo").addEventListener("change", renderNotes); $("ntQ").addEventListener("input", renderNotes);
     $("bkXls").addEventListener("click", function () { downloadBooksXls(this); }); $("vXls").addEventListener("click", function () { downloadVendorsXls(this); }); $("txXls").addEventListener("click", function () { downloadTxXls(this); });
     $("vhNew").addEventListener("click", function () { openVchForm(null); });
     $("vhCo").addEventListener("change", renderVch); $("vhQ").addEventListener("input", renderVch);

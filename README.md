@@ -124,3 +124,18 @@ provides the same calls, so the app code did not need rewriting:
 -- add another super admin (after they have created an account)
 insert into public.app_super_admins (email) values ('someone@kksk.in');
 ```
+
+
+### Paying vendors (from 10 Oct 2026)
+
+- **No TDS.** Bills and vouchers count at their full total; the accountant approves with ledgers only.
+- **Approve bill by bill.** On a Bills CR the admin presses Approve for Payment: untick a bill to send it back to the
+  purchaser, or lower its amount to approve part of it (a note to the purchaser is then needed). The unapproved rest
+  waits with the purchaser, who may put it in a new Bills CR. Advance CRs can be approved in part the same way.
+- **No Payment Planning.** Whatever the admin approves goes straight to the financier's Payment Entry, by due date:
+  overdue and the next 7 days, then 1–2, 2–3, 3–4 weeks and later. Opening balances and credit notes are due now.
+  A payment on a vendor line is set against that line's bills (`billAlloc` on the transaction).
+- **Debit & Credit Notes** (Accounts): a debit note takes off what is owed (optionally against one bill), a credit
+  note adds to it. Stored in `notes/`.
+- **Vendor statement** (Vendors › View Statement, and the PDF): Date, Particulars (Bill, Payment, Discount, Debit
+  Note, Credit Note, Voucher), Reference No., Payable, Paid and the running balance.

@@ -3287,7 +3287,23 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (!it.manual) it.orig = null;
     });
   }
-  /* A file holding several bills: each becomes its own bill, with the pages it is on. The whole file is kept with each. */
+  /* Each bill from a combined PDF is kept as its own PDF holding only its pages. Photos, or a PDF that can't be split, are kept whole. */
+  var PDFLIB = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
+  function splitPdfFile(it, pages, label) {
+    if (!pages.length || !isPdf(it.orig)) return Promise.resolve(null);
+    it.srcPdf = it.srcPdf || loadScript(PDFLIB).then(function () { return it.orig.arrayBuffer(); }).then(function (buf) { return window.PDFLib.PDFDocument.load(buf, { ignoreEncryption: true }); });
+    return it.srcPdf.then(function (src) {
+      var n = src.getPageCount(), idx = pages.map(function (pg) { return pg - 1; }).filter(function (i) { return i >= 0 && i < n; });
+      if (!idx.length || idx.length === n) return null;
+      return window.PDFLib.PDFDocument.create().then(function (out) {
+        return out.copyPages(src, idx).then(function (ps) { ps.forEach(function (pg) { out.addPage(pg); }); return out.save(); });
+      }).then(function (bytes) {
+        var base = String(it.orig.name || "Bills").replace(/\.pdf$/i, ""), tag = String(label || "").replace(/[\\/:*?"<>|]+/g, "-").trim();
+        return new File([bytes], base + " - " + (tag || "bill") + ".pdf", { type: "application/pdf" });
+      });
+    }).catch(function () { return null; });
+  }
+  /* A file holding several bills: each becomes its own bill, with the pages it is on. Each is kept as its own PDF of just its pages. */
   function saveSplit(it, list) {
     var prev = (it.prep && it.prep.previews) || [], made = [], dups = 0, total = list.length;
     var job = Promise.resolve();
@@ -3302,14 +3318,15 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
           S.bills[id] = Object.assign({ id: id }, d); invalidate();
           var pv = pages.length ? pages.map(function (pg) { return prev[pg - 1]; }).filter(Boolean) : [];
           S.previews[id] = pv.length ? pv : prev.slice(); storePreviews(id, S.previews[id]);
-          if (it.orig) keepFile(id, it.orig);
+          var orig = it.orig;
           if (findDuplicate(draftFrom(S.bills[id]), S.bills[id])) dups++;
           made.push((d.billNo || "bill " + (k + 1)) + (pages.length ? " (page" + (pages.length > 1 ? "s " : " ") + pages.join(", ") + ")" : ""));
+          if (orig) return splitPdfFile(it, pages, d.billNo || "bill " + (k + 1)).then(function (f) { return keepFile(id, f || orig); });
         });
       });
     });
     return job.then(function () {
-      it.prep = null; it.orig = null; it.state = "ok"; it.dup = dups > 0;
+      it.prep = null; it.orig = null; it.srcPdf = null; it.state = "ok"; it.dup = dups > 0;
       it.msg = "Split into " + total + " bills: " + made.join(", ") + (dups ? ". " + (dups === 1 ? "1 may be a duplicate" : dups + " may be duplicates") + "; check before submitting." : ".");
       onData();
     }, function (e) { throw { kind: "save", e: e }; });

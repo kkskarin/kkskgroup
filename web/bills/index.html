@@ -3243,9 +3243,144 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       it.state = "ok"; it.msg = "Added to your list"; it.manual = false; onData();
     }, function (e) { it.state = "bad"; it.msg = "Not saved: " + explain(e) + " Upload this file again."; it.manual = false; it.orig = null; dropPrep(it); });
   }
+  /* ---- A PDF of several pages: first sort the pages into bills, then read each bill with only its own pages ----
+     Claude sees at most 8 images at a time, so a long scan read in one go loses pages. Sorting looks at every page (in batches,
+     at a smaller size); reading then gets each bill's pages at full size, with close-ups. Copies of a bill are kept with it
+     but not read twice; e-way bills, challans and receipts stay with the bill before them. */
+  var MULTI_MAX_PAGES = 30;
+  function aiKind(e) {
+    var c = e && e.code;
+    if (c === "not_granted" || c === "sampling_disabled" || c === "not_declared" || c === "capability_disabled" || c === "capability_removed") { B.aiOff = "off"; return { kind: "off" }; }
+    if (c === "rate_limited") { B.aiOff = "limit"; return { kind: "limit" }; }
+    if (c === "images_unavailable") return { kind: "noimg" };
+    if (c === "upstream_error" || c === "session_expired") return { kind: "busy" };
+    return { kind: "failed", manual: true };
+  }
+  function openPdf(file) {
+    return Promise.all([pdfLib(), file.arrayBuffer()]).then(function (r) { return r[0].getDocument({ data: new Uint8Array(r[1]), isEvalSupported: false }).promise; }, function (e) { throw e && e.kind ? e : { kind: "open" }; });
+  }
+  function sortPrompt(from, to, scanned, texts) {
+    var cos = roleCos("bills").map(function (c) { return c.name; });
+    return [
+      "You are sorting the pages of one uploaded PDF of purchase documents for an Indian company. " + (scanned ? "Pages " + from + " to " + to + " are attached as images, in order (image 1 is page " + from + ")." : "The text of pages " + from + " to " + to + " is below."),
+      "For each page, say what it is:",
+      "- bill_start: the first page of a supplier's bill (tax invoice, bill of supply, cash or credit bill).",
+      "- bill_continued: a later page of the same bill as the page before it (\"continued\", page 2 of 2, the rest of the item list, the totals).",
+      "- copy: a duplicate, triplicate or transporter copy of a bill already in the file (same supplier and bill number).",
+      "- other: not a bill: e-way bill, delivery challan, receipt, packing list, blank page.",
+      "Also give the supplier (the seller who issued it) and the bill number printed on the page, as printed; empty strings if not shown. The buyer is one of: " + JSON.stringify(cos) + "; never give the buyer as the supplier.",
+      "Reply with only this JSON: {\"pages\":[{\"page\":" + from + ",\"kind\":\"bill_start\",\"supplier\":\"\",\"bill_number\":\"\"}]} with one entry per page " + from + " to " + to + ".",
+      texts ? "\n" + texts : ""
+    ].join("\n");
+  }
+  function normBillKey(sup, no) { return normName(sup || "").slice(0, 12) + "|" + String(no || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+  /* pages: [{page, kind, supplier, bill_number}] in order -> groups [{pages:[...], read:[...]}] */
+  function groupPages(list) {
+    var groups = [], last = null, byKey = {};
+    list.forEach(function (x) {
+      var key = x.bill_number ? normBillKey(x.supplier, x.bill_number) : "";
+      if (x.kind === "bill_start") {
+        if (key && byKey[key] && byKey[key] !== last) { byKey[key].pages.push(x.page); return; }
+        if (key && last && byKey[key] === last) { last.pages.push(x.page); return; }
+        last = { pages: [x.page], read: [x.page], supplier: x.supplier || "", no: x.bill_number || "" }; groups.push(last); if (key) byKey[key] = last; return;
+      }
+      if (x.kind === "copy") { var g = (key && byKey[key]) || last; if (g) { g.pages.push(x.page); return; } }
+      if (x.kind === "bill_continued" && last) { last.pages.push(x.page); last.read.push(x.page); return; }
+      if (last) { last.pages.push(x.page); return; }
+      last = { pages: [x.page], read: x.kind === "other" ? [] : [x.page], supplier: x.supplier || "", no: x.bill_number || "" }; groups.push(last);
+    });
+    groups.forEach(function (g) { g.pages.sort(function (a, b) { return a - b; }); if (!g.read.length) g.read = g.pages.slice(0, 1); });
+    return groups;
+  }
+  function readMulti(it, pdf) {
+    var n = Math.min(pdf.numPages, MULTI_MAX_PAGES), texts = [], thumbs = [], prevs = [], maxImgs = Math.min(8, (S.sLimits && S.sLimits.images && S.sLimits.images.maxCount) || 8);
+    it.msg = "Sorting " + n + " pages"; renderLog();
+    var chain = Promise.resolve();
+    function look(i) {
+      return pdf.getPage(i).then(function (pg) {
+        return pg.getTextContent().then(function (tc) {
+          texts[i - 1] = tc.items.map(function (t) { return (t.str || "") + (t.hasEOL ? "\n" : " "); }).join("").replace(/[ \t]+/g, " ").replace(/\n\s*\n+/g, "\n").trim();
+          return renderPdfCanvas(pg, 1600).then(function (cv) {
+            return Promise.all([canvasBlob(cropCanvas(cv, 0, 0, cv.width, cv.height, 1400, true)), canvasBlob(cropCanvas(cv, 0, 0, cv.width, cv.height, 1400, false)).then(blobData)]).then(function (r) { thumbs[i - 1] = r[0]; prevs[i - 1] = r[1]; });
+          });
+        });
+      });
+    }
+    for (var i = 1; i <= n; i++) chain = chain.then(look.bind(null, i));
+    var scanned = false, sorted = [];
+    return chain.then(function () {
+      var raw = texts.join("").replace(/\s+/g, "");
+      scanned = raw.length < 40 * Math.min(n, 4) || texts.some(function (t) { return t.replace(/\s+/g, "").length < 30; });
+      var batches = [], size = scanned ? maxImgs : 12;
+      for (var a = 1; a <= n; a += size) batches.push([a, Math.min(n, a + size - 1)]);
+      var c2 = Promise.resolve();
+      batches.forEach(function (bt) {
+        c2 = c2.then(function () {
+          var tx = scanned ? "" : texts.slice(bt[0] - 1, bt[1]).map(function (t, k) { return "--- page " + (bt[0] + k) + " ---\n" + t.slice(0, 2500); }).join("\n");
+          return S.sample.json(sortPrompt(bt[0], bt[1], scanned, tx), { images: scanned ? thumbs.slice(bt[0] - 1, bt[1]) : undefined, modelTier: "quick" }).then(function (r) {
+            var got = (r && Array.isArray(r.pages) ? r.pages : []).filter(function (x) { return x && x.page >= bt[0] && x.page <= bt[1]; }), seen = {};
+            got.forEach(function (x) { seen[x.page] = 1; });
+            for (var q = bt[0]; q <= bt[1]; q++) if (!seen[q]) got.push({ page: q, kind: "bill_continued", supplier: "", bill_number: "" });
+            got.sort(function (x, y) { return x.page - y.page; }); sorted = sorted.concat(got);
+          }, function (e) { throw aiKind(e); });
+        });
+      });
+      return c2;
+    }).then(function () {
+      var groups = groupPages(sorted), done = [], dups = 0, okN = 0;
+      it.msg = "Found " + plural(groups.length, "bill") + " in " + n + " pages. Reading each"; renderLog();
+      var c3 = Promise.resolve();
+      groups.forEach(function (g, gi) {
+        c3 = c3.then(function () {
+          it.msg = "Reading bill " + (gi + 1) + " of " + groups.length; renderLog();
+          var cap = scanned ? Math.max(1, Math.floor(maxImgs / 3)) : 4, rd = g.read.length > cap ? g.read.slice(0, cap - 1).concat(g.read.slice(-1)) : g.read.slice(), canv = [];
+          var c4 = Promise.resolve();
+          rd.forEach(function (pn) { c4 = c4.then(function () { return pdf.getPage(pn).then(function (pg) { return renderPdfCanvas(pg, 3000); }).then(function (cv) { canv.push(cv); }); }); });
+          return c4.then(function () { return pageImages(canv, scanned, scanned ? maxImgs : 1); }).then(function (im) {
+            var parts = im.parts.map(function (x) { return { page: rd[x.page - 1], part: x.part }; });
+            var sub = { name: it.name, text: scanned ? "" : g.read.map(function (pn) { return "--- page " + pn + " ---\n" + (texts[pn - 1] || ""); }).join("\n").slice(0, 30000), images: im.images, previews: [], parts: parts, scanned: scanned, pages: n };
+            return S.sample.json(buildPrompt(sub) + "\n\nThis upload holds several bills; only page" + (g.read.length > 1 ? "s " : " ") + g.read.join(", ") + " (one bill" + (g.no ? ", number " + g.no : "") + (g.supplier ? ", from " + g.supplier : "") + ") are given here. Read that one bill.", { images: im.images.length ? im.images : undefined, modelTier: scanned ? "default" : "quick" })
+              .then(function (res) { var l = res && Array.isArray(res.bills) ? res.bills : [res]; return l.filter(function (x) { return x && typeof x === "object"; })[0] || {}; }, function (e) { var k = aiKind(e); if (k.kind === "off" || k.kind === "limit") throw k; return { readable: false }; });
+          }).then(function (res) {
+            var d = linkInto(docFromResult(res, it), it.link); d.ex.aiMarks = billAiMarks(d); d.ex.pages = g.pages; d.ex.ofBills = groups.length; d.ex.splitNo = gi + 1;
+            d.ex.notes = ((d.ex.notes ? d.ex.notes + " " : "") + "Page" + (g.pages.length > 1 ? "s " : " ") + g.pages.join(", ") + " of " + (it.name || "the file") + ".").trim();
+            var id = newId("b");
+            return retry(function () { return S.db.doc("bills/" + id).set(d); }).then(function () {
+              S.bills[id] = Object.assign({ id: id }, d); invalidate();
+              S.previews[id] = g.pages.map(function (pn) { return prevs[pn - 1]; }).filter(Boolean); storePreviews(id, S.previews[id]);
+              if (findDuplicate(draftFrom(S.bills[id]), S.bills[id])) dups++;
+              if (!nothingRead(d)) okN++;
+              done.push((d.billNo || "bill " + (gi + 1)) + " (page" + (g.pages.length > 1 ? "s " : " ") + g.pages.join(", ") + ")");
+              onData();
+              return splitPdfFile(it, groups.length > 1 ? g.pages : [], d.billNo || "bill " + (gi + 1)).then(function (f) { return keepFile(id, f || it.orig); });
+            });
+          });
+        });
+      });
+      return c3.then(function () {
+        try { pdf.destroy(); } catch (e) {}
+        it.state = "ok"; it.dup = dups > 0; it.orig = null; it.srcPdf = null; it.file = null;
+        it.msg = (groups.length > 1 ? "Split into " + groups.length + " bills: " : "Added: ") + done.join(", ") + "." + (okN < groups.length ? " " + (groups.length - okN === 1 ? "1 couldn't be read and needs" : (groups.length - okN) + " couldn't be read and need") + " typing in from the file." : "") + (dups ? " " + (dups === 1 ? "1 may be a duplicate" : dups + " may be duplicates") + "; check before submitting." : "");
+        onData();
+      });
+    });
+  }
   function readOne(it) {
     it.state = "run"; it.msg = "Reading"; renderLog();
     if (!S.sample || B.aiOff) return addFromFile(it);
+    if (it.file && isPdf(it.file) && it.file.size <= 25 * 1024 * 1024) {
+      return openPdf(it.file).then(function (pdf) {
+        if (pdf.numPages < 2) { try { pdf.destroy(); } catch (e) {} return readSingle(it); }
+        return readMulti(it, pdf);
+      }).catch(function (e) {
+        e = e || {};
+        if (it.orig && { off: 1, limit: 1, noimg: 1, failed: 1, blank: 1, busy: 1, open: 1, lib: 1 }[e.kind]) return addFromFile(it);
+        it.state = "bad"; it.file = null; it.msg = e.kind === "save" ? "Read, but not saved: " + explain(e.e) : REJECT[e.kind] || REJECT.failed; it.orig = null;
+      });
+    }
+    return readSingle(it);
+  }
+  function readSingle(it) {
     return prepFile(it.file).then(function (p) {
       it.prep = p; it.file = null;
       return S.sample.json(buildPrompt(p), { images: p.images.length ? p.images : undefined, modelTier: p.scanned ? "default" : "quick" }).catch(function (e) {

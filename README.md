@@ -151,3 +151,27 @@ insert into public.app_super_admins (email) values ('someone@kksk.in');
   note adds to it. Stored in `notes/`.
 - **Vendor statement** (Vendors › View Statement, and the PDF): Date, Particulars (Bill, Payment, Discount, Debit
   Note, Credit Note, Voucher), Reference No., Payable, Paid and the running balance.
+
+### Renewable Energy › Solar billing (from 12 Oct 2026)
+
+Monthly bills of supply from a solar generator to each consumer it supplies, as set out in the
+"Solar Invoicing & Finance App" specification.
+
+- **Masters**: generators (HTSC, the company that bills, its PAN, bank account and signatory), consumers (HTSC, address,
+  GSTIN, credit days) and PPA rates (per consumer, optionally per generator, in force from a month).
+- **Monthly Billing**: upload the generation statement, energy allotment order, energy adjusted report and each consumer's
+  HT bill, in any order and all at once. Claude works out which is which and reads it (text PDFs as text, scans as
+  images); everything read for a generator and month is kept in `solar_months/<generator HTSC>_<YYYY-MM>`, with the files in
+  the `bill-files` bucket under `<live|demo>/solar/`. Only the HT bill's OA rows for our generator are used.
+- **Bill**: billed units = solar units credited in the HT bill; A = units × PPA rate; B = the nine deductions copied from the
+  HT bill (self-generation tax is our share only, units × ₹0.10); net = A − B, rounded.
+- **Checks** (pass, check, or blocks the invoice): all documents present, units tie out per slot, loss applied, adjustment
+  posted (±3 units), charges tie out with the generation statement once every HT bill is in, wheeling = gross × 0.49967,
+  self-generation tax share, HT bill figures changed by hand, consumer HTSC in Masters, rate present, low net (< 20% of A).
+- **Issue**: number NN/YY-YY, one series per company per financial year, never reused; the PDF holds the covering letter, the
+  bill of supply (Original for Recipient) and the Triplicate for Supplier. An issued invoice is locked; cancel it (admin, with a
+  reason) and issue a new one for corrections.
+- **Invoices & Receipts**: register, receipts with TDS under 194Q, ageing 0–30/31–60/61–90/90+, Excel.
+  **Reports**: generation and realisation by month, deductions by charge, line loss by consumer (year of the energy month).
+- Who may use it: the Renewable Energy app plus the Solar Billing responsibility for the generator's company.
+  The division's own expenses go through its Bills and Cash Vouchers, so they reach Accounts like any other.

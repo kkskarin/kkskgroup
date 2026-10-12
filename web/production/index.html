@@ -557,7 +557,7 @@ function avatarFrom(file){return new Promise((res,rej)=>{if(!file||!/^image\//.t
 /* ---------- Settings › Users (admins): the same people as every KKSK app; here, who may use Production Planning ---------- */
 /* Maintenance, Renewable Energy, Accounts and Finance a person has (as the KKSK Group home works it out). */
 function moneyApps(u){const a=(u&&u.apps)||{},bv=a.bv!==false,st=k=>!u.roles||Object.keys(u.roles).some(c=>(u.roles[c]||[]).indexOf(k)>=0);
-  const on={apr:bv&&st('txn')&&(a.apr!=null?!!a.apr:true),mnt:a.mnt!=null?!!a.mnt:bv,re:!!a.re,acc:a.acc!=null?!!a.acc:bv&&st('acct'),fin:a.fin!=null?!!a.fin:bv&&st('txn')};
+  const on={apr:bv&&!!u.roles&&st('appr')&&(a.apr!=null?!!a.apr:true),mnt:a.mnt!=null?!!a.mnt:bv,re:!!a.re,acc:a.acc!=null?!!a.acc:bv&&st('acct'),fin:a.fin!=null?!!a.fin:bv&&st('txn')};
   return [['mnt','Maintenance'],['re','Renewable Energy'],['acc','Accounts'],['fin','Finance'],['apr','Approvals']].filter(x=>on[x[0]]).map(x=>x[1]).join(', ')||'None'}
 const PPR={approver:'Approver',planner:'Planner',floor:'Floor Team'};
 let PEOPLE=null;

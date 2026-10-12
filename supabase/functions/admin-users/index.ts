@@ -1,5 +1,5 @@
 // Bills & Vouchers: lets an admin give someone a login (email and password) before they ever sign in,
-// and set a new password for a person. Only the super admin and active app admins may call it.
+// set a new password for a person, and remove a person for good. Only the super admin and active app admins may call it.
 // Uses the service role key that Supabase provides to every Edge Function.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -75,6 +75,34 @@ Deno.serve(async (req) => {
     }
     const r = await admin.auth.admin.updateUserById(id, { password });
     if (r.error) return fail(400, "invalid_argument", r.error.message);
+    return reply(200, { ok: true });
+  }
+
+  // Permanently remove a person: their login (if any), profile, user record, access request, cash openings and preferences.
+  // Entries they made keep the name saved on them. Admins and super admins can't be removed this way, nor can you remove yourself.
+  if (body.action === "delete") {
+    const uid = String(body.uid ?? "");
+    if (!/^[A-Za-z0-9_.~:@+-]{1,200}$/.test(uid)) return fail(400, "invalid_argument", "Unknown person.");
+    if (uid === who.data.uid) return fail(400, "invalid_argument", "You can't remove yourself.");
+    const adm = await admin.from("app_docs").select("path").eq("path", "admins/" + uid).maybeSingle();
+    if (adm.data) return fail(403, "not_granted", "Remove their admin role first.");
+    const id = authIdOf(uid);
+    if (id) {
+      const u = await admin.auth.admin.getUserById(id);
+      const email = (u.data.user?.email ?? "").toLowerCase();
+      if (email) {
+        const sup = await admin.from("app_super_admins").select("email").eq("email", email).maybeSingle();
+        if (sup.data) return fail(403, "not_granted", "A super admin can't be removed here.");
+      }
+      if (u.data.user) {
+        const r = await admin.auth.admin.deleteUser(id);
+        if (r.error) return fail(400, "invalid_argument", r.error.message);
+      }
+      await admin.from("app_profiles").delete().eq("user_id", id);
+    }
+    const paths = ["users/", "requests/", "balances/", "prefs/", "demo__balances/"].map((p) => p + uid);
+    const d = await admin.from("app_docs").delete().in("path", paths);
+    if (d.error) return fail(400, "invalid_argument", d.error.message);
     return reply(200, { ok: true });
   }
 

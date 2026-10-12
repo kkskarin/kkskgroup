@@ -768,10 +768,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <div id="lgmList"></div>
   </section>
   <section id="secAcct" hidden>
-    <div class="head"><div class="grow"><h2>To Account</h2><p class="sub">Every submitted bill and voucher comes here first. Check the ledgers and approve it; only then can it go into a checking report. Postpone it to come back later, or send it back with a note.</p></div></div>
+    <div class="head"><div class="grow"><h2>To Account</h2><p class="sub">Every submitted bill and voucher comes here first. Set the ledgers and TDS and account it; only then can it go into a checking report. Postpone it to come back later, or send it back with a note.</p></div></div>
     <div class="filters">
       <div class="seg" role="tablist" aria-label="Show"><button type="button" role="tab" id="acSideB" aria-selected="true">Bills <span id="acNB"></span></button><button type="button" role="tab" id="acSideV" aria-selected="false">Vouchers <span id="acNV"></span></button></div>
-      <select class="field" id="acSt" aria-label="Status"><option value="pending">Waiting</option><option value="held">Postponed by me</option><option value="back">Sent back</option><option value="approved">Approved</option><option value="all">All</option></select>
+      <select class="field" id="acSt" aria-label="Status"><option value="pending">Waiting</option><option value="held">Postponed by me</option><option value="back">Sent back</option><option value="approved">Accounted</option><option value="all">All</option></select>
       <select class="field" id="acCo" aria-label="Company"></select>
       <select class="field" id="acPrep" aria-label="Prepared by"></select>
       <select class="field" id="acDept" aria-label="Department"></select>
@@ -1000,7 +1000,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secChecks" hidden>
     <div class="head">
-      <div><h2>Bills Checking Report</h2><p class="sub">Bills CR (bill checking report): one vendor, one company, one preparer. Only bills the accountant has approved can go in. It is then printed, and the admin approves it for payment, bill by bill. A vendor's bills can't go into a report until its opening balance for that company is captured.</p></div>
+      <div><h2>Bills Checking Report</h2><p class="sub">Bills CR (bill checking report): one vendor, one company, one preparer. Only bills the accountant has accounted can go in. It is then printed, and the admin approves it for payment, bill by bill. A vendor's bills can't go into a report until its opening balance for that company is captured.</p></div>
       <span class="grow"></span>
       <select class="field" id="ckCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
@@ -1504,7 +1504,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* Headings, each with its own tabs. Tab keys stay the same inside the app; labels are what people see. */
   var SET_TABS = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Personalise", "Personalise"]] };
   var DIV_NAV = [
-    { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"], ["Vendors", "Vendors"]] },
+    { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"], ["Vendors", "Vendors"], ["Ledgers", "Ledgers"]] },
     { h: "Bills", tabs: [["Bills", "Enter Bills"], ["Checking Report", "Bills CR"]] },
     { h: "Proformas", tabs: [["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance CR"]] },
     { h: "Vouchers", tabs: [["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Vouchers CR"], ["Cash Advance", "Cash Advance"]] }
@@ -1539,7 +1539,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {
       var fo = finOnly();
-      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (fo && !FIN_TABS[t[0]]) return false; return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (t[0] === "Bills" && canDo("adv")) : nonAcct())); })
+      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (fo && !FIN_TABS[t[0]]) return false; return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
         /* The financier's Reports: Payables first, then Payments (Transactions showing payments only). */
         .map(function (t) { return fo && t[0] === "Transactions" ? [t[0], "Payments"] : t; }).sort(function (x, y) { return fo ? (x[0] === "Payables" ? -1 : y[0] === "Payables" ? 1 : 0) : 0; }) };
     }).filter(function (g) { return g.tabs.length; });
@@ -1764,8 +1764,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ================= responsibilities: who does which step for which company ================= */
   /* Job roles every user must have. Each suggests the steps it usually does; the admin can still change the ticks. */
-  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Checks every bill and voucher: ledgers and approval; keeps the ledgers"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Energy Billing", "Renewable Energy: reads TNPDCL statements for solar plants and windmills, issues bills of supply, records receipts"]];
-  var JOB_STEPS = { purchaser: ["bills", "bcr", "adv", "vouchers", "vcr", "cash"], accountant: ["acct"], financier: ["txn"], solar: ["solar"] };
+  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["approver", "Approver", "Approves checking reports and cash advances that name them, in the Approvals app"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Energy Billing", "Renewable Energy: reads TNPDCL statements for solar plants and windmills, issues bills of supply, records receipts"]];
+  var JOB_STEPS = { purchaser: ["bills", "bcr", "adv", "vouchers", "vcr", "cash"], accountant: ["acct"], approver: ["appr"], financier: ["txn"], solar: ["solar"] };
   function jobChecks(box, sel) {
     sel = sel || []; box.textContent = "";
     JOBS.forEach(function (j) { var lab = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: j[0] }), tx = el("span"); cb.checked = sel.indexOf(j[0]) >= 0; tx.appendChild(el("b", null, j[1])); tx.appendChild(el("span", null, j[2])); lab.appendChild(cb); lab.appendChild(tx); box.appendChild(lab); });
@@ -1774,12 +1774,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function jobsOf(u) { return (u && u.jobRoles && u.jobRoles.length ? u.jobRoles : null) || ((u && S.requests[u.id]) || {}).jobRoles || []; }
   function stepsForJobs(js) { var m = {}; (js || []).forEach(function (k) { (JOB_STEPS[k] || []).forEach(function (st) { m[st] = 1; }); }); return STEPS.map(function (s) { return s[0]; }).filter(function (k) { return m[k]; }); }
   function myJobs() { var u = S.myUser; if (u && u.jobRoles && u.jobRoles.length) return u.jobRoles; return !S.actId && S.myReq && S.myReq.jobRoles ? S.myReq.jobRoles : []; }
-  var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bills CR"], ["vouchers", "Cash Vouchers"], ["vcr", "Vouchers CR"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance CR"], ["txn", "Payment Entry"], ["solar", "Energy Billing"]];
-  var TAB_STEP = { "Cash Approvals": "txn", "Solar Month": "solar", "Solar Invoices": "solar", "Solar Reports": "solar", "Solar Masters": "solar", "Approvals": "txn", "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
+  var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bills CR"], ["vouchers", "Cash Vouchers"], ["vcr", "Vouchers CR"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance CR"], ["appr", "Approval"], ["txn", "Payment Entry"], ["solar", "Energy Billing"]];
+  var TAB_STEP = { "Cash Approvals": "appr", "Solar Month": "solar", "Solar Invoices": "solar", "Solar Reports": "solar", "Solar Masters": "solar", "Approvals": "appr", "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
   /* A user saved before responsibilities existed does every step for their companies until the admin sets them. */
   function userHas(u, step, cid) {
     if (!u || u.active === false || (u.companyIds || []).indexOf(cid) < 0) return false;
-    if (!u.roles) return true;
+    if (!u.roles) return step !== "appr"; /* approving is only ever given on purpose */
     return (u.roles[cid] || []).indexOf(step) >= 0;
   }
   function hasRole(step, cid) { if (S.isAdmin) return !!S.companies[cid]; return userHas(S.myUser, step, cid); }
@@ -1982,6 +1982,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         ed.addEventListener("click", function () { openUserForm(u.id, "edit"); });
         tg.addEventListener("click", function () { toggleUser(u.id); });
         acts.appendChild(ed); acts.appendChild(tg);
+        if (!S.admins[u.id] && u.id !== meId()) { var dl = el("button", { class: "btn danger" }, "Delete"); dl.addEventListener("click", function () { deleteUserForm(u); }); acts.appendChild(dl); }
         if (S.isSuper && !S.admins[u.id] && !u.unlinked && /^u_/.test(u.id)) { var ma2 = el("button", { class: "btn" }, "Make admin"); ma2.addEventListener("click", function () { makeAdmin(u, ma2, true); }); acts.appendChild(ma2); }
         if (S.admins[u.id]) row.querySelector(".who").appendChild(el("span", { class: "chip on", style: "margin-left:6px" }, "Admin"));
         row.appendChild(acts); ul.appendChild(row);
@@ -2042,7 +2043,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function hasStepAny(u, step) { if (!u || !u.roles) return true; return Object.keys(u.roles).some(function (k) { return (u.roles[k] || []).indexOf(step) >= 0; }); }
   function appsWith(u) {
     var a = (u && u.apps) || {}, bv = a.bv !== false;
-    return { mnt: a.mnt != null ? !!a.mnt : bv, re: !!a.re, acc: a.acc != null ? !!a.acc : bv && hasStepAny(u, "acct"), fin: a.fin != null ? !!a.fin : bv && hasStepAny(u, "txn"), apr: bv && !!(u && u.roles) && hasStepAny(u, "txn") && (a.apr != null ? !!a.apr : true) };
+    return { mnt: a.mnt != null ? !!a.mnt : bv, re: !!a.re, acc: a.acc != null ? !!a.acc : bv && hasStepAny(u, "acct"), fin: a.fin != null ? !!a.fin : bv && hasStepAny(u, "txn"), apr: bv && !!(u && u.roles) && hasStepAny(u, "appr") && (a.apr != null ? !!a.apr : true) };
   }
   function readApps() { return { mnt: $("uAppMnt").checked, re: $("uAppRe").checked, acc: $("uAppAcc").checked, fin: $("uAppFin").checked, apr: $("uAppApr").checked }; }
   function anyMoneyApp(a) { return !!(a.mnt || a.re || a.acc || a.fin || a.apr); }
@@ -2067,8 +2068,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var ma = readApps(), appBv = anyMoneyApp(ma), ppRole = $("uPpRole").value, apps = { bv: appBv, mnt: ma.mnt, re: ma.re, acc: ma.acc, fin: ma.fin, apr: ma.apr, pp: ppRole ? { role: ppRole, region: $("uPpRegion").value || null } : null };
     $("uEApps").hidden = true; $("uEApps").textContent = "Give at least one app."; if (!appBv && !ppRole) { $("uEApps").hidden = false; ok = false; }
     if (appBv && !cos.length) { $("uECos").hidden = false; ok = false; }
-    /* Approvals is for admins and the financier only. */
-    if (ma.apr && !Object.keys(roles).some(function (k) { return (roles[k] || []).indexOf("txn") >= 0; })) { $("uEApps").textContent = "Approvals is only for financiers: give them Payment Entry for a company, or untick Approvals."; $("uEApps").hidden = false; ok = false; }
+    /* The Approvals app is for admins and people who approve. */
+    if (ma.apr && !Object.keys(roles).some(function (k) { return (roles[k] || []).indexOf("appr") >= 0; })) { $("uEApps").textContent = "Approvals is only for approvers: give them Approval for a company, or untick Approvals."; $("uEApps").hidden = false; ok = false; }
     var dept = usDept.value(); if (!dept) { $("uEDept").hidden = false; ok = false; }
     var jobs = readChecks($("uJobs")); if (appBv && !jobs.length) { $("uJobsE").hidden = false; ok = false; }
     var purch = appBv && jobs.indexOf("purchaser") >= 0, defAppr = purch ? $("uAppr").value : "";
@@ -2132,6 +2133,27 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     retry(function () { return S.db.doc("requests/" + uid).update({ status: "declined", decidedAt: Date.now() }); })
       .then(function () { toast("Request declined. " + (r.name || "The person") + " sees this on their page."); }, function (e) { toast(explain(e)); })
       .then(function () { S.busy = false; });
+  }
+  /* Removing a person for good (a trial account, say): their login, user record, request, cash openings and preferences go.
+     Whatever they entered stays, under the name saved on it. */
+  function userEntryCount(uid) {
+    var n = 0; [S.bills, S.vouchers, S.advances, S.cashadv].forEach(function (m) { Object.keys(m || {}).forEach(function (k) { var x = m[k]; if (x.preparedBy === uid || x.ownerId === uid || x.submittedBy === uid || x.uid === uid || x.createdBy === uid) n++; }); });
+    return n;
+  }
+  function deleteUserForm(u) {
+    var n = userEntryCount(u.id), body = el("div", { class: "mform" });
+    body.appendChild(el("p", { style: "margin:0 0 10px" }, n ? u.name + " has " + plural(n, "entry") + " (bills, vouchers, proformas or cash advances). They stay, under " + u.name + "'s name; only the person and their login go." : "Nothing has been entered by " + u.name + "."));
+    body.appendChild(fld("Type DELETE to confirm", inp("udConfirm", "", { maxlength: "10", autocomplete: "off" })));
+    popForm("Delete " + u.name + " for good", "This removes their login and can't be undone. To stop someone for now, Deactivate instead.", body, "Delete for good", function () {
+      errClear(body); if ($("udConfirm").value.trim().toUpperCase() !== "DELETE") { errOn("udConfirm", "Type DELETE."); return false; }
+      var job = window.bvAccount && window.bvAccount.deleteUser ? window.bvAccount.deleteUser(u.id)
+        : Promise.all(["users/", "requests/", "balances/", "prefs/"].map(function (p) { return S.rawDb.doc(p + u.id).delete().catch(function () {}); }));
+      return job.then(function () {
+        delete S.users[u.id]; if (S.requests) delete S.requests[u.id]; if (S.balances) delete S.balances[u.id];
+        S.db.doc("audit/" + newId("a")).set({ at: Date.now(), by: meId(), byName: (S.me && S.me.name) || "Admin", action: "deleted", col: "users", docId: u.id, label: u.name || "", changes: [] }).catch(function () {});
+        toast(u.name + " is deleted."); renderUsers(); return true;
+      }, function (e) { toast((e && e.message) || explain(e)); return false; });
+    });
   }
   function toggleUser(uid) {
     var u = S.users[uid]; if (!u || S.busy) return;
@@ -2198,6 +2220,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     S.db.doc("requests/" + S.me.id).onSnapshot(function (snap) { S.myReq = snap.exists ? snap.data() : null; settle("r"); }, subFail("request"));
     S.db.doc("users/" + S.me.id).onSnapshot(function (snap) { S.loginUser = snap.exists ? snap.data() : null; syncMyUser(); settle("u"); }, subFail("user"));
     /* Profiles: people the admin set to work under this login. */
+    /* People with the Approver job, so anyone can name them as the approver of an entry. */
+    S.db.collection("users").where("jobRoles", "array-contains", "approver").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data() || {}; }); S.approvers = m; }, function () {});
     S.db.collection("users").where("accountedFor", "==", S.me.id).onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var u = Object.assign({}, d.data() || {}); u.id = d.id; if (u.active !== false && u.accountedFor === S.me.id) m[d.id] = u; });
       S.profiles = m; syncMyUser(); settle("p");
@@ -2245,7 +2269,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     host.addEventListener("click", function (e) { e.stopPropagation(); var open = box.querySelector(".memenu"); if (open) { closeMeMenu(); return; } openMeMenu(box, host); });
   }
   /* Admins can see the app exactly as any user sees it, and work as them, without a PIN. */
-  function viewables() { return Object.keys(S.users).map(function (k) { return S.users[k]; }).filter(function (u) { return u.active !== false && !(S.admins && S.admins[u.id]) && u.id !== (S.me && S.me.id); }).sort(function (a, b) { return natCmp(a.name, b.name); }); }
+  function viewables() { return Object.keys(S.users).map(function (k) { return S.users[k]; }).filter(function (u) { var js = jobsOf(u); return u.active !== false && !(S.admins && S.admins[u.id]) && u.id !== (S.me && S.me.id) && !(js.length === 1 && js[0] === "approver"); }).sort(function (a, b) { return natCmp(a.name, b.name); }); }
   function renderAdminMe() {
     var box = $("me"); if (!box) return; box.textContent = "";
     var viewing = !!S._adm, u = viewing ? S.users[S.actId] : null;
@@ -2700,19 +2724,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function advPaid(aid, inst) { var s = 0; txList().forEach(function (t) { if (t.advanceId === aid && t.kind === "payment" && (inst == null || t.inst === inst)) s += Number(t.amount) || 0; }); return round2(s); }
   function advPaidInr(aid) { return advPaid(aid); }
   function billSent(b) { var ck = checkOf(b); return !!ck && stageOf(ck.r) === "payment"; }
-  /* TDS is not used: every bill counts at its full total. */
+  /* TDS is entered when a bill is accounted; what the vendor is paid is the bill total less its TDS. */
   function tdsShares() {
-    return {};
     var m = {};
-    Object.keys(S.reports).forEach(function (k) {
-      var r = S.reports[k]; if (r.kind === "inst" || r.billTds || !tdsSet(r)) return;
-      var tds = Number(r.tds) || 0; if (!tds) return;
-      var bs = (r.billIds || []).map(function (id) { return S.bills[id]; }).filter(Boolean); if (!bs.length) return;
-      var byTax = bs.reduce(function (s, b) { return s + (Number(b.taxable) || 0); }, 0) > 0;
-      var base = bs.reduce(function (s, b) { return s + (Number(byTax ? b.taxable : b.total) || 0); }, 0), left = tds;
-      bs.forEach(function (b, i) { var sh = i === bs.length - 1 ? round2(left) : round2(tds * (Number(byTax ? b.taxable : b.total) || 0) / (base || 1)); left = round2(left - sh); if (m[b.id] == null) m[b.id] = sh; });
-    });
-    Object.keys(S.bills).forEach(function (k) { var b = S.bills[k]; if (m[k] == null && b.status === "done" && b.tds != null && !legacyTds(b)) m[k] = Number(b.tds) || 0; });
+    Object.keys(S.bills).forEach(function (k) { var b = S.bills[k]; if (b.status === "done" && b.acct === "approved" && Number(b.tds)) m[k] = Number(b.tds) || 0; });
     return m;
   }
   /* A bill whose TDS was keyed on an older report (before TDS moved onto each bill) keeps that report's split. */
@@ -3644,6 +3659,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       vNew: { name: vn.name || "", gstin: vn.gstin || "", pan: vn.pan || "", type: vn.type || "", termDays: vn.termDays == null ? "" : String(vn.termDays), addr: vn.address || "" },
       billNo: b.billNo || "", billDate: fmtDate(b.billDate), currency: curOk(b.currency) ? b.currency : "INR", rate: b.fxRate ? fmtRate(b.fxRate) : "",
       taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt),
+      tds: b.entryTds || "", tdsSec: b.entryTdsSection || "",
       termDays: b.termDays == null ? "" : String(b.termDays), termChoice: b.termChoice || "", updateVendorTerm: !!b.updateVendorTerm, narration: b.narration || "", advPick: b.advPick || "", advWhy: b.advWhy || "",
       ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId)
     };
@@ -3668,10 +3684,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function prepOf(x) { return x.preparedBy || x.submittedBy || x.createdBy || x.ownerId || ""; }
   /* ---- Approver: the admin responsible for approving a bill, proforma, import or voucher. Recorded, printed and used to
      show each admin only the work they approve; the super admin sees everything. ---- */
-  function approverList() {
+  function approverList(cid) {
     var m = {};
     (S.supers || []).forEach(function (p) { if (p && p.id) m[p.id] = { id: p.id, name: pnm(p.name) || "Super Admin" }; });
     Object.keys(S.admins || {}).forEach(function (k) { var a = S.admins[k]; if (a && a.active !== false && !m[k]) m[k] = { id: k, name: pnm(a.name) || userLabel(k) || "Admin" }; });
+    var ap = Object.assign({}, S.approvers || {}); Object.keys(S.users || {}).forEach(function (k) { if ((S.users[k].jobRoles || []).indexOf("approver") >= 0) ap[k] = S.users[k]; });
+    Object.keys(ap).forEach(function (k) { var u = ap[k]; if (u && u.active !== false && !m[k] && (!cid || userHas(Object.assign({ id: k }, u), "appr", cid))) m[k] = { id: k, name: pnm(u.name) || "Approver" }; });
     return Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return natCmp(a.name, b.name); });
   }
   function approverName(x) {
@@ -3697,19 +3715,29 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var m = {}; xs.forEach(function (x) { var n = approverName(x); if (n) m[n] = 1; });
     return Object.keys(m).sort(natCmp).join(", ");
   }
-  var APPR_HINT = "The admin who approves it. It shows in their reports.";
+  var APPR_HINT = "The approver (or admin) who approves it, in the Approvals app.";
   function prepName(x) { return pnm(x.preparedByName) || (S.isAdmin ? userLabel(prepOf(x)) : prepOf(x) === meId() ? preparedByText() : "") || ""; }
   /* A final bill started from a proforma or import counts under Proformas, imports, Advance CR as well as Bills. */
   function billStep(b) { return b && b.advanceId ? "adv" : "bills"; }
   function billCanCo(b, cid) { return canStep("bills", cid) || (!!(b && b.advanceId) && canStep("adv", cid)); }
   function amountsOf(D) { return inrAmounts(D.currency, 1, num(D.taxable), num(D.gstAmt)); }
+  /* Someone who both enters and accounts bills for a company does it in one go: the bill is accounted as it is submitted,
+     with its ledgers and TDS, provided its vendor's details are complete. It still goes to approval. */
+  function oneStop(cid) { return !!cid && canStep("acct", cid) && billCanCo(null, cid); }
+  function oneStopAny() { return canDo("acct") && canDo("bills"); }
+  function oneStopAcct(D, vid) {
+    if (!oneStop(D.companyId) || !$("bcTds")) return {};
+    var v = S.vendors[vid]; if (!v || vendorNeeds(v).list.some(function (x) { return x.indexOf("opening balance") !== 0; })) return {};
+    var t = round2(num(D.tds) || 0); B.oneStopDone = true;
+    return Object.assign({ acct: "approved", acctNote: "", tds: t, tdsSection: t > 0 ? D.tdsSec || "" : "" }, acctWho());
+  }
   function draftToDoc(D) {
     return Object.assign({
       companyId: D.companyId || null, vendorId: D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : null,
       vendorNew: { name: D.vNew.name.trim(), gstin: normId(D.vNew.gstin), pan: panOfNew(D), type: D.vNew.type || "", termDays: intOrNull(D.vNew.termDays), address: String(D.vNew.addr || "").trim() },
       billNo: D.billNo.trim(), billDate: parseDate(D.billDate),
       termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: D.narration.trim(), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
-      ledgers: ledLinesOut(D.ledgers)
+      ledgers: ledLinesOut(D.ledgers), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || ""
     }, amountsOf(D), prepFields(D.prepBy), approverFields(D.approverId));
   }
   /* PAN is never typed: it is characters 3 to 12 of the GSTIN. */
@@ -3777,6 +3805,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
     if (tx != null && ga != null && tx + ga <= 0) E("bcLed", "The total must be more than zero.");
     if (D.companyId && tx != null && tx > 0) { var le = ledCheck(D.ledgers, tx, D.companyId, MAX_LED.bill); if (le) E("bcLed", le); }
+    if (oneStop(D.companyId) && $("bcTds")) {
+      var td0 = num(D.tds), tot0 = (tx || 0) + (num(D.gstAmt) || 0);
+      if (!String(D.tds || "").trim()) E("bcTds", "Enter the TDS. Enter 0 if none is deducted."); else if (td0 == null || td0 < 0) E("bcTds", "Enter the TDS as a number, 0 or more."); else if (td0 > tot0) E("bcTds", "TDS can't be more than the total.");
+      if (td0 > 0 && !D.tdsSec) E("bcTdsSec", "Choose the TDS section.");
+    }
     if (foreign && vendorTypeOfCard(D) !== "overseas") E("bcCur", "Only an overseas vendor's bill can be in another currency.");
     var printed = b.ex && b.ex.printedTotal;
     if (printed != null && tx != null && ga != null && Math.abs(tx + ga - printed) > 1) warns.push("The bill's printed total is " + cl + amt(printed) + ", but taxable plus GST comes to " + cl + amt(tx + ga) + ". Check for round-off, freight or TDS.");
@@ -3928,6 +3961,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var lgf = el("div", { class: "f wide" }); lgf.appendChild(el("span", { class: "lb" }, "Ledgers")); lgf.appendChild(el("div", { id: "bcLedWrap" }));
     lgf.appendChild(el("span", { class: "hint" }, "Choose the ledger for each part of the bill and enter its amount, before GST. Together they make the taxable amount." + (b.source === "file" ? " The taxable amount read from the bill is filled in on the first line." : "") + " TDS is entered by the accountant."));
     lgf.appendChild(el("span", { class: "err", id: "bcLedE", hidden: "" })); f.appendChild(lgf);
+    if (oneStopAny()) {
+      var tf = fld("TDS (₹)", inp("bcTds", D.tds || "", { inputmode: "decimal", class: "field num" }), "You also account bills: enter the TDS (0 if none). The bill is accounted as you submit it.");
+      var tsel = el("select", { class: "field", id: "bcTdsSec" }); fillSelect(tsel, [["", "No TDS"]].concat(TDS_SECTIONS), D.tdsSec || ""); var sf = fld("TDS section", tsel);
+      tf.classList.add("onestop"); sf.classList.add("onestop"); f.appendChild(tf); f.appendChild(sf);
+    }
     var rf = fld("Exchange rate", inp("bcRate", D.rate, { inputmode: "decimal", class: "field num" }), " "); rf.id = "bcRateF"; rf.className = "f wide"; f.appendChild(rf);
     f.appendChild(fld("Taxable amount", inp("bcTax", D.taxable, { inputmode: "decimal", class: "field num ro", readonly: "", tabindex: "-1" }), "The total of the ledger lines."));
     f.appendChild(fld("GST amount", inp("bcGst", D.gstAmt, { inputmode: "decimal", class: "field num" }), "CGST plus SGST, or IGST. Enter 0 if none."));
@@ -3964,6 +4002,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     D.taxable = $("bcTax").value; D.gstAmt = $("bcGst").value;
     D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value; if ($("bcAppr")) D.approverId = $("bcAppr").value;
     if ($("bcTerm")) D.termDays = $("bcTerm").value;
+    if ($("bcTds")) { D.tds = $("bcTds").value; D.tdsSec = $("bcTdsSec").value; }
     var r = document.querySelector('input[name="bcTermPick"]:checked'); if (r) D.termChoice = r.value;
     if ($("bcUpd")) D.updateVendorTerm = $("bcUpd").checked;
   }
@@ -4190,11 +4229,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     }
     job.then(function () {
       if (!b.advanceId && D.advPick && D.advPick !== "no" && S.advances[D.advPick]) doc.advanceId = D.advPick;
-      return retry(function () { return S.db.doc("bills/" + b.id).update(Object.assign(doc, { vendorId: vid, termDays: days, dueDate: addDays(doc.billDate, days), status: "done", submittedAt: now, submittedBy: meId(), autoPostponed: null, acct: "pending", acctNote: "" })); });
+      return retry(function () { return S.db.doc("bills/" + b.id).update(Object.assign(doc, { vendorId: vid, termDays: days, dueDate: addDays(doc.billDate, days), status: "done", submittedAt: now, submittedBy: meId(), autoPostponed: null, acct: "pending", acctNote: "" }, oneStopAcct(D, vid))); });
     }).then(function () {
       var la = (b.advanceId || doc.advanceId) && S.advances[b.advanceId || doc.advanceId];
       if (la && !la.taxBillId) retry(function () { return S.db.doc("advances/" + la.id).update({ taxBillId: b.id, updatedAt: Date.now(), updatedBy: meId() }); }).then(function () { la.taxBillId = b.id; invalidate(); }, function () {});
-      toast("Bill " + doc.billNo + " submitted." + (la && !la.taxBillId ? " It is now the final bill of " + (la.kind === "import" ? "import " : "proforma ") + la.piNo + "." : "") + (madeVendor ? " " + madeVendor + " was added to the Vendor list." : ""));
+      var os = B.oneStopDone; B.oneStopDone = false;
+      toast("Bill " + doc.billNo + " submitted" + (os ? " and accounted. It can now go into a Bills CR." : oneStop(doc.companyId) ? ". It waits in To Account until the vendor's details are complete." : ".") + (la && !la.taxBillId ? " It is now the final bill of " + (la.kind === "import" ? "import " : "proforma ") + la.piNo + "." : "") + (madeVendor ? " " + madeVendor + " was added to the Vendor list." : ""));
       dropPreviews(b.id); closeCard(b.id);
     }, function (e) { toast(explain(e)); setCardBusy(false); }).then(function () { B.busy = false; });
   }
@@ -4438,7 +4478,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var ed = canEditVendors();
     Array.prototype.forEach.call(document.querySelectorAll("#secVendor .form .field, #veOb input"), function (i) { if (i.id !== "vePan") i.disabled = !ed || i.disabled; });
     $("veSave").hidden = !ed; $("veCancel").textContent = ed ? "Cancel" : "Back";
-    if (!ed) { var nt = el("div", { class: "flag", style: "margin-top:8px" }, "Vendor details and opening balances are filled in by the accountant in the Accounts app."); $("vFlags").appendChild(nt); }
+    if (!ed) { var nt = el("div", { class: "flag", style: "margin-top:8px" }, "Vendor details and opening balances are filled in by the accountant."); $("vFlags").appendChild(nt); }
     var tg = $("veToggle"); tg.hidden = !S.isAdmin || !ed;
     if (S.isAdmin) { var off = v.active === false; tg.textContent = off ? "Reactivate vendor" : "Deactivate vendor"; tg.className = "btn" + (off ? "" : " danger"); }
     show("secVendor");
@@ -4928,7 +4968,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function stmtBal(n) { return Math.abs(n) < 0.005 ? "0" : n < 0 ? amt(-n) + " Cr" : amt(n); }
   function stmtData(vid, cid, from) {
     var r = ledger(cid, vid), v = S.vendors[vid] || {}, ev = [];
-    r.bills.forEach(function (b) { var x = billInfo(b); ev.push({ d: b.billDate || "", o: 1, p: "Bill", ref: b.billNo || "", payable: Number(b.total) || 0, paid: 0 }); if (x.adv) ev.push({ d: b.billDate || "", o: 2, p: "Payment", ref: "Advance paid on the proforma, set against bill " + (b.billNo || ""), payable: 0, paid: x.adv }); });
+    r.bills.forEach(function (b) { var x = billInfo(b); ev.push({ d: b.billDate || "", o: 1, p: "Bill", ref: b.billNo || "", payable: Number(b.total) || 0, paid: 0 }); if (x.tds) ev.push({ d: b.billDate || "", o: 2, p: "TDS" + (b.tdsSection ? " u/s " + b.tdsSection : ""), ref: b.billNo || "", payable: 0, paid: x.tds }); if (x.adv) ev.push({ d: b.billDate || "", o: 2, p: "Payment", ref: "Advance paid on the proforma, set against bill " + (b.billNo || ""), payable: 0, paid: x.adv }); });
     r.txs.forEach(function (tx) { var m = modeInfo(tx.mode); ev.push({ d: tx.date || "", o: 3, p: tx.kind === "discount" ? "Discount" : "Payment", ref: tx.kind === "discount" ? tx.ref || "" : (m ? m[1] : "") + (tx.ref ? (m ? " · " : "") + tx.ref : ""), payable: 0, paid: txInr(tx) }); });
     r.notes.forEach(function (n) { var cr = n.kind === "credit"; ev.push({ d: n.date || "", o: 4, p: cr ? "Credit Note" : "Debit Note", ref: n.no || "", payable: cr ? Number(n.amount) || 0 : 0, paid: cr ? 0 : Number(n.amount) || 0 }); });
     /* Cash vouchers paid to this vendor: bought and paid on the spot. */
@@ -5014,7 +5054,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var STAGE_ORDER = { draft: 0, tds: 1, generated: 2, printed: 3, payment: 4 };
   function stageOf(r) { return r.stage === "tds" ? "generated" : STAGE[r.stage] ? r.stage : "generated"; }
   /* Once a report is printed it leaves the team's view; only the admin sees it from then on. */
-  function teamSees(r) { var s = stageOf(r); return S.isAdmin || (S.tab === "Approvals" && canBehalf()) || s === "draft" || s === "tds" || s === "generated"; }
+  function teamSees(r) { var s = stageOf(r); return S.isAdmin || (S.tab === "Approvals" && apprUser()) || s === "draft" || s === "tds" || s === "generated"; }
   /* In the report lists the admin sees a report once it is generated for approval; drafts stay with the team. */
   function listSees(r) { return S.isAdmin ? STAGE_ORDER[stageOf(r)] >= 2 : teamSees(r); }
   function tdsSet(r) { return stageOf(r) !== "draft"; }
@@ -5025,7 +5065,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function tdsText(n, cur) { n = Number(n) || 0; return n > 0 ? "(" + curMoney(cur, n) + ")" : curMoney(cur, 0); }
   function stageTag(r) { var s = stageOf(r); return el("span", { class: "tag stg s-" + s }, STAGE[s]); }
-  function draftFor(cid, vid, prep) { var ks = Object.keys(S.reports); for (var i = 0; i < ks.length; i++) { var r = S.reports[ks[i]]; if (r.kind !== "vcr" && r.companyId === cid && r.vendorId === vid && stageOf(r) === "draft" && (!r.preparedById || r.preparedById === prep)) return r; } return null; }
+  function draftFor(cid, vid, prep, appr) { var ks = Object.keys(S.reports); for (var i = 0; i < ks.length; i++) { var r = S.reports[ks[i]]; if (r.kind !== "vcr" && r.companyId === cid && r.vendorId === vid && stageOf(r) === "draft" && (!r.preparedById || r.preparedById === prep) && (r.approverId || "") === (appr || "")) return r; } return null; }
   function logEntry(stage, note) { return { stage: stage, at: Date.now(), by: meId(), name: preparedByText(), note: note || "" }; }
   function ridx() {
     if (RIDX) return RIDX;
@@ -5056,7 +5096,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var g = {};
     awaitingCheck().forEach(function (b) {
       if (cidFilter && b.companyId !== cidFilter) return;
-      var pb = prepOf(b), k = b.companyId + "|" + b.vendorId + "|" + pb, x = g[k] || (g[k] = { cid: b.companyId, vid: b.vendorId, prep: pb, prepName: prepName(b), bills: [], total: 0, oldest: 0 });
+      /* One report per company, vendor, preparer and approver: each report goes to one approver. */
+      var pb = prepOf(b), ap = b.approverId || "", k = b.companyId + "|" + b.vendorId + "|" + pb + "|" + ap, x = g[k] || (g[k] = { cid: b.companyId, vid: b.vendorId, prep: pb, appr: ap, prepName: prepName(b), bills: [], total: 0, oldest: 0 });
       x.bills.push(b); x.total += checkOf(b) ? billRest(b) : Number(b.total) || 0; if (b.submittedAt && (!x.oldest || b.submittedAt < x.oldest)) x.oldest = b.submittedAt;
     });
     return Object.keys(g).map(function (k) { return g[k]; }).filter(function (x) { return S.vendors[x.vid]; });
@@ -5093,16 +5134,17 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Vendor", sort: function (x) { return S.vendors[x.vid].name; }, cell: function (x, td) {
           var v = S.vendors[x.vid]; td.appendChild(el("b", null, v.name)); if (v.gstin) sub(td, v.gstin);
           if (!opening(v, x.cid)) { var n = el("span", { class: "needs" }); n.appendChild(warnIcon("Blocked")); n.appendChild(document.createTextNode(" Opening balance for " + coLabel(x.cid) + " isn't captured yet.")); td.appendChild(n); } } },
+      { label: "Approver", sort: function (x) { return approverName({ approverId: x.appr }); }, cell: function (x, td) { txt(td, approverName({ approverId: x.appr }) || "Not named"); } },
       { label: "Prepared by", who: function (x) { return x.prepName; }, sort: function (x) { return x.prepName; }, cell: function (x, td) { txt(td, x.prepName || "Not recorded"); } },
       { label: "Bills", cls: "r num", sort: function (x) { return x.bills.length; }, desc: true, cell: function (x, td) { txt(td, x.bills.length); } },
       { label: "Total amount", cls: "r num", sort: function (x) { return x.total; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, money(x.total))); } },
       { label: "Oldest waiting", cls: "num", sort: function (x) { return -(x.oldest || 0); }, desc: true, cell: function (x, td) {
           var d = daysSince(x.oldest); td.appendChild(el("span", { class: d > 7 ? "late" : "" }, d ? plural(d, "day") : "Today")); } },
       { label: "", kind: "act", cls: "r", cell: function (x, td) {
-          var ready = !!opening(S.vendors[x.vid], x.cid), dr = draftFor(x.cid, x.vid, x.prep);
-          var b = el("button", { class: "btn" + (ready ? " primary" : "") }, !ready ? (canEditVendors() ? "Fill in vendor" : "Waiting for Accounts") : dr ? "Add to " + dr.no : "Prepare report");
-          if (!ready && !canEditVendors()) b.title = "The accountant fills in this vendor's opening balance in the Accounts app.";
-          b.addEventListener("click", function () { if (!ready && !canEditVendors()) { toast("The accountant fills in this vendor's opening balance in the Accounts app first."); return; } if (!ready) { setTab("Vendors"); openVendor(x.vid); } else if (dr) openDraft(dr.id); else openNewCheck(x.cid, x.vid, x.prep); });
+          var ready = !!opening(S.vendors[x.vid], x.cid), dr = draftFor(x.cid, x.vid, x.prep, x.appr);
+          var b = el("button", { class: "btn" + (ready ? " primary" : "") }, !ready ? (canEditVendors() ? "Fill in vendor" : "Waiting for accountant") : dr ? "Add to " + dr.no : "Prepare report");
+          if (!ready && !canEditVendors()) b.title = "The accountant fills in this vendor's opening balance first.";
+          b.addEventListener("click", function () { if (!ready && !canEditVendors()) { toast("The accountant fills in this vendor's opening balance first."); return; } if (!ready) { setTab("Vendors"); openVendor(x.vid); } else if (dr) openDraft(dr.id); else openNewCheck(x.cid, x.vid, x.prep, x.appr); });
           td.appendChild(b); } }
     ], groups, { sortIndex: 5, sortDir: -1 });
 
@@ -5128,19 +5170,19 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
 
   /* ---- choosing bills: a new report, or a draft that was reversed ---- */
-  function openNewCheck(cid, vid, prep) {
-    CK.draftId = null; CK.cid = cid; CK.vid = vid; CK.prep = prep || ""; CK.sel = {};
+  function openNewCheck(cid, vid, prep, appr) {
+    CK.draftId = null; CK.cid = cid; CK.vid = vid; CK.prep = prep || ""; CK.appr = appr || ""; CK.sel = {};
     newCheckBills().forEach(function (b) { CK.sel[b.id] = true; });
     renderNewCheck(); show("secCheckNew");
   }
   function openDraft(id) {
     var r = S.reports[id]; if (!r) return;
-    CK.draftId = id; CK.cid = r.companyId; CK.vid = r.vendorId; CK.prep = r.preparedById || (reportBills(r)[0] ? prepOf(reportBills(r)[0]) : ""); CK.sel = {};
+    CK.draftId = id; CK.cid = r.companyId; CK.vid = r.vendorId; CK.prep = r.preparedById || (reportBills(r)[0] ? prepOf(reportBills(r)[0]) : ""); CK.appr = r.approverId || ""; CK.sel = {};
     newCheckBills().forEach(function (b) { CK.sel[b.id] = true; });
     renderNewCheck(); show("secCheckNew");
   }
   function newCheckBills() {
-    var g = checkGroups(CK.cid).filter(function (x) { return x.vid === CK.vid && x.prep === (CK.prep || ""); })[0], list = g ? g.bills.slice() : [];
+    var g = checkGroups(CK.cid).filter(function (x) { return x.vid === CK.vid && x.prep === (CK.prep || "") && (x.appr || "") === (CK.appr || ""); })[0], list = g ? g.bills.slice() : [];
     var d = CK.draftId && S.reports[CK.draftId];
     if (d) list = reportBills(d).concat(list);
     return list;
@@ -5262,7 +5304,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       id = d.id; doc = Object.assign({}, d); delete doc.id;
       Object.assign(doc, { billIds: bills.map(function (b) { return b.id; }), taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to,
         tds: 0, amts: crAmtsFor(bills), appr: null, sentBack: [], backNote: "", stage: "generated", generatedAt: now, generatedBy: meId(), log: (d.log || []).concat([logEntry("generated")]), currency: billsCur(bills), billTds: true,
-        preparedById: CK.prep || "", preparedBy: prepName(bills[0]) || d.preparedBy || "" });
+        preparedById: CK.prep || "", approverId: CK.appr || "", preparedBy: prepName(bills[0]) || d.preparedBy || "" });
     } else {
       /* Numbers run through the financial year (April to March) for each company and restart at 01 the next year.
          A cancelled report is deleted, so the next report takes the lowest free number. */
@@ -5275,7 +5317,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var code = normId(c.shortName || c.name).slice(0, 10) || "CO";
       id = newId("r");
       doc = { no: serialNo(code + "-BCR", seq, day, fy), seq: seq, fy: fy, companyId: CK.cid, vendorId: CK.vid, billIds: bills.map(function (b) { return b.id; }),
-        taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to, checkDate: day, preparedBy: prepName(bills[0]) || preparedByText(), preparedById: CK.prep || "", billTds: true, createdAt: now, createdBy: meId(),
+        taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to, checkDate: day, preparedBy: prepName(bills[0]) || preparedByText(), preparedById: CK.prep || "", approverId: CK.appr || "", billTds: true, createdAt: now, createdBy: meId(),
         tds: 0, amts: crAmtsFor(bills), stage: "generated", generatedAt: now, generatedBy: meId(), log: [logEntry("generated")], currency: billsCur(bills) };
     }
     CK.busy = true; $("cnCreate").disabled = true;
@@ -5360,9 +5402,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var box = $("cvActs"), s = stageOf(r), hint = $("cvHint"), admin = S.isAdmin;
     function actBtn(b0, label, cls, fn, arm) { if (noApprove(label)) return; return actBtnAll(b0, label, cls, fn, arm); }
     box.textContent = ""; hint.textContent = "";
-    if (S.tab === "Approvals" && (admin || canBehalf())) {
+    if (S.tab === "Approvals" && apprUser()) {
       if (S.downloads) actBtnAll(box, "Download PDF", "", function (b) { downloadReport(r.id, b); });
-      if ((s === "generated" || s === "printed") && canApprove(r.companyId)) { actBtnAll(box, admin ? "Approve for payment" : "Record approval", "primary", function () { if (r.kind === "inst") instApproveForm(r); else crApproveForm(r); }); hint.textContent = admin ? "Approve it bill by bill: untick a bill to send it back, or lower its amount to approve part of it." : "Record it only once management has signed it on paper. Untick or lower anything they did not approve."; }
+      if ((s === "generated" || s === "printed") && apprMine(r)) { actBtnAll(box, "Approve for payment", "primary", function () { if (r.kind === "inst") instApproveForm(r); else crApproveForm(r); }); hint.textContent = r.kind === "inst" ? "Approve the instalment, or part of it; the rest goes back to the purchaser." : "Approve it bill by bill: untick a bill to send it back, or lower its amount to approve part of it."; }
       else if (s === "payment") {
         hint.textContent = apprByText(r) + ", " + stamp(r.approvedAt) + ".";
         if (admin && (r.kind === "inst" ? !advPaid(r.advanceId, r.inst) && !instLaterReport(r) : !inLockedPlan(r.id))) actBtnAll(box, "Undo approval", "", function () { if (r.kind === "inst") setStage(r, "printed", { apprAmt: null, backNote: "" }); else undoCrApprove(r); }, "Click again to undo the approval");
@@ -5410,13 +5452,18 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
      The financier may record an approval already given on paper, on behalf of management: it is marked as such, with who signed it.
      Once a report is approved (by an admin or on their behalf) it leaves the list, so it can't be approved twice. */
   var APV = { div: "" };
-  function canBehalf() { return APP === "apr" && !S.isAdmin && canDo("txn"); }
+  /* Approving is done by admins and Approvers, in the Approvals app. An Approver approves only what names them. */
+  function canBehalf() { return false; }
+  /* No approving while viewing as someone: approval is never done from another person's seat. */
+  function apprUser() { return APP === "apr" && !S._adm && (S.isAdmin || canDo("appr")); }
   /* Approving (and undoing an approval) happens only in the Approvals app. Elsewhere those buttons are left out. */
   function actBtnAll() { return actBtn.apply(null, arguments); }
   function noApprove(label) { return label === "Approve for payment" || label === "Undo approval"; }
-  function canApprove(cid) { return S.isAdmin || (canBehalf() && (!cid || canStep("txn", cid))); }
+  function canApprove(cid) { return S.isAdmin || (APP === "apr" && (!cid || canStep("appr", cid))); }
   function apprCos(r) { return r.kind === "vcr" ? r.companyIds || [] : [r.companyId]; }
-  function apprMine(r) { return apprCos(r).some(function (cid) { return canApprove(cid); }); }
+  function apprMine(r) { if (S.isAdmin) return true; return APP === "apr" && reportApproverId(r) === meId() && apprCos(r).some(function (cid) { return canApprove(cid); }); }
+  /* The approver a checking report is for: saved on it, or (older reports) the one most of its entries name. */
+  function reportApproverId(r) { return r.approverId || reportApprover(r); }
   function apprKind(r) { return r.kind === "vcr" ? "Vouchers CR" : r.kind === "inst" ? "Advance CR" : "Bills CR"; }
   function apprWho(r) { if (r.kind === "vcr") return pnm(r.preparedBy); return (S.vendors[r.vendorId] || {}).name || ""; }
   function apprAmount(r) { return r.kind === "vcr" ? money(r.payable != null ? r.payable : r.total) : repMoney(r, r.kind === "inst" ? r.total : payableOf(r)); }
@@ -5437,7 +5484,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function openAppr(r) { if (r.kind === "vcr") openVcr(r.id); else openReport(r.id); }
   function renderApprovals() {
     var ds = $("apDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), APV.div); APV.div = ds.value;
-    $("apSub").textContent = canBehalf() ? "Checking reports waiting for approval. Once management has signed one on paper, open it and record the approval on their behalf. Anything an admin has already approved has left this list." : "Checking reports from every division waiting to be approved for payment. Open one to approve it bill by bill.";
+    $("apSub").textContent = S.isAdmin ? "Checking reports from every division waiting to be approved for payment. Open one to approve it bill by bill." : "Checking reports that name you as approver, waiting to be approved for payment. Open one to approve it bill by bill.";
     var w = apprWaiting(), done = apprRecent(), tot = {};
     w.forEach(function (r) { curAdd(tot, r.currency || "INR", r.kind === "vcr" ? (r.payable != null ? r.payable : r.total) : r.kind === "inst" ? r.total : payableOf(r)); });
     statBoxes($("apStats"), [["Waiting", String(w.length), plural(w.length, "report")], ["Amount waiting", curSum(tot) || money(0), ""], ["Approved, 30 days", String(done.length), done.filter(function (r) { return r.onBehalf; }).length + " on behalf"]]);
@@ -5452,7 +5499,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!w.length) box.appendChild(el("div", { class: "empty" }, "Nothing is waiting for approval."));
     else sortTable(box, "apWait", cols.concat([
       { label: "Stage", cell: function (r, td) { td.appendChild(stageTag(r)); sub(td, "Since " + fmtDay(r.printedAt || r.generatedAt || r.createdAt)); } },
-      { label: "", kind: "act", cls: "r", cell: function (r, td) { var b = el("button", { type: "button", class: "btn sm primary" }, canBehalf() ? "Open to record" : "Open to approve"); b.addEventListener("click", function () { openAppr(r); }); td.appendChild(b); } }
+      { label: "", kind: "act", cls: "r", cell: function (r, td) { var b = el("button", { type: "button", class: "btn sm primary" }, "Open to approve"); b.addEventListener("click", function () { openAppr(r); }); td.appendChild(b); } }
     ]), w, { sortIndex: -1 });
     var db = $("apDone"); db.textContent = "";
     if (!done.length) db.appendChild(el("div", { class: "empty" }, "Nothing approved in the last 30 days."));
@@ -5463,11 +5510,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* ---- Approvals › Cash Advances: requests from every division ---- */
   var CAP = { div: "" };
-  function capMine(a) { return (S.isAdmin || canStep("txn", a.companyId)) && (!CAP.div || divOf(a) === CAP.div); }
+  function capMine(a) { return (S.isAdmin || (canStep("appr", a.companyId) && caApproverId(a) === meId())) && (!CAP.div || divOf(a) === CAP.div); }
+  /* A cash advance is approved by the approver named on it, or else the person's default approver. */
+  function caApproverId(a) { if (a.approverId) return a.approverId; var u = (S.users || {})[a.uid] || (S.profiles || {})[a.uid]; return (u && u.defaultApproverId) || ""; }
   function capPending() { return caList().filter(function (a) { return a.status === "pending" && capMine(a); }); }
   function renderCashAppr() {
     var ds = $("capDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), CAP.div); CAP.div = ds.value;
-    $("capSub").textContent = canBehalf() ? "Cash advances people have asked for. Once management has signed one on paper, record the approval on their behalf. The financier then pays it out in Finance." : "Cash advances people have asked for, from every division. Approve one, or change the amount; the financier then pays it out in Finance.";
+    $("capSub").textContent = S.isAdmin ? "Cash advances people have asked for, from every division. Approve one, or change the amount; the financier then pays it out in Finance." : "Cash advances that name you as approver. Approve one, or change the amount; the financier then pays it out in Finance.";
     var pend = capPending().sort(function (a, b) { return (a.requestedAt || 0) - (b.requestedAt || 0); });
     var appr = caList().filter(function (a) { return a.status === "approved" && capMine(a); }).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); });
     $("capPendN").textContent = pend.length ? "(" + pend.length + ")" : "";
@@ -5477,8 +5526,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!pend.length) box.appendChild(el("div", { class: "empty" }, "No requests waiting."));
     else sortTable(box, "capPend", [who, { label: "Amount asked", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.amount))); } }].concat(caCashCols()).concat([pur,
       { label: "", kind: "act", cls: "r", cell: function (a, td) {
-          var w = el("div", { class: "acts" }), ok = el("button", { class: "btn sm primary" }, canBehalf() ? "Record approval" : "Approve"); ok.addEventListener("click", function () { caApprove(a); }); w.appendChild(ok);
-          if (S.isAdmin) { var no = el("button", { class: "btn sm danger" }, "Decline"); no.addEventListener("click", function () { caDecline(a, no); }); w.appendChild(no); }
+          var w = el("div", { class: "acts" }), ok = el("button", { class: "btn sm primary" }, "Approve"); ok.addEventListener("click", function () { caApprove(a); }); w.appendChild(ok);
+          { var no = el("button", { class: "btn sm danger" }, "Decline"); no.addEventListener("click", function () { caDecline(a, no); }); w.appendChild(no); }
           td.appendChild(w); } }]), pend, { sortIndex: -1 });
     box = $("capAppr"); box.textContent = "";
     if (!appr.length) box.appendChild(el("div", { class: "empty" }, "Nothing approved is waiting to be paid."));
@@ -6266,7 +6315,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var st0 = a && instState(a, i);
     if (CK.busy || !a || !(st0 === "due" || st0 === "upcoming" || st0 === "dispatch")) return;
     var now = Date.now(), n = nextReportNo(a.companyId, now, "APR"), amt0 = instReport(a, i) ? instRest(a, i) : instAmt(a, i), id = newId("r"), due0 = instDue(a, i) || "";
-    var doc = { kind: "inst", advanceId: a.id, inst: i, advKind: a.kind, no: n.no, seq: n.seq, fy: n.fy, companyId: a.companyId, vendorId: a.vendorId, billIds: [], currency: a.currency || "INR",
+    var doc = { kind: "inst", advanceId: a.id, approverId: a.approverId || "", inst: i, advKind: a.kind, no: n.no, seq: n.seq, fy: n.fy, companyId: a.companyId, vendorId: a.vendorId, billIds: [], currency: a.currency || "INR",
       taxable: null, gst: null, total: amt0, periodFrom: due0, periodTo: due0, early: st0 !== "due", checkDate: n.day, preparedBy: preparedByText(), createdAt: now, createdBy: meId(),
       tds: 0, payable: amt0, stage: "generated", generatedAt: now, generatedBy: meId(), log: [logEntry("generated", instLabel(a, i))] };
     CK.busy = true; if (btn) btn.disabled = true;
@@ -7369,9 +7418,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!es.length) { toast("Nothing is posted in this period."); return; }
     es.sort(function (a, b) { return ledCmp(S.ledgers[a.lg] || {}, S.ledgers[b.lg] || {}) || natCmp(a.d, b.d); });
     var book = { bills: "Bills", proformas: "Proforma and import tax bills", vouchers: "Vouchers" }[BK.side];
-    var rows = es.map(function (e) { var l = S.ledgers[e.lg] || {}; return [l.main || "", l.sub || "", ledName(e.lg) || "Unknown ledger", e.d, coLabel(e.cid), e.no || "", e.type || "", e.who || "", e.what || "", e.prep || "", e.amt]; });
+    var rows = es.map(function (e) { var l = S.ledgers[e.lg] || {}; return [l.main || "", l.sub || "", ledName(e.lg) || "Unknown ledger", e.d, coLabel(e.cid), e.no || "", e.type || "", e.who || "", e.what || "", e.prep || "", e.amt, e.tds || 0, e.sec || ""]; });
     xlDownload(btn, "Ledger book - " + book + " " + fmtDate(fr || todayYmd()) + " to " + fmtDate(to || todayYmd()) + ".xlsx", [{ name: book, title: "Ledger book · " + book + (lg ? " · " + ledName(lg) : ""), sub: (co ? coLabel(co) : "All companies") + " · " + (fr ? fmtDate(fr) : "Start") + " to " + (to ? fmtDate(to) : "today") + " · Generated " + fmtDate(todayYmd()), rows: rows,
-      cols: [{ h: "Main group", w: 16 }, { h: "Sub group", w: 24 }, { h: "Ledger", w: 30 }, { h: "Date", t: "date", w: 12 }, { h: "Company", w: 10 }, { h: "No.", w: 18 }, { h: "Type", w: 14 }, { h: BK.side === "vouchers" ? "Paid to" : "Vendor", w: 26 }, { h: "Description", w: 36 }, { h: "Prepared by", w: 18 }, { h: "Amount", t: "money", w: 14, sum: true }] }]);
+      cols: [{ h: "Main group", w: 16 }, { h: "Sub group", w: 24 }, { h: "Ledger", w: 30 }, { h: "Date", t: "date", w: 12 }, { h: "Company", w: 10 }, { h: "No.", w: 18 }, { h: "Type", w: 14 }, { h: BK.side === "vouchers" ? "Paid to" : "Vendor", w: 26 }, { h: "Description", w: 36 }, { h: "Prepared by", w: 18 }, { h: "Amount", t: "money", w: 14, sum: true }, { h: "TDS", t: "money", w: 12, sum: true }, { h: "TDS section", w: 10 }] }]);
   }
   function downloadVendorsXls(btn) {
     var idx = lidx(), cos = sorted().filter(function (c) { return c.active !== false && (S.isAdmin || canSee(c.id)); }), rows = [];
@@ -7390,8 +7439,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
      gets a result (added, updated, skipped or an error to fix by hand). A file that isn't in the template's layout is refused. */
   var IMP = { busy: false };
   /* Vendor details and opening balances, and ledgers, are kept only in Accounts, by the accountant (or an admin). */
-  function canImport() { return APP === "acc" && (S.isAdmin || canDo("acct")); }
-  function canEditVendors() { return APP === "acc" && (S.isAdmin || canDo("acct")); }
+  /* Vendor details and opening balances, and ledgers, are kept by the accountant (or an admin, also when viewing as them). */
+  function canImport() { return S.isAdmin || canDo("acct"); }
+  function canEditVendors() { return S.isAdmin || canDo("acct"); }
   var IMP_SPECS = {
     ledgers: {
       title: "Ledgers", key: "ledger name",
@@ -8015,7 +8065,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function vcrList() { return Object.keys(S.reports).map(function (k) { return S.reports[k]; }).filter(function (r) { return r.kind === "vcr"; }); }
   /* Which voucher checking report a voucher is in. */
   function vcrOf(vid) { var rs = vcrList(); for (var i = 0; i < rs.length; i++) if ((rs[i].voucherIds || []).indexOf(vid) >= 0) return rs[i]; return null; }
-  function vPayable(v) { return round2(Number(v.total) || 0); }
+  function vPayable(v) { return round2((Number(v.total) || 0) - (v.acct === "approved" ? Number(v.tds) || 0 : 0)); }
   function openingOf(uid, cid) { var b = S.balances[uid], o = b && b.openings && b.openings[cid]; return o == null ? null : Number(o) || 0; }
   /* Settled vouchers come off a person's cash only once the admin approves them; until then they are pending,
      and new settled vouchers are checked against what is free after the pending ones. */
@@ -8363,7 +8413,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (n == null || n <= 0) { errOn("caAmt", "Enter the amount needed."); ok = false; }
     if (!pur) { errOn("caPur", "Say what the cash is for."); ok = false; }
     if (!ok) return;
-    var id = newId("ca"), now = Date.now(), doc = { uid: who, name: S.isAdmin ? userLabel(who) : preparedByText(), companyId: cid, amount: round2(n), purpose: pur, status: "pending", requestedAt: now, requestedBy: meId(), updatedAt: now };
+    var id = newId("ca"), now = Date.now(), doc = { uid: who, name: S.isAdmin ? userLabel(who) : preparedByText(), companyId: cid, amount: round2(n), purpose: pur, approverId: defaultApprover(who) || "", status: "pending", requestedAt: now, requestedBy: meId(), updatedAt: now };
     if (S.isAdmin) Object.assign(doc, { status: "approved", approvedAmount: round2(n), approvedAt: now, approvedBy: meId(), note: "Requested by the admin" });
     CA.busy = true; $("caSend").disabled = true;
     retry(function () { return S.db.doc("cashadv/" + id).set(doc); }).then(function () {
@@ -8382,7 +8432,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     body.appendChild(fld("Amount to give (₹)", inp("caApAmt", fmtInput(a.amount), { inputmode: "decimal", class: "field num" }), "Asked for " + money(a.amount) + ". Change it to approve a different amount."));
     body.appendChild(fld("Note (optional)", inp("caApNote", "", { maxlength: "200" })));
     behalfField(body, "");
-    popForm(canBehalf() ? "Record cash advance approval" : "Approve cash advance", caName(a) + ", " + coLabel(a.companyId) + ". " + (a.purpose || ""), body, "Approve", function () {
+    popForm("Approve cash advance", caName(a) + ", " + coLabel(a.companyId) + ". " + (a.purpose || ""), body, "Approve", function () {
       errClear(body); var n = num($("caApAmt").value), bh = behalfRead(); if (!bh) return false;
       if (n == null || n <= 0) { errOn("caApAmt", "Enter the amount to give."); return false; }
       return caUpdate(a, Object.assign({ status: "approved", approvedAmount: round2(n), approvedAt: Date.now(), approvedBy: meId(), note: $("caApNote").value.trim() }, bh), "Approved " + money(round2(n)) + " for " + caName(a) + ". It counts once they mark it received.");
@@ -8423,12 +8473,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
 
   /* ---- Voucher Checking Report tab ---- */
-  var VC = { prep: "", sel: {}, cos: {}, viewId: null, busy: false, sig: "" };
+  var VC = { prep: "", appr: "", sel: {}, cos: {}, viewId: null, busy: false, sig: "" };
   function vcrWaiting(cidFilter) { return vchList().filter(function (v) { return canSee(v.companyId) && hasRole("vcr", v.companyId) && !vcrOf(v.id) && !v.sentBack && acctOk(v) && (!cidFilter || v.companyId === cidFilter); }); }
   function vcrGroups(cidFilter) {
     var g = {};
     vcrWaiting(cidFilter).forEach(function (v) {
-      var p = prepOf(v), x = g[p] || (g[p] = { prep: p, name: pnm(v.preparedByName || prepName(v)), vs: [], cos: {}, total: 0, oldest: 0 });
+      /* One report per preparer and approver: each report goes to one approver. */
+      var p = prepOf(v), ap = v.approverId || "", k = p + "|" + ap, x = g[k] || (g[k] = { prep: p, appr: ap, name: pnm(v.preparedByName || prepName(v)), vs: [], cos: {}, total: 0, oldest: 0 });
       x.vs.push(v); x.cos[v.companyId] = (x.cos[v.companyId] || 0) + 1; x.total += Number(v.total) || 0; if (!x.oldest || (v.createdAt || 0) < x.oldest) x.oldest = v.createdAt || 0;
     });
     return Object.keys(g).map(function (k) { return g[k]; });
@@ -8439,7 +8490,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     vs.forEach(function (v) { var p = vPayable(v); t.total += Number(v.total) || 0; t.payable += p; if (v.settle) t.settled += p; else t.toPay += p; if (!t.from || v.voucherDate < t.from) t.from = v.voucherDate; if (!t.to || v.voucherDate > t.to) t.to = v.voucherDate; });
     ["total", "tds", "payable", "settled", "toPay"].forEach(function (k) { t[k] = round2(t[k]); }); return t;
   }
-  function vcrTeamSees(r) { return S.isAdmin || (S.tab === "Approvals" && canBehalf()) || stageOf(r) === "generated"; }
+  function vcrTeamSees(r) { return S.isAdmin || (S.tab === "Approvals" && apprUser()) || stageOf(r) === "generated"; }
   function renderVcr() {
     var sel = $("vcCo"), cur = sel.value;
     fillSelect(sel, [["", "All your companies"]].concat(roleCos("vcr").map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
@@ -8449,11 +8500,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!groups.length) { wb.textContent = ""; wb.appendChild(el("div", { class: "empty" }, "No vouchers are waiting for a report.")); }
     else sortTable(wb, "vcWait", [
       { label: "Prepared by", kind: "co", who: function (x) { return x.name; }, sort: function (x) { return x.name; }, cell: function (x, td) { td.appendChild(el("b", null, x.name || "Not recorded")); } },
+      { label: "Approver", sort: function (x) { return approverName({ approverId: x.appr }); }, cell: function (x, td) { txt(td, approverName({ approverId: x.appr }) || "Not named"); } },
       { label: "Companies", cell: function (x, td) { txt(td, sorted().filter(function (c) { return x.cos[c.id]; }).map(function (c) { return (c.shortName || c.name) + " (" + x.cos[c.id] + ")"; }).join(", ")); } },
       { label: "Vouchers", cls: "r num", sort: function (x) { return x.vs.length; }, desc: true, cell: function (x, td) { txt(td, x.vs.length); } },
       { label: "Total amount", cls: "r num", sort: function (x) { return x.total; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, money(x.total))); } },
       { label: "Oldest waiting", cls: "num", sort: function (x) { return -(x.oldest || 0); }, desc: true, cell: function (x, td) { var d = daysSince(x.oldest); td.appendChild(el("span", { class: d > 7 ? "late" : "" }, d ? plural(d, "day") : "Today")); } },
-      { label: "", kind: "act", cls: "r", cell: function (x, td) { var b = el("button", { class: "btn primary" }, "Prepare report"); b.addEventListener("click", function () { openVcrNew(x.prep); }); td.appendChild(b); } }
+      { label: "", kind: "act", cls: "r", cell: function (x, td) { var b = el("button", { class: "btn primary" }, "Prepare report"); b.addEventListener("click", function () { openVcrNew(x.prep, x.appr); }); td.appendChild(b); } }
     ], groups, { sortIndex: 0, sortDir: 1 });
     var q = $("vcQ").value.trim().toLowerCase();
     var reps = vcrList().filter(function (r) {
@@ -8474,9 +8526,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "", kind: "act", cls: "r", cell: function (r, td) { var b = el("button", { class: "btn sm" }, "Open"); b.addEventListener("click", function () { openVcr(r.id); }); td.appendChild(b); } }
     ], reps, { sortIndex: 0, sortDir: -1 });
   }
-  function vcrNewList() { return vcrWaiting("").filter(function (v) { return prepOf(v) === VC.prep; }); }
-  function openVcrNew(prep) {
-    VC.prep = prep; VC.sel = {}; VC.cos = {};
+  function vcrNewList() { return vcrWaiting("").filter(function (v) { return prepOf(v) === VC.prep && (v.approverId || "") === (VC.appr || ""); }); }
+  function openVcrNew(prep, appr) {
+    VC.prep = prep; VC.appr = appr || ""; VC.sel = {}; VC.cos = {};
     vcrNewList().forEach(function (v) { VC.sel[v.id] = true; VC.cos[v.companyId] = true; });
     renderVcrNew(); show("secVcrNew");
   }
@@ -8516,7 +8568,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var t = vcrSums(vs), cos = sorted().filter(function (c) { return vs.some(function (v) { return v.companyId === c.id; }); }).map(function (c) { return c.id; }), byCo = {};
     cos.forEach(function (cid) { var s = vcrSums(vs.filter(function (v) { return v.companyId === cid; })); byCo[cid] = { total: s.total, tds: s.tds, payable: s.payable, settled: s.settled, toPay: s.toPay }; });
     var id = newId("r"), doc = { kind: "vcr", no: serialNo("VCR", seq, day, fy), seq: seq, fy: fy, voucherIds: vs.map(function (v) { return v.id; }), companyIds: cos, byCo: byCo,
-      preparedById: VC.prep, preparedBy: pnm(vs[0].preparedByName || prepName(vs[0])), total: t.total, tds: t.tds, payable: t.payable, settled: t.settled, toPay: t.toPay,
+      preparedById: VC.prep, approverId: VC.appr || "", preparedBy: pnm(vs[0].preparedByName || prepName(vs[0])), total: t.total, tds: t.tds, payable: t.payable, settled: t.settled, toPay: t.toPay,
       periodFrom: t.from, periodTo: t.to, checkDate: day, currency: "INR", stage: "generated", createdAt: now, createdBy: meId(), generatedAt: now, generatedBy: meId(), log: [logEntry("generated")] };
     VC.busy = true; $("vnCreate").disabled = true;
     retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () {
@@ -8553,9 +8605,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     statBoxes($("vvPay"), [["Total amount", money(r.total), ""], ["Total payable", money(r.payable), ""], ["Settled from advance", money(r.settled), ""], ["By Financier", money(r.toPay), "", "hi"]]);
     var acts = $("vvActs"), hint = $("vvHint"); acts.textContent = ""; hint.textContent = "";
     function actBtn(b0, label, cls, fn, arm) { if (noApprove(label)) return; return actBtnAll(b0, label, cls, fn, arm); }
-    if (S.tab === "Approvals" && (admin || canBehalf())) {
+    if (S.tab === "Approvals" && apprUser()) {
       if (S.downloads) actBtnAll(acts, "Download PDF", "", function (b) { downloadVcr(r.id, b); });
-      if ((s === "generated" || s === "printed") && apprMine(r)) { actBtnAll(acts, admin ? "Approve for payment" : "Record approval", "primary", function () { openVcrApprove(r); }); hint.textContent = admin ? "Approve it voucher by voucher." : "Record it only once management has signed it on paper."; }
+      if ((s === "generated" || s === "printed") && apprMine(r)) { actBtnAll(acts, "Approve for payment", "primary", function () { openVcrApprove(r); }); hint.textContent = "Approve it voucher by voucher."; }
       else if (s === "payment") { hint.textContent = apprByText(r) + ", " + stamp(r.approvedAt) + "."; if (admin && !vcrPaid(r.id) && !inLockedPlan(r.id)) actBtnAll(acts, "Undo approval", "", function () { undoVcrApprove(r); }, "Click again to undo"); }
       return;
     }
@@ -8584,7 +8636,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function sendBackText(sb) { if (!sb) return ""; var r = SEND_BACK.filter(function (x) { return x[0] === sb.reason; })[0]; return (r ? r[1] : "Sent back") + (sb.note ? ": " + sb.note : ""); }
   function vchPaid(vid) { var s = 0; txList().forEach(function (t) { if (t.voucherId === vid && t.kind === "payment") s += Number(t.amount) || 0; }); return round2(s); }
   function openVcrApprove(r) {
-    if (!S.isAdmin && !(canBehalf() && apprMine(r))) return;
+    if (!apprMine(r)) return;
     VA = { rid: r.id, sel: {}, why: {}, note: {}, busy: false, paperBy: reportApprover(r) };
     vcrVouchers(r).forEach(function (v) { VA.sel[v.id] = true; });
     renderVcrApprove(); show("secVcrApprove");
@@ -9320,7 +9372,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function dataReady() { return S.vLoaded && S.bLoaded && S.rLoaded && S.aLoaded && S.tLoaded && S.vcLoaded && S.caLoaded && S.blLoaded && S.lpLoaded && (!S.isAdmin || (S.loaded && S.pLoaded)); }
   /* A named admin (not the super admin) sees only the bills, proformas, imports and vouchers they approve,
      and the checking reports that hold any of them. Everyone else sees what their companies and steps allow. */
-  function approverScoped() { return !!(S.isAppAdmin && !S.isSuper); }
+  function approverScoped() { return false; /* admins and the super admin see the same work */ }
   function applyScope() {
     var R = S.raw, me = S.me && S.me.id, sc = approverScoped();
     function pick(src, ok) { var m = {}; Object.keys(src || {}).forEach(function (k) { if (inDiv(src[k]) && (!sc || ok(src[k]))) m[k] = src[k]; }); return m; }
@@ -9407,7 +9459,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var TDS_SECTIONS = [["194C", "194C, Contractors"], ["194J", "194J, Professional or technical fees"], ["194H", "194H, Commission or brokerage"], ["194I(a)", "194I(a), Rent of plant or machinery"], ["194I(b)", "194I(b), Rent of land or building"], ["194Q", "194Q, Purchase of goods"], ["194A", "194A, Interest"]];
   var VTYPES_V = [["Cash Voucher", "Cash Voucher"], ["Self Invoice", "Self Invoice"], ["Freight & Transport", "Freight & Transport"]];
   var MAX_LED = { bill: 4, voucher: 2 };
-  function canLedgers() { return APP === "acc" && (S.isAdmin || canDo("acct")); }
+  function canLedgers() { return S.isAdmin || canDo("acct"); }
   function ledAll() { return Object.keys(S.ledgers || {}).map(function (k) { return S.ledgers[k]; }); }
   function ledCmp(a, b) { return LED_MAINS.indexOf(a.main) - LED_MAINS.indexOf(b.main) || natCmp(a.sub, b.sub) || natCmp(a.name, b.name); }
   function ledFor(cid) { return ledAll().filter(function (l) { return l.active !== false && ledInApp(l) && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
@@ -9612,7 +9664,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* A bill or voucher counts only once the Accountant approves it. Older items already in a checking report stand as they are. */
   function acctOk(x) { return x.acct === "approved"; }
   function acctLabel(x) {
-    if (x.acct === "approved") return ["Approved by accountant", "s-payment"];
+    if (x.acct === "approved") return ["Accounted", "s-payment"];
     if (x.acct === "held") return ["Postponed by accountant", "s-tds"];
     if (x.acct === "back") return ["Sent back by accountant", "s-tds"];
     return ["With accountant", "s-draft"];
@@ -9644,7 +9696,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       ], subs[sb], { sortIndex: 0 });
     });
   }
-  function ledUse() { var m = {}; billList().forEach(function (b) { (b.ledgers || []).forEach(function (x) { m[x.id] = (m[x.id] || 0) + 1; }); }); vchList().forEach(function (v) { (v.ledgers || []).forEach(function (x) { m[x.id] = (m[x.id] || 0) + 1; }); }); return m; }
+  /* How many bills and vouchers use each ledger, across every division. */
+  function ledUse() { var m = {}, R = S.raw || {}; [R.bills || S.bills, R.vouchers || S.vouchers].forEach(function (src) { Object.keys(src || {}).forEach(function (k) { (src[k].ledgers || []).forEach(function (x) { m[x.id] = (m[x.id] || 0) + 1; }); }); }); return m; }
   function ledForm(l) {
     if (!canLedgers()) return;
     var body = el("div", { class: "mform" }), isNew = !l; l = l || { main: LGM.side, sub: "", name: "", companyIds: [], active: true };
@@ -9661,7 +9714,18 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     Object.keys(DIVS).forEach(function (k) { var lb = el("label", { class: "check" }), cb = el("input", { type: "checkbox", value: k }); cb.checked = (l.apps || []).indexOf(k) >= 0; lb.appendChild(cb); lb.appendChild(document.createTextNode(" " + DIVS[k].name)); dk.appendChild(lb); });
     dv.appendChild(el("span", { class: "hint" }, "Purchasers in a division see only its ledgers. Leave all unticked to let every division use it.")); body.appendChild(dv);
     var af = el("label", { class: "check" }), ac = el("input", { type: "checkbox", id: "lfAct" }); ac.checked = l.active !== false; af.appendChild(ac); af.appendChild(document.createTextNode(" Active (shown when choosing ledgers)")); if (!isNew) body.appendChild(af);
-    popForm(isNew ? "Add Ledger" : "Edit Ledger", isNew ? "" : "Changes show on every bill and voucher that uses this ledger.", body, isNew ? "Add ledger" : "Save", function () {
+    /* A ledger nothing has used yet can be deleted; one in use can only be turned off. */
+    var close0 = null;
+    if (!isNew) {
+      var used = ledUse()[l.id] || 0, dw = el("div", { style: "margin-top:12px" });
+      if (used) dw.appendChild(el("span", { class: "hint" }, "Used on " + plural(used, "entry") + ", so it can't be deleted. Untick Active to stop it being chosen."));
+      else { var db = el("button", { type: "button", class: "btn danger sm" }, "Delete ledger"); db.addEventListener("click", function () {
+          if (!armed(db)) return;
+          retry(function () { return S.db.doc("ledgers/" + l.id).delete(); }).then(function () { delete S.ledgers[l.id]; toast(l.name + " deleted."); if (close0) close0(); renderLedgers(); }, function (e) { toast(explain(e)); });
+        }); dw.appendChild(db); }
+      body.appendChild(dw);
+    }
+    close0 = popForm(isNew ? "Add Ledger" : "Edit Ledger", isNew ? "" : "Changes show on every bill and voucher that uses this ledger.", body, isNew ? "Add ledger" : "Save", function () {
       errClear(body);
       var main = ms.value, sb = ss.value === "__new__" ? nsub.value.trim().replace(/\s+/g, " ") : ss.value, nm = $("lfName").value.trim().replace(/\s+/g, " "), cos = readChecks(ck), ok = true;
       if (!sb) { errOn(ss.value === "__new__" ? "lfSubNew" : "lfSub", "Choose or type the sub group."); ok = false; }
@@ -9708,7 +9772,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: isB ? "Vendor" : "Paid to", cls: "desc", cell: function (x, td) { td.appendChild(el("b", null, isB ? vendorLabelOfBill(x) : x.payee || "")); sub(td, isB ? x.narration || "" : (x.vtype || "Type not set") + (x.gstApp === "RCM" ? " · RCM" : "") + " · " + (x.narration || "")); } },
       { label: "Prepared by", who: function (x) { return pnm(x.preparedByName) || userLabel(prepOf(x)); }, cell: function (x, td) { txt(td, pnm(x.preparedByName) || userLabel(prepOf(x)) || ""); var d = personDept(prepOf(x)); if (d) sub(td, d); } },
       { label: isB ? "Taxable" : "Total", cls: "r num", sort: function (x) { return Number(isB ? x.taxable : x.total) || 0; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, isB ? bm(x, x.taxable) : money(x.total))); if (isB) sub(td, "Total " + bm(x, x.total)); } },
-      { label: "Ledger", cell: function (x, td) { txt(td, ledText(x.ledgers) || "Not chosen"); } },
+      { label: "Ledger", cell: function (x, td) { txt(td, ledText(x.ledgers) || "Not chosen"); if (x.tds != null && x.acct === "approved") sub(td, "TDS " + money(x.tds) + (x.tdsSection ? " · " + x.tdsSection : "")); } },
       { label: "Status", cell: function (x, td) { var l = acctLabel(x); td.appendChild(el("span", { class: "tag stg " + l[1] }, l[0])); if (x.acctNote && x.acct !== "approved") sub(td, x.acctNote); if (isB && x.acct !== "approved" && acctVendorNeeds(x)) { var n = el("span", { class: "needs" }); n.appendChild(warnIcon("Vendor")); n.appendChild(document.createTextNode(" Vendor details needed first")); td.appendChild(n); } } },
       { label: "", kind: "act", cls: "r", cell: function (x, td) { var o = el("button", { class: "btn sm primary" }, "Open"); o.addEventListener("click", function () { openAcct(isB ? "bill" : "voucher", x.id); }); td.appendChild(o); } }
     ], rows, { sortIndex: 0, limit: AC.limit });
@@ -9759,6 +9823,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var syncG = function () { var other = D.vtype && D.vtype !== "Cash Voucher"; gf.hidden = !other; rf2.hidden = !(other && D.gstApp === "RCM"); };
       vt.addEventListener("change", function () { D.vtype = vt.value; syncG(); }); gs.addEventListener("change", function () { D.gstApp = gs.value; syncG(); }); rs.addEventListener("change", function () { D.gstRate = rs.value; }); syncG();
     }
+    var ti = inp("aoTds", D.tds, { inputmode: "decimal", class: "field num" }); ti.disabled = locked; ti.addEventListener("input", function () { D.tds = ti.value; }); ti.addEventListener("blur", function () { if (num(ti.value) != null) ti.value = fmtInput(ti.value); });
+    form.appendChild(fld("TDS" + (isB && x.currency && x.currency !== "INR" ? " (" + x.currency + ")" : " (₹)"), ti, "Enter 0 if none is deducted. The vendor is paid the total less this."));
+    var ts = el("select", { class: "field", id: "aoSec" }); fillSelect(ts, [["", "No TDS"]].concat(TDS_SECTIONS), D.sec); ts.disabled = locked; ts.addEventListener("change", function () { D.sec = ts.value; }); form.appendChild(fld("TDS section", ts));
     var lf = el("div", { class: "f wide" }); lf.appendChild(el("span", { class: "lb" }, isB ? "Ledgers" : "Ledger"));
     var eo = { id: "aoLed", lines: D.lines, max: isB ? MAX_LED.bill : MAX_LED.voucher, cid: function () { return x.companyId; }, base: function () { return D.base; }, baseLabel: isB ? "taxable amount" : "total", suggest: isB ? function () { return suggestBill(x, x.companyId, x.vendorId, D.base); } : null };
     lf.appendChild(ledEditor(eo)); lf.appendChild(el("span", { class: "hint" }, isB ? "Up to 4 ledgers. The amounts must add up to the taxable amount, " + amt2(D.base) + "." : "Up to 2 ledgers. The amounts must add up to the total, " + amt2(D.base) + ".")); lf.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" }));
@@ -9772,7 +9839,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       $("aoBody").insertBefore(vf, $("aoBody").firstChild);
     }
     if (!locked) {
-      var ap = el("button", { class: "btn primary" }, x.acct === "approved" ? "Save changes" : "Approve"); ap.addEventListener("click", function () { acctApprove(ap); }); if (!vNeed) acts.appendChild(ap);
+      var ap = el("button", { class: "btn primary" }, x.acct === "approved" ? "Save changes" : "Account"); ap.addEventListener("click", function () { acctApprove(ap); }); if (!vNeed) acts.appendChild(ap);
       if (x.acct !== "approved") { var ho = el("button", { class: "btn" }, "Postpone"); ho.addEventListener("click", function () { acctHold(ho); }); acts.appendChild(ho); }
       var sb = el("button", { class: "btn danger" }, "Send back"); sb.addEventListener("click", acctSendBack); acts.appendChild(sb);
     }
@@ -9781,24 +9848,27 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function acctCheck() {
     var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, errs = [];
     var le = ledCheck(D.lines, D.base, x.companyId, AC.kind === "bill" ? MAX_LED.bill : MAX_LED.voucher); if (le) errs.push(["aoLed", le]);
+    var t = num(D.tds); if (!String(D.tds).trim()) errs.push(["aoTds", "Enter the TDS. Enter 0 if none is deducted."]); else if (t == null || t < 0) errs.push(["aoTds", "Enter the TDS as a number, 0 or more."]); else if (t > (Number(AC.kind === "bill" ? (x.fcTaxable != null ? x.fcTaxable + (x.fcGst || 0) : x.total) : x.total) || 0)) errs.push(["aoTds", "TDS can't be more than the total."]);
+    if (t > 0 && !D.sec) errs.push(["aoSec", "Choose the TDS section."]);
     if (AC.kind === "voucher" && !D.vtype) errs.push(["aoType", "Choose the type of voucher."]);
     if (AC.kind === "voucher" && D.vtype && D.vtype !== "Cash Voucher" && D.gstApp === "RCM" && !D.gstRate) errs.push(["aoRate", "Choose the GST rate."]);
     return errs;
   }
   function acctWho() { return { acctAt: Date.now(), acctBy: meId(), acctByName: S.isAdmin ? (S.me && S.me.name) || "Admin" : pnm(preparedByText()) }; }
   /* What the bill's vendor still needs before the bill can be accounted, or null when it is complete. */
-  function acctVendorNeeds(b) { var v = b && S.vendors[b.vendorId]; if (!v) return ["to be saved as a vendor"]; var n = vendorNeeds(v).list; return n.length ? n : null; }
+  /* Accounting needs the vendor's details; its opening balance (the accountant's approval of the vendor) is needed only for a checking report. */
+  function acctVendorNeeds(b) { var v = b && S.vendors[b.vendorId]; if (!v) return ["to be saved as a vendor"]; var n = vendorNeeds(v).list.filter(function (x) { return x.indexOf("opening balance") !== 0; }); return n.length ? n : null; }
   function acctApprove(btn) {
     if (AC.busy) return;
     if (AC.kind === "bill" && acctVendorNeeds(S.bills[AC.id])) { toast("Fill in the vendor's details first."); return; }
     errClear($("aoBody")); var errs = acctCheck();
     if (errs.length) { errs.forEach(function (e) { errOn(e[0], e[1]); }); var f0 = $(errs[0][0]); if (f0 && f0.scrollIntoView) f0.scrollIntoView({ block: "center" }); return; }
-    var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, tds = 0, up = Object.assign({ acct: "approved", acctNote: "", ledgers: ledLinesOut(D.lines), tds: 0, tdsSection: "" }, acctWho());
+    var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, tds = round2(num(D.tds) || 0), up = Object.assign({ acct: "approved", acctNote: "", ledgers: ledLinesOut(D.lines), tds: tds, tdsSection: tds > 0 ? D.sec : "" }, acctWho());
     if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher"; up.vtype = D.vtype; up.gstApp = oth ? D.gstApp : "N/A"; up.gstRate = oth && D.gstApp === "RCM" ? Number(D.gstRate) : null; up.taxable = Number(x.total) || 0; up.payable = round2((Number(x.total) || 0) - tds); }
     var col = AC.kind === "bill" ? "bills" : "vouchers", was = x.acct === "approved";
     AC.busy = true; btn.disabled = true;
     retry(function () { return S.db.doc(col + "/" + x.id).update(up); }).then(function () {
-      Object.assign(x, up); invalidate(); toast((AC.kind === "bill" ? "Bill " + x.billNo : "Voucher " + x.voucherNo) + (was ? " updated." : " approved. It can now go into a checking report.")); backToAcct(); renderNav();
+      Object.assign(x, up); invalidate(); toast((AC.kind === "bill" ? "Bill " + x.billNo : "Voucher " + x.voucherNo) + (was ? " updated." : " accounted. It can now go into a checking report.")); backToAcct(); renderNav();
     }, function (e) { toast(explain(e)); }).then(function () { AC.busy = false; btn.disabled = false; });
   }
   function acctHold(btn) {
@@ -9854,7 +9924,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var es = bookEntries(BK.side, co.value, fr, to), box = $("bkList"); box.textContent = "";
     if (lg.value) {
       var rows = es.filter(function (e) { return e.lg === lg.value; }), tot = rows.reduce(function (s0, e) { return s0 + e.amt; }, 0), tt = rows.reduce(function (s0, e) { return s0 + e.tds; }, 0);
-      statBoxes($("bkStats"), [["Entries", String(rows.length), ""], ["Amount", money(tot), ""]]);
+      statBoxes($("bkStats"), [["Entries", String(rows.length), ""], ["Amount", money(tot), ""], ["TDS", money(tt), ""]]);
       if (!rows.length) { box.appendChild(el("div", { class: "card empty" }, "Nothing posted to this ledger in this period.")); return; }
       var w = el("div", { class: "card list scroll" }); box.appendChild(w);
       sortTable(w, "bk_one", [
@@ -9863,6 +9933,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         { label: BK.side === "vouchers" ? "Paid to" : "Vendor", cls: "desc", cell: function (e, td) { td.appendChild(el("b", null, e.who)); sub(td, e.what); } },
         { label: "Prepared by", cell: function (e, td) { txt(td, e.prep || ""); } },
         { label: "Amount", cls: "r num", sort: function (e) { return e.amt; }, desc: true, cell: function (e, td) { td.appendChild(el("b", null, money(e.amt))); } },
+        { label: "TDS", cls: "r num", cell: function (e, td) { txt(td, e.tds ? money(e.tds) : "-"); if (e.sec && e.tds) sub(td, e.sec); } }
       ], rows, { sortIndex: 0, desc: true });
       return;
     }
@@ -9882,6 +9953,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
           { label: "Ledger", kind: "co", cell: function (l, td) { var b0 = el("button", { class: "link-btn", type: "button" }, l.name); b0.addEventListener("click", function () { if (!S.ledgers[l.id]) return; $("bkLed").value = l.id; renderBooks(); }); td.appendChild(b0); } },
           { label: "Entries", cls: "r num", cell: function (l, td) { txt(td, String(per[l.id].n)); } },
           { label: "Amount", cls: "r num", sort: function (l) { return per[l.id].amt; }, desc: true, cell: function (l, td) { td.appendChild(el("b", null, money(per[l.id].amt))); } },
+          { label: "TDS", cls: "r num", cell: function (l, td) { txt(td, per[l.id].tds ? money(per[l.id].tds) : "-"); } },
         ], subs[sb], { sortIndex: 2 });
       });
     });

@@ -18,13 +18,21 @@
   none means mnt). Maintenance and Renewable Energy each see only their own; Accounts and Finance see every division.
   Maintenance is paid in Finance; Renewable Energy pays in its own app, and Finance shows those as payables only.
   Accounts decides which divisions may use each ledger (Ledgers › Edit › Divisions that use it).
-- **Approvals** happen only in the Approvals app (admins, and people holding Payment Entry): Bills CR, Advance CR and
-  Vouchers CR, and cash advance requests, from every division. The financier may record an approval management has already signed on paper: it is saved as approved on their behalf
-  (`onBehalf`, `paperByName`) and shown that way. Once approved, by either, a report leaves the list and can't be approved again.
-- **Vendors and ledgers are kept in Accounts.** A vendor is added from its first bill or proforma, as read; after that only the
-  accountant (or an admin), in Accounts, changes its details and opening balances. A bill can't be accounted until its vendor
-  is complete (type, terms, address, valid GSTIN, opening balance). Ledgers are added and imported only in Accounts.
-- **Access per app** is set on each person (Settings › Users › Apps): Maintenance, Renewable Energy, Accounts, Finance, Approvals (financiers only), and a Production Planning
+- **Workflow.** Every bill, voucher, proforma and import goes: data entry → accounting → approval → payment.
+  Jobs: Purchaser (entry), Accountant (accounting), Approver (approval), Financier (payment); any mix may be held.
+  A Purchaser who is also the Accountant for a company accounts a bill as they record it (ledgers and TDS on the bill form);
+  it skips To Account but still goes to approval. The accountant "accounts" entries; only the Approver step "approves".
+- **Approvals** happen only in the Approvals app, for admins and people with Approval. An Approver sees and approves only the
+  checking reports and cash advances that name them; checking reports are made one per approver. No approving while viewing as someone.
+- **TDS** is entered when an entry is accounted. The vendor is paid the total less TDS; the vendor statement and Ledger Books
+  show it. Checking reports and their PDFs don't.
+- **Admins** do the same work as the Super Admin and can view as a Purchaser, Accountant or Financier. The Super Admin alone adds
+  admins and edits the app. Admins can delete a person for good (Settings › Users › Delete): their login goes, their entries stay.
+- **Vendors and ledgers are kept by the Accountant** (or an admin, also when viewing as them), in any app. A vendor is added from
+  its first bill or proforma, as read; after that only the accountant changes its details. A bill can't be accounted until its
+  vendor's details are complete (type, terms, address, valid GSTIN); its opening balance, entered by the accountant, approves the
+  vendor and is needed before a checking report. Ledgers: the accountant adds, edits, imports and deletes (only if unused).
+- **Access per app** is set on each person (Settings › Users › Apps): Maintenance, Renewable Energy, Accounts, Finance, Approvals (approvers only), and a Production Planning
   role (Approver, Planner, Floor Team) with a region (Erode, Ambur, or both). Admins and Super Admins get every app.
   `app_portal()` in KKSK Group answers what a signed-in person may open.
 - **Super Admins** are managed by Super Admins in Settings › Users › Super Admins. Someone added becomes a Super Admin

@@ -6,21 +6,25 @@
 | --- | --- | --- |
 | `/` (`web/index.html`, `web/portal.js`) | KKSK Group home: sign-in, then a tile per app (straight into the app when a person has only one) | KKSK Group |
 | `/maintenance/` | Maintenance: the division's bills, proformas, imports, cash vouchers and checking reports | KKSK Group |
-| `/renewable/` | Renewable Energy: the same for that division, plus its own Payment Entry and solar billing | KKSK Group |
+| `/renewable/` | Renewable Energy: the same for that division, plus its own Payment Entry and energy billing for solar plants and windmills | KKSK Group |
 | `/accounts/` | Accounts: every division's accounting, ledgers, debit and credit notes, ledger books, companies | KKSK Group |
-| `/finance/` | Finance: approvals (admins, or the financier on their behalf), Payment Entry and advances, payables | KKSK Group |
+| `/finance/` | Finance: Payment Entry and advances, payables | KKSK Group |
+| `/approvals/` | Approvals: checking reports (Bills, Advance, Vouchers CR) and cash advances from every division, approved by admins or recorded by the financier on their behalf | KKSK Group |
 | `/production/` (`web/production/index.html`) | Production Planning (Live on the KKSK-Production tables; Demo sample for admins) | KKSK-Production, through the hand-over |
 
-- **One page, four apps.** Maintenance, Renewable Energy, Accounts and Finance are all `web/bills/index.html`; `netlify.toml`
+- **One page, five apps.** Maintenance, Renewable Energy, Accounts and Finance are all `web/bills/index.html`; `netlify.toml`
   serves it at each address and the address picks the app (`BV_APP`: mnt, re, acc, fin). `/bills/` (the old Bills & Vouchers)
   moves to `/maintenance/`. Every bill, report, proforma, voucher, payment, note and cash advance carries `div` (mnt or re;
   none means mnt). Maintenance and Renewable Energy each see only their own; Accounts and Finance see every division.
   Maintenance is paid in Finance; Renewable Energy pays in its own app, and Finance shows those as payables only.
   Accounts decides which divisions may use each ledger (Ledgers › Edit › Divisions that use it).
-- **Approvals.** Admins approve checking reports in the division's app or in Finance › Approvals. The financier may record,
-  in Finance › Approvals, an approval management has already signed on paper: it is saved as approved on their behalf
+- **Approvals** happen only in the Approvals app (admins, and people holding Payment Entry): Bills CR, Advance CR and
+  Vouchers CR, and cash advance requests, from every division. The financier may record an approval management has already signed on paper: it is saved as approved on their behalf
   (`onBehalf`, `paperByName`) and shown that way. Once approved, by either, a report leaves the list and can't be approved again.
-- **Access per app** is set on each person (Settings › Users › Apps): Maintenance, Renewable Energy, Accounts, Finance, and a Production Planning
+- **Vendors and ledgers are kept in Accounts.** A vendor is added from its first bill or proforma, as read; after that only the
+  accountant (or an admin), in Accounts, changes its details and opening balances. A bill can't be accounted until its vendor
+  is complete (type, terms, address, valid GSTIN, opening balance). Ledgers are added and imported only in Accounts.
+- **Access per app** is set on each person (Settings › Users › Apps): Maintenance, Renewable Energy, Accounts, Finance, Approvals (financiers only), and a Production Planning
   role (Approver, Planner, Floor Team) with a region (Erode, Ambur, or both). Admins and Super Admins get every app.
   `app_portal()` in KKSK Group answers what a signed-in person may open.
 - **Super Admins** are managed by Super Admins in Settings › Users › Super Admins. Someone added becomes a Super Admin
@@ -152,10 +156,11 @@ insert into public.app_super_admins (email) values ('someone@kksk.in');
 - **Vendor statement** (Vendors › View Statement, and the PDF): Date, Particulars (Bill, Payment, Discount, Debit
   Note, Credit Note, Voucher), Reference No., Payable, Paid and the running balance.
 
-### Renewable Energy › Solar billing (from 12 Oct 2026)
+### Renewable Energy › Energy billing (from 12 Oct 2026)
 
-Monthly bills of supply from a solar generator to each consumer it supplies, as set out in the
-"Solar Invoicing & Finance App" specification.
+Monthly bills of supply from a solar plant or windmill to each consumer it supplies, as set out in the
+"Solar Invoicing & Finance App" specification. Each generator is marked Solar plant or Windmill; that decides which HT bill
+row (SOLAR or WIND) is billed and the wording on the bill.
 
 - **Masters**: generators (HTSC, the company that bills, its PAN, bank account and signatory), consumers (HTSC, address,
   GSTIN, credit days) and PPA rates (per consumer, optionally per generator, in force from a month).
@@ -173,5 +178,5 @@ Monthly bills of supply from a solar generator to each consumer it supplies, as 
   reason) and issue a new one for corrections.
 - **Invoices & Receipts**: register, receipts with TDS under 194Q, ageing 0–30/31–60/61–90/90+, Excel.
   **Reports**: generation and realisation by month, deductions by charge, line loss by consumer (year of the energy month).
-- Who may use it: the Renewable Energy app plus the Solar Billing responsibility for the generator's company.
+- Who may use it: the Renewable Energy app plus the Energy Billing responsibility for the generator's company.
   The division's own expenses go through its Bills and Cash Vouchers, so they reach Accounts like any other.

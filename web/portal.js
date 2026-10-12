@@ -4,12 +4,14 @@
   var APPS = [
     { key: "mnt", name: "Maintenance", path: "maintenance/", desc: "Bills, proformas and imports, cash vouchers and checking reports for the maintenance division.",
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3 17.8V21h3.2l6.3-6.3a4 4 0 0 0 5.2-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>' },
-    { key: "re", name: "Renewable Energy", path: "renewable/", desc: "Solar bills of supply from TNPDCL statements, receipts, and the division's own bills, vouchers and payments.",
+    { key: "re", name: "Renewable Energy", path: "renewable/", desc: "Solar and windmill bills of supply from TNPDCL statements, receipts, and the division's own bills, proformas, vouchers and payments.",
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' },
     { key: "acc", name: "Accounts", path: "accounts/", desc: "Every division's bills and vouchers accounted to ledgers, debit and credit notes, ledger books, vendors and companies.",
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11M13 13h4M13 17h4"/></svg>' },
-    { key: "fin", name: "Finance", path: "finance/", desc: "Approvals for payment, Payment Entry and advances, with every division's payables in one place.",
+    { key: "fin", name: "Finance", path: "finance/", desc: "Payment Entry and advances, with every division's payables in one place.",
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></svg>' },
+    { key: "apr", name: "Approvals", path: "approvals/", desc: "Bills, advance and voucher checking reports and cash advances from every division, approved for payment.",
+      icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>' },
     { key: "pp", name: "Production Planning", path: "production/", desc: "Leather lots from issue to dispatch, stage updates, approvals and stock, for Erode and Ambur.",
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V9l6 4V9l6 4V5l6 4v12z"/><path d="M7 17h2M12 17h2M17 17h2"/></svg>' }
   ];
@@ -37,6 +39,7 @@
   function render(p) {
     /* Before the four-app split reached the database, apps.bv stood for all of them. */
     if (p.apps && p.apps.mnt === undefined && p.apps.bv) { p.apps.mnt = p.apps.acc = p.apps.fin = true; }
+    if (p.apps && p.apps.apr === undefined && p.admin) p.apps.apr = true;
     var mine = APPS.filter(function (a) { return p.apps && p.apps[a.key]; });
     /* Not approved yet: the access request lives in Maintenance. One app: straight in. */
     if (!p.approved) { location.replace("maintenance/"); return; }

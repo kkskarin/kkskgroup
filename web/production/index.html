@@ -557,8 +557,8 @@ function avatarFrom(file){return new Promise((res,rej)=>{if(!file||!/^image\//.t
 /* ---------- Settings › Users (admins): the same people as every KKSK app; here, who may use Production Planning ---------- */
 /* Maintenance, Renewable Energy, Accounts and Finance a person has (as the KKSK Group home works it out). */
 function moneyApps(u){const a=(u&&u.apps)||{},bv=a.bv!==false,st=k=>!u.roles||Object.keys(u.roles).some(c=>(u.roles[c]||[]).indexOf(k)>=0);
-  const on={mnt:a.mnt!=null?!!a.mnt:bv,re:!!a.re,acc:a.acc!=null?!!a.acc:bv&&st('acct'),fin:a.fin!=null?!!a.fin:bv&&st('txn')};
-  return [['mnt','Maintenance'],['re','Renewable Energy'],['acc','Accounts'],['fin','Finance']].filter(x=>on[x[0]]).map(x=>x[1]).join(', ')||'None'}
+  const on={apr:bv&&st('txn')&&(a.apr!=null?!!a.apr:true),mnt:a.mnt!=null?!!a.mnt:bv,re:!!a.re,acc:a.acc!=null?!!a.acc:bv&&st('acct'),fin:a.fin!=null?!!a.fin:bv&&st('txn')};
+  return [['mnt','Maintenance'],['re','Renewable Energy'],['acc','Accounts'],['fin','Finance'],['apr','Approvals']].filter(x=>on[x[0]]).map(x=>x[1]).join(', ')||'None'}
 const PPR={approver:'Approver',planner:'Planner',floor:'Floor Team'};
 let PEOPLE=null;
 function loadPeople(){
@@ -569,7 +569,7 @@ function loadPeople(){
   },e=>{PEOPLE={error:(e&&e.message)||'The list couldn\'t be loaded.',users:[],admins:{}};render()});
 }
 function vUsers(){
-  let h='<div class="sechead"><div class="grow"><h2>Users</h2><div class="sub">The same people as every KKSK Group app: one login each. Set who may use Production Planning, as what and for which plant. Admins and Super Admins always have every app. Maintenance, Renewable Energy, Accounts and Finance, with companies and responsibilities, are set in those apps under Settings › Users.</div></div>'+(window.bvAccount?'<button class="btn small" data-act="uAdd">'+(UI.uadd?'Close':'Add Person With Login')+'</button>':'')+'</div>';
+  let h='<div class="sechead"><div class="grow"><h2>Users</h2><div class="sub">The same people as every KKSK Group app: one login each. Set who may use Production Planning, as what and for which plant. Admins and Super Admins always have every app. Maintenance, Renewable Energy, Accounts, Finance and Approvals, with companies and responsibilities, are set in those apps under Settings › Users.</div></div>'+(window.bvAccount?'<button class="btn small" data-act="uAdd">'+(UI.uadd?'Close':'Add Person With Login')+'</button>':'')+'</div>';
   if(UI.uadd){const a=UI.uadd;h+='<div class="card form"><h3 style="margin:0 0 10px">Add Person With Login</h3><div class="grid2"><div class="field"><label for="ua_name">Name</label><input id="ua_name" data-ua="name" value="'+esc(a.name)+'" maxlength="60"></div><div class="field"><label for="ua_mail">Login Email</label><input id="ua_mail" type="email" data-ua="mail" value="'+esc(a.mail)+'" maxlength="120"></div><div class="field"><label for="ua_pw">Password</label><input id="ua_pw" data-ua="pw" value="'+esc(a.pw)+'" maxlength="72" autocomplete="new-password"><p class="hint">At least 8 characters. Give it to them; they can change it under Personalise.</p></div><div class="field"><label for="ua_role">Production Planning</label><select id="ua_role" data-ua="role">'+Object.entries(PPR).map(([k,l])=>'<option value="'+k+'"'+(a.role===k?' selected':'')+'>'+l+'</option>').join('')+'</select></div><div class="field"><label for="ua_reg">Plant</label><select id="ua_reg" data-ua="region"><option value="E"'+(a.region==='E'?' selected':'')+'>Erode</option><option value="A"'+(a.region==='A'?' selected':'')+'>Ambur</option><option value=""'+(!a.region?' selected':'')+'>Both</option></select></div></div><p class="hint">They get Production Planning only. To give them other apps too, edit them in Maintenance › Settings › Users.</p><div class="row"><span class="spacer"></span><button class="btn" data-act="uAddSave">Add Person</button></div></div>'}
   if(!PEOPLE){loadPeople();return h+'<div class="empty">Loading people…</div>'}
   if(PEOPLE.loading)return h+'<div class="empty">Loading people…</div>';
@@ -1427,7 +1427,7 @@ window.__ppStart=function(me){
       /* The KKSK-Production session, for the real tables (Zoho orders and lots). */
       window.ppDb = window.supabase.createClient(window.PP_CONFIG.url, window.PP_CONFIG.key, { auth: { persistSession: false, autoRefreshToken: true } });
       return window.ppDb.auth.setSession({ access_token: h.access_token, refresh_token: h.refresh_token }).then(function () {
-        var apps = ["mnt", "re", "acc", "fin", "pp"].filter(function (k) { return p.apps[k]; }).length;
+        var apps = ["mnt", "re", "acc", "fin", "apr", "pp"].filter(function (k) { return p.apps[k]; }).length;
         window.PP_ME = { uid: p.uid, name: p.name || h.user.name, email: p.email, role: h.user.role, region: h.user.region, super: !!p.super, admin: !!p.admin, apps: apps };
         window.__ppStart(window.PP_ME);
       });

@@ -4,6 +4,7 @@
 #   /renewable/      Renewable Energy  } /bills/ is the old address of Maintenance and moves there.
 #   /accounts/       Accounts          }
 #   /finance/        Finance           }
+#   /approvals/      Approvals         }
 #   /production/     Production Planning
 # Netlify treats /maintenance and /maintenance/ alike, so each address is served directly (a slash redirect would loop).
 [build]
@@ -40,5 +41,13 @@
   status = 200
 [[redirects]]
   from = "/finance/*"
+  to = "/bills/index.html"
+  status = 200
+[[redirects]]
+  from = "/approvals"
+  to = "/bills/index.html"
+  status = 200
+[[redirects]]
+  from = "/approvals/*"
   to = "/bills/index.html"
   status = 200

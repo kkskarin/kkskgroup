@@ -1,4 +1,43 @@
-# Netlify: serve KKSK Group from web/ (static files, no build step): home at /, Bills & Vouchers at /bills/, Production Planning at /production/.
+# Netlify: serve KKSK Group from web/ (static files, no build step).
+#   /                home and sign-in
+#   /maintenance/    Maintenance       } one page (web/bills/index.html); the address picks the app.
+#   /renewable/      Renewable Energy  } /bills/ is the old address of Maintenance and moves there.
+#   /accounts/       Accounts          }
+#   /finance/        Finance           }
+#   /production/     Production Planning
 [build]
   publish = "web"
   command = ""
+
+[[redirects]]
+  from = "/maintenance"
+  to = "/maintenance/"
+  status = 301
+[[redirects]]
+  from = "/renewable"
+  to = "/renewable/"
+  status = 301
+[[redirects]]
+  from = "/accounts"
+  to = "/accounts/"
+  status = 301
+[[redirects]]
+  from = "/finance"
+  to = "/finance/"
+  status = 301
+[[redirects]]
+  from = "/maintenance/*"
+  to = "/bills/index.html"
+  status = 200
+[[redirects]]
+  from = "/renewable/*"
+  to = "/bills/index.html"
+  status = 200
+[[redirects]]
+  from = "/accounts/*"
+  to = "/bills/index.html"
+  status = 200
+[[redirects]]
+  from = "/finance/*"
+  to = "/bills/index.html"
+  status = 200

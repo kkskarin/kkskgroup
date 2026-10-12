@@ -1,10 +1,13 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><script src="../textsize.js"></script><link rel="icon" type="image/png" href="../favicon.png"><link rel="apple-touch-icon" href="../apple-touch-icon.png"><meta name="theme-color" content="#10281F">
 <script src="../config.js"></script>
-<script>window.BV_APP = "bv"; window.BV_HOME = "../";</script>
+<script>/* One page, four apps: the address picks which. /bills/ is the old address of Maintenance. */
+(function () { var seg = location.pathname.split("/")[1] || "";
+  if (seg === "bills") { location.replace("/maintenance/" + location.search + location.hash); }
+  window.BV_APP = { maintenance: "mnt", renewable: "re", accounts: "acc", finance: "fin" }[seg] || "mnt"; window.BV_HOME = "../"; })();</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script src="../supabase-runtime.js"></script>
 <link rel="stylesheet" href="../auth.css"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Bills &amp; Vouchers Accounting</title>
+<title>KKSK Group</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&family=Marcellus&display=swap" rel="stylesheet">
@@ -702,7 +705,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 </style>
 <header class="top"><div class="wrap">
   <div class="mark"><img alt="KKSK" src="data:image/png;base64,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"></div>
-  <div class="titles"><div class="t1">Bills <span class="amp">&amp;</span> Vouchers Accounting</div><div class="t2">KKSK Group</div></div>
+  <div class="titles"><div class="t1" id="appTitle">KKSK Group</div><div class="t2">KKSK Group</div></div>
   <a class="appsln" id="appsLink" href="../" hidden title="All KKSK apps"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M1 1h4v4H1zM6 1h4v4H6zM11 1h4v4h-4zM1 6h4v4H1zM6 6h4v4H6zM11 6h4v4h-4zM1 11h4v4H1zM6 11h4v4H6zM11 11h4v4h-4z"/></svg>All Apps</a>
   <div class="modesw" id="modeSw" role="group" aria-label="Data" hidden></div>
   <div class="me" id="me" hidden></div>
@@ -862,7 +865,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         <div class="f" id="uPinF" hidden><label for="uPin">Profile PIN</label><input class="field num" id="uPin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="4 digits"><span class="hint" id="uPinH"></span><button class="link-btn" id="uPinReset" type="button" hidden>Reset PIN</button><span class="err" id="uEPin" hidden></span></div>
         <div class="f wide" id="uLinkF" hidden><label for="uLink">Link to a Person Already Added</label><select class="field" id="uLink"></select><span class="hint">Pick the person you added without a login, if this request is theirs. Everything entered for them moves to this login.</span></div>
         <div class="f wide" id="uAppsF"><span class="lb">Apps</span>
-          <div class="uapps"><label class="check"><input type="checkbox" id="uAppBv"> Bills &amp; Vouchers</label>
+          <div class="uapps"><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label>
             <div class="uapp-pp"><span>Production Planning</span><select class="field" id="uPpRole" aria-label="Production Planning role"><option value="">No access</option><option value="approver">Approver</option><option value="planner">Planner</option><option value="floor">Floor Team</option></select>
               <select class="field" id="uPpRegion" aria-label="Production Planning region"><option value="">Erode and Ambur</option><option value="E">Erode</option><option value="A">Ambur</option></select></div></div>
           <span class="hint">They see only the apps given here; with one app they go straight into it. Admins get every app.</span><span class="err" id="uEApps" hidden>Give at least one app.</span></div>
@@ -961,6 +964,19 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <h3>Statements</h3>
     <p class="sub" style="margin-bottom:12px" id="veStSub">One statement per company, as a PDF. Figures use what is saved, so save any changes first.</p>
     <div class="card list scroll" id="veSt"></div>
+  </section>
+
+  <section id="secAppr" hidden>
+    <div class="head">
+      <div><h2>Approvals</h2><p class="sub" id="apSub">Checking reports from every division waiting to be approved for payment. Open one to approve it bill by bill.</p></div>
+      <span class="grow"></span>
+      <select class="field" id="apDiv" aria-label="Filter by division" style="width:auto;min-width:180px"></select>
+    </div>
+    <div class="stats" id="apStats"></div>
+    <h3 style="margin-top:4px">Waiting for approval <span id="apWaitN"></span></h3>
+    <div class="card list scroll" id="apWait"></div>
+    <h3 style="margin-top:28px">Approved in the last 30 days</h3>
+    <div class="card list scroll" id="apDone"></div>
   </section>
 
   <section id="secChecks" hidden>
@@ -1345,7 +1361,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var S = { ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secApr", "secArch"];
+  var VIEWS = ["secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1450,23 +1466,53 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       .then(function () { btn.disabled = false; });
   }
 
+  /* ---- One page, four apps ----
+     Maintenance and Renewable Energy are divisions: their purchasers enter bills, proformas and vouchers, and each sees only its own.
+     Accounts keeps the books for every division (ledgers, accounting, notes, companies). Finance approves and pays for every division,
+     except a division that pays in its own app (Renewable Energy), which Finance still sees. Every entry carries the division it came from. */
+  var APP = window.BV_APP || "mnt";
+  var DIVS = { mnt: { name: "Maintenance", payIn: "fin" }, re: { name: "Renewable Energy", payIn: "re" } };
+  var APP_NAMES = { mnt: "Maintenance", re: "Renewable Energy", acc: "Accounts", fin: "Finance" };
+  var APP_KEYS = ["mnt", "re", "acc", "fin"];
+  function appName(k) { return APP_NAMES[k || APP] || ""; }
+  /* The division this page works in, or null in Accounts and Finance (every division). */
+  var DIV = DIVS[APP] ? APP : null;
+  function divOf(x) { return (x && x.div) || "mnt"; }
+  function divName(x) { return (DIVS[typeof x === "string" ? x : divOf(x)] || DIVS.mnt).name; }
+  function inDiv(x) { return !DIV || divOf(x) === DIV; }
+  /* Payments for a division's entries are recorded in one app only; elsewhere they are shown, not paid. */
+  function payHere(x) { return (DIVS[typeof x === "string" ? x : divOf(x)] || DIVS.mnt).payIn === APP; }
   /* Headings, each with its own tabs. Tab keys stay the same inside the app; labels are what people see. */
-  var NAV = [
-    { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"], ["Vendors", "Vendors"], ["Ledgers", "Ledgers"]] },
+  var SET_TABS = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Personalise", "Personalise"]] };
+  var DIV_NAV = [
+    { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"], ["Vendors", "Vendors"]] },
     { h: "Bills", tabs: [["Bills", "Enter Bills"], ["Checking Report", "Bills CR"]] },
     { h: "Proformas", tabs: [["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance CR"]] },
-    { h: "Vouchers", tabs: [["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Vouchers CR"], ["Cash Advance", "Cash Advance"]] },
-    { h: "Accounts", tabs: [["Accounts", "To Account"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Books"]] },
-    { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] },
-    { h: "Settings", tabs: [["Companies", "Companies", true], ["Users", "Users", true], ["Change Log", "Change Log", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] }
+    { h: "Vouchers", tabs: [["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Vouchers CR"], ["Cash Advance", "Cash Advance"]] }
   ];
-  var HOME_TAB = "Transactions", LAST_IN = {};
-  var DATA_TABS = ["Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
+  var NAV_BY_APP = {
+    mnt: DIV_NAV.concat([SET_TABS]),
+    re: DIV_NAV.concat([{ h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] }, SET_TABS]),
+    acc: [
+      { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"], ["Vendors", "Vendors"], ["Ledgers", "Ledgers"]] },
+      { h: "Accounts", tabs: [["Accounts", "To Account"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Books"]] },
+      { h: "Settings", tabs: [["Companies", "Companies", true], ["Users", "Users", true], ["Change Log", "Change Log", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] }
+    ],
+    fin: [
+      { h: "Approvals", tabs: [["Approvals", "Approvals"]] },
+      { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] },
+      { h: "Reports", tabs: [["Payables", "Payables"], ["Transactions", "Transactions"], ["Vendors", "Vendors"]] },
+      SET_TABS
+    ]
+  };
+  var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
+  var HOME_TAB = { acc: "Accounts", fin: "Approvals" }[APP] || "Transactions", LAST_IN = {};
+  var DATA_TABS = ["Approvals", "Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
   /* Admins oversee rather than enter: the entry screens (and the accountant's queue) are left out for them.
      Reports > Transactions shows every item, where it stands and who is responsible. "View as" still opens a person's screens. */
   var ADMIN_HIDE = { "Bills": 1, "Plan Advance": 1, "Imports": 1, "Cash Voucher": 1, "Accounts": 1, "Mark Transaction": 1 };
   /* A financier who only pays out sees Reports (Transactions, Payables) and Payments, nothing else. */
-  var FIN_TABS = { "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1 };
+  var FIN_TABS = { "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1 };
   function finOnly() { return !S.isAdmin && canDo("txn") && STEPS.every(function (st) { return st[0] === "txn" || !canDo(st[0]); }); }
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {
@@ -1478,11 +1524,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* Reports other than Ledgers are for people who do more than accounts. */
   function nonAcct() { return STEPS.some(function (st) { return st[0] !== "acct" && canDo(st[0]); }); }
-  function homeTab() { if (!S.isAdmin && !nonAcct() && groupOf("Accounts")) return "Accounts"; if (finOnly() && groupOf("Payables")) return "Payables"; if (groupOf(HOME_TAB)) return HOME_TAB; var gs = navGroups(); return gs.length ? gs[0].tabs[0][0] : HOME_TAB; }
+  function homeTab() { if (APP === "fin" && groupOf("Approvals")) return "Approvals"; if (!S.isAdmin && !nonAcct() && groupOf("Accounts")) return "Accounts"; if (finOnly() && groupOf("Payables")) return "Payables"; if (groupOf(HOME_TAB)) return HOME_TAB; var gs = navGroups(); return gs.length ? gs[0].tabs[0][0] : HOME_TAB; }
   function groupOf(t) { var gs = navGroups(); for (var i = 0; i < gs.length; i++) for (var j = 0; j < gs[i].tabs.length; j++) if (gs[i].tabs[j][0] === t) return gs[i]; return null; }
   function tabLabel(t) { var g = groupOf(t); if (g) for (var j = 0; j < g.tabs.length; j++) if (g.tabs[j][0] === t) return g.tabs[j][1]; return t; }
   /* The little count shown on a tab, or null. */
   function tabBadge(t) {
+    if (t === "Approvals" && dataReady()) { var nap = apprWaiting().length; if (nap) return { n: nap, cls: "count info", label: nap + " waiting for approval" }; }
     if (t === "Accounts" && dataReady()) { var na0 = acctWaitN(); if (na0) return { n: na0, cls: "count info", label: na0 + " to account" }; }
     if (t === "Users" && S.isAdmin) { var n = pendingRequests().length; if (n) return { n: n, cls: "count", label: n + " waiting" }; }
     if (t === "Cash Advance" && dataReady()) return caBadge();
@@ -1534,6 +1581,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (groupOf(t) === null) { t = S.tab = homeTab(); renderNav(); }
     if (DATA_TABS.indexOf(t) >= 0 && (t !== "Payment Planning" || S.isAdmin)) {
       if (!dataReady()) { show("vLoading"); return; }
+      if (t === "Approvals") { renderApprovals(); show("secAppr"); return; }
       if (t === "Transactions") { renderTxn(); show("secTxn"); return; }
       if (t === "Payables") { renderPayables(); show("secPayables"); return; }
       if (t === "Advance Summary") { renderAdvSum(); show("secAdvSum"); return; }
@@ -1702,7 +1750,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function stepsForJobs(js) { var m = {}; (js || []).forEach(function (k) { (JOB_STEPS[k] || []).forEach(function (st) { m[st] = 1; }); }); return STEPS.map(function (s) { return s[0]; }).filter(function (k) { return m[k]; }); }
   function myJobs() { var u = S.myUser; if (u && u.jobRoles && u.jobRoles.length) return u.jobRoles; return !S.actId && S.myReq && S.myReq.jobRoles ? S.myReq.jobRoles : []; }
   var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bills CR"], ["vouchers", "Cash Vouchers"], ["vcr", "Vouchers CR"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance CR"], ["txn", "Payment Entry"]];
-  var TAB_STEP = { "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
+  var TAB_STEP = { "Approvals": "txn", "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
   /* A user saved before responsibilities existed does every step for their companies until the admin sets them. */
   function userHas(u, step, cid) {
     if (!u || u.active === false || (u.companyIds || []).indexOf(cid) < 0) return false;
@@ -1951,7 +1999,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function fillUserForm(src, roles, balUid) {
     var js = jobsOf(src); jobChecks($("uJobs"), js); $("uJobsE").hidden = true;
-    var ap = src.apps || {}; $("uAppBv").checked = ap.bv !== false; $("uPpRole").value = (ap.pp && ap.pp.role) || ""; $("uPpRegion").value = (ap.pp && ap.pp.region) || ""; $("uEApps").hidden = true; syncAppsF();
+    var ap = appsWith(src); $("uAppMnt").checked = ap.mnt; $("uAppRe").checked = ap.re; $("uAppAcc").checked = ap.acc; $("uAppFin").checked = ap.fin; $("uPpRole").value = (ap.pp && ap.pp.role) || ""; $("uPpRegion").value = (ap.pp && ap.pp.region) || ""; $("uEApps").hidden = true; syncAppsF();
     var ua = $("uAppr"); ua.parentNode.replaceChild(approverSelect("uAppr", src.defaultApproverId || ""), ua); $("uAppr").options[0].textContent = "Choose the default approver"; syncApprF();
     if (!roles && js.length) { roles = {}; (src.companyIds || []).forEach(function (cid) { roles[cid] = stepsForJobs(js); }); }
     $("uName").value = src.name || ""; usLoc.close(); usLoc.fill(src.locationId || ""); usDept.close(); usDept.fill(src.deptId || ""); buildChecks($("uCos"), src.companyIds || []);
@@ -1965,13 +2013,21 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* A purchaser must have a default approver; it is asked for as soon as Purchaser is ticked. */
   /* Bills & Vouchers details (roles, companies, responsibilities) are only asked when Bills & Vouchers is given. */
+  /* The money apps a person has. Someone saved before the split keeps Maintenance, and gets Accounts or Finance if they do accounts or payments. */
+  function hasStepAny(u, step) { if (!u || !u.roles) return true; return Object.keys(u.roles).some(function (k) { return (u.roles[k] || []).indexOf(step) >= 0; }); }
+  function appsWith(u) {
+    var a = (u && u.apps) || {}, bv = a.bv !== false;
+    return { mnt: a.mnt != null ? !!a.mnt : bv, re: !!a.re, acc: a.acc != null ? !!a.acc : bv && hasStepAny(u, "acct"), fin: a.fin != null ? !!a.fin : bv && hasStepAny(u, "txn") };
+  }
+  function readApps() { return { mnt: $("uAppMnt").checked, re: $("uAppRe").checked, acc: $("uAppAcc").checked, fin: $("uAppFin").checked }; }
+  function anyMoneyApp(a) { return !!(a.mnt || a.re || a.acc || a.fin); }
   function syncAppsF() {
-    var bv = $("uAppBv").checked; $("uPpRegion").hidden = !$("uPpRole").value;
+    var bv = anyMoneyApp(readApps()); $("uPpRegion").hidden = !$("uPpRole").value;
     ["uJobs", "uCos"].forEach(function (id) { var f = $(id).closest(".f"); if (f) f.hidden = !bv; });
     var rs = document.querySelector("#secUser .uresp"); if (rs) rs.hidden = !bv;
     if (!bv) $("uApprF").hidden = true; else syncApprF();
   }
-  function appsOf(u) { var a = (u && u.apps) || {}, out = []; if (a.bv !== false) out.push("Bills & Vouchers"); if (a.pp && a.pp.role) out.push("Production Planning (" + ({ approver: "Approver", planner: "Planner", floor: "Floor Team" }[a.pp.role] || a.pp.role) + (a.pp.region ? ", " + ({ E: "Erode", A: "Ambur" }[a.pp.region]) : "") + ")"); return out.join(", "); }
+  function appsOf(u) { var a = (u && u.apps) || {}, w = appsWith(u), out = APP_KEYS.filter(function (k) { return w[k]; }).map(function (k) { return APP_NAMES[k]; }); if (a.pp && a.pp.role) out.push("Production Planning (" + ({ approver: "Approver", planner: "Planner", floor: "Floor Team" }[a.pp.role] || a.pp.role) + (a.pp.region ? ", " + ({ E: "Erode", A: "Ambur" }[a.pp.region]) : "") + ")"); return out.join(", "); }
   function syncApprF() { var on = readChecks($("uJobs")).indexOf("purchaser") >= 0; $("uApprF").hidden = !on; if (!on) $("uEAppr").hidden = true; }
   function backToUsers() { S.userEditing = null; renderUsers(); renderNav(); show("secUsers"); }
   function saveUser() {
@@ -1983,7 +2039,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var obs = null; if (S.balances[balUid] || noLogin || link) { obs = Object.assign({}, (S.balances[balUid] || {}).openings || {}); Array.prototype.forEach.call(document.querySelectorAll("#uOb tr[data-co]"), function (tr) { var cid = tr.getAttribute("data-co"), v = $("uob_" + cid).value.trim(); if (v === "") delete obs[cid]; else if (num(v) != null) obs[cid] = round2(num(v)); }); }
     if (!name) { $("uEName").hidden = false; $("uName").classList.add("bad"); ok = false; }
     if (!loc) { $("uELoc").hidden = false; ok = false; }
-    var appBv = $("uAppBv").checked, ppRole = $("uPpRole").value, apps = { bv: appBv, pp: ppRole ? { role: ppRole, region: $("uPpRegion").value || null } : null };
+    var ma = readApps(), appBv = anyMoneyApp(ma), ppRole = $("uPpRole").value, apps = { bv: appBv, mnt: ma.mnt, re: ma.re, acc: ma.acc, fin: ma.fin, pp: ppRole ? { role: ppRole, region: $("uPpRegion").value || null } : null };
     $("uEApps").hidden = true; if (!appBv && !ppRole) { $("uEApps").hidden = false; ok = false; }
     if (appBv && !cos.length) { $("uECos").hidden = false; ok = false; }
     var dept = usDept.value(); if (!dept) { $("uEDept").hidden = false; ok = false; }
@@ -2641,6 +2697,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     function slot(cid, vid) { var k = cid + "|" + vid; return m[k] || (m[k] = emptyLedger(cid, vid)); }
     Object.keys(S.vendors).forEach(function (vid) {
       var v = S.vendors[vid];
+      /* Vendor opening balances were set up for Maintenance (the old Bills & Vouchers); another division starts without them. */
+      if (DIV && DIV !== "mnt") return;
       Object.keys(v.openings || {}).forEach(function (cid) { var op = opening(v, cid); if (op) slot(cid, vid).opening = op; });
     });
     billList().forEach(function (b) {
@@ -3646,8 +3704,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function findDuplicate(D, b) {
     var vk = vendorIdent(D.vendorChoice !== "new" ? D.vendorChoice : null, D.vendorChoice === "new" ? { name: D.vNew.name, gstin: D.vNew.gstin } : null), no = normId(D.billNo);
     if (!vk || !no) return null;
-    var hit = null;
-    billList().forEach(function (o) {
+    var hit = null, all = (S.raw && S.raw.bills) || {};
+    /* Across every division: the same bill entered in Maintenance and Renewable Energy is still a duplicate. */
+    billList().concat(Object.keys(all).filter(function (k) { return !S.bills[k]; }).map(function (k) { return Object.assign({ id: k }, all[k]); })).forEach(function (o) {
       if (hit || o.id === b.id || normId(o.billNo) !== no) return;
       if (vendorIdent(o.vendorId, o.vendorNew) === vk) hit = o;
     });
@@ -4742,7 +4801,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         return { g: g, rows: rows, foot: foot };
       });
       var odAny = Object.keys(grandOd).some(function (k) { return grandOd[k] > 0.5; });
-      var y = P.head({ logo: groupLogo(), name: "KKSK Group", sub: "Bills & Vouchers Accounting · Vendor payables by company", big: curSum(grand), bigSub: "As on " + fmtDate(t),
+      var y = P.head({ logo: groupLogo(), name: "KKSK Group", sub: appName() + " · Vendor payables by company", big: curSum(grand), bigSub: "As on " + fmtDate(t),
         facts: [["As on", fmtDate(t)], ["Vendors", String(vens.length)], ["Companies", String(cos.length)], ["Overdue", odAny ? curSum(grandOd) : "Nil"]] });
       var head = ["Vendor"].concat(cos.map(function (c) { return { content: c.shortName || c.name, styles: { halign: "right" } }; })).concat([{ content: "Total", styles: { halign: "right" } }]);
       var vw = many ? 96 : 120, tw = many ? 62 : 74, cw = (PDFK.R - PDFK.L - vw - tw) / cos.length, colStyles = { 0: { cellWidth: vw } }; cos.forEach(function (c, i) { colStyles[i + 1] = { cellWidth: cw }; }); colStyles[cos.length + 1] = { cellWidth: tw };
@@ -4934,7 +4993,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var STAGE_ORDER = { draft: 0, tds: 1, generated: 2, printed: 3, payment: 4 };
   function stageOf(r) { return r.stage === "tds" ? "generated" : STAGE[r.stage] ? r.stage : "generated"; }
   /* Once a report is printed it leaves the team's view; only the admin sees it from then on. */
-  function teamSees(r) { var s = stageOf(r); return S.isAdmin || s === "draft" || s === "tds" || s === "generated"; }
+  function teamSees(r) { var s = stageOf(r); return S.isAdmin || (S.tab === "Approvals" && canBehalf()) || s === "draft" || s === "tds" || s === "generated"; }
   /* In the report lists the admin sees a report once it is generated for approval; drafts stay with the team. */
   function listSees(r) { return S.isAdmin ? STAGE_ORDER[stageOf(r)] >= 2 : teamSees(r); }
   function tdsSet(r) { return stageOf(r) !== "draft"; }
@@ -5206,11 +5265,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function backToChecks() {
     CK.viewId = null; CK.vid = null; CK.draftId = null;
     if (S.tab === "Advance Report") { renderApr(); renderNav(); show("secApr"); return; }
+    if (S.tab === "Approvals") { renderApprovals(); renderNav(); show("secAppr"); return; }
     renderChecks(); renderNav(); show("secChecks");
   }
 
   /* ---- one report on screen: a plain table, like the screen it was prepared on ---- */
-  function openReport(id) { CK.viewId = id; CK.arm = ""; $("cvBack").textContent = S.tab === "Advance Report" ? "Back to Advance CR" : "Back to Bills CR"; renderReport(); show("secCheckView"); window.scrollTo(0, 0); }
+  function openReport(id) { CK.viewId = id; CK.arm = ""; $("cvBack").textContent = S.tab === "Approvals" ? "Back to Approvals" : S.tab === "Advance Report" ? "Back to Advance CR" : "Back to Bills CR"; renderReport(); show("secCheckView"); window.scrollTo(0, 0); }
   function renderReport() {
     var r = S.reports[CK.viewId]; if (!r) { backToChecks(); return; }
     if (!teamSees(r)) { toast("Report " + r.no + " has been printed and is with the admin now."); backToChecks(); return; }
@@ -5277,6 +5337,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function renderActions(r) {
     var box = $("cvActs"), s = stageOf(r), hint = $("cvHint"), admin = S.isAdmin;
     box.textContent = ""; hint.textContent = "";
+    if (!admin && S.tab === "Approvals" && canBehalf()) {
+      if (S.downloads) actBtn(box, "Download PDF", "", function (b) { downloadReport(r.id, b); });
+      if ((s === "generated" || s === "printed") && canApprove(r.companyId)) { actBtn(box, "Record approval", "primary", function () { if (r.kind === "inst") instApproveForm(r); else crApproveForm(r); }); hint.textContent = "Record it only once management has signed it on paper. Untick or lower anything they did not approve."; }
+      else if (s === "payment") hint.textContent = apprByText(r) + ", " + stamp(r.approvedAt) + ".";
+      return;
+    }
     if (r.kind === "inst") {
       if (S.downloads && s !== "payment") actBtn(box, s !== "generated" ? "Download PDF" : "Download PDF to print", s === "generated" ? "primary" : "", function (b) { downloadReport(r.id, b); });
       if (s === "generated") { if (admin) actBtn(box, "Approve for payment", "primary", function () { instApproveForm(r); }); actBtn(box, "Cancel report", "danger", function () { cancelReport(r); }, "Click again to delete this report"); hint.textContent = admin ? "Process Payment sends it to Payment Planning straight away, printed or not." : "Download it to print; it then goes to the admin."; }
@@ -5312,6 +5378,81 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       hint.textContent = "Approved for payment. The financier sees it on Payment Entry by its due dates.";
     }
   }
+  /* ================= Finance › Approvals =================
+     Every checking report waiting to be approved, from every division. The admins approve here or in the division's app.
+     The financier may record an approval already given on paper, on behalf of management: it is marked as such, with who signed it.
+     Once a report is approved (by an admin or on their behalf) it leaves the list, so it can't be approved twice. */
+  var APV = { div: "" };
+  function canBehalf() { return APP === "fin" && !S.isAdmin && canDo("txn"); }
+  function canApprove(cid) { return S.isAdmin || (canBehalf() && (!cid || canStep("txn", cid))); }
+  function apprCos(r) { return r.kind === "vcr" ? r.companyIds || [] : [r.companyId]; }
+  function apprMine(r) { return apprCos(r).some(function (cid) { return canApprove(cid); }); }
+  function apprKind(r) { return r.kind === "vcr" ? "Vouchers CR" : r.kind === "inst" ? "Advance CR" : "Bills CR"; }
+  function apprWho(r) { if (r.kind === "vcr") return pnm(r.preparedBy); return (S.vendors[r.vendorId] || {}).name || ""; }
+  function apprAmount(r) { return r.kind === "vcr" ? money(r.payable != null ? r.payable : r.total) : repMoney(r, r.kind === "inst" ? r.total : payableOf(r)); }
+  function apprWaiting() {
+    return Object.keys(S.reports).map(function (k) { return S.reports[k]; }).filter(function (r) { var s = stageOf(r); return (s === "generated" || s === "printed") && apprMine(r) && (!APV.div || divOf(r) === APV.div); })
+      .sort(function (a, b) { return (a.generatedAt || a.createdAt || 0) - (b.generatedAt || b.createdAt || 0); });
+  }
+  function apprRecent() {
+    var since = Date.now() - 30 * 864e5;
+    return Object.keys(S.reports).map(function (k) { return S.reports[k]; }).filter(function (r) { return stageOf(r) === "payment" && (r.approvedAt || 0) >= since && apprMine(r) && (!APV.div || divOf(r) === APV.div); })
+      .sort(function (a, b) { return (b.approvedAt || 0) - (a.approvedAt || 0); });
+  }
+  /* "Approved by Asha", or "Recorded by Ravi on behalf of management · signed by Asha on paper". */
+  function apprByText(r) {
+    if (r.onBehalf) return "Recorded by " + (pnm(r.behalfByName) || userLabel(r.approvedBy) || "the financier") + " on behalf of management" + (r.paperByName ? " · signed by " + pnm(r.paperByName) + " on paper" : "");
+    return "Approved by " + (userLabel(r.approvedBy) || approverName({ approverId: r.approvedBy }) || "an admin");
+  }
+  function openAppr(r) { if (r.kind === "vcr") openVcr(r.id); else openReport(r.id); }
+  function renderApprovals() {
+    var ds = $("apDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), APV.div); APV.div = ds.value;
+    $("apSub").textContent = canBehalf() ? "Checking reports waiting for approval. Once management has signed one on paper, open it and record the approval on their behalf. Anything an admin has already approved has left this list." : "Checking reports from every division waiting to be approved for payment. Open one to approve it bill by bill.";
+    var w = apprWaiting(), done = apprRecent(), tot = {};
+    w.forEach(function (r) { curAdd(tot, r.currency || "INR", r.kind === "vcr" ? (r.payable != null ? r.payable : r.total) : r.kind === "inst" ? r.total : payableOf(r)); });
+    statBoxes($("apStats"), [["Waiting", String(w.length), plural(w.length, "report")], ["Amount waiting", curSum(tot) || money(0), ""], ["Approved, 30 days", String(done.length), done.filter(function (r) { return r.onBehalf; }).length + " on behalf"]]);
+    $("apWaitN").textContent = w.length ? "(" + w.length + ")" : "";
+    var cols = [
+      { label: "Report", kind: "co", sort: function (r) { return r.no; }, cell: function (r, td) { td.appendChild(el("b", { class: "mono" }, r.no || "")); sub(td, apprKind(r) + " · " + divName(r)); } },
+      { label: "Company", sort: function (r) { return coLabel(apprCos(r)[0]); }, cell: function (r, td) { txt(td, apprCos(r).map(coLabel).join(", ")); } },
+      { label: "Vendor / prepared by", cls: "desc", sort: apprWho, cell: function (r, td) { td.appendChild(el("b", null, apprWho(r))); if (r.kind !== "vcr" && r.preparedBy) sub(td, "Prepared by " + pnm(r.preparedBy)); } },
+      { label: "Amount", cls: "r num", cell: function (r, td) { td.appendChild(el("b", null, apprAmount(r))); } }
+    ];
+    var box = $("apWait"); box.textContent = "";
+    if (!w.length) box.appendChild(el("div", { class: "empty" }, "Nothing is waiting for approval."));
+    else sortTable(box, "apWait", cols.concat([
+      { label: "Stage", cell: function (r, td) { td.appendChild(stageTag(r)); sub(td, "Since " + fmtDay(r.printedAt || r.generatedAt || r.createdAt)); } },
+      { label: "", kind: "act", cls: "r", cell: function (r, td) { var b = el("button", { type: "button", class: "btn sm primary" }, canBehalf() ? "Open to record" : "Open to approve"); b.addEventListener("click", function () { openAppr(r); }); td.appendChild(b); } }
+    ]), w, { sortIndex: -1 });
+    var db = $("apDone"); db.textContent = "";
+    if (!done.length) db.appendChild(el("div", { class: "empty" }, "Nothing approved in the last 30 days."));
+    else sortTable(db, "apDone", cols.concat([
+      { label: "Approval", cls: "desc", cell: function (r, td) { txt(td, apprByText(r)); sub(td, stamp(r.approvedAt)); } },
+      { label: "", kind: "act", cls: "r", cell: function (r, td) { var b = el("button", { type: "button", class: "btn sm" }, "Open"); b.addEventListener("click", function () { openAppr(r); }); td.appendChild(b); } }
+    ]), done, { sortIndex: -1 });
+  }
+  /* In an approval form: who signed it on paper (asked only when the financier records it on management's behalf). */
+  function behalfField(body, def) {
+    if (!canBehalf()) return;
+    var list = approverList(), sel = el("select", { class: "field", id: "bhBy" });
+    fillSelect(sel, [["", "Choose who signed it on paper"]].concat(list.map(function (a) { return [a.id, a.name]; })), list.some(function (a) { return a.id === def; }) ? def : "");
+    var f = fld("Signed on paper by", sel, "You are recording an approval management has already given on paper. It is saved as approved on their behalf.");
+    body.insertBefore(f, body.firstChild);
+  }
+  function behalfRead() {
+    if (!canBehalf()) return {};
+    var v = $("bhBy") && $("bhBy").value; if (!v) { errOn("bhBy", "Choose who signed it on paper."); return null; }
+    var a = approverList().filter(function (x) { return x.id === v; })[0];
+    return { onBehalf: true, paperById: v, paperByName: a ? a.name : "", behalfByName: pnm(preparedByText()) };
+  }
+  function behalfNote(x) { return x && x.onBehalf ? "On behalf of management, signed by " + pnm(x.paperByName) + " on paper" : ""; }
+  /* The approver most of a report's bills or vouchers name, to suggest who signed it. */
+  function reportApprover(r) {
+    var n = {}, items = r.kind === "vcr" ? (r.voucherIds || []).map(function (id) { return S.vouchers[id]; }) : r.kind === "inst" ? [S.advances[r.advanceId]] : (r.billIds || []).map(function (id) { return S.bills[id]; });
+    items.forEach(function (x) { if (x && x.approverId) n[x.approverId] = (n[x.approverId] || 0) + 1; });
+    return Object.keys(n).sort(function (a, b) { return n[b] - n[a]; })[0] || "";
+  }
+
   /* ---- Approving a Bills CR, bill by bill ----
      Tick the bills to pay and set the amount for each (the whole of it, or a part). An unticked bill goes back to the purchaser;
      the unpaid rest of a part-approved bill waits for the purchaser too, who may put it in a new Bills CR later. What is approved goes
@@ -5336,6 +5477,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       rows[b.id] = { tr: tr, ck: ck, amt: amt, max: max };
     });
     body.appendChild(totEl);
+    behalfField(body, reportApprover(r));
     var nf = tidyField("Note to the purchaser", tidyBox("apNote", "", "reason", 300), "Needed when a bill goes back or is approved in part. The purchaser sees it with the bill."); body.appendChild(nf);
     sync();
     popForm("Approve " + r.no, "Untick a bill to send it back to the purchaser. Lower the amount to approve part of a bill: the rest goes back to the purchaser, who can put it in a new Bills CR later.", body, "Approve for payment", function () {
@@ -5343,13 +5485,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       bills.forEach(function (b) { var x = rows[b.id]; if (!x.ck.checked) { back.push(b.id); return; } var n = num(x.amt.value); if (n == null || n <= 0) bad = bad || "Enter the amount to approve for bill " + b.billNo + ", or untick it."; else if (n > x.max + 0.5) bad = bad || "Bill " + b.billNo + " can be approved for up to " + bm(b, x.max) + "."; else { appr[b.id] = round2(n); keep.push(b); if (n < x.max - 0.5) part = true; } });
       if (bad) { toast(bad); return false; }
       if (!keep.length) { toast("Tick at least one bill, or cancel the report."); return false; }
-      var note = $("apNote").value.trim();
+      var note = $("apNote").value.trim(), bh = behalfRead(); if (!bh) return false;
       if ((back.length || part) && note.length < 4) { errOn("apNote", "Write a note for the purchaser."); return false; }
       var tp = tidyPending("apNote");
       return (tp || Promise.resolve()).then(function () {
         var t = sumBills(keep), nt = note ? sentenceFix($("apNote").value.trim()) : "";
         var extra = { appr: appr, billIds: keep.map(function (b) { return b.id; }), sentBack: (r.sentBack || []).concat(back), lastBack: back, backNote: nt, taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to, approvedAt: Date.now(), approvedBy: meId() };
-        return setStage(r, "payment", extra, back.length || part ? nt : "");
+        Object.assign(extra, bh);
+        return setStage(r, "payment", extra, [back.length || part ? nt : "", behalfNote(bh)].filter(Boolean).join(" · "));
       });
     });
   }
@@ -5364,13 +5507,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var a = S.advances[r.advanceId], max = round2(Number(r.total) || 0), cur = r.currency || "INR", body = el("div", { class: "mform" });
     body.appendChild(fld("Amount to approve" + (cur !== "INR" ? " (" + cur + ")" : ""), inp("iaAmt", fmtInput(String(max)), { inputmode: "decimal", class: "field num" }), "Up to " + curMoney(cur, max) + ". Anything less stays due and goes back to the purchaser for a new Advance CR."));
     body.appendChild(tidyField("Note to the purchaser", tidyBox("iaNote", "", "reason", 300), "Needed when approving less than the full amount."));
+    behalfField(body, reportApprover(r));
     popForm("Approve " + r.no, a ? instLabel(a, r.inst) + " of " + (a.kind === "import" ? "import " : "proforma ") + (a.piNo || "") : "", body, "Approve for payment", function () {
-      errClear(body); var n = num($("iaAmt").value), note = $("iaNote").value.trim();
+      errClear(body); var n = num($("iaAmt").value), note = $("iaNote").value.trim(), bh = behalfRead(); if (!bh) return false;
       if (n == null || n <= 0) { errOn("iaAmt", "Enter the amount to approve."); return false; }
       if (n > max + 0.5) { errOn("iaAmt", "Up to " + curMoney(cur, max) + "."); return false; }
       if (n < max - 0.5 && note.length < 4) { errOn("iaNote", "Write a note for the purchaser."); return false; }
       var tp = tidyPending("iaNote");
-      return (tp || Promise.resolve()).then(function () { var nt = note ? sentenceFix($("iaNote").value.trim()) : ""; return setStage(r, "payment", { apprAmt: round2(n), backNote: nt, approvedAt: Date.now(), approvedBy: meId() }, nt); });
+      return (tp || Promise.resolve()).then(function () { var nt = note ? sentenceFix($("iaNote").value.trim()) : ""; return setStage(r, "payment", Object.assign({ apprAmt: round2(n), backNote: nt, approvedAt: Date.now(), approvedBy: meId() }, bh), [nt, behalfNote(bh)].filter(Boolean).join(" · ")); });
     });
   }
   function setStage(r, stage, extra, note) {
@@ -6045,8 +6189,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function nextVoucherNo(cid, day) {
     day = day || todayYmd();
     var fy = fyOf(day), c = S.companies[cid] || {}, top = 0, code = normId(c.shortName || c.name).slice(0, 10) || "CO";
-    Object.keys(S.vouchers || {}).forEach(function (k) {
-      var v = S.vouchers[k]; if (v.companyId !== cid) return;
+    var all = (S.raw && S.raw.vouchers) || S.vouchers || {};
+    Object.keys(all).forEach(function (k) {
+      var v = all[k]; if (v.companyId !== cid) return;
       var m = /-VOU(\d+)\//.exec(v.voucherNo || ""), sq = v.voucherSeq || (m ? Number(m[1]) : 0);
       if (sq && (v.voucherFy || fyOf(v.voucherDate || "")) === fy && sq > top) top = sq;
     });
@@ -6055,7 +6200,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function nextReportNo(cid, now, series) {
     series = series || "BCR";
     var day = ymdOfMs(now), fy = fyOf(day), used = {}, seq = 1, c = S.companies[cid] || {};
-    Object.keys(S.reports).forEach(function (k) { var r = S.reports[k]; if (r.companyId !== cid || String(r.no || "").indexOf("-" + series) < 0) return; if ((r.fy || fyOf(r.checkDate || ymdOfMs(r.createdAt || now))) === fy && r.seq) used[r.seq] = 1; });
+    var all = (S.raw && S.raw.reports) || S.reports;
+    Object.keys(all).forEach(function (k) { var r = all[k]; if (r.companyId !== cid || String(r.no || "").indexOf("-" + series) < 0) return; if ((r.fy || fyOf(r.checkDate || ymdOfMs(r.createdAt || now))) === fy && r.seq) used[r.seq] = 1; });
     while (used[seq]) seq++;
     var code = normId(c.shortName || c.name).slice(0, 10) || "CO";
     return { no: serialNo(code + "-" + series, seq, day, fy), seq: seq, fy: fy, day: day };
@@ -6208,16 +6354,16 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       ledgersFor(function (r) { return S.vendors[r.vid] && canStep("txn", r.cid) && (!cid || r.cid === cid); }).forEach(function (r) {
         var by = {};
         function add(bk, it) { (by[bk] = by[bk] || []).push(it); }
-        if (r.opRem > 0.5) add("now", { kind: "opening", amt: r.opRem, od: r.opOdRem, due: t });
-        if (r.cnRem > 0.5) add("now", { kind: "cn", amt: r.cnRem, od: 0, due: t });
-        r.bills.forEach(function (b) { var p = billPayNow(b); if (p > 0.5) add(dueBucket(b.dueDate), { kind: "bill", b: b, amt: p, due: ymdOk(b.dueDate) ? b.dueDate : t }); });
+        if (r.opRem > 0.5 && payHere("mnt")) add("now", { kind: "opening", amt: r.opRem, od: r.opOdRem, due: t });
+        if (r.cnRem > 0.5 && payHere("mnt")) add("now", { kind: "cn", amt: r.cnRem, od: 0, due: t });
+        r.bills.forEach(function (b) { if (!payHere(b)) return; var p = billPayNow(b); if (p > 0.5) add(dueBucket(b.dueDate), { kind: "bill", b: b, amt: p, due: ymdOk(b.dueDate) ? b.dueDate : t }); });
         Object.keys(by).forEach(function (bk) {
           var its = by[bk].sort(function (x, y) { return (x.kind !== "opening") - (y.kind !== "opening") || natCmp(x.due, y.due); });
           rows.push({ key: "v|" + r.cid + "|" + r.vid + "|" + bk, type: "vendor", cid: r.cid, vid: r.vid, cur: r.cur || "INR", r: r, items: its, bucket: bk, due: its[0].due,
             pay: round2(its.reduce(function (s0, x) { return s0 + x.amt; }, 0)), sent: its.filter(function (x) { return x.b; }).map(function (x) { return x.b; }) });
         });
         r.advs.forEach(function (ad) {
-          var a = ad.a; if (a.status !== "active") return;
+          var a = ad.a; if (a.status !== "active" || !payHere(a)) return;
           (a.installments || []).forEach(function (it, i) {
             var p = instPayNow(a, i); if (p <= 0.5) return;
             var d = instDue(a, i) || t, rs = instReports(a, i).filter(function (q) { return stageOf(q) === "payment"; });
@@ -6228,7 +6374,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     }
     if (side !== "vendors") {
       vchList().forEach(function (v) {
-        if (v.settle || !v.approvedAt || v.sentBack || !canStep("txn", v.companyId) || (cid && v.companyId !== cid)) return;
+        if (v.settle || !v.approvedAt || v.sentBack || !payHere(v) || !canStep("txn", v.companyId) || (cid && v.companyId !== cid)) return;
         var p = round2(vPayable(v) - vchPaid(v.id)); if (p <= 0.5) return;
         var rp = vcrOf(v.id); rows.push({ key: "vch|" + v.id, type: "vch", cid: v.companyId, vid: "", cur: "INR", v: v, rp: rp, name: v.payee || "", payee: v.payee || "", payeeId: "", pay: p, due: t, bucket: "now", prep: pnm(v.preparedByName || (rp && rp.preparedBy) || "") });
       });
@@ -7358,7 +7504,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     function put(r, c, cell) { ws[XLSX.utils.encode_cell({ r: r, c: c })] = cell; }
     put(0, 0, { t: "s", v: o.title || "", s: { font: { name: "Calibri", sz: 16, bold: true, color: { rgb: XL_DARK } } } });
     put(1, 0, { t: "s", v: o.sub || "", s: { font: { name: "Calibri", sz: 10, italic: true, color: { rgb: "5B6B63" } } } });
-    put(2, 0, { t: "s", v: "KKSK Group · Bills & Vouchers Accounting", s: { font: { name: "Calibri", sz: 9, color: { rgb: "8A9A92" } } } });
+    put(2, 0, { t: "s", v: "KKSK Group · " + appName(), s: { font: { name: "Calibri", sz: 9, color: { rgb: "8A9A92" } } } });
     cols.forEach(function (c, j) { put(r0 - 1, j, { t: "s", v: c.h, s: { font: { name: "Calibri", sz: 10, bold: true, color: { rgb: "FFFFFF" } }, fill: { patternType: "solid", fgColor: { rgb: XL_GREEN } }, alignment: { vertical: "center", horizontal: c.t === "money" || c.t === "int" ? "right" : "left", wrapText: true }, border: border } }); });
     o.rows.forEach(function (row, i) {
       var band = i % 2 ? { patternType: "solid", fgColor: { rgb: XL_BAND } } : undefined;
@@ -7668,7 +7814,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var doc = newPdf(jsPDF), P = pdfLook(doc), title = meta.no ? "Payment plan " + meta.no : "Payment plan (not locked yet)", first = true;
       function startPage(heading, big, n, label2) {
         if (!first) doc.addPage(); first = false;
-        var y = P.head({ logo: groupLogo(), name: "KKSK Group", sub: "Bills & Vouchers Accounting · " + heading, big: big, bigSub: title + " · " + fmtDate(meta.date || todayYmd()),
+        var y = P.head({ logo: groupLogo(), name: "KKSK Group", sub: appName() + " · " + heading, big: big, bigSub: title + " · " + fmtDate(meta.date || todayYmd()),
           facts: [["Plan", meta.no || "Not locked"], ["Planning date", fmtDate(meta.date || todayYmd())], [label2, String(n)], ["Prepared by", meta.by || preparedByText()]] });
         P.font("Lato", "bold", 13, PDFK.navy); doc.text(heading, PDFK.L, y + 12);
         return y + 22;
@@ -7827,7 +7973,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function missingOpenings() { if (S.isAdmin || !S.blLoaded || !S.myUser) return []; return cashCos(S.myUser).filter(function (cid) { return openingOf(meId(), cid) == null; }); }
   /* The super admin and the admins hold no cash advances or opening cash balances. */
   function isAnyAdmin(uid) { return !!(S.admins && S.admins[uid]) || (uid === meId() && !S.actId && !!(S.me && S.me.canEdit)); }
-  function lockedNow() { return !S.isAdmin && S.blLoaded && missingOpenings().length > 0; }
+  /* Opening cash is asked for in Maintenance, where cash vouchers began; other divisions start from nil. */
+  function lockedNow() { return DIV === "mnt" && !S.isAdmin && S.blLoaded && missingOpenings().length > 0; }
 
   /* ---- the lock screen ---- */
   function renderLock() {
@@ -8235,7 +8382,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     vs.forEach(function (v) { var p = vPayable(v); t.total += Number(v.total) || 0; t.payable += p; if (v.settle) t.settled += p; else t.toPay += p; if (!t.from || v.voucherDate < t.from) t.from = v.voucherDate; if (!t.to || v.voucherDate > t.to) t.to = v.voucherDate; });
     ["total", "tds", "payable", "settled", "toPay"].forEach(function (k) { t[k] = round2(t[k]); }); return t;
   }
-  function vcrTeamSees(r) { return S.isAdmin || stageOf(r) === "generated"; }
+  function vcrTeamSees(r) { return S.isAdmin || (S.tab === "Approvals" && canBehalf()) || stageOf(r) === "generated"; }
   function renderVcr() {
     var sel = $("vcCo"), cur = sel.value;
     fillSelect(sel, [["", "All your companies"]].concat(roleCos("vcr").map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
@@ -8319,7 +8466,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       S.reports[id] = Object.assign({ id: id }, doc); invalidate(); renderNav(); toast("Vouchers CR " + doc.no + " generated."); openVcr(id);
     }, function (e) { toast(explain(e)); }).then(function () { VC.busy = false; if (!$("secVcrNew").hidden) updVcrNew(); });
   }
-  function backToVcr() { VC.viewId = null; renderVcr(); renderNav(); show("secVcr"); }
+  function backToVcr() { VC.viewId = null; if (S.tab === "Approvals") { renderApprovals(); renderNav(); show("secAppr"); return; } renderVcr(); renderNav(); show("secVcr"); }
   function openVcr(id) { VC.viewId = id; CK.arm = ""; renderVcrView(); show("secVcrView"); window.scrollTo(0, 0); }
   function vcrVouchers(r, cid) { return (r.voucherIds || []).map(function (id) { return S.vouchers[id]; }).filter(function (v) { return v && (!cid || v.companyId === cid); }).sort(vcrSort); }
   function vcrPaid(rid, cid) { var s = 0; txList().forEach(function (t) { if (t.vcrId === rid && (!cid || t.companyId === cid) && t.kind === "payment") s += Number(t.amount) || 0; }); return round2(s); }
@@ -8348,6 +8495,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
     statBoxes($("vvPay"), [["Total amount", money(r.total), ""], ["Total payable", money(r.payable), ""], ["Settled from advance", money(r.settled), ""], ["By Financier", money(r.toPay), "", "hi"]]);
     var acts = $("vvActs"), hint = $("vvHint"); acts.textContent = ""; hint.textContent = "";
+    if (!admin && S.tab === "Approvals" && canBehalf()) {
+      if (S.downloads) actBtn(acts, "Download PDF", "", function (b) { downloadVcr(r.id, b); });
+      if ((s === "generated" || s === "printed") && apprMine(r)) { actBtn(acts, "Record approval", "primary", function () { openVcrApprove(r); }); hint.textContent = "Record it only once management has signed it on paper."; }
+      else if (s === "payment") hint.textContent = apprByText(r) + ", " + stamp(r.approvedAt) + ".";
+      return;
+    }
     if (s === "generated") {
       if (S.downloads) actBtn(acts, "Download PDF to print", "primary", function (b) { downloadVcr(r.id, b); });
       if (admin) actBtn(acts, "Approve for payment", "", function () { openVcrApprove(r); });
@@ -8373,8 +8526,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function sendBackText(sb) { if (!sb) return ""; var r = SEND_BACK.filter(function (x) { return x[0] === sb.reason; })[0]; return (r ? r[1] : "Sent back") + (sb.note ? ": " + sb.note : ""); }
   function vchPaid(vid) { var s = 0; txList().forEach(function (t) { if (t.voucherId === vid && t.kind === "payment") s += Number(t.amount) || 0; }); return round2(s); }
   function openVcrApprove(r) {
-    if (!S.isAdmin) return;
-    VA = { rid: r.id, sel: {}, why: {}, note: {}, busy: false };
+    if (!S.isAdmin && !(canBehalf() && apprMine(r))) return;
+    VA = { rid: r.id, sel: {}, why: {}, note: {}, busy: false, paperBy: reportApprover(r) };
     vcrVouchers(r).forEach(function (v) { VA.sel[v.id] = true; });
     renderVcrApprove(); show("secVcrApprove");
   }
@@ -8401,6 +8554,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
             s.id = "vaWhy_" + v.id; td.appendChild(s); td.appendChild(n); } }
       ], list, { sortIndex: -1, rowClass: function (v) { return VA.sel[v.id] ? "" : "skip"; } });
     });
+    if (canBehalf()) {
+      var bw = el("div", { class: "card", style: "padding:14px 16px" }); behalfField(bw, VA.paperBy); box.insertBefore(bw, box.firstChild);
+      $("bhBy").addEventListener("change", function () { VA.paperBy = this.value; this.classList.remove("bad"); });
+    }
     var ok = vs.filter(function (v) { return VA.sel[v.id]; }), t = vcrSums(ok), back = vs.length - ok.length;
     statBoxes($("vaStats"), [["Prepared by", pnm(r.preparedBy), ""], ["Settled to approve", money(t.settled), ""], ["Payable to approve", money(t.toPay), "Goes to Payment Entry"], ["Sent back", String(back), back ? "Leave the report" : ""]]);
     $("vaGo").textContent = ok.length ? (back ? "Approve " + ok.length + ", send back " + back : "Approve all and process payment") : "Send all back";
@@ -8408,7 +8565,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function goVcrApprove(btn) {
     var r = S.reports[VA.rid]; if (!r || VA.busy) return;
     var vs = vcrVouchers(r), ok = vs.filter(function (v) { return VA.sel[v.id]; }), back = vs.filter(function (v) { return !VA.sel[v.id]; });
-    var miss = back.filter(function (v) { return !VA.why[v.id]; });
+    var miss = back.filter(function (v) { return !VA.why[v.id]; }), bh = behalfRead();
+    if (!bh) { toast("Choose who signed it on paper."); $("bhBy").focus(); return; }
     if (miss.length) { miss.forEach(function (v) { var s = $("vaWhy_" + v.id); if (s) s.classList.add("bad"); }); toast("Choose why each unticked voucher is sent back."); var f = $("vaWhy_" + miss[0].id); if (f) f.focus(); return; }
     if (btn.getAttribute("data-arm") !== "1") { btn.setAttribute("data-arm", "1"); var lb = btn.textContent; btn.textContent = "Click again to confirm"; setTimeout(function () { if (btn.isConnected) { btn.removeAttribute("data-arm"); btn.textContent = lb; } }, 4000); return; }
     btn.removeAttribute("data-arm");
@@ -8426,7 +8584,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var doc = Object.assign({}, r); delete doc.id;
       Object.assign(doc, { voucherIds: ok.map(function (v) { return v.id; }), companyIds: cos, byCo: byCo, total: t.total, tds: t.tds, payable: t.payable, settled: t.settled, toPay: t.toPay, periodFrom: t.from, periodTo: t.to,
         stage: "payment", approvedAt: now, approvedBy: meId(), sentBackIds: (r.sentBackIds || []).concat(back.map(function (v) { return v.id; })),
-        log: (r.log || []).concat([logEntry("payment", "Approved " + plural(ok.length, "voucher") + (back.length ? ", sent back " + back.length : ""))]) });
+        log: (r.log || []).concat([logEntry("payment", "Approved " + plural(ok.length, "voucher") + (back.length ? ", sent back " + back.length : "") + (bh.onBehalf ? " · " + behalfNote(bh) : ""))]) }, bh);
       return retry(function () { return S.db.doc("reports/" + r.id).set(doc); }).then(function () { S.reports[r.id] = Object.assign({ id: r.id }, doc); });
     });
     job.then(function (res) {
@@ -8605,6 +8763,21 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     return out.slice(0, 30);
   }
   /* Wraps the database so every set, update and delete also writes a log entry. Drafts of bills being typed are not logged until they are submitted. */
+  /* A new entry is stamped with its division: the app it is made in, or (in Accounts and Finance) the division of what it is about. */
+  var DIV_COLS = { bills: 1, reports: 1, advances: 1, vouchers: 1, transactions: 1, notes: 1, cashadv: 1 };
+  function withDiv(col, v) {
+    if (!DIV_COLS[col] || !v || typeof v !== "object" || v.div) return v;
+    return Object.assign({}, v, { div: DIV || inferDiv(v) || "mnt" });
+  }
+  function inferDiv(v) {
+    var R = S.raw || {}, ids = [];
+    function from(m, id) { var x = id && m && m[id]; return x && x.div; }
+    var d = from(R.bills, v.billId) || from(R.bills, v.taxBillId) || from(R.advances, v.advanceId) || from(R.vouchers, v.voucherId) || from(R.reports, v.vcrId) || from(R.reports, v.reportId);
+    if (d) return d;
+    ids = (v.billIds || []).concat(Object.keys(v.billAlloc || {})); for (var i = 0; i < ids.length; i++) { d = from(R.bills, ids[i]); if (d) return d; }
+    ids = v.voucherIds || []; for (i = 0; i < ids.length; i++) { d = from(R.vouchers, ids[i]); if (d) return d; }
+    return null;
+  }
   function auditDb(db) {
     return {
       collection: function (c) { return db.collection(c); },
@@ -8625,7 +8798,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         return {
           onSnapshot: function () { return d.onSnapshot.apply(d, arguments); },
           get: function () { return d.get.apply(d, arguments); },
-          set: function (v) { var b = auditPrev(col, id); return d.set(v).then(function (r) { try { log("set", b, JSON.parse(JSON.stringify(v))); } catch (e) {} return r; }); },
+          set: function (v) { v = withDiv(col, v); var b = auditPrev(col, id); return d.set(v).then(function (r) { try { log("set", b, JSON.parse(JSON.stringify(v))); } catch (e) {} return r; }); },
           update: function (v) { var b = auditPrev(col, id); return d.update(v).then(function (r) { try { log("update", b, JSON.parse(JSON.stringify(v))); } catch (e) {} return r; }); },
           delete: function () { var b = auditPrev(col, id); return d.delete().then(function (r) { try { log("delete", b, null); } catch (e) {} return r; }); }
         };
@@ -8831,7 +9004,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function bkBook(XLSX, data) {
     var wb = XLSX.utils.book_new(), now = Date.now(), counts = BK_COLS.map(function (c) { return [c, Object.keys(data[c] || {}).length]; });
-    XLSX.utils.book_append_sheet(wb, aoaSheet(XLSX, ["Bills & Vouchers Accounting backup", ""], [["Made", stamp(now)], ["Made by", pnm(preparedByText())], ["How to restore", "Data & Archive › Restore from backup, then choose this file. The raw_ sheets hold every record; do not edit them."], ["Not included", "Bill images kept while a bill is being checked."]].concat(counts.map(function (c) { return ["Records in " + c[0], c[1]]; })), [26, 90]), "About");
+    XLSX.utils.book_append_sheet(wb, aoaSheet(XLSX, ["KKSK Group accounts backup", ""], [["Made", stamp(now)], ["Made by", pnm(preparedByText())], ["How to restore", "Data & Archive › Restore from backup, then choose this file. The raw_ sheets hold every record; do not edit them."], ["Not included", "Bill images kept while a bill is being checked."]].concat(counts.map(function (c) { return ["Records in " + c[0], c[1]]; })), [26, 90]), "About");
     var bills = Object.keys(data.bills || {}).map(function (k) { return Object.assign({ id: k }, data.bills[k]); });
     var vn = function (id) { return ((data.vendors || {})[id] || {}).name || ""; }, cn = function (id) { var c = (data.companies || {})[id]; return c ? c.shortName || c.name : ""; };
     XLSX.utils.book_append_sheet(wb, aoaSheet(XLSX, ["Company", "Vendor", "Bill no.", "Bill date", "Status", "Currency", "Taxable", "GST", "Total", "TDS", "Landed taxable (INR)", "Landed GST (INR)", "Narration"],
@@ -9092,7 +9265,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function approverScoped() { return !!(S.isAppAdmin && !S.isSuper); }
   function applyScope() {
     var R = S.raw, me = S.me && S.me.id, sc = approverScoped();
-    function pick(src, ok) { var m = {}; Object.keys(src || {}).forEach(function (k) { if (!sc || ok(src[k])) m[k] = src[k]; }); return m; }
+    function pick(src, ok) { var m = {}; Object.keys(src || {}).forEach(function (k) { if (inDiv(src[k]) && (!sc || ok(src[k]))) m[k] = src[k]; }); return m; }
     function mine(x) { return x.approverId === me; }
     S.bills = pick(R.bills, mine); S.vouchers = pick(R.vouchers, mine); S.advances = pick(R.advances, mine);
     S.reports = pick(R.reports, function (r) {
@@ -9125,11 +9298,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       S.raw.advances = m; applyScope(); S.aLoaded = true; invalidate(); onData();
     }, function (e) { S.aLoaded = true; onData(); toast("Proformas and imports stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     S.db.collection("transactions").onSnapshot(function (snap) {
-      var m = {}; snap.docs.forEach(function (d) { var t = Object.assign({}, d.data() || {}); t.id = d.id; m[d.id] = t; });
+      var m = {}; snap.docs.forEach(function (d) { var t = Object.assign({}, d.data() || {}); t.id = d.id; if (inDiv(t)) m[d.id] = t; });
       S.txns = m; S.tLoaded = true; invalidate(); onData();
     }, function (e) { S.tLoaded = true; onData(); toast("Payments stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     S.db.collection("notes").onSnapshot(function (snap) {
-      var m = {}; snap.docs.forEach(function (d) { var n = Object.assign({}, d.data() || {}); n.id = d.id; m[d.id] = n; });
+      var m = {}; snap.docs.forEach(function (d) { var n = Object.assign({}, d.data() || {}); n.id = d.id; if (inDiv(n)) m[d.id] = n; });
       S.notes = m; invalidate(); onData();
     }, function () {});
     S.db.collection("vouchers").onSnapshot(function (snap) {
@@ -9138,12 +9311,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     }, function (e) { S.vcLoaded = true; onData(); toast("Vouchers stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     S.db.collection("payees").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data() || {}; }); S.payees = m; }, function () {});
     S.db.collection("cashadv").onSnapshot(function (snap) {
-      var m = {}; snap.docs.forEach(function (d) { var v = Object.assign({}, d.data() || {}); v.id = d.id; m[d.id] = v; });
+      var m = {}; snap.docs.forEach(function (d) { var v = Object.assign({}, d.data() || {}); v.id = d.id; if (inDiv(v)) m[d.id] = v; });
       S.cashadv = m; S.caLoaded = true; onData();
     }, function (e) { S.caLoaded = true; onData(); toast("Cash advances stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     /* Everyone loads every balance, so switching person on a shared login (or an admin viewing as someone) always has the right one. */
     if (true) S.db.collection("balances").onSnapshot(function (snap) {
-      var m = {}; snap.docs.forEach(function (d) { var v = Object.assign({}, d.data() || {}); v.id = d.id; m[d.id] = v; });
+      var m = {}; snap.docs.forEach(function (d) { var v = Object.assign({}, d.data() || {}); v.id = d.id; if (!DIV || DIV === "mnt") m[d.id] = v; });
       S.balances = m; S.blLoaded = true; if (S.userEditing && S.userEditing.mode !== "approve") { /* keep the open form as typed */ } onData();
     }, function (e) { S.blLoaded = true; onData(); });
     else S.db.doc("balances/" + meId()).onSnapshot(function (snap) {
@@ -9178,7 +9351,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function canLedgers() { return S.isAdmin || canDo("acct"); }
   function ledAll() { return Object.keys(S.ledgers || {}).map(function (k) { return S.ledgers[k]; }); }
   function ledCmp(a, b) { return LED_MAINS.indexOf(a.main) - LED_MAINS.indexOf(b.main) || natCmp(a.sub, b.sub) || natCmp(a.name, b.name); }
-  function ledFor(cid) { return ledAll().filter(function (l) { return l.active !== false && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
+  function ledFor(cid) { return ledAll().filter(function (l) { return l.active !== false && ledInApp(l) && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
+  /* Accounts decides which divisions may use a ledger; a ledger with none ticked is open to every division. */
+  function ledInApp(l) { return !DIV || !(l.apps && l.apps.length) || l.apps.indexOf(DIV) >= 0; }
+  function ledAppsText(l) { return l.apps && l.apps.length ? l.apps.map(function (k) { return divName(k); }).join(", ") : "Every division"; }
   /* A name used by more than one ledger (e.g. Travelling Expenses under two sub groups) carries its sub group. */
   function ledName(id) {
     var l = S.ledgers && S.ledgers[id]; if (!l) return "";
@@ -9403,6 +9579,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       sortTable(tb, "lgm_" + sb, [
         { label: "Ledger", kind: "co", sort: function (l) { return l.name; }, cell: function (l, td) { td.appendChild(el("b", null, l.name)); if (l.active === false) sub(td, "Turned off"); } },
         { label: "Companies", cell: function (l, td) { td.appendChild(companyTags(l.companyIds)); if ((l.companyIds || []).length > 1) sub(td, "Shared"); } },
+        { label: "Used in", sort: function (l) { return ledAppsText(l); }, cell: function (l, td) { txt(td, ledAppsText(l)); } },
         { label: "Used", cls: "r num", sort: function (l) { return use[l.id] || 0; }, cell: function (l, td) { txt(td, String(use[l.id] || 0)); } },
         { label: "", kind: "act", cls: "r", cell: function (l, td) { if (!canLedgers()) return; var e = el("button", { class: "btn sm" }, "Edit"); e.addEventListener("click", function () { ledForm(l); }); td.appendChild(e); } }
       ], subs[sb], { sortIndex: 0 });
@@ -9421,6 +9598,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     body.appendChild(fld("Ledger name", inp("lfName", l.name, { maxlength: "80", "data-fmt": "name" })));
     var cf = el("div", { class: "f wide" }), ck = el("div", { class: "checks", id: "lfCos" }); cf.appendChild(el("span", { class: "lb" }, "Companies that use it")); cf.appendChild(ck); cf.appendChild(el("span", { class: "hint" }, "Tick several to share one ledger between companies.")); cf.appendChild(el("span", { class: "err", id: "lfCosE", hidden: "" })); body.appendChild(cf);
     buildChecks(ck, l.companyIds || []);
+    var dv = el("div", { class: "f wide" }), dk = el("div", { class: "checks", id: "lfApps" }); dv.appendChild(el("span", { class: "lb" }, "Divisions that use it")); dv.appendChild(dk);
+    Object.keys(DIVS).forEach(function (k) { var lb = el("label", { class: "check" }), cb = el("input", { type: "checkbox", value: k }); cb.checked = (l.apps || []).indexOf(k) >= 0; lb.appendChild(cb); lb.appendChild(document.createTextNode(" " + DIVS[k].name)); dk.appendChild(lb); });
+    dv.appendChild(el("span", { class: "hint" }, "Purchasers in a division see only its ledgers. Leave all unticked to let every division use it.")); body.appendChild(dv);
     var af = el("label", { class: "check" }), ac = el("input", { type: "checkbox", id: "lfAct" }); ac.checked = l.active !== false; af.appendChild(ac); af.appendChild(document.createTextNode(" Active (shown when choosing ledgers)")); if (!isNew) body.appendChild(af);
     popForm(isNew ? "Add Ledger" : "Edit Ledger", isNew ? "" : "Changes show on every bill and voucher that uses this ledger.", body, isNew ? "Add ledger" : "Save", function () {
       errClear(body);
@@ -9430,7 +9610,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       else if (ledAll().some(function (x) { return x.id !== l.id && x.main === main && normName(x.sub) === normName(sb) && normName(x.name) === normName(nm) && (x.companyIds || []).some(function (c) { return cos.indexOf(c) >= 0; }); })) { errOn("lfName", "This ledger already exists in this sub group for one of these companies."); ok = false; }
       if (!cos.length) { errOn("lfCos", "Tick at least one company."); ok = false; }
       if (!ok) return false;
-      var id = l.id || ("lg_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)), doc = { main: main, sub: sb, name: nm, companyIds: cos, active: isNew ? true : ac.checked, updatedAt: Date.now(), by: meId() };
+      var id = l.id || ("lg_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)), doc = { main: main, sub: sb, name: nm, companyIds: cos, apps: Array.prototype.filter.call(dk.querySelectorAll("input"), function (x) { return x.checked; }).map(function (x) { return x.value; }), active: isNew ? true : ac.checked, updatedAt: Date.now(), by: meId() };
       if (isNew) doc.createdAt = Date.now();
       return retry(function () { return isNew ? S.db.doc("ledgers/" + id).set(doc) : S.db.doc("ledgers/" + id).update(doc); }).then(function () { S.ledgers[id] = Object.assign({ id: id }, l, doc); LGM.side = main; toast(nm + (isNew ? " added." : " saved.")); renderLedgers(); return true; }, function (e) { toast(explain(e)); return false; });
     });
@@ -9767,6 +9947,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (t === "Ledger Books" && !$("secBooks").hidden) { var ba = document.activeElement; if (!(ba && $("secBooks").contains(ba) && ba.tagName === "INPUT")) renderBooks(); return; }
     if (t === "Ledgers" && !$("secLedgers").hidden) { var lga = document.activeElement; if (!(lga && $("secLedgers").contains(lga) && lga.tagName === "INPUT")) renderLedgers(); return; }
     if (t === "Advance Report") { if (!$("secApr").hidden) renderApr(); else if (!$("secCheckView").hidden) renderReport(); return; }
+    if (t === "Approvals") { if (!$("secAppr").hidden) renderApprovals(); else if (!$("secCheckView").hidden) renderReport(); else if (!$("secVcrView").hidden) renderVcrView(); return; }
     if (document.querySelector(".ms-pop")) return; /* a filter list is open: redraw once it closes */
     if (t === "Payables" && !$("secPayables").hidden) { renderPayables(); return; }
     if (t === "Advance Summary" && !$("secAdvSum").hidden) { renderAdvSum(); return; }
@@ -9893,7 +10074,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (t.classList.contains("vnco")) VC.cos[t.getAttribute("data-co")] = t.checked; else if (t.classList.contains("vninc")) VC.sel[t.getAttribute("data-id")] = t.checked;
       updVcrNew();
     });
-    $("uAppBv").addEventListener("change", syncAppsF); $("uPpRole").addEventListener("change", syncAppsF);
+    ["uAppMnt", "uAppRe", "uAppAcc", "uAppFin"].forEach(function (id) { $(id).addEventListener("change", syncAppsF); }); $("uPpRole").addEventListener("change", syncAppsF);
     $("uJobs").addEventListener("change", function () { if (!S.userEditing) return; $("uJobsE").hidden = true; syncApprF(); var js = readChecks($("uJobs")), cos = readChecks($("uCos")), m = {}; cos.forEach(function (cid) { m[cid] = stepsForJobs(js); }); S.userEditing.roles = m; renderRoleGrid(cos, m); });
     $("uCos").addEventListener("change", function () { if (!S.userEditing) return; var cur = readRoleGrid(), cos = readChecks($("uCos")), m = {}, js = readChecks($("uJobs")); cos.forEach(function (cid) { m[cid] = cur[cid] || (js.length ? stepsForJobs(js) : STEPS.map(function (s) { return s[0]; })); }); renderRoleGrid(cos, m);
       var keep = {}; Array.prototype.forEach.call(document.querySelectorAll("#uOb input"), function (i) { keep[i.id] = i.value; });
@@ -9903,6 +10084,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("secMark").addEventListener("focusout", function () { setTimeout(function () { var ae = document.activeElement; if (MK.stale && !(ae && $("secMark").contains(ae) && ae.tagName === "INPUT")) renderMark(); }, 0); });
     $("secPlanPay").addEventListener("focusout", function () { setTimeout(function () { var ae = document.activeElement; if (PP.stale && !(ae && $("secPlanPay").contains(ae) && ae.tagName === "INPUT")) { PP.stale = false; renderPlanning(); } }, 0); });
     $("ppPdf").addEventListener("click", function () { downloadPlan(this); }); $("ppClear").addEventListener("click", function () { ppClearAll(this); }); $("ppLock").addEventListener("click", function () { lockPlan(this); }); $("ppSideV").addEventListener("click", function () { PP.side = "vendors"; renderPlanning(); }); $("ppSideC").addEventListener("click", function () { PP.side = "vouchers"; renderPlanning(); }); $("ppSideL").addEventListener("click", function () { PP.side = "locked"; renderPlanning(); });
+    $("apDiv").addEventListener("change", function () { APV.div = this.value; renderApprovals(); });
     $("vaBack").addEventListener("click", function () { openVcr(VA.rid); }); $("vaCancel").addEventListener("click", function () { openVcr(VA.rid); }); $("vaGo").addEventListener("click", function () { goVcrApprove(this); });
     $("mkSideV").addEventListener("click", function () { MK.side = "vendors"; renderMark(); }); $("mkSideC").addEventListener("click", function () { MK.side = "vouchers"; renderMark(); }); $("mkSideA").addEventListener("click", function () { MK.side = "advances"; renderMark(); });
     $("lgSideV").addEventListener("click", function () { LG.side = "vendors"; LG.limit = 100; renderLedger(); }); $("lgSideC").addEventListener("click", function () { LG.side = "vouchers"; LG.limit = 100; renderLedger(); });
@@ -9926,6 +10108,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
   }
   function start() {
+    $("appTitle").textContent = appName(); document.title = appName() + " · KKSK Group";
     wire();
     $("failReload").addEventListener("click", function () { location.reload(); });
     if (!window.claude || typeof window.claude.use !== "function") { fail("no-runtime"); return; }
@@ -9939,7 +10122,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (window.bvSuperAdmins) window.bvSuperAdmins().then(function (l) { S.supers = l || []; }, function () { S.supers = []; });
       return S.user.me().then(function (me) {
         S.me = me || {}; startPrefs();
-        if (window.bvPortal) window.bvPortal().then(function (p) { var a = p.apps || {}; $("appsLink").hidden = !((a.bv ? 1 : 0) + (a.pp ? 1 : 0) > 1); }, function () {});
+        if (window.bvPortal) window.bvPortal().then(function (p) { var a = p.apps || {}; $("appsLink").hidden = !(APP_KEYS.concat(["pp"]).filter(function (k) { return a[k]; }).length > 1); }, function () {});
         var box = $("me"); box.textContent = "";
         box.appendChild(el("div", { class: "nm" }, S.me.name || "Signed in")); box.appendChild(el("div", { class: "rl" }, S.me.canEdit ? "Super Admin" : "")); box.hidden = false; renderMeAvatar();
         if (!S.me.canEdit) {

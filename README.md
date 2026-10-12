@@ -5,10 +5,22 @@
 | Path | What | Supabase project |
 | --- | --- | --- |
 | `/` (`web/index.html`, `web/portal.js`) | KKSK Group home: sign-in, then a tile per app (straight into the app when a person has only one) | KKSK Group |
-| `/bills/` (`web/bills/index.html`) | Bills & Vouchers | KKSK Group |
+| `/maintenance/` | Maintenance: the division's bills, proformas, imports, cash vouchers and checking reports | KKSK Group |
+| `/renewable/` | Renewable Energy: the same for that division, plus its own Payment Entry and solar billing | KKSK Group |
+| `/accounts/` | Accounts: every division's accounting, ledgers, debit and credit notes, ledger books, companies | KKSK Group |
+| `/finance/` | Finance: approvals (admins, or the financier on their behalf), Payment Entry and advances, payables | KKSK Group |
 | `/production/` (`web/production/index.html`) | Production Planning (Live on the KKSK-Production tables; Demo sample for admins) | KKSK-Production, through the hand-over |
 
-- **Access per app** is set on each person (Settings › Users › Apps): Bills & Vouchers on/off, and a Production Planning
+- **One page, four apps.** Maintenance, Renewable Energy, Accounts and Finance are all `web/bills/index.html`; `netlify.toml`
+  serves it at each address and the address picks the app (`BV_APP`: mnt, re, acc, fin). `/bills/` (the old Bills & Vouchers)
+  moves to `/maintenance/`. Every bill, report, proforma, voucher, payment, note and cash advance carries `div` (mnt or re;
+  none means mnt). Maintenance and Renewable Energy each see only their own; Accounts and Finance see every division.
+  Maintenance is paid in Finance; Renewable Energy pays in its own app, and Finance shows those as payables only.
+  Accounts decides which divisions may use each ledger (Ledgers › Edit › Divisions that use it).
+- **Approvals.** Admins approve checking reports in the division's app or in Finance › Approvals. The financier may record,
+  in Finance › Approvals, an approval management has already signed on paper: it is saved as approved on their behalf
+  (`onBehalf`, `paperByName`) and shown that way. Once approved, by either, a report leaves the list and can't be approved again.
+- **Access per app** is set on each person (Settings › Users › Apps): Maintenance, Renewable Energy, Accounts, Finance, and a Production Planning
   role (Approver, Planner, Floor Team) with a region (Erode, Ambur, or both). Admins and Super Admins get every app.
   `app_portal()` in KKSK Group answers what a signed-in person may open.
 - **Super Admins** are managed by Super Admins in Settings › Users › Super Admins. Someone added becomes a Super Admin
@@ -22,8 +34,8 @@
   pooling, dispatch counted against orders, default rates and other WF1 work. Screens refresh when someone else saves.
   Admins and Super Admins can switch to Demo with the LIVE / DEMO pill: sample data kept in that browser only, never
   written to the database. Everyone else is always on Live.
-- **Settings in both apps**: Users, Change Log, Data & Archive (admins) and Personalise (everyone); Companies is in
-  Bills & Vouchers only. Users are the same KKSK Group people in both; Production Planning's Users tab sets who may use it,
+- **Settings in every app**: Users, Change Log (admins) and Personalise (everyone); Companies and Data & Archive are in
+  Accounts only. Users are the same KKSK Group people in both; Production Planning's Users tab sets who may use it,
   as what and for which plant, and can add a person with a Production Planning-only login. Personalise (picture, look,
   password) is saved per login in KKSK Group (`prefs/<uid>`) and shared by every app.
 

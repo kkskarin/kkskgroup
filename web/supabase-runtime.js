@@ -269,10 +269,15 @@
     });
     startRealtime();
     /* Someone approved for other KKSK apps but not this one goes back to the KKSK Group home. */
-    if (window.BV_APP === "bv") {
+    /* Maintenance, Renewable Energy, Accounts and Finance share one page; access is per app. Asking for access happens in Maintenance. */
+    var K = window.BV_APP;
+    if (K && K !== "pp") {
       sb.rpc("app_portal").then(function (r) {
         var p = r.data || {};
-        if (!r.error && p.approved && !(p.apps && p.apps.bv)) location.replace(HOME); else resolve(ME);
+        if (!r.error && !p.approved && K !== "mnt") location.replace(HOME + "maintenance/");
+        /* Before the four-app split reached the database, apps.bv stood for all of them. */
+        else if (!r.error && p.approved && !(p.apps && (p.apps[K] || (p.apps[K] === undefined && p.apps.bv)))) location.replace(HOME);
+        else resolve(ME);
       }, function () { resolve(ME); });
       return;
     }

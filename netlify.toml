@@ -5,26 +5,27 @@
 #   /accounts/       Accounts          }
 #   /finance/        Finance           }
 #   /production/     Production Planning
+# Netlify treats /maintenance and /maintenance/ alike, so each address is served directly (a slash redirect would loop).
 [build]
   publish = "web"
   command = ""
 
 [[redirects]]
   from = "/maintenance"
-  to = "/maintenance/"
-  status = 301
+  to = "/bills/index.html"
+  status = 200
 [[redirects]]
   from = "/renewable"
-  to = "/renewable/"
-  status = 301
+  to = "/bills/index.html"
+  status = 200
 [[redirects]]
   from = "/accounts"
-  to = "/accounts/"
-  status = 301
+  to = "/bills/index.html"
+  status = 200
 [[redirects]]
   from = "/finance"
-  to = "/finance/"
-  status = 301
+  to = "/bills/index.html"
+  status = 200
 [[redirects]]
   from = "/maintenance/*"
   to = "/bills/index.html"

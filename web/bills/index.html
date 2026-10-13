@@ -409,7 +409,7 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .modal.wide{max-width:520px;max-height:calc(100vh - 32px);overflow:auto}
 .mform{display:grid;gap:2px}
 .mbar{margin:18px 0 -4px}.mbar .seg{margin:0;flex-wrap:wrap}
-.rehtsc{padding:12px 14px;margin:10px 0}.rerows{margin-top:10px;display:grid;gap:6px}.rerow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rerow .field{flex:1 1 140px;min-width:0}.tplkeys{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;position:sticky;top:0;z-index:6;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line)}.chipbtn{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:999px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}.chipbtn:hover{border-color:var(--accent,#00704a)}.tplpage{padding:12px 14px;margin:10px 0}.tpltools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.tpled{background:#fff;color:#1e2823;border:1px dashed #9fb3a8;border-radius:2px;padding:0;max-width:100%;box-sizing:content-box;overflow:auto;font-family:Lato,Arial,sans-serif;font-size:13px;line-height:1.45;outline:none}.tpled:focus{border-color:#00704a;box-shadow:0 0 0 3px rgba(0,112,74,.15)}.tpled table{border-collapse:collapse}.tpled>:first-child{margin-top:0}.tpled>:last-child{margin-bottom:0}.resub{margin:2px 0 8px 22px;padding-left:10px;border-left:2px solid var(--line)}
+.rehtsc{padding:12px 14px;margin:10px 0}.rerows{margin-top:10px;display:grid;gap:6px}.rerow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rerow .field{flex:1 1 140px;min-width:0}.tplkeys{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;position:sticky;top:0;z-index:6;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line)}.chipbtn{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:999px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}.chipbtn:hover{border-color:var(--accent,#00704a)}.tplpage{padding:12px 14px;margin:10px 0}.tpltools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.tplgrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}.tplleft{min-width:0}.tplright{position:sticky;top:120px}.tplprev{display:grid;gap:6px}.tplimg{width:100%;aspect-ratio:210/297;border:1px solid var(--line);border-radius:4px;background:#fff;box-shadow:0 4px 14px rgba(15,23,42,.12)}.tplwrap{overflow:auto;max-height:900px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:10px}.tplai{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft)}.tbtn{min-width:34px}.tsep{width:1px;align-self:stretch;background:var(--line);margin:0 2px}.tsel{width:auto;height:30px;padding:0 6px;font-size:12.5px}.tcol{width:34px;height:30px;padding:0 2px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer}@media (max-width:900px){.tplgrid{grid-template-columns:1fr}.tplright{position:static;max-width:340px}}.tpled{background-color:transparent;background-repeat:no-repeat;color:#1e2823;outline:1px dashed #9fb3a8;border-radius:0;padding:0;box-sizing:content-box;overflow:visible;font-family:Lato,Arial,sans-serif;font-size:13px;line-height:1.4}.tpled:focus{outline:2px solid #00704a}.tpled table{border-collapse:collapse}.tpled>:first-child{margin-top:0}.tpled h1,.tpled h2,.tpled h3,.tplhost h1,.tplhost h2,.tplhost h3{font-family:inherit;letter-spacing:normal;text-transform:none;font-weight:700;color:inherit;line-height:1.25;margin:.5em 0 .35em}.tpled h1,.tplhost h1{font-size:22px}.tpled h2,.tplhost h2{font-size:18px}.tpled h3,.tplhost h3{font-size:15px}.tpled p,.tplhost p{margin:0 0 .6em}.tpled>:last-child{margin-bottom:0}.resub{margin:2px 0 8px 22px;padding-left:10px;border-left:2px solid var(--line)}
 .solgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 16px}.solgrid .f.wide{grid-column:1/-1}
 .soldocs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 14px}
 .soldoc{padding:12px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border-left:4px solid var(--line)}.soldoc .k{font-size:12.5px;color:var(--muted)}
@@ -10641,7 +10641,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* ---- The bill of supply PDF: the company's pages, each written as HTML, laid on its A4 letterpad within its margins ---- */
   function solInvoicePdf(iv, btn) {
     if (!S.downloads) { toast("Downloads aren't available here."); return; }
-    var label = btn ? btn.textContent : "", doc = null, tp = coTpl(iv.companyId); if (btn) { btn.disabled = true; btn.textContent = "Preparing"; }
+    var label = btn ? btn.textContent : "", doc = null, tp = iv._co ? tplOf((iv._co.re || {}).tpl || {}) : coTpl(iv.companyId); if (btn) { btn.disabled = true; btn.textContent = "Preparing"; }
     return Promise.all([loadScript(JSPDF), loadScript(H2C), padImage(tp.pad)]).then(function (r) {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF || !window.html2canvas) throw { kind: "lib" };
       doc = newPdf(jsPDF); var c = Promise.resolve();
@@ -10668,7 +10668,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     footer: "Electrical energy is exempt from GST; this is a bill of supply. Payment due by {Due Date}.\n\n**Bank details**\nBank:\nAccount number:\nIFSC:\nPAN:\n\n**For {Company Name}**\n\n\n\nAuthorised Signatory"
   };
   /* The company's pages; a company set up before pages existed gets its letter and footer turned into pages. */
-  function coTpl(cid) { var t = ((S.companies[cid] || {}).re || {}).tpl || {}; return { pages: t.pages && t.pages.length ? t.pages : defPages(t), pad: t.pad || null, m: tplMargins(t), line: t.line || TPL0.line }; }
+  function coTpl(cid) { return tplOf(((S.companies[cid] || {}).re || {}).tpl || {}); }
+  function ivCo(iv) { return iv._co || S.companies[iv.companyId] || {}; }
+  function tplOf(t) { return { pages: t.pages && t.pages.length ? t.pages : defPages(t), pad: t.pad || null, m: tplMargins(t), line: t.line || TPL0.line }; }
   function tplMargins(t) { var d = t.pad ? { t: 45, b: 25, l: 20, r: 20 } : { t: 15, b: 15, l: 15, r: 15 }, m = t.margins || {}, o = {}; ["t", "b", "l", "r"].forEach(function (k) { o[k] = m[k] != null && m[k] !== "" ? n0(m[k]) : d[k]; }); return o; }
   function txtHtml(t) { return String(t || "").split("\n").map(function (l) { var b = /^\*\*.*\*\*$/.test(l.trim()), x = escH(b ? l.trim().slice(2, -2) : l); return b ? "<b>" + x + "</b>" : x; }).join("<br>"); }
   var HEAD_HTML = "<div style=\"display:flex;gap:14px;align-items:center;border-bottom:2px solid #00704a;padding-bottom:10px;margin-bottom:14px\">{Logo}<div><b style=\"font-size:20px\">{Company Name}</b><br><span style=\"font-size:11px\">{Company Address}<br>GSTIN {Company GSTIN} &nbsp; State code {Company State Code}</span></div></div>";
@@ -10706,13 +10708,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     SOL_DED.forEach(function (d, i) { rows += line((i + 1) + ". " + escH(d[1]), amtPdf(iv.ded[d[0]]), false, true); });
     var diff = round2(iv.A - iv.B);
     rows += line("Total charges (B)", amtPdf(iv.B), true) + line("A - B", amtPdf(diff, true)) + line("Rounding", amtPdf(round2(iv.net - diff), true));
-    rows += "<tr style='background:#ecf5f0'><td></td><td colspan='3' style='padding:8px;font-weight:700;font-size:15px'>Net total</td><td style='padding:8px;font-weight:700;font-size:15px;white-space:nowrap;" + r + "'>Rs. " + amtPdf(iv.net) + "</td></tr>";
-    return "<table style='width:100%;border-collapse:collapse;font-size:12.5px;background:#fff'><thead><tr style='background:#ecf5f0'><th style='" + td + "text-align:left'>HSN</th><th style='" + td + "text-align:left'>Particulars</th><th style='" + td + r + "'>Units</th><th style='" + td + r + "'>Rate (Rs.)</th><th style='" + td + r + "'>Amount (Rs.)</th></tr></thead><tbody>" + rows + "</tbody></table>"
+    rows += "<tr style='border-top:1.5px solid #1e2823;border-bottom:1.5px solid #1e2823'><td></td><td colspan='3' style='padding:8px;font-weight:700;font-size:15px'>Net total</td><td style='padding:8px;font-weight:700;font-size:15px;white-space:nowrap;" + r + "'>Rs. " + amtPdf(iv.net) + "</td></tr>";
+    return "<table style='width:100%;border-collapse:collapse;font-size:12.5px'><thead><tr style='border-top:1.5px solid #1e2823;border-bottom:1.5px solid #1e2823'><th style='" + td + "text-align:left'>HSN</th><th style='" + td + "text-align:left'>Particulars</th><th style='" + td + r + "'>Units</th><th style='" + td + r + "'>Rate (Rs.)</th><th style='" + td + r + "'>Amount (Rs.)</th></tr></thead><tbody>" + rows + "</tbody></table>"
       + "<p style='margin:8px 0 0;font-size:12.5px'>Amount in words: " + escH(inWords(iv.net)) + "</p>";
   }
   function htmlFill(html, iv, copy) {
     html = String(html || "").replace(/<p>\s*\{Amounts Table\}\s*<\/p>/g, "{Amounts Table}");
-    var co = S.companies[iv.companyId] || {}, cs = iv.consSnap, tv = tplVals(iv), tp = coTpl(iv.companyId), v = {};
+    var co = ivCo(iv), cs = iv.consSnap, tv = tplVals(iv), tp = iv._co ? tplOf((co.re || {}).tpl || {}) : coTpl(iv.companyId), v = {};
     Object.keys(tv).forEach(function (k) { v[k] = escH(tv[k]).replace(/\n/g, "<br>"); });
     v["Copy"] = escH(copy); v["Logo"] = co.logo ? "<img src='" + escH(co.logo) + "' alt='' style='height:64px;width:auto'>" : "";
     v["Company Address"] = escH(co.address || "").replace(/\n/g, "<br>"); v["Company GSTIN"] = escH(co.gstin || ""); v["Company State Code"] = escH(co.stateCode || "33");
@@ -10720,23 +10722,35 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     v["Bill Line"] = escH(tplFill(tp.line, tv)); v["Amounts Table"] = amountsHtml(iv, tv, tp);
     return cleanHtml(html).replace(/\{([^{}<>]+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; });
   }
-  /* Lays a page's filled HTML out at the width between the margins, takes a picture of it and puts it on the page,
-     over the letterpad when there is one. A page longer than the space is shrunk to fit. */
-  function htmlPage(doc, iv, pg, m, bg) {
-    var W = 595.28, H = 841.89, MM = 72 / 25.4, bw = W - (m.l + m.r) * MM, bh = H - (m.t + m.b) * MM;
-    if (bg) doc.addImage(bg, "JPEG", 0, 0, W, H);
-    var host = el("div", { "aria-hidden": "true", style: "position:absolute;left:0;top:0;z-index:-5;width:" + Math.round(bw / 0.75) + "px;background:transparent;color:#1e2823;font-family:Lato,Arial,sans-serif;font-size:13px;line-height:1.4;display:flow-root" });
+  /* A page's filled HTML laid out at the width between the margins, as a transparent picture. */
+  function pageCanvas(iv, pg, m) {
+    var bw = 210 - m.l - m.r, host = el("div", { "aria-hidden": "true", class: "tplhost", style: "position:absolute;left:0;top:0;z-index:-5;width:" + Math.round(bw * 96 / 25.4) + "px;background:transparent;color:#1e2823;font-family:Lato,Arial,sans-serif;font-size:13px;line-height:1.4;display:flow-root" });
     host.innerHTML = htmlFill(pg.html, iv, String(pg.name || "").toUpperCase()); document.body.appendChild(host);
     if (host.firstElementChild) host.firstElementChild.style.marginTop = "0"; if (host.lastElementChild) host.lastElementChild.style.marginBottom = "0";
     var imgs = Array.prototype.map.call(host.querySelectorAll("img"), function (im) { return im.decode ? im.decode().catch(function () {}) : null; }).filter(Boolean);
-    return Promise.all(imgs).then(function () { return window.html2canvas(host, { scale: 2, backgroundColor: null, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 1400, windowHeight: Math.max(1400, host.scrollHeight + 100) }); }).then(function (cv) {
-      host.remove(); if (!cv.width || !cv.height) return;
-      var h = cv.height * bw / cv.width, w = bw; if (h > bh) { w = bw * bh / h; h = bh; }
-      doc.addImage(cv.toDataURL("image/png"), "PNG", m.l * MM, m.t * MM, w, h);
-    }, function (e) { host.remove(); throw e; });
+    return Promise.all(imgs).then(function () { return window.html2canvas(host, { scale: 2, backgroundColor: null, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 1400, windowHeight: Math.max(1400, host.scrollHeight + 100) }); })
+      .then(function (cv) { host.remove(); return cv; }, function (e) { host.remove(); throw e; });
+  }
+  /* Where the content goes inside the margins (in mm): shrunk to fit when it runs longer than the space. */
+  function fitBox(cv, m) { var bw = 210 - m.l - m.r, bh = 297 - m.t - m.b, h = cv.height * bw / cv.width, w = bw; if (h > bh) { w = bw * bh / h; h = bh; } return { x: m.l, y: m.t, w: w, h: h }; }
+  /* Puts a page on the PDF, over the letterpad when there is one. */
+  function htmlPage(doc, iv, pg, m, bg) {
+    var MM = 72 / 25.4;
+    if (bg) doc.addImage(bg, "JPEG", 0, 0, 595.28, 841.89);
+    return pageCanvas(iv, pg, m).then(function (cv) { if (!cv.width || !cv.height) return; var b = fitBox(cv, m); doc.addImage(cv.toDataURL("image/png"), "PNG", b.x * MM, b.y * MM, b.w * MM, b.h * MM); });
+  }
+  /* The whole printed page as a picture, for the preview beside each page. */
+  function pagePreview(iv, pg, m, bg) {
+    var W = 620, H = Math.round(W * 297 / 210), k = W / 210;
+    return pageCanvas(iv, pg, m).then(function (cv) {
+      var out = document.createElement("canvas"); out.width = W; out.height = H; var cx = out.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0, 0, W, H);
+      var draw = function () { if (cv.width && cv.height) { var b = fitBox(cv, m); cx.drawImage(cv, b.x * k, b.y * k, b.w * k, b.h * k); } cx.strokeStyle = "rgba(0,112,74,.35)"; cx.setLineDash([4, 4]); cx.strokeRect(m.l * k, m.t * k, (210 - m.l - m.r) * k, (297 - m.t - m.b) * k); return out.toDataURL("image/jpeg", 0.88); };
+      if (!bg) return draw();
+      return new Promise(function (res) { var im = new Image(); im.onload = function () { cx.drawImage(im, 0, 0, W, H); res(draw()); }; im.onerror = function () { res(draw()); }; im.src = bg; });
+    });
   }
   function tplVals(iv, ln) {
-    var co = S.companies[iv.companyId] || {}, cs = iv.consSnap, pl = iv.plantSnap, k = kindWord(pl.kind);
+    var co = ivCo(iv), cs = iv.consSnap, pl = iv.plantSnap, k = kindWord(pl.kind);
     if (ln) { cs = Object.assign({}, cs, { htsc: ln.htsc }); pl = Object.assign({}, pl, { htsc: ln.plant, location: (PL()[ln.plant] || {}).location || pl.location }); }
     return { "Company Name": co.name || "", "Invoice No": iv.no, "Invoice Date": fmtDate(iv.date), "Due Date": fmtDate(iv.dueDate), "Month": monthLabel(iv.month), "Energy": k, "ENERGY": k.toUpperCase(), "Generator HTSC": pl.htsc, "Generator Location": pl.location || "",
       "Consumer Name": cs.name, "Consumer Address": cs.address || "", "Consumer HTSC": cs.htsc, "Consumer GSTIN": cs.gstin || "", "Addressee": cs.addressee || "The Managing Director", "Units": units(iv.units), "Rate": String(iv.rate),
@@ -10928,57 +10942,165 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     lp.appendChild(mg);
     lp.appendChild(el("span", { class: "hint", id: "reArea" }));
     /* fields */
-    var lg = el("div", { class: "tplkeys" }); lg.appendChild(el("span", { class: "lb", style: "width:100%" }, "Fields"));
+    var lg = el("div", { class: "tplkeys" }); lg.appendChild(el("span", { class: "lb", style: "width:100%" }, "Fields: click one to put it where the cursor is"));
     TPL_FIELDS.concat(HTML_FIELDS).forEach(function (f) { var b = el("button", { type: "button", class: "chipbtn", title: f === "Amounts Table" ? "The table of units, rate, deductions and net, made by the app" : "Put {" + f + "} here" }, f); b.addEventListener("mousedown", function (e) { e.preventDefault(); }); b.addEventListener("click", function () { tplInsert("{" + f + "}"); }); lg.appendChild(b); });
     box.appendChild(lg);
-    /* pages */
-    T.pages.forEach(function (pg, pi) {
-      var cd = el("div", { class: "card tplpage" }), top = el("div", { class: "acts", style: "align-items:center;margin-bottom:8px" });
-      top.appendChild(el("b", null, "Page " + (pi + 1)));
-      var nm = inp("", pg.name || "", { maxlength: "40", placeholder: "Name, e.g. Covering letter", "aria-label": "Page " + (pi + 1) + " name", style: "max-width:260px" }); nm.removeAttribute("id"); nm.addEventListener("input", function () { pg.name = nm.value; }); top.appendChild(nm);
-      top.appendChild(el("span", { class: "grow" }));
-      if (pi > 0) { var up = el("button", { type: "button", class: "btn sm" }, "Move up"); up.addEventListener("click", function () { T.pages.splice(pi - 1, 0, T.pages.splice(pi, 1)[0]); renderCoRe(); }); top.appendChild(up); }
-      if (pi < T.pages.length - 1) { var dn = el("button", { type: "button", class: "btn sm" }, "Move down"); dn.addEventListener("click", function () { T.pages.splice(pi + 1, 0, T.pages.splice(pi, 1)[0]); renderCoRe(); }); top.appendChild(dn); }
-      if (T.pages.length > 1) { var rm = el("button", { type: "button", class: "btn sm danger" }, "Remove"); rm.addEventListener("click", function () { T.pages.splice(pi, 1); renderCoRe(); }); top.appendChild(rm); }
-      cd.appendChild(top);
-      var html = !!pg._src || /<style/i.test(pg.html || ""), tb = el("div", { class: "tpltools" });
-      function tool(lbl, title, fn) { var b = el("button", { type: "button", class: "btn sm", title: title, "aria-label": title }, lbl); b.addEventListener("mousedown", function (e) { e.preventDefault(); }); b.addEventListener("click", fn); tb.appendChild(b); return b; }
-      var ed, ta;
-      if (!html) {
-        [["B", "Bold", "bold"], ["I", "Italic", "italic"], ["U", "Underline", "underline"], ["Left", "Align left", "justifyLeft"], ["Centre", "Centre", "justifyCenter"], ["Right", "Align right", "justifyRight"], ["• List", "Bulleted list", "insertUnorderedList"]].forEach(function (t) { tool(t[0], t[1], function () { ed.focus(); document.execCommand(t[2], false, null); pg.html = ed.innerHTML; }); });
-        var fs = el("select", { class: "field", "aria-label": "Text size", style: "width:auto;height:30px;padding:0 6px" }); fillSelect(fs, [["", "Size"], ["2", "Small"], ["3", "Normal"], ["4", "Large"], ["5", "Larger"]], ""); fs.addEventListener("change", function () { if (!fs.value) return; ed.focus(); document.execCommand("fontSize", false, fs.value); pg.html = ed.innerHTML; fs.value = ""; }); tb.appendChild(fs);
-      }
-      tool(html ? "Visual editor" : "Edit as HTML", html ? "Back to the visual editor" : "Edit this page's HTML", function () { pg._src = !html; renderCoRe(); });
-      cd.appendChild(tb);
-      if (html) {
-        ta = el("textarea", { class: "field mono", rows: "14", spellcheck: "false", style: "font-size:12.5px", "aria-label": "Page " + (pi + 1) + " HTML" }); ta.value = pg.html || "";
-        ta.addEventListener("input", function () { pg.html = ta.value; }); ta.addEventListener("focus", function () { S.tplFocus = { ta: ta, pg: pg }; });
-        cd.appendChild(ta);
-      } else {
-        ed = el("div", { class: "tpled", contenteditable: "true", role: "textbox", "aria-multiline": "true", "aria-label": "Page " + (pi + 1) + " wording", spellcheck: "true" }); ed.innerHTML = cleanHtml(pg.html || "");
-        ed.addEventListener("input", function () { pg.html = ed.innerHTML; }); ed.addEventListener("focus", function () { S.tplFocus = { ed: ed, pg: pg }; });
-        cd.appendChild(ed);
-      }
-      box.appendChild(cd);
-    });
-    var pa = el("div", { class: "acts", style: "margin-top:10px" }), ad = el("button", { type: "button", class: "btn" }, "Add Page"), pv = el("button", { type: "button", class: "btn" }, "Preview PDF"), rs = el("button", { type: "button", class: "link-btn" }, "Put back the standard pages");
+    T.pages.forEach(function (pg, pi) { box.appendChild(tplPageCard(T, pg, pi)); });
+    var pa = el("div", { class: "acts", style: "margin-top:10px" }), ad = el("button", { type: "button", class: "btn" }, "Add Page"), pv = el("button", { type: "button", class: "btn" }, "Download Sample PDF"), rs = el("button", { type: "button", class: "link-btn" }, "Put back the standard pages");
     ad.addEventListener("click", function () { T.pages.push({ name: "Page " + (T.pages.length + 1), html: "" }); renderCoRe(); });
     pv.addEventListener("click", function () { coRePreview(pv); }); rs.addEventListener("click", function () { T.pages = defPages({ pad: T.pad }); renderCoRe(); });
     pa.appendChild(ad); pa.appendChild(pv); pa.appendChild(rs); box.appendChild(pa);
-    tplSize(T);
+    tplSize(T); tplPreviewAll();
   }
-  /* Each page's editing box is exactly the space inside the margins, at the size it prints; the wording needs no margins of its own. */
+  /* One page: (1) its wording, laid over the letterpad, with formatting tools; (2) a box to ask Claude to write or change it; (3) the printed page, always shown. */
+  function tplPageCard(T, pg, pi) {
+    var cd = el("div", { class: "card tplpage" }), top = el("div", { class: "acts", style: "align-items:center;margin-bottom:8px" });
+    top.appendChild(el("b", null, "Page " + (pi + 1)));
+    var nm = inp("", pg.name || "", { maxlength: "40", placeholder: "Name, e.g. Covering letter", "aria-label": "Page " + (pi + 1) + " name", style: "max-width:260px" }); nm.removeAttribute("id"); nm.addEventListener("input", function () { pg.name = nm.value; tplPreviewSoon(pg); }); top.appendChild(nm);
+    top.appendChild(el("span", { class: "grow" }));
+    if (pi > 0) { var up = el("button", { type: "button", class: "btn sm" }, "Move up"); up.addEventListener("click", function () { T.pages.splice(pi - 1, 0, T.pages.splice(pi, 1)[0]); renderCoRe(); }); top.appendChild(up); }
+    if (pi < T.pages.length - 1) { var dn = el("button", { type: "button", class: "btn sm" }, "Move down"); dn.addEventListener("click", function () { T.pages.splice(pi + 1, 0, T.pages.splice(pi, 1)[0]); renderCoRe(); }); top.appendChild(dn); }
+    if (T.pages.length > 1) { var rm = el("button", { type: "button", class: "btn sm danger" }, "Remove"); rm.addEventListener("click", function () { T.pages.splice(pi, 1); renderCoRe(); }); top.appendChild(rm); }
+    cd.appendChild(top);
+    var grid = el("div", { class: "tplgrid" }), left = el("div", { class: "tplleft" }), right = el("div", { class: "tplright" }); grid.appendChild(left); grid.appendChild(right); cd.appendChild(grid);
+    /* (1) wording */
+    var src = !!pg._src, ed = null, ta = null, tb = el("div", { class: "tpltools" });
+    function changed() { pg.html = src ? ta.value : ed.innerHTML; tplPreviewSoon(pg); }
+    function cmd(c, v) { if (!ed) return; ed.focus(); document.execCommand("styleWithCSS", false, c === "hiliteColor" || c === "foreColor"); document.execCommand(c, false, v == null ? null : v); changed(); }
+    function tool(lbl, title, fn, html) { var b = el("button", { type: "button", class: "btn sm tbtn", title: title, "aria-label": title }); if (html) b.innerHTML = lbl; else b.textContent = lbl; b.addEventListener("mousedown", function (e) { e.preventDefault(); }); b.addEventListener("click", fn); tb.appendChild(b); return b; }
+    function sep() { tb.appendChild(el("span", { class: "tsep" })); }
+    if (!src) {
+      tool("↶", "Undo", function () { cmd("undo"); }); tool("↷", "Redo", function () { cmd("redo"); }); sep();
+      var fsel = el("select", { class: "field tsel", "aria-label": "Font" }); fillSelect(fsel, [["", "Font"], ["Lato, Arial, sans-serif", "Lato"], ["Arial, sans-serif", "Arial"], ["'Times New Roman', serif", "Times New Roman"], ["Georgia, serif", "Georgia"], ["Verdana, sans-serif", "Verdana"], ["'Courier New', monospace", "Courier New"]], ""); fsel.addEventListener("change", function () { if (fsel.value) cmd("fontName", fsel.value); fsel.value = ""; }); tb.appendChild(fsel);
+      var zsel = el("select", { class: "field tsel", "aria-label": "Text size" }); fillSelect(zsel, [["", "Size"], ["1", "Tiny"], ["2", "Small"], ["3", "Normal"], ["4", "Large"], ["5", "Larger"], ["6", "Huge"]], ""); zsel.addEventListener("change", function () { if (zsel.value) cmd("fontSize", zsel.value); zsel.value = ""; }); tb.appendChild(zsel);
+      var hsel = el("select", { class: "field tsel", "aria-label": "Paragraph style" }); fillSelect(hsel, [["", "Style"], ["P", "Normal text"], ["H1", "Heading 1"], ["H2", "Heading 2"], ["H3", "Heading 3"]], ""); hsel.addEventListener("change", function () { if (hsel.value) cmd("formatBlock", hsel.value); hsel.value = ""; }); tb.appendChild(hsel); sep();
+      [["<b>B</b>", "Bold", "bold"], ["<i>I</i>", "Italic", "italic"], ["<u>U</u>", "Underline", "underline"], ["<s>S</s>", "Strikethrough", "strikeThrough"], ["X<sub>2</sub>", "Subscript", "subscript"], ["X<sup>2</sup>", "Superscript", "superscript"]].forEach(function (t) { tool(t[0], t[1], function () { cmd(t[2]); }, true); });
+      var fc = el("input", { type: "color", class: "tcol", value: "#1e2823", title: "Text colour", "aria-label": "Text colour" }); fc.addEventListener("input", function () { cmd("foreColor", fc.value); }); tb.appendChild(fc);
+      var hc = el("input", { type: "color", class: "tcol", value: "#fff59d", title: "Highlight", "aria-label": "Highlight colour" }); hc.addEventListener("input", function () { cmd("hiliteColor", hc.value); }); tb.appendChild(hc); sep();
+      [["⯇", "Align left", "justifyLeft"], ["≡", "Centre", "justifyCenter"], ["⯈", "Align right", "justifyRight"], ["☰", "Justify", "justifyFull"], ["•", "Bulleted list", "insertUnorderedList"], ["1.", "Numbered list", "insertOrderedList"], ["⇤", "Decrease indent", "outdent"], ["⇥", "Increase indent", "indent"], ["―", "Horizontal line", "insertHorizontalRule"]].forEach(function (t) { tool(t[0], t[1], function () { cmd(t[2]); }); });
+      sep();
+      tool("Table", "Insert a table", function () { tplTableForm(ed, changed); });
+      tool("+Row", "Add a row below", function () { tplTableEdit(ed, "row+"); changed(); }); tool("+Col", "Add a column to the right", function () { tplTableEdit(ed, "col+"); changed(); });
+      tool("−Row", "Delete this row", function () { tplTableEdit(ed, "row-"); changed(); }); tool("−Col", "Delete this column", function () { tplTableEdit(ed, "col-"); changed(); });
+      tool("Clear", "Clear formatting", function () { cmd("removeFormat"); }); sep();
+    }
+    tool(src ? "Back to editor" : "</> HTML", src ? "Back to the formatted editor" : "See and edit this page's HTML", function () { pg._src = !src; renderCoRe(); });
+    left.appendChild(tb);
+    if (src) {
+      ta = el("textarea", { class: "field mono", rows: "18", spellcheck: "false", style: "font-size:12.5px", "aria-label": "Page " + (pi + 1) + " HTML" }); ta.value = pg.html || "";
+      ta.addEventListener("input", changed); ta.addEventListener("focus", function () { S.tplFocus = { ta: ta, pg: pg }; }); left.appendChild(ta);
+    } else {
+      var wrap = el("div", { class: "tplwrap" });
+      ed = el("div", { class: "tpled", contenteditable: "true", role: "textbox", "aria-multiline": "true", "aria-label": "Page " + (pi + 1) + " wording", spellcheck: "true" }); ed.innerHTML = cleanHtml(pg.html || "");
+      ed.addEventListener("input", changed); ed.addEventListener("focus", function () { S.tplFocus = { ed: ed, pg: pg }; });
+      wrap.appendChild(ed); left.appendChild(wrap);
+    }
+    /* (2) Claude */
+    var ai = el("div", { class: "tplai" }), q = el("textarea", { class: "field", rows: "3", placeholder: "Ask Claude to write or change this page, e.g. \"Put the bank details in a small box at the bottom left and make the heading green.\"", "aria-label": "Ask Claude about page " + (pi + 1) });
+    ai.appendChild(el("span", { class: "lb" }, "Ask Claude"));
+    ai.appendChild(q);
+    var aa = el("div", { class: "acts", style: "margin-top:6px;align-items:center" }), go = el("button", { type: "button", class: "btn primary sm" }, "Ask Claude"), note = el("span", { class: "hint", style: "flex:1;min-width:160px" }, pg._note || "");
+    var mic = null, Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (Rec) { mic = el("button", { type: "button", class: "btn sm", title: "Speak instead of typing", "aria-label": "Speak" }, "🎤 Speak"); mic.addEventListener("click", function () { tplDictate(Rec, q, mic); }); }
+    var att = el("input", { type: "file", accept: "image/*,application/pdf", hidden: "" }), ab = el("button", { type: "button", class: "btn sm", title: "A picture or PDF of a page to copy the look of" }, pg._ref ? "Picture: " + pg._ref.name : "Attach Picture");
+    ab.addEventListener("click", function () { if (pg._ref) { pg._ref = null; ab.textContent = "Attach Picture"; return; } att.click(); });
+    att.addEventListener("change", function () { var f = att.files && att.files[0]; att.value = ""; if (f) { pg._ref = f; ab.textContent = "Picture: " + f.name + " (click to remove)"; } });
+    var undo = el("button", { type: "button", class: "btn sm" }, "Undo Claude's change"); undo.hidden = !(pg._hist && pg._hist.length);
+    undo.addEventListener("click", function () { if (!pg._hist || !pg._hist.length) return; pg.html = pg._hist.pop(); pg._note = ""; renderCoRe(); });
+    go.addEventListener("click", function () { tplAsk(T, pg, q.value.trim(), go, note); });
+    q.addEventListener("keydown", function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); go.click(); } });
+    aa.appendChild(go); if (mic) aa.appendChild(mic); aa.appendChild(ab); aa.appendChild(att); aa.appendChild(undo); aa.appendChild(note); ai.appendChild(aa);
+    if (!S.sample) { go.disabled = true; note.textContent = "Claude isn't available here."; }
+    left.appendChild(ai);
+    /* (3) preview */
+    var pvw = el("div", { class: "tplprev" }), img = el("img", { alt: "Page " + (pi + 1) + " as printed", class: "tplimg" }), st = el("span", { class: "hint" }, "Preparing the preview…");
+    pvw.appendChild(el("span", { class: "lb" }, "As printed")); pvw.appendChild(img); pvw.appendChild(st); right.appendChild(pvw);
+    pg._pv = { img: img, st: st };
+    return cd;
+  }
+  /* Previews: redrawn a moment after each change, one page at a time. */
+  function tplPreviewSoon(pg) { clearTimeout(pg._pt); pg._pt = setTimeout(function () { tplPreview(pg); }, 700); }
+  function tplPreviewAll() { var T = (S.coRe || {}).tpl; if (T) (T.pages || []).forEach(function (pg, i) { clearTimeout(pg._pt); pg._pt = setTimeout(function () { tplPreview(pg); }, 200 + i * 150); }); }
+  var TPLQ = Promise.resolve();
+  function tplPreview(pg) {
+    TPLQ = TPLQ.then(function () {
+      var R = S.coRe; if (!R || !pg._pv || !document.body.contains(pg._pv.img)) return;
+      var T = R.tpl, m = tplMargins(T), iv = sampleInvoice();
+      return Promise.all([loadScript(H2C), padImage(T.pad)]).then(function (r) { return pagePreview(iv, pg, m, r[1]); }).then(function (u) { pg._pv.img.src = u; pg._pv.st.textContent = "With sample figures" + (T.pad ? ", on the letterpad" : "") + ". The dashed line is the margin."; }, function () { pg._pv.st.textContent = "The preview couldn't be drawn."; });
+    }).catch(function () {});
+    return TPLQ;
+  }
+  /* Ask Claude to write or change one page; what it gives back replaces the wording, and can be undone. */
+  function tplAsk(T, pg, ask, btn, note) {
+    if (!ask) { toast("Write what Claude should do with this page."); return; }
+    if (!S.sample) { toast("Claude isn't available here."); return; }
+    var m = tplMargins(T), w = Math.round(210 - m.l - m.r), h = Math.round(297 - m.t - m.b), lb = btn.textContent; btn.disabled = true; btn.textContent = "Claude is writing…"; note.textContent = "";
+    var prompt = [
+      "You write one page of a bill of supply PDF for an Indian renewable energy company, as an HTML fragment.",
+      "The fragment is laid out in a box " + w + " mm wide and " + h + " mm tall (A4 less the page margins), at 96 px per inch, base font 13px Lato. " + (T.pad ? "It is printed over the company's letterpad, which already has the logo, name, address and a light background design: do not repeat the letterhead, and do not give the page or its blocks a background colour unless asked." : "There is no letterpad; include a heading with {Logo}, {Company Name}, {Company Address} and GSTIN {Company GSTIN} if the page needs one.") + " No outer margins or padding on the page itself.",
+      "Fields in braces are filled in for each bill; keep them exactly as written, and use only these: " + TPL_FIELDS.concat(HTML_FIELDS).map(function (f) { return "{" + f + "}"; }).join(" ") + ". {Amounts Table} is a full-width table of units, rate, the nine deductions and the net, made by the app: put it on its own line, never inside a paragraph.",
+      "Use plain HTML with inline styles only (p, div, span, b, i, u, s, sub, sup, br, h1-h3, ul, ol, li, table, tr, td, th, hr, img with {Logo}). No scripts, forms, iframes, external links or images, fonts or style sheets. Keep it to one page.",
+      "Change only what is asked and keep everything else as it is.",
+      "This page is named \"" + (pg.name || "") + "\". Its current HTML:\n" + (pg.html || "(empty)"),
+      "What to do: " + ask,
+      pg._ref ? "A picture of a page to follow is attached; copy its layout and wording style, but use the fields above for anything that changes from bill to bill." : "",
+      "Reply with only JSON: {\"html\": \"the whole new HTML of the page\", \"note\": \"one short sentence on what you changed\"}"
+    ].filter(Boolean).join("\n\n");
+    var ref = pg._ref ? (fileType(pg._ref) === "application/pdf" ? openPdf(pg._ref).then(function (pdf) { return pdf.getPage(1); }).then(function (p1) { return renderPdfCanvas(p1, 1600); }).then(canvasBlob) : Promise.resolve(pg._ref)) : Promise.resolve(null);
+    ref.then(function (im) { return S.sample.json(prompt, { images: im ? [im] : undefined, modelTier: "default" }); }).then(function (r) {
+      var html = r && typeof r.html === "string" ? cleanHtml(r.html).trim() : "";
+      if (!html) throw { kind: "empty" };
+      pg._hist = pg._hist || []; pg._hist.push(pg.html || ""); if (pg._hist.length > 20) pg._hist.shift();
+      pg.html = html; pg._src = false; pg._note = "Claude: " + str((r && r.note) || "Done.", 200); renderCoRe();
+    }).catch(function (e) { btn.disabled = false; btn.textContent = lb; note.textContent = e && e.kind === "empty" ? "Claude didn't give back a page. Try saying it another way." : "Claude couldn't do it (" + ((e && (e.kind || e.code || e.message)) || "error") + ")."; });
+  }
+  /* Speaking into the Claude box, with the browser's own dictation (Indian English). */
+  function tplDictate(Rec, q, btn) {
+    if (btn._rec) { btn._rec.stop(); return; }
+    var r = new Rec(), base = q.value ? q.value.replace(/\s*$/, " ") : ""; r.lang = "en-IN"; r.interimResults = true; r.continuous = true; btn._rec = r; btn.textContent = "■ Stop";
+    r.onresult = function (e) { var t = ""; for (var i = 0; i < e.results.length; i++) t += e.results[i][0].transcript; q.value = base + t; };
+    r.onend = r.onerror = function () { btn._rec = null; btn.textContent = "🎤 Speak"; };
+    try { r.start(); } catch (e) { btn._rec = null; btn.textContent = "🎤 Speak"; toast("The microphone couldn't be started."); }
+  }
+  function tplTableForm(ed, done) {
+    var sel = window.getSelection(), rng = sel.rangeCount && ed.contains(sel.anchorNode) ? sel.getRangeAt(0).cloneRange() : null; if (rng) rng.collapse(false);
+    var body = el("div", { class: "mform" }), g = el("div", { class: "solgrid" }); body.appendChild(g);
+    g.appendChild(fld("Rows", inp("ttR", "3", { inputmode: "numeric", class: "field num" }))); g.appendChild(fld("Columns", inp("ttC", "3", { inputmode: "numeric", class: "field num" })));
+    var hb = el("label", { class: "check" }), hc = el("input", { type: "checkbox", id: "ttH" }); hc.checked = true; hb.appendChild(hc); hb.appendChild(document.createTextNode(" First row is a heading")); body.appendChild(hb);
+    var bb = el("label", { class: "check" }), bc = el("input", { type: "checkbox", id: "ttB" }); bc.checked = true; bb.appendChild(bc); bb.appendChild(document.createTextNode(" Lines between cells")); body.appendChild(bb);
+    popForm("Insert table", "", body, "Insert", function () {
+      var nr = Math.min(40, Math.max(1, Math.round(n0($("ttR").value)))), nc = Math.min(10, Math.max(1, Math.round(n0($("ttC").value)))), bd = $("ttB").checked ? "border:1px solid #6b7a72;" : "", hd = $("ttH").checked;
+      var t = "<table style=\"width:100%;border-collapse:collapse;margin:6px 0\">";
+      for (var r = 0; r < nr; r++) { t += "<tr>"; for (var c = 0; c < nc; c++) t += (hd && !r ? "<th style=\"" + bd + "padding:4px 6px;text-align:left\">" : "<td style=\"" + bd + "padding:4px 6px\">") + "&nbsp;" + (hd && !r ? "</th>" : "</td>"); t += "</tr>"; }
+      t += "</table><p><br></p>";
+      ed.focus(); var s2 = window.getSelection(); if (rng) { s2.removeAllRanges(); s2.addRange(rng); } else { var r2 = document.createRange(); r2.selectNodeContents(ed); r2.collapse(false); s2.removeAllRanges(); s2.addRange(r2); }
+      document.execCommand("insertHTML", false, t); done(); return true;
+    });
+  }
+  /* Add or delete the row or column where the cursor is. */
+  function tplTableEdit(ed, what) {
+    var sel = window.getSelection(), n = sel.rangeCount ? sel.anchorNode : null; while (n && n !== ed && !(n.nodeType === 1 && /^T[DH]$/.test(n.tagName))) n = n.parentNode;
+    if (!n || n === ed) { toast("Put the cursor in a table cell first."); return; }
+    var tr = n.parentNode, tbl = tr.closest("table"), ci = Array.prototype.indexOf.call(tr.children, n), rows = tbl.querySelectorAll("tr");
+    if (what === "row+") { var nr = tr.cloneNode(true); Array.prototype.forEach.call(nr.children, function (c) { c.innerHTML = "&nbsp;"; }); tr.parentNode.insertBefore(nr, tr.nextSibling); }
+    else if (what === "row-") { if (rows.length > 1) tr.remove(); else tbl.remove(); }
+    else Array.prototype.forEach.call(rows, function (r) { var c = r.children[ci]; if (!c) return; if (what === "col+") { var nc = c.cloneNode(false); nc.innerHTML = "&nbsp;"; r.insertBefore(nc, c.nextSibling); } else { if (r.children.length > 1) c.remove(); } });
+  }
+  /* Each page's wording box is exactly the space inside the margins, at the size it prints, with the letterpad showing behind it. */
   function tplSize(T) {
     var m = tplMargins(T), w = Math.max(40, 210 - m.l - m.r), h = Math.max(40, 297 - m.t - m.b), px = 96 / 25.4;
-    var a = $("reArea"); if (a) a.textContent = "Space for the wording on each page: " + Math.round(w) + " × " + Math.round(h) + " mm (A4 less the margins). The page boxes below are that size; a page that runs longer is shrunk to fit.";
-    Array.prototype.forEach.call(document.querySelectorAll("#coRe .tpled"), function (ed) { ed.style.width = Math.round(w * px) + "px"; ed.style.height = Math.round(h * px) + "px"; });
+    var a = $("reArea"); if (a) a.textContent = "Space for the wording on each page: " + Math.round(w) + " × " + Math.round(h) + " mm (A4 less the margins). Each page's wording box is that size, laid over the letterpad; a page that runs longer is shrunk to fit.";
+    var eds = document.querySelectorAll("#coRe .tpled");
+    Array.prototype.forEach.call(eds, function (ed) { ed.style.width = Math.round(w * px) + "px"; ed.style.minHeight = Math.round(h * px) + "px"; ed.style.backgroundImage = ""; });
+    tplPreviewAll();
+    padImage(T.pad).then(function (bg) { if (!bg) return; Array.prototype.forEach.call(eds, function (ed) { ed.style.backgroundImage = "url(" + bg + ")"; ed.style.backgroundSize = Math.round(210 * px) + "px " + Math.round(297 * px) + "px"; ed.style.backgroundPosition = -Math.round(m.l * px) + "px " + -Math.round(m.t * px) + "px"; }); });
   }
   /* Puts a field where the cursor was in the page last worked on. */
   function tplInsert(txt0) {
     var f = S.tplFocus; if (!f || !document.body.contains(f.ed || f.ta)) { toast("Click in a page first, where the field should go."); return; }
-    if (f.ta) { var a = f.ta.selectionStart, b = f.ta.selectionEnd; f.ta.setRangeText(txt0, a, b, "end"); f.ta.focus(); f.pg.html = f.ta.value; return; }
+    if (f.ta) { var a = f.ta.selectionStart, b = f.ta.selectionEnd; f.ta.setRangeText(txt0, a, b, "end"); f.ta.focus(); f.pg.html = f.ta.value; tplPreviewSoon(f.pg); return; }
     var sel = window.getSelection(); if (!sel.rangeCount || !f.ed.contains(sel.anchorNode)) { f.ed.focus(); var r = document.createRange(); r.selectNodeContents(f.ed); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); }
-    document.execCommand("insertText", false, txt0); f.pg.html = f.ed.innerHTML;
+    document.execCommand("insertText", false, txt0); f.pg.html = f.ed.innerHTML; tplPreviewSoon(f.pg);
   }
   /* A letterpad must be an A4 portrait PDF; it is kept with the bill files. */
   function padUpload(f, T, btn) {
@@ -11026,13 +11148,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       tpl: { pages: ((R.tpl || {}).pages || []).slice(0, 12).map(function (pg) { return { name: String(pg.name || "").trim().slice(0, 40), html: cleanHtml(pg.html || "").slice(0, 80000) }; }), pad: (R.tpl || {}).pad || null, margins: tplMargins(R.tpl || {}) } };
   }
   /* A sample bill in this wording, with made-up figures. */
-  function coRePreview(btn) {
-    var R = S.coRe, id = S.editing === "new" ? "__preview" : S.editing, saved = S.companies[id];
-    S.companies[id] = Object.assign({}, saved || {}, { name: $("fName").value.trim() || "Company name", address: $("fAddr").value.trim(), gstin: normId($("fGstin").value), stateCode: $("fState").value.trim(), logo: S.draftLogo || "", re: coReOut() });
+  function coRePreview(btn) { solInvoicePdf(sampleInvoice(), btn); }
+  /* A sample bill with made-up figures, for the company as it stands in the form. */
+  function sampleInvoice() {
+    var R = S.coRe, id = S.editing === "new" ? "__preview" : S.editing, saved = S.companies[id] || {};
+    var co = Object.assign({}, saved, { name: $("fName").value.trim() || "Company name", shortName: $("fShort").value.trim() || saved.shortName || "", address: $("fAddr").value.trim(), gstin: normId($("fGstin").value), stateCode: $("fState").value.trim(), logo: S.draftLogo || "", re: coReOut() });
     var h = (R.htscs || [])[0] || {}, ded = {}; SOL_DED.forEach(function (d, i) { ded[d[0]] = [445, 111039, 7212, 4148, 13711, 65332, 3135, 12060, 14934][i]; });
-    var iv = { companyId: id, plant: htscOf(h.htsc) || "079514700620", month: prevMonth(), no: invNoFmt(id, 1, fyOf(todayYmd())), date: todayYmd(), dueDate: addDays(todayYmd(), 30), units: 120604, rate: 6.65, A: 802017, ded: ded, B: 232016, net: 570001,
+    return { _co: co, companyId: id, plant: htscOf(h.htsc) || "079514700620", month: prevMonth(), no: (co.shortName || "ABC").toUpperCase().replace(/[^A-Z0-9]+/g, "") + "-001-" + fyOf(todayYmd()).replace("-", "/"), date: todayYmd(), dueDate: addDays(todayYmd(), 30), units: 120604, rate: 6.65, A: 802017, ded: ded, B: 232016, net: 570001,
       plantSnap: { name: "", htsc: htscOf(h.htsc) || "079514700620", location: h.location || "", kind: R.kind }, consSnap: { name: "Sample Consumer Mills", htsc: "079094620227", address: "Mill Road, Virudhunagar 626001, Tamil Nadu", gstin: "33ABCDE1234F1Z5", stateCode: "33", addressee: "The Managing Director" } };
-    var p0 = solInvoicePdf(iv, btn); (p0 && p0.then ? p0 : Promise.resolve()).then(function () { if (saved) S.companies[id] = saved; else delete S.companies[id]; });
   }
 
   /* ---- Reports › Masters › Consumers and PPA Rates ---- */

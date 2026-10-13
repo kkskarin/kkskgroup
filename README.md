@@ -181,14 +181,20 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   (transformers), each with a location and either its inverters, with the solar panels under each inverter (make, number,
   kW per panel), or its windmills (make, capacity); at least one HTSC finishes setting it up. Makes typed before are offered
   again (separate lists for windmills, inverters and panels). The invoice is set up as **pages** (by default Covering letter, Original for Recipient,
-  Triplicate for Supplier; pages can be added, removed, renamed and reordered). Each page is written in a visual editor
-  (bold, italic, underline, alignment, lists, text size) or as HTML, and the field buttons ({Invoice No}, {Consumer Name},
-  {Amounts Table}, {Net in Words}…) put a field at the cursor; fields are filled in for each bill. An optional **letterpad**
-  (an A4 portrait PDF with the logo, name, address, GSTIN and background) is put behind every page, with top, bottom, left
-  and right margins in mm; the wording needs no margins of its own: it is laid out in the space inside them (each page's
-  editing box is that size), and a page that runs longer is shrunk to fit. Adding a letterpad takes the
-  standard company heading off the pages. Scripts, forms, event handlers and outside links are removed from the HTML.
-  Preview PDF shows a sample. Older companies' letter and footer wording are turned into pages.
+  Triplicate for Supplier; pages can be added, removed, renamed and reordered). Each page has three parts, side by side:
+  (1) the wording, in a box the size of the space inside the margins and laid over the letterpad, with a toolbar (undo/redo,
+  font, size, heading styles, bold, italic, underline, strikethrough, subscript, superscript, text and highlight colour,
+  alignment, lists, indent, horizontal line, tables with add/delete row and column, clear formatting) and an HTML view;
+  (2) **Ask Claude**: type or speak (browser dictation, Indian English) what the page should say or look like, optionally
+  with a picture or PDF of a page to follow; Claude rewrites the page's HTML, which replaces the wording and can be undone;
+  (3) the page **as printed**, redrawn with sample figures a moment after every change. Field buttons ({Invoice No},
+  {Consumer Name}, {Amounts Table}, {Net in Words}…) put a field at the cursor; fields are filled in for each bill. Nothing
+  has a background of its own (the amounts table is drawn with lines only), so the letterpad's design shows through. An
+  optional **letterpad** (an A4 portrait PDF with the logo, name, address, GSTIN and background) is put behind every page,
+  with top, bottom, left and right margins in mm; the wording needs no margins of its own, and a page that runs longer than
+  the space is shrunk to fit. Adding a letterpad takes the standard company heading off the pages. Scripts, forms, event
+  handlers and outside links are removed from the HTML. Download Sample PDF gives the whole PDF with sample figures.
+  Older companies' letter and footer wording are turned into pages.
 - **Consumers** (one or more HTSCs, address, GSTIN, injection voltage, credit days) and **PPA Rates** (per consumer, for
   all their HTSCs, optionally per generator HTSC, from a month).
 - **Monthly Billing**: choose the company and the month and upload all its documents at once: each generator HTSC's

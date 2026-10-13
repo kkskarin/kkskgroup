@@ -216,7 +216,12 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   issuing but never one already used; the PDF holds the company's pages. An issued invoice is locked; cancel it (admin, with a
   reason) and issue a new one for corrections.
 - **Invoices & Receipts**: register, receipts with TDS under 194Q, ageing 0–30/31–60/61–90/90+, Excel.
-  **Data**: generation and realisation by company and month, deductions by charge, line loss by consumer (year of the energy month).
+  **Data**: filters for the year, solar or windmill, companies and consumers; by company and month: net generated, units
+  billed, A (energy), B (deductions), A − B, **C (expenses)** and what is left (A − B − C); the expenses itemised; deductions by
+  charge; line loss by consumer; all to Excel. C is everything raised in the Renewable Energy app for that company in that
+  month: submitted bills, proformas and imports until their final tax bill comes (then the bill counts), and cash vouchers;
+  cash advances are not counted (the vouchers paid from them are). C is not split by consumer, so it is hidden while
+  consumers are filtered.
 - Tabs in Renewable Energy: Reports (Transactions, Payables, Masters), Energy Billing (Monthly Billing, Invoices & Receipts,
   Data), Expenses (bills, proformas, imports, vouchers and their checking reports, cash advances), Payments, Settings.
 - Who may use it: the Renewable Energy app plus the Energy Billing responsibility for the generator's company.

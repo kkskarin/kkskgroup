@@ -10752,6 +10752,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function tplVals(iv, ln) {
     var co = ivCo(iv), cs = iv.consSnap, pl = iv.plantSnap, k = kindWord(pl.kind);
     if (ln) { cs = Object.assign({}, cs, { htsc: ln.htsc }); pl = Object.assign({}, pl, { htsc: ln.plant, location: (PL()[ln.plant] || {}).location || pl.location }); }
+    var andL = function (x) { var l = String(x || "").split(/\s*,\s*/).filter(Boolean); return l.length > 1 ? l.slice(0, -1).join(", ") + " and " + l[l.length - 1] : l.join(""); };
+    pl = Object.assign({}, pl, { htsc: andL(pl.htsc) }); cs = Object.assign({}, cs, { htsc: andL(cs.htsc) });
     return { "Company Name": co.name || "", "Invoice No": iv.no, "Invoice Date": fmtDate(iv.date), "Due Date": fmtDate(iv.dueDate), "Month": monthLabel(iv.month), "Energy": k, "ENERGY": k.toUpperCase(), "Generator HTSC": pl.htsc, "Generator Location": pl.location || "",
       "Consumer Name": cs.name, "Consumer Address": cs.address || "", "Consumer HTSC": cs.htsc, "Consumer GSTIN": cs.gstin || "", "Addressee": cs.addressee || "The Managing Director", "Units": units(iv.units), "Rate": String(iv.rate),
       "Energy Charges": Math.round(n0(iv.A)).toLocaleString("en-IN"), "Deductions": Math.round(n0(iv.B)).toLocaleString("en-IN"), "Net": Math.round(n0(iv.net)).toLocaleString("en-IN"), "Net in Words": inWords(iv.net) };
@@ -10834,44 +10836,87 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
 
   /* ---- Reports ---- */
+  /* Expenses (C): everything raised in the Renewable Energy app, by company and month. Bills as entered; proformas and imports
+     until their final tax bill comes (the bill then counts instead); cash vouchers. Cash advances are not counted: the vouchers
+     paid from them are. Amounts in rupees (a foreign-currency bill at its exchange rate). */
+  function solExpenses() {
+    var out = [], inr = function (x) { var t = Number(x.total) || 0; return (x.currency && x.currency !== "INR" && Number(x.fxRate)) ? round2(t * Number(x.fxRate)) : t; };
+    billList().forEach(function (b) { if (divOf(b) !== "re" || b.status !== "done" || !b.companyId) return; out.push({ kind: "bill", cid: b.companyId, date: b.billDate || "", amt: inr(b), no: b.billNo || "", party: vendorLabelOfBill(b) || "" }); });
+    Object.keys(S.advances || {}).forEach(function (k) { var a = S.advances[k]; if (divOf(a) !== "re" || !a.companyId || a.taxBillId || a.status === "cancelled" || a.status === "deleted") return; var v = S.vendors[a.vendorId]; out.push({ kind: a.kind === "import" ? "import" : "proforma", cid: a.companyId, date: a.piDate || "", amt: inr(a), no: a.piNo || "", party: v ? v.name : (a.vendorNew && a.vendorNew.name) || "" }); });
+    vchList().forEach(function (v) { if (divOf(v) !== "re" || !v.companyId || v.status === "deleted") return; out.push({ kind: "voucher", cid: v.companyId, date: v.voucherDate || "", amt: Number(v.total) || 0, no: v.voucherNo || "", party: v.payee || "" }); });
+    return out.filter(function (e) { return /^\d{4}-\d{2}/.test(e.date) && e.amt; });
+  }
+  /* ---- Data ---- */
   function solReports(box) {
-    var hd = el("div", { class: "head" }), h = el("div"); h.appendChild(el("h2", null, "Data")); h.appendChild(el("p", { class: "sub" }, "Generation and realisation by month, deductions by charge, and line loss by consumer, from the invoices issued and the documents read. The year is that of the energy month.")); hd.appendChild(h); hd.appendChild(el("span", { class: "grow" }));
-    /* The year of the energy month, so April to March of generation lines up with the TNPDCL statements. */
-    var fys = {}; solList(SOL.inv).forEach(function (i) { fys[fyFromMonth(i.month)] = 1; }); var fl = Object.keys(fys).sort().reverse(); if (!SOL.rfy || !fys[SOL.rfy]) SOL.rfy = fl[0] || fyOf(todayYmd());
-    var fs = el("select", { class: "field", "aria-label": "Financial year", style: "width:auto" }); fillSelect(fs, (fl.length ? fl : [SOL.rfy]).map(function (y) { return [y, "FY 20" + y]; }), SOL.rfy); fs.addEventListener("change", function () { SOL.rfy = fs.value; solRender(); }); hd.appendChild(fs);
-    var xb = el("button", { class: "btn", type: "button" }, "Excel"); hd.appendChild(xb); box.appendChild(hd);
-    var inv = solList(SOL.inv).filter(function (i) { return i.status !== "cancelled" && fyFromMonth(i.month) === SOL.rfy && (S.isAdmin || canStep("solar", i.companyId)); });
-    var byM = {}; inv.forEach(function (i) { var k = i.companyId + "|" + i.month, m = byM[k] || (byM[k] = { cid: i.companyId, month: i.month, n: 0, units: 0, A: 0, B: 0, net: 0 }); m.n++; m.units += n0(i.units); m.A += n0(i.A); m.B += n0(i.B); m.net += n0(i.net); });
-    var mrows = Object.keys(byM).map(function (k) { var m = byM[k]; m.gen = coPlants(m.cid).reduce(function (s0, p) { var md = monthDoc(p, m.month); return s0 + (md && md.gen ? n0(md.gen.netTotal) || sum5(md.gen.net) : 0); }, 0); return m; }).sort(function (a, b) { return natCmp(a.month, b.month) || coRank(a.cid) - coRank(b.cid); });
-    box.appendChild(el("h3", null, "Generation and realisation"));
+    var hd = el("div", { class: "head" }), h = el("div"); h.appendChild(el("h2", null, "Data")); h.appendChild(el("p", { class: "sub" }, "By company and month: generation, units billed, energy charges (A), deductions (B), expenses (C) and what is left (A − B − C). A, B and units come from the bills of supply issued; C is every bill, proforma, import and cash voucher raised in this app. The year is that of the energy month.")); hd.appendChild(h); box.appendChild(hd);
+    var allowed = function (cid) { return S.isAdmin || canStep("solar", cid) || canSee(cid); };
+    var exps = solExpenses().filter(function (e) { return allowed(e.cid); });
+    var invAll = solList(SOL.inv).filter(function (i) { return i.status !== "cancelled" && (S.isAdmin || canStep("solar", i.companyId)); });
+    var fys = {}; invAll.forEach(function (i) { fys[fyFromMonth(i.month)] = 1; }); exps.forEach(function (e) { fys[fyOf(e.date)] = 1; });
+    var fl = Object.keys(fys).sort().reverse(); if (!SOL.rfy || !fys[SOL.rfy]) SOL.rfy = fl[0] || fyOf(todayYmd());
+    /* filters: year, solar or windmill, companies, consumers */
+    var bar = el("div", { class: "filters", style: "display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px" });
+    var fs = el("select", { class: "field", "aria-label": "Financial year", style: "width:auto" }); fillSelect(fs, (fl.length ? fl : [SOL.rfy]).map(function (y) { return [y, "FY 20" + y]; }), SOL.rfy); fs.addEventListener("change", function () { SOL.rfy = fs.value; solRender(); }); bar.appendChild(fs);
+    var ks = el("select", { class: "field", "aria-label": "Solar or windmill", style: "width:auto" }); fillSelect(ks, [["", "Solar and windmill"], ["solar", "Solar only"], ["wind", "Windmill only"]], SOL.rkind || ""); ks.addEventListener("change", function () { SOL.rkind = ks.value; solRender(); }); bar.appendChild(ks);
+    var reCos = Object.keys(S.companies).filter(function (k) { var c = S.companies[k]; return coApps(c).indexOf("re") >= 0 && allowed(k) && (!SOL.rkind || (((c.re || {}).kind === "wind") ? "wind" : "solar") === SOL.rkind); }).sort(function (a, b) { return coRank(a) - coRank(b); });
+    bar.appendChild(msPick("solData", "co", reCos.map(function (k) { return [k, S.companies[k].shortName || S.companies[k].name]; }), MS_WORDS.co, solRender));
+    bar.appendChild(msPick("solData", "ven", solList(SOL.cons).sort(function (a, b) { return natCmp(a.name, b.name); }).map(function (c) { return [c.id, c.name]; }), ["All consumers", "consumers", "Consumers"], solRender));
+    var xb = el("button", { class: "btn", type: "button" }, "Excel"); bar.appendChild(el("span", { class: "grow" })); bar.appendChild(xb); box.appendChild(bar);
+    var st = msGet("solData"), coOk = function (cid) { return reCos.indexOf(cid) >= 0 && (!st.co.length || st.co.indexOf(cid) >= 0); }, consF = st.ven.length > 0;
+    var inv = invAll.filter(function (i) { return fyFromMonth(i.month) === SOL.rfy && coOk(i.companyId) && (!consF || st.ven.indexOf(i.consumer) >= 0); });
+    var ex = exps.filter(function (e) { return fyOf(e.date) === SOL.rfy && coOk(e.cid); });
+    /* by company and month */
+    var byM = {}, row = function (cid, month) { var k = cid + "|" + month; return byM[k] || (byM[k] = { cid: cid, month: month, n: 0, units: 0, A: 0, B: 0, C: 0, cx: {} }); };
+    inv.forEach(function (i) { var m = row(i.companyId, i.month); m.n++; m.units += n0(i.units); m.A += n0(i.A); m.B += n0(i.B); });
+    if (!consF) ex.forEach(function (e) { var m = row(e.cid, e.date.slice(0, 7)); m.C += e.amt; m.cx[e.kind] = (m.cx[e.kind] || 0) + e.amt; });
+    var mrows = Object.keys(byM).map(function (k) { var m = byM[k]; m.A = round2(m.A); m.B = round2(m.B); m.C = round2(m.C); m.net = round2(m.A - m.B); m.left = round2(m.net - m.C); m.gen = coPlants(m.cid).reduce(function (s0, p) { var md = monthDoc(p, m.month); return s0 + (md && md.gen ? n0(md.gen.netTotal) || sum5(md.gen.net) : 0); }, 0); return m; }).sort(function (a, b) { return natCmp(a.month, b.month) || coRank(a.cid) - coRank(b.cid); });
+    var tot = mrows.reduce(function (t, m) { ["gen", "units", "A", "B", "net", "C", "left"].forEach(function (k) { t[k] += m[k]; }); return t; }, { gen: 0, units: 0, A: 0, B: 0, net: 0, C: 0, left: 0 });
+    statBoxes(box.appendChild(el("div", { class: "stats" })), [["Energy charges (A)", rs(tot.A), units(tot.units) + " units billed"], ["Deductions (B)", rs(tot.B), tot.A ? (100 * tot.B / tot.A).toFixed(1) + "% of A" : ""], ["Expenses (C)", consF ? "Not split by consumer" : rs(tot.C), consF ? "Clear the consumer filter to see C" : ""], ["Left (A − B − C)", consF ? rs(tot.net) + " (A − B)" : rs(tot.left), tot.units ? "₹" + ((consF ? tot.net : tot.left) / tot.units).toFixed(2) + " a unit" : "", "hi"]]);
+    box.appendChild(el("h3", null, "By company and month"));
     var c1 = el("div", { class: "card list scroll" }); box.appendChild(c1);
-    if (!mrows.length) c1.appendChild(el("div", { class: "empty" }, "No invoices in this year yet."));
+    if (!mrows.length) c1.appendChild(el("div", { class: "empty" }, "Nothing in FY 20" + SOL.rfy + " for this choice."));
     else sortTable(c1, "solRepM", [
-      { label: "Month", cell: function (m, td) { td.appendChild(el("b", null, monthLabel(m.month))); sub(td, coLabel(m.cid)); } },
-      { label: "Net generated", cls: "r num", cell: function (m, td) { txt(td, m.gen ? units(m.gen) : ""); } },
-      { label: "Billed units", cls: "r num", cell: function (m, td) { txt(td, units(m.units)); sub(td, plural(m.n, "consumer")); } },
-      { label: "Energy (A)", cls: "r num", cell: function (m, td) { txt(td, rs(m.A)); sub(td, m.units ? "₹" + (m.A / m.units).toFixed(2) + "/unit" : ""); } },
-      { label: "Deductions (B)", cls: "r num", cell: function (m, td) { txt(td, rs(m.B)); sub(td, m.A ? (100 * m.B / m.A).toFixed(1) + "% of A" : ""); } },
-      { label: "Net", cls: "r num", cell: function (m, td) { td.appendChild(el("b", null, rs(m.net))); sub(td, m.units ? "₹" + (m.net / m.units).toFixed(2) + "/unit" : ""); } }
-    ], mrows, { sortIndex: -1 });
+      { label: "Month", sort: function (m) { return m.month + coRank(m.cid); }, cell: function (m, td) { td.appendChild(el("b", null, monthLabel(m.month))); sub(td, coLabel(m.cid) + " · " + (((S.companies[m.cid] || {}).re || {}).kind === "wind" ? "Windmill" : "Solar")); } },
+      { label: "Net generated", cls: "r num", sort: function (m) { return m.gen; }, cell: function (m, td) { txt(td, m.gen ? units(m.gen) : ""); } },
+      { label: "Billed units", cls: "r num", sort: function (m) { return m.units; }, cell: function (m, td) { txt(td, m.units ? units(m.units) : ""); if (m.n) sub(td, plural(m.n, "bill")); } },
+      { label: "A (energy)", cls: "r num", sort: function (m) { return m.A; }, cell: function (m, td) { txt(td, m.A ? rs(m.A) : ""); if (m.units) sub(td, "₹" + (m.A / m.units).toFixed(2) + "/unit"); } },
+      { label: "B (deductions)", cls: "r num", sort: function (m) { return m.B; }, cell: function (m, td) { txt(td, m.B ? rs(m.B) : ""); if (m.A) sub(td, (100 * m.B / m.A).toFixed(1) + "% of A"); } },
+      { label: "A − B", cls: "r num", sort: function (m) { return m.net; }, cell: function (m, td) { txt(td, m.A || m.B ? rs(m.net) : ""); } },
+      { label: "C (expenses)", cls: "r num", sort: function (m) { return m.C; }, cell: function (m, td) { if (consF) { txt(td, ""); return; } txt(td, m.C ? rs(m.C) : ""); var p0 = [["bill", "bills"], ["proforma", "proformas"], ["import", "imports"], ["voucher", "vouchers"]].filter(function (k) { return m.cx[k[0]]; }).map(function (k) { return k[1] + " " + rs(m.cx[k[0]]); }); if (p0.length) sub(td, p0.join(" · ")); } },
+      { label: consF ? "Left (A − B)" : "Left (A − B − C)", cls: "r num", sort: function (m) { return consF ? m.net : m.left; }, cell: function (m, td) { var v = consF ? m.net : m.left; td.appendChild(el("b", { style: v < 0 ? "color:var(--bad)" : "" }, rs(v))); if (m.units) sub(td, "₹" + (v / m.units).toFixed(2) + "/unit"); } }
+    ], mrows, { sortIndex: 0 });
+    /* expenses itemised */
+    if (!consF) {
+      box.appendChild(el("h3", { style: "margin-top:24px" }, "Expenses (C) in FY 20" + SOL.rfy));
+      var c4 = el("div", { class: "card list scroll" }); box.appendChild(c4);
+      if (!ex.length) c4.appendChild(el("div", { class: "empty" }, "No bills, proformas, imports or vouchers raised in this app for this choice."));
+      else sortTable(c4, "solRepX", [
+        { label: "Date", sort: function (e) { return e.date; }, cell: function (e, td) { txt(td, fmtDate(e.date)); sub(td, coLabel(e.cid)); } },
+        { label: "Type", cell: function (e, td) { txt(td, TX_KIND[e.kind] || e.kind); } },
+        { label: "Number", cell: function (e, td) { txt(td, e.no); } },
+        { label: "Paid to", cls: "desc", cell: function (e, td) { txt(td, e.party); } },
+        { label: "Amount", cls: "r num", sort: function (e) { return e.amt; }, cell: function (e, td) { txt(td, rs(e.amt)); } }
+      ], ex.sort(function (a, b) { return natCmp(b.date, a.date); }), { sortIndex: 0, sortDir: -1 });
+    }
     /* deductions by charge */
     var dt = {}, A = 0; inv.forEach(function (i) { A += n0(i.A); SOL_DED.forEach(function (d) { dt[d[0]] = (dt[d[0]] || 0) + n0(i.ded[d[0]]); }); });
     box.appendChild(el("h3", { style: "margin-top:24px" }, "Deductions by charge"));
     var c2 = el("div", { class: "card list scroll" }); box.appendChild(c2);
     sortTable(c2, "solRepD", [{ label: "Charge", cell: function (d, td) { txt(td, d[1]); } }, { label: "This year", cls: "r num", cell: function (d, td) { txt(td, rs(dt[d[0]] || 0)); } }, { label: "% of energy charges", cls: "r num", cell: function (d, td) { txt(td, A ? (100 * (dt[d[0]] || 0) / A).toFixed(2) + "%" : ""); } }], SOL_DED, { sortIndex: -1 });
     /* line loss by consumer */
-    var ll = {}; solList(SOL.months).forEach(function (md) { if (fyFromMonth(md.month) !== SOL.rfy) return; Object.keys(((md.adj || {}).consumers) || {}).forEach(function (h) { var c = md.adj.consumers[h], k = consKey(h), x = ll[k] || (ll[k] = { h: k, hs: {}, g: 0, n: 0, ls: {} }); x.hs[h] = 1; x.g += sum5(c.gross); x.n += sum5(c.net); x.ls[c.loss] = 1; }); });
+    var ll = {}; solList(SOL.months).forEach(function (md) { if (fyFromMonth(md.month) !== SOL.rfy || !coOk((PL()[md.plant] || {}).companyId)) return; Object.keys(((md.adj || {}).consumers) || {}).forEach(function (h) { var c = md.adj.consumers[h], k = consKey(h); if (consF && st.ven.indexOf(k) < 0) return; var x = ll[k] || (ll[k] = { h: k, hs: {}, g: 0, n: 0, ls: {} }); x.hs[h] = 1; x.g += sum5(c.gross); x.n += sum5(c.net); x.ls[c.loss] = 1; }); });
     var lr = Object.keys(ll).map(function (k) { return ll[k]; });
     box.appendChild(el("h3", { style: "margin-top:24px" }, "Line loss by consumer"));
     var c3 = el("div", { class: "card list scroll" }); box.appendChild(c3);
-    if (!lr.length) c3.appendChild(el("div", { class: "empty" }, "No adjusted reports read in this year."));
+    if (!lr.length) c3.appendChild(el("div", { class: "empty" }, "No adjusted reports read for this choice."));
     else sortTable(c3, "solRepL", [{ label: "Consumer", cell: function (x, td) { td.appendChild(el("b", null, consName(x.h))); sub(td, Object.keys(x.hs).join(", ")); } }, { label: "Gross allotted", cls: "r num", cell: function (x, td) { txt(td, units(x.g)); } }, { label: "Net after loss", cls: "r num", cell: function (x, td) { txt(td, units(x.n)); } }, { label: "Loss", cls: "r num", cell: function (x, td) { txt(td, x.g ? (100 * (x.g - x.n) / x.g).toFixed(2) + "%" : ""); sub(td, Object.keys(x.ls).join(", ") + "% applied"); } }], lr, { sortIndex: -1 });
     xb.addEventListener("click", function () {
-      xlDownload(xb, "Energy reports FY " + SOL.rfy + ".xlsx", [
-        { name: "Generation", title: "Generation and realisation · FY 20" + SOL.rfy, sub: "Generated " + fmtDate(todayYmd()), cols: [{ h: "Month", w: 14 }, { h: "Company", w: 26 }, { h: "Net generated", t: "int", sum: true }, { h: "Billed units", t: "int", sum: true }, { h: "Energy A", t: "money", sum: true }, { h: "Deductions B", t: "money", sum: true }, { h: "Net", t: "money", sum: true }, { h: "Net per unit", t: "money" }],
-          rows: mrows.map(function (m) { return [monthLabel(m.month), coLabel(m.cid), m.gen, m.units, m.A, m.B, m.net, m.units ? round2(m.net / m.units) : 0]; }) },
-        { name: "Deductions", title: "Deductions by charge · FY 20" + SOL.rfy, sub: "", cols: [{ h: "Charge", w: 40 }, { h: "Amount", t: "money", sum: true }], rows: SOL_DED.map(function (d) { return [d[1], round2(dt[d[0]] || 0)]; }) }
-      ]);
+      var sh = [{ name: "By month", title: "Energy data · FY 20" + SOL.rfy, sub: [ks.options[ks.selectedIndex].text, st.co.length ? st.co.map(coLabel).join(", ") : "All companies", consF ? st.ven.map(consName).join(", ") : "All consumers"].join(" · ") + " · Generated " + fmtDate(todayYmd()),
+        cols: [{ h: "Month", w: 14 }, { h: "Company", w: 14 }, { h: "Type", w: 10 }, { h: "Net generated", t: "int", sum: true }, { h: "Billed units", t: "int", sum: true }, { h: "A energy", t: "money", sum: true }, { h: "B deductions", t: "money", sum: true }, { h: "A - B", t: "money", sum: true }].concat(consF ? [] : [{ h: "C expenses", t: "money", sum: true }, { h: "A - B - C", t: "money", sum: true }]),
+        rows: mrows.map(function (m) { return [monthLabel(m.month), coLabel(m.cid), ((S.companies[m.cid] || {}).re || {}).kind === "wind" ? "Windmill" : "Solar", m.gen, m.units, m.A, m.B, m.net].concat(consF ? [] : [m.C, m.left]); }) },
+        { name: "Deductions", title: "Deductions by charge · FY 20" + SOL.rfy, sub: "", cols: [{ h: "Charge", w: 40 }, { h: "Amount", t: "money", sum: true }], rows: SOL_DED.map(function (d) { return [d[1], round2(dt[d[0]] || 0)]; }) }];
+      if (!consF) sh.push({ name: "Expenses", title: "Expenses (C) · FY 20" + SOL.rfy, sub: "", cols: [{ h: "Date", t: "date", w: 12 }, { h: "Company", w: 12 }, { h: "Type", w: 10 }, { h: "Number", w: 18 }, { h: "Paid to", w: 30 }, { h: "Amount", t: "money", sum: true }], rows: ex.map(function (e) { return [e.date, coLabel(e.cid), TX_KIND[e.kind] || e.kind, e.no, e.party, e.amt]; }) });
+      xlDownload(xb, "Energy data FY " + SOL.rfy + ".xlsx", sh);
     });
   }
 

@@ -10549,31 +10549,39 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ---- Issuing a bill of supply ---- */
   function fyFromMonth(m) { return fyOf(m + "-01"); }
-  /* One series per company per financial year: NN/YY-YY. Numbers are never reused, so a cancelled invoice keeps its number. */
+  /* One series per company per financial year: SHORT-NNN-YY/YY, e.g. ARA-001-26/27. The number can be changed when issuing,
+     but never to one already used by the company; a cancelled invoice keeps its number. */
+  function invPrefix(cid) { var c = S.companies[cid] || {}; return String(c.shortName || c.name || "INV").toUpperCase().replace(/[^A-Z0-9]+/g, "").slice(0, 12) || "INV"; }
+  function invNoFmt(cid, seq, fy) { return invPrefix(cid) + "-" + String(seq).padStart(3, "0") + "-" + fy.replace("-", "/"); }
   function nextInvNo(cid, date) {
     var fy = fyOf(date), top = 0; solList(SOL.inv).forEach(function (i) { if (i.companyId === cid && i.fy === fy && i.seq > top) top = i.seq; });
-    return { seq: top + 1, fy: fy, no: (top + 1) + "/" + fy };
+    return { seq: top + 1, fy: fy, no: invNoFmt(cid, top + 1, fy) };
   }
+  function invNoUsed(cid, no) { var k = String(no).replace(/\s+/g, "").toUpperCase(); return solList(SOL.inv).some(function (i) { return i.companyId === cid && String(i.no).replace(/\s+/g, "").toUpperCase() === k; }); }
   function issueForm(key) {
     var cid = SOL.co, co = S.companies[cid], c = coMonthRows(cid, SOL.month).filter(function (r) { return r.key === key; })[0], cn = SOL.cons[key], month = SOL.month;
     if (!co || !c || !cn) { toast("Set up the company and the consumer in Masters first."); return; }
     if (c.blocks || !c.ready) { toast("Clear the checks marked Blocks first."); return; }
     var body = el("div", { class: "mform" }), d0 = todayYmd(), nx = nextInvNo(cid, d0);
     body.appendChild(fld("Invoice date", inp("siDate", d0, { type: "date" })));
-    var noEl = el("div", { class: "f" }); noEl.appendChild(el("span", { class: "lb" }, "Invoice number")); var nb = el("b", { class: "mono", id: "siNo" }, nx.no); noEl.appendChild(nb); noEl.appendChild(el("span", { class: "hint" }, "Next in " + (co.shortName || co.name) + "'s series for the year. Numbers are never skipped or reused."));
-    body.appendChild(noEl);
+    var nb = inp("siNo", nx.no, { maxlength: "40", class: "field mono", autocomplete: "off" }), touched = false; nb.addEventListener("input", function () { touched = true; });
+    body.appendChild(fld("Invoice number", nb, "Next in " + (co.shortName || co.name) + "'s series for the year (" + invPrefix(cid) + "-NNN-YY/YY). You can change it; a number already used can't be given again."));
     body.appendChild(fld("Payment due in (days)", inp("siDays", String(cn.creditDays != null ? cn.creditDays : 30), { inputmode: "numeric", class: "field num" })));
     var sm = el("div", { class: "card", style: "padding:10px 14px;margin-top:6px" });
     c.lines.forEach(function (l) { sm.appendChild(el("p", { style: "margin:0 0 4px" }, (c.lines.length > 1 ? "HTSC " + l.htsc + " from " + l.plant + ": " : "") + units(l.billed) + " units × ₹" + l.rate.rate + " = " + rs(l.A))); });
     sm.appendChild(el("p", { style: "margin:4px 0 0" }, "Energy charges " + rs(c.A) + ", less " + rs(c.B) + " = " + rs(c.net)));
     if (c.warns) sm.appendChild(el("p", { class: "sub", style: "margin:6px 0 0" }, plural(c.warns, "check") + " to look at."));
     body.appendChild(sm);
-    setTimeout(function () { var di = $("siDate"); if (di) di.addEventListener("change", function () { if (ymdOk(di.value)) $("siNo").textContent = nextInvNo(cid, di.value).no; }); }, 0);
+    setTimeout(function () { var di = $("siDate"); if (di) di.addEventListener("change", function () { if (ymdOk(di.value) && !touched) $("siNo").value = nextInvNo(cid, di.value).no; }); }, 0);
     popForm("Issue bill of supply", c.name + " · " + monthLabel(month), body, "Issue and download PDF", function () {
       errClear(body); var dt = $("siDate").value, days = Math.round(n0($("siDays").value));
       if (!ymdOk(dt)) { errOn("siDate", "Choose the invoice date."); return false; }
       if (invFor(cid, month, key)) { toast("An invoice is already issued for this consumer and month."); return false; }
-      var n = nextInvNo(cid, dt), id = newId("si"), now = Date.now(), kind = plantKind(c.plants[0]);
+      var n = nextInvNo(cid, dt), typed = $("siNo").value.trim().replace(/\s+/g, "");
+      if (!typed) { errOn("siNo", "Type the invoice number."); return false; }
+      if (invNoUsed(cid, typed)) { errOn("siNo", "Invoice " + typed + " is already used by " + (co.shortName || co.name) + "."); return false; }
+      if (typed !== n.no) { var mm = /-(\d+)-(\d{2})\/(\d{2})$/.exec(typed); n = { no: typed, fy: mm ? mm[2] + "-" + mm[3] : n.fy, seq: mm ? Number(mm[1]) : n.seq }; }
+      var id = newId("si"), now = Date.now(), kind = plantKind(c.plants[0]);
       var lines = c.lines.map(function (l) { return { plant: l.plant, htsc: l.htsc, units: l.billed, rate: n0(l.rate.rate), rateRef: l.rate.ref || "", A: l.A, ded: l.ded, B: l.B, gross: l.gross, loss: l.loss }; });
       var doc = { companyId: cid, plant: c.plants[0], plants: c.plants, consumer: key, month: month, no: n.no, seq: n.seq, fy: n.fy, date: dt, dueDate: addDays(dt, days), creditDays: days,
         units: c.billed, rate: c.rate, rateRef: lines[0].rateRef, A: c.A, ded: c.ded, B: c.B, net: c.net, gross: c.gross, loss: lines[0].loss, lines: lines,
@@ -10949,7 +10957,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var R = S.coRe, id = S.editing === "new" ? "__preview" : S.editing, saved = S.companies[id];
     S.companies[id] = Object.assign({}, saved || {}, { name: $("fName").value.trim() || "Company name", address: $("fAddr").value.trim(), gstin: normId($("fGstin").value), stateCode: $("fState").value.trim(), logo: S.draftLogo || "", re: coReOut() });
     var h = (R.htscs || [])[0] || {}, ded = {}; SOL_DED.forEach(function (d, i) { ded[d[0]] = [445, 111039, 7212, 4148, 13711, 65332, 3135, 12060, 14934][i]; });
-    var iv = { companyId: id, plant: htscOf(h.htsc) || "079514700620", month: prevMonth(), no: "1/" + fyOf(todayYmd()), date: todayYmd(), dueDate: addDays(todayYmd(), 30), units: 120604, rate: 6.65, A: 802017, ded: ded, B: 232016, net: 570001,
+    var iv = { companyId: id, plant: htscOf(h.htsc) || "079514700620", month: prevMonth(), no: invNoFmt(id, 1, fyOf(todayYmd())), date: todayYmd(), dueDate: addDays(todayYmd(), 30), units: 120604, rate: 6.65, A: 802017, ded: ded, B: 232016, net: 570001,
       plantSnap: { name: "", htsc: htscOf(h.htsc) || "079514700620", location: h.location || "", kind: R.kind }, consSnap: { name: "Sample Consumer Mills", htsc: "079094620227", address: "Mill Road, Virudhunagar 626001, Tamil Nadu", gstin: "33ABCDE1234F1Z5", stateCode: "33", addressee: "The Managing Director" } };
     var p0 = solInvoicePdf(iv, btn); (p0 && p0.then ? p0 : Promise.resolve()).then(function () { if (saved) S.companies[id] = saved; else delete S.companies[id]; });
   }

@@ -875,7 +875,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         <div class="f" id="uPinF" hidden><label for="uPin">Profile PIN</label><input class="field num" id="uPin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="4 digits"><span class="hint" id="uPinH"></span><button class="link-btn" id="uPinReset" type="button" hidden>Reset PIN</button><span class="err" id="uEPin" hidden></span></div>
         <div class="f wide" id="uLinkF" hidden><label for="uLink">Link to a Person Already Added</label><select class="field" id="uLink"></select><span class="hint">Pick the person you added without a login, if this request is theirs. Everything entered for them moves to this login.</span></div>
         <div class="f wide" id="uAppsF"><span class="lb">Apps</span>
-          <div class="uapps"><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label><label class="check"><input type="checkbox" id="uAppApr"> Approvals</label>
+          <div class="uapps"><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label><label class="check"><input type="checkbox" id="uAppApr"> Approvals</label>
             <div class="uapp-pp"><span>Production Planning</span><select class="field" id="uPpRole" aria-label="Production Planning role"><option value="">No access</option><option value="approver">Approver</option><option value="planner">Planner</option><option value="floor">Floor Team</option></select>
               <select class="field" id="uPpRegion" aria-label="Production Planning region"><option value="">Erode and Ambur</option><option value="E">Erode</option><option value="A">Ambur</option></select></div></div>
           <span class="hint">They see only the apps given here; with one app they go straight into it. Admins get every app.</span><span class="err" id="uEApps" hidden>Give at least one app.</span></div>
@@ -2056,7 +2056,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function fillUserForm(src, roles, balUid) {
     var js = jobsOf(src); jobChecks($("uJobs"), js); $("uJobsE").hidden = true;
-    var ap = appsWith(src); $("uAppMnt").checked = ap.mnt; $("uAppRe").checked = ap.re; $("uAppAcc").checked = ap.acc; $("uAppFin").checked = ap.fin; $("uAppApr").checked = ap.apr; $("uPpRole").value = (ap.pp && ap.pp.role) || ""; $("uPpRegion").value = (ap.pp && ap.pp.region) || ""; $("uEApps").hidden = true; syncAppsF();
+    var ap = appsWith(src); $("uAppMnt").checked = ap.mnt; $("uAppRe").checked = ap.re; $("uReCo").checked = !!(src && src.reCompanies); $("uAppAcc").checked = ap.acc; $("uAppFin").checked = ap.fin; $("uAppApr").checked = ap.apr; $("uPpRole").value = (ap.pp && ap.pp.role) || ""; $("uPpRegion").value = (ap.pp && ap.pp.region) || ""; $("uEApps").hidden = true; syncAppsF();
     var ua = $("uAppr"); ua.parentNode.replaceChild(approverSelect("uAppr", src.defaultApproverId || ""), ua); $("uAppr").options[0].textContent = "Choose the default approver"; syncApprF();
     if (!roles && js.length) { roles = {}; (src.companyIds || []).forEach(function (cid) { roles[cid] = stepsForJobs(js); }); }
     $("uName").value = src.name || ""; usLoc.close(); usLoc.fill(src.locationId || ""); usDept.close(); usDept.fill(src.deptId || ""); buildChecks($("uCos"), src.companyIds || [], true);
@@ -2083,7 +2083,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function readApps() { return { mnt: $("uAppMnt").checked, re: $("uAppRe").checked, acc: $("uAppAcc").checked, fin: $("uAppFin").checked, apr: $("uAppApr").checked }; }
   function anyMoneyApp(a) { return !!(a.mnt || a.re || a.acc || a.fin || a.apr); }
   function syncAppsF() {
-    var bv = anyMoneyApp(readApps()); $("uPpRegion").hidden = !$("uPpRole").value;
+    var bv = anyMoneyApp(readApps()); $("uPpRegion").hidden = !$("uPpRole").value; $("uReCoF").hidden = !$("uAppRe").checked;
     ["uJobs", "uCos"].forEach(function (id) { var f = $(id).closest(".f"); if (f) f.hidden = !bv; });
     var rs = document.querySelector("#secUser .uresp"); if (rs) rs.hidden = !bv;
     if (!bv) $("uApprF").hidden = true; else syncApprF();
@@ -2119,7 +2119,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!ok) return;
     S.busy = true; $("userSave").disabled = true;
     (acc && pin ? pinHash(uid, pin) : Promise.resolve("")).then(function (ph) {
-    var extra = { deptId: dept, jobRoles: jobs, defaultApproverId: defAppr || null, apps: apps };
+    var extra = { deptId: dept, jobRoles: jobs, defaultApproverId: defAppr || null, apps: apps, reCompanies: !!(ma.re && $("uReCo").checked) };
     if (accOn) { extra.accountedFor = acc || null; extra.unlinked = !acc; if (ph) extra.pinHash = ph; else if ((!acc || S.userEditing.resetPin) && cur.pinHash) extra.pinHash = null; }
     var job;
     if (mode === "login") {
@@ -2460,7 +2460,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     coLoc.close(); coLoc.fill(locIdOf(c));
     /* Which divisions use it: chosen in Accounts and Finance; a company added in a division app starts in that division. */
     var ua = c ? coApps(c) : DIV ? [DIV] : [], fa = $("fApps"); fa.textContent = "";
-    Object.keys(DIVS).forEach(function (k) { var lb = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: k }); cb.checked = ua.indexOf(k) >= 0; cb.disabled = !!DIV && k === DIV; lb.appendChild(cb); lb.appendChild(el("span", null, DIVS[k].name)); fa.appendChild(lb); });
+    Object.keys(DIVS).forEach(function (k) { var lb = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: k }); cb.checked = ua.indexOf(k) >= 0; cb.disabled = (!!DIV && k === DIV) || !S.isAdmin; lb.appendChild(cb); lb.appendChild(el("span", null, DIVS[k].name)); fa.appendChild(lb); });
     $("fAppsH").textContent = DIV ? "It always stays in " + DIVS[DIV].name + " while you work here; tick another division to use it there too." : "The divisions whose apps list this company. Accounts and Finance always see every company.";
     S.coRe = APP === "re" ? reNorm(JSON.parse(JSON.stringify((c && c.re) || { kind: "solar", htscs: [], tpl: {} }))) : null; renderCoRe();
     var tg = $("toggle"); tg.hidden = !c;
@@ -8044,12 +8044,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* The financier's copy: A4, one short table per company (vendor and amount to pay), then a summary by company. Only vendors with an amount above zero are listed. */
   /* ================= Companies list (admin) ================= */
+  /* Admins add and edit companies; in Renewable Energy, also anyone the admin has allowed to (Users › Can add and edit companies). */
+  function canCoEdit() { return S.isAdmin || (APP === "re" && !!(S.myUser && S.myUser.reCompanies)); }
   function renderList() {
     var box = $("list");
-    $("add").hidden = !S.isAdmin;
+    $("add").hidden = !canCoEdit();
     var ue = $("coUse"); if (!ue) { ue = el("button", { class: "btn", type: "button", id: "coUse" }, "Use an Existing Company"); ue.addEventListener("click", useCompanyForm); $("add").parentNode.insertBefore(ue, $("add")); }
     var others = Object.keys(S.companies).map(function (k) { return S.companies[k]; }).filter(function (c) { return c.active !== false && !coInApp(c); });
-    ue.hidden = !S.isAdmin || !DIV || !others.length;
+    ue.hidden = !canCoEdit() || !DIV || !others.length;
     var all = sorted(), showOff = $("showOff").checked;
     var rows = all.filter(function (c) { return showOff || c.active !== false; });
     box.textContent = "";
@@ -8079,7 +8081,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       false && { label: "Overdue", cls: "r num", cell: function (c, td) {
           var b = el("button", { class: "amt" + (anyOver(c._tot, "overdue") ? " od" : ""), "aria-label": "Overdue for " + c.name + ", open statement" }, mixMoney(c._tot, "overdue")); b.addEventListener("click", function () { openStatement(c.id); }); td.appendChild(b); } },
       { label: "Status", cell: function (c, td) { var off = c.active === false; td.appendChild(el("span", { class: "chip " + (off ? "off" : "on") }, off ? "Deactivated" : "Active")); } },
-      { label: "", kind: "act", cls: "r", cell: function (c, td) { if (!S.isAdmin) return; var b = el("button", { class: "btn" }, "Edit"); b.addEventListener("click", function () { openEdit(c.id); }); td.appendChild(b); } }
+      { label: "", kind: "act", cls: "r", cell: function (c, td) { if (!canCoEdit()) return; var b = el("button", { class: "btn" }, "Edit"); b.addEventListener("click", function () { openEdit(c.id); }); td.appendChild(b); } }
     ], rows, { sortIndex: -1, rowClass: function (c) { return c.active === false ? "off" : ""; } });
     /* Drag a row by its handle to move it; the new order is saved for everyone. */
     var trs = box.querySelectorAll("tbody tr"), dragId = null;
@@ -8114,7 +8116,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
   }
   function moveCompany(id, targetId, where) {
-    if (!S.isAdmin || id === targetId) return;
+    if (!canCoEdit() || id === targetId) return;
     var list = sorted().map(function (c) { return c.id; }).filter(function (x) { return x !== id; });
     var at = list.indexOf(targetId); if (at < 0) return;
     list.splice(where === "after" ? at + 1 : at, 0, id);
@@ -10155,10 +10157,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* Generator-level charges: generation statement code, allotment order code, label. */
   var SOL_GCH = [["C001", "MR", "AMR / meter reading"], ["C002", "OM", "O&M"], ["C003", "TRC", "Transmission"], ["C004", "SO", "System operation"], ["C005", "RK", "RKVAh penalty"], ["C006", "NE", "Import energy"], ["C007", "SH", "Scheduling"], ["C008", "O", "Other"], ["C010", "DC", "DSM"]];
   var WHEEL_RATE = 0.49967, SGT_RATE = 0.10, SOL_HSN = "27160000";
-  var SOL = { plants: {}, cons: {}, rates: {}, months: {}, inv: {}, rcpt: {}, got: {}, plant: "", co: "", month: "", view: "month", htsc: "", cid: "", log: [], busy: false, mside: "plants", ishow: "open" };
-  function solReady() { return ["solar_consumers", "solar_rates", "solar_months", "solar_invoices", "solar_receipts"].every(function (k) { return SOL.got[k]; }); }
+  var SOL = { plants: {}, ups: {}, cons: {}, rates: {}, months: {}, inv: {}, rcpt: {}, got: {}, plant: "", co: "", month: "", view: "month", htsc: "", cid: "", log: [], busy: false, mside: "plants", ishow: "open" };
+  function solReady() { return ["solar_consumers", "solar_rates", "solar_months", "solar_invoices", "solar_receipts", "solar_uploads"].every(function (k) { return SOL.got[k]; }); }
   function solStart() {
-    [["solar_consumers", "cons"], ["solar_rates", "rates"], ["solar_months", "months"], ["solar_invoices", "inv"], ["solar_receipts", "rcpt"]].forEach(function (c) {
+    [["solar_consumers", "cons"], ["solar_rates", "rates"], ["solar_months", "months"], ["solar_invoices", "inv"], ["solar_receipts", "rcpt"], ["solar_uploads", "ups"]].forEach(function (c) {
       S.db.collection(c[0]).onSnapshot(function (snap) {
         var m = {}; snap.docs.forEach(function (d) { var x = Object.assign({}, d.data() || {}); x.id = d.id; m[d.id] = x; });
         SOL[c[1]] = m; SOL.got[c[0]] = true; solRefresh();
@@ -10303,7 +10305,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (canSolar()) {
       var fi = el("input", { type: "file", accept: "application/pdf,image/*", multiple: "", hidden: "", id: "solFiles" }), up = el("button", { class: "btn primary", type: "button", id: "solUpload" }, "Upload Documents");
       up.addEventListener("click", function () { fi.click(); }); fi.addEventListener("change", function () { var fs = Array.prototype.slice.call(fi.files || []); fi.value = ""; if (fs.length) solUpload(fs); });
-      if (solMonthDocs(SOL.co, SOL.month).length) { var dc0 = el("button", { class: "btn", type: "button", id: "solDiscard" }, "Discard Uploads"); dc0.addEventListener("click", function () { discardForm(SOL.co, SOL.month); }); bar.appendChild(dc0); }
+      if (solMonthDocs(SOL.co, SOL.month).length || solList(SOL.ups).some(function (u) { return u.companyId === SOL.co && u.month === SOL.month; })) { var dc0 = el("button", { class: "btn", type: "button", id: "solDiscard" }, "Discard Uploads"); dc0.addEventListener("click", function () { discardForm(SOL.co, SOL.month); }); bar.appendChild(dc0); }
       bar.appendChild(up); bar.appendChild(fi);
     }
     box.appendChild(bar);
@@ -10311,6 +10313,18 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var lg = el("div", { class: "card", style: "padding:10px 14px;margin-bottom:14px" });
       SOL.log.forEach(function (it) { var r = el("div", { class: "sollog " + (it.st || "") }); r.appendChild(el("b", null, it.name)); r.appendChild(el("span", null, " " + (it.msg || ""))); lg.appendChild(r); });
       box.appendChild(lg);
+    }
+    /* every file uploaded for this company and month, kept */
+    var ul = solList(SOL.ups).filter(function (u) { return u.companyId === SOL.co && u.month === SOL.month; }).sort(function (a, b) { return b.at - a.at; });
+    if (ul.length) {
+      box.appendChild(el("h3", { style: "margin-top:4px" }, "Uploaded files (" + ul.length + ")"));
+      var uc = el("div", { class: "card list scroll", style: "margin-bottom:14px" }); box.appendChild(uc);
+      sortTable(uc, "solUps", [
+        { label: "File", kind: "co", cell: function (u, td) { td.appendChild(el("b", null, u.name)); sub(td, fmtDate(new Date(u.at).toISOString().slice(0, 10)) + (u.byName ? " · " + u.byName : "")); } },
+        { label: "Result", cell: function (u, td) { td.appendChild(chkTag(u.status === "ok" ? "pass" : u.status === "reading" ? "info" : u.status === "bad" ? "block" : "warn")); td.lastChild.textContent = u.status === "ok" ? "Read" : u.status === "reading" ? "Reading" : u.status === "bad" ? "Not read" : "Not used"; } },
+        { label: "", cls: "desc", cell: function (u, td) { txt(td, u.msg || ""); } },
+        { label: "", kind: "act", cls: "r", cell: function (u, td) { if (u.file) td.appendChild(solFileBtn(u.file)); else txt(td, "Not stored"); } }
+      ], ul, { sortIndex: -1 });
     }
     /* documents, per generator HTSC */
     var gNet = 0, gAny = false, gCh = 0;
@@ -10366,26 +10380,32 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* Throw away what was read, with its files, to upload again. Not once a bill of supply is out for the month: cancel it first. */
   function discardForm(cid, month) {
     if (solList(SOL.inv).some(function (i) { return i.companyId === cid && i.month === month && i.status !== "cancelled"; })) { toast("A bill of supply is issued for " + monthLabel(month) + ". Cancel it in Invoices & Receipts first."); return; }
-    var docs = solMonthDocs(cid, month), body = el("div", { class: "mform" }), many = coPlants(cid).length > 1, boxes = [];
-    body.appendChild(el("p", { class: "sub", style: "margin:0 0 8px" }, "The ticked documents, their files and everything read from them are deleted. Changed deductions go with the allotment order. Upload again afterwards."));
+    var ups = solList(SOL.ups).filter(function (u) { return u.companyId === cid && u.month === month; }).sort(function (a, b) { return a.at - b.at; }), paths = {};
+    ups.forEach(function (u) { if (u.file && u.file.path) paths[u.file.path] = 1; });
+    var items = ups.map(function (u) { return { label: u.name + " · " + (u.status === "ok" ? (u.msg || "read").split(" · ")[0] : u.status === "bad" ? "not read" : "not used"), up: u, file: u.file, parts: (u.produced || []).filter(function (d) { var md = monthDoc(d.pl, month), x = md && (d.k === "ht" ? (md.ht || {})[d.h] : md[d.k]); return x && (!u.file || !x.file || x.file.path === u.file.path); }) }; });
+    solMonthDocs(cid, month).forEach(function (d) { if (!(d.file && paths[d.file.path])) items.push({ label: d.label + " · HTSC " + d.pl + (d.file && d.file.name ? " · " + d.file.name : ""), file: d.file, parts: [{ pl: d.pl, k: d.k, h: d.h }] }); });
+    var body = el("div", { class: "mform" }), boxes = [];
+    body.appendChild(el("p", { class: "sub", style: "margin:0 0 8px" }, "The ticked files are deleted, with everything read from them. Changed deductions go with the allotment order. Upload again afterwards."));
     var all = el("label", { class: "check" }), ac = el("input", { type: "checkbox" }); ac.checked = true; all.appendChild(ac); all.appendChild(document.createTextNode(" Everything for " + monthLabel(month))); body.appendChild(all);
     var lst = el("div", { style: "display:grid;gap:4px;margin:6px 0 0 18px" }); body.appendChild(lst);
-    docs.forEach(function (d) { var lb = el("label", { class: "check" }), cb = el("input", { type: "checkbox" }); cb.checked = true; lb.appendChild(cb); lb.appendChild(document.createTextNode(" " + d.label + (many ? " · HTSC " + d.pl : "") + (d.file && d.file.name ? " · " + d.file.name : ""))); lst.appendChild(lb); boxes.push([cb, d]); cb.addEventListener("change", function () { ac.checked = boxes.every(function (b) { return b[0].checked; }); }); });
+    items.forEach(function (d) { var lb = el("label", { class: "check" }), cb = el("input", { type: "checkbox" }); cb.checked = true; lb.appendChild(cb); lb.appendChild(document.createTextNode(" " + d.label)); lst.appendChild(lb); boxes.push([cb, d]); cb.addEventListener("change", function () { ac.checked = boxes.every(function (b) { return b[0].checked; }); }); });
     ac.addEventListener("change", function () { boxes.forEach(function (b) { b[0].checked = ac.checked; }); });
     popForm("Discard uploads", coLabel(cid) + " · " + monthLabel(month), body, "Discard", function () {
       var pick = boxes.filter(function (b) { return b[0].checked; }).map(function (b) { return b[1]; }); if (!pick.length) { toast("Tick what to discard."); return false; }
-      var byPl = {}; pick.forEach(function (d) { (byPl[d.pl] || (byPl[d.pl] = [])).push(d); });
+      var byPl = {}; pick.forEach(function (d) { d.parts.forEach(function (x) { (byPl[x.pl] || (byPl[x.pl] = [])).push(x); }); });
       var chain = Promise.resolve();
       Object.keys(byPl).forEach(function (pl) { chain = chain.then(function () {
-        var id = pl + "_" + month, cur = JSON.parse(JSON.stringify(SOL.months[id] || {})); delete cur.id;
+        var id = pl + "_" + month; if (!SOL.months[id]) return;
+        var cur = JSON.parse(JSON.stringify(SOL.months[id])); delete cur.id;
         byPl[pl].forEach(function (d) { if (d.k === "ht") delete (cur.ht || {})[d.h]; else delete cur[d.k]; if (d.k === "allot") delete cur.over; });
         var left = cur.gen || cur.allot || cur.adj || Object.keys(cur.ht || {}).length;
-        return retry(function () { return left ? S.db.doc("solar_months/" + id).set(Object.assign(cur, { updatedAt: Date.now(), updatedBy: meId() })) : S.db.doc("solar_months/" + id).delete(); }).then(function () {
-          if (left) SOL.months[id] = Object.assign({ id: id }, cur); else delete SOL.months[id];
-          byPl[pl].forEach(function (d) { if (d.file && d.file.path && window.bvFiles) window.bvFiles.remove(d.file.path).catch(function () {}); });
-        });
+        return retry(function () { return left ? S.db.doc("solar_months/" + id).set(Object.assign(cur, { updatedAt: Date.now(), updatedBy: meId() })) : S.db.doc("solar_months/" + id).delete(); }).then(function () { if (left) SOL.months[id] = Object.assign({ id: id }, cur); else delete SOL.months[id]; });
       }); });
-      return chain.then(function () { SOL.log = []; toast(plural(pick.length, "document") + " discarded."); solRender(); return true; }, function (e) { toast(explain(e)); return false; });
+      pick.forEach(function (d) { chain = chain.then(function () {
+        if (d.file && d.file.path && window.bvFiles) window.bvFiles.remove(d.file.path).catch(function () {});
+        if (d.up) return retry(function () { return S.db.doc("solar_uploads/" + d.up.id).delete(); }).then(function () { delete SOL.ups[d.up.id]; });
+      }); });
+      return chain.then(function () { SOL.log = []; toast(plural(pick.length, "file") + " discarded."); solRender(); return true; }, function (e) { toast(explain(e)); return false; });
     });
   }
   /* An HTSC not yet in Masters: add it to a consumer already there, or start a new consumer with it. */
@@ -10489,21 +10509,43 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       });
     });
   }
+  /* Every file uploaded is kept, whether or not it can be read, and listed in solar_uploads with what came of it. */
   function solUpload(files) {
-    if (!S.sample) { toast("Reading with Claude isn't available here."); return; }
-    var items = files.map(function (f) { return { f: f, name: f.name, msg: "Waiting", st: "" }; });
+    var items = files.map(function (f) { return { f: f, name: f.name, msg: "Waiting", st: "" }; }), co = SOL.co, month = SOL.month;
     SOL.log = items; solRender();
     var chain = Promise.resolve();
-    items.forEach(function (it) { chain = chain.then(function () { return solReadOne(it); }).catch(function (e) { it.st = "bad"; it.msg = "Couldn't be read (" + ((e && (e.kind || e.code || e.message)) || "error") + ")."; solRender(); }); });
+    items.forEach(function (it) {
+      chain = chain.then(function () { return solKeep(it, co, month); }).then(function () {
+        if (!S.sample) { it.st = "warn"; it.msg = "Kept, but reading with Claude isn't available here."; return; }
+        return solReadOne(it);
+      }).catch(function (e) { it.st = "bad"; it.msg = "Kept, but couldn't be read (" + ((e && (e.kind || e.code || e.message)) || "error") + ")."; }).then(function () { solRender(); return solNote(it); });
+    });
     chain.then(function () { solRender(); });
+  }
+  function solKeep(it, co, month) {
+    it.msg = "Keeping the file"; solRender();
+    var t = fileType(it.f) || it.f.type || "application/octet-stream", path = (S.mode === "demo" ? "demo" : "live") + "/solar/" + co + "/" + month + "/" + Date.now().toString(36) + "-" + fileSafeName(it.f.name);
+    var put = window.bvFiles ? window.bvFiles.put(path, it.f, t).then(function () { return true; }, function () { return false; }) : Promise.resolve(false);
+    return put.then(function (ok) {
+      it.file = ok ? { path: path, name: str(it.f.name, 160), type: t, size: it.f.size || 0, at: Date.now(), by: meId() } : null;
+      it.upId = newId("su"); it.produced = [];
+      var doc = { companyId: co, month: month, name: str(it.f.name, 160), type: t, size: it.f.size || 0, file: it.file, kept: ok, status: "reading", msg: "", at: Date.now(), by: meId(), byName: pnm(preparedByText()) };
+      return retry(function () { return S.db.doc("solar_uploads/" + it.upId).set(doc); }).then(function () { SOL.ups[it.upId] = Object.assign({ id: it.upId }, doc); }, function () { it.upId = ""; });
+    });
+  }
+  function solNote(it) {
+    if (!it.upId) return Promise.resolve();
+    var ch = { status: it.st || "warn", msg: str(it.msg || "", 300), kind: it.kind || "", produced: it.produced || [] }; if (it.month) ch.month = it.month; if (it.co) ch.companyId = it.co;
+    if (!it.file) ch.msg = "The file couldn't be stored. " + ch.msg;
+    return retry(function () { return S.db.doc("solar_uploads/" + it.upId).update(ch); }).then(function () { Object.assign(SOL.ups[it.upId] || {}, ch); }, function () {});
   }
   function solReadOne(it) {
     it.msg = "Reading"; solRender();
     return solReadFile(it.f).then(function (p) {
       return S.sample.json(solPrompt(p.text, p.scanned), { images: p.images.length ? p.images : undefined, modelTier: "default" });
     }).then(function (r) {
-      r = r || {}; var type = r.type;
-      if (["generation", "allotment", "adjusted", "htbill"].indexOf(type) < 0) { it.st = "warn"; it.msg = "Not a TNPDCL statement this app uses; left out."; return; }
+      r = r || {}; var type = r.type; it.kind = type || "other";
+      if (["generation", "allotment", "adjusted", "htbill"].indexOf(type) < 0) { it.st = "warn"; it.msg = "Kept, but not a TNPDCL statement this app uses; nothing read from it."; return; }
       var month = /^\d{4}-\d{2}$/.test(r.month || "") ? r.month : SOL.month, plant = htscOf(r.generator_htsc), pls = coPlants(SOL.co), targets = [plant];
       if (type === "htbill") {
         targets = (r.oa || []).map(function (o) { return htscOf(o.generator_htsc); }).filter(function (g, i, a) { return PL()[g] && a.indexOf(g) === i; });
@@ -10513,12 +10555,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         if (plant || pls.length !== 1) { it.st = "warn"; it.msg = (plant ? "Generator HTSC " + plant + " isn't under any company. Add it to the company in Reports › Masters › Companies, then upload again." : "No generator HTSC could be read on it, so it can't be filed."); return; }
         plant = targets[0] = pls[0];
       }
-      it.msg = "Keeping the file"; solRender();
-      var path = (S.mode === "demo" ? "demo" : "live") + "/solar/" + plant + "/" + month + "/" + Date.now().toString(36) + "-" + fileSafeName(it.f.name), t = fileType(it.f);
-      var keep = window.bvFiles && t ? window.bvFiles.put(path, it.f, t).then(function () { return { path: path, name: str(it.f.name, 160), type: t, size: it.f.size || 0, at: Date.now(), by: meId() }; }, function () { return null; }) : Promise.resolve(null);
-      return keep.then(function (file) {
+      it.msg = "Filing what was read"; solRender(); it.month = month; it.co = (PL()[plant] || {}).companyId || SOL.co;
+      var dk = { generation: "gen", allotment: "allot", adjusted: "adj", htbill: "ht" }[type];
+      return Promise.resolve(it.file).then(function (file) {
         var what = "", now = Date.now();
-        var one = function (plant) { return solSaveMonth(plant, month, function (d) {
+        var one = function (plant) { it.produced.push(dk === "ht" ? { pl: plant, k: "ht", h: htscOf(r.consumer_htsc) } : { pl: plant, k: dk }); return solSaveMonth(plant, month, function (d) {
           if (type === "generation") {
             d.gen = { period: r.period || "", genDate: r.generation_date || "", voltage: r.voltage || "", injLoss: n0(r.injection_loss_pct), export: arr5(r.export), import: arr5(r.import), net: arr5(r.net), netTotal: n0(r.net_total) || sum5(r.net), kvah: n0(r.kvah), rkvah: n0(r.rkvah), charges: {}, file: file, readAt: now };
             SOL_GCH.forEach(function (g) { d.gen.charges[g[0]] = n0((r.charges || {})[g[0]]); });

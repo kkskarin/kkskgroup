@@ -175,7 +175,8 @@ Monthly bills of supply from a solar plant or windmill to each consumer it suppl
 "Solar Invoicing & Finance App" specification. Each generator is marked Solar plant or Windmill; that decides which HT bill
 row (SOLAR or WIND) is billed and the wording on the bill.
 
-- **Companies** (Reports › Masters, admins): each Renewable Energy company has a generator type (solar or windmill), its
+- **Companies** (Reports › Masters; admins, and in Renewable Energy also people given "Can add and edit companies in Renewable
+  Energy" in Users, at present Prabhu): each Renewable Energy company has a generator type (solar or windmill), its
   capacity in MW (AC for solar; the DC figure is worked out as panels × capacity per panel), and its generator HTSCs
   (transformers), each with a location and either its inverters, with the solar panels under each inverter (make, number,
   kW per panel), or its windmills (make, capacity); at least one HTSC finishes setting it up. Makes typed before are offered
@@ -189,8 +190,9 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   generation statement, energy allotment order and energy adjusted report, and, if you have them, the consumers' HT bills.
   Claude works out which is which and reads it (text PDFs as text, scans as images); each document is filed under its
   generator HTSC in `solar_months/<generator HTSC>_<YYYY-MM>` (an HT bill listing several of our HTSCs under each of them),
-  with the files in the `bill-files` bucket under `<live|demo>/solar/`. **Discard Uploads** deletes chosen documents (or
-  everything for the month) with their files and what was read from them; not while a bill of supply is issued for the month.
+  with the files in the `bill-files` bucket under `<live|demo>/solar/<company>/<month>/`. Every file uploaded is kept, even one
+  that can't be read or isn't used, and listed under Uploaded files from `solar_uploads` with what came of it. **Discard Uploads** deletes chosen files (or
+  everything for the month) with what was read from them; not while a bill of supply is issued for the month.
 - **Bill**: one bill of supply per consumer per company per month, with a row for each consumer HTSC and generator HTSC pair.
   Units = units adjusted in the energy adjusted report; A = units × PPA rate; B = the charges the allotment order puts on the
   consumer, wheeling = gross allotted × 0.49967, self-generation tax = units adjusted × ₹0.10; net = A − B, rounded.

@@ -873,7 +873,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         <div class="f" id="uPinF" hidden><label for="uPin">Profile PIN</label><input class="field num" id="uPin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="4 digits"><span class="hint" id="uPinH"></span><button class="link-btn" id="uPinReset" type="button" hidden>Reset PIN</button><span class="err" id="uEPin" hidden></span></div>
         <div class="f wide" id="uLinkF" hidden><label for="uLink">Link to a Person Already Added</label><select class="field" id="uLink"></select><span class="hint">Pick the person you added without a login, if this request is theirs. Everything entered for them moves to this login.</span></div>
         <div class="f wide" id="uAppsF"><span class="lb">Apps</span>
-          <div class="uapps"><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label><label class="check"><input type="checkbox" id="uAppApr"> Approvals</label>
+          <div class="uapps"><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label><label class="check"><input type="checkbox" id="uAppApr"> Approvals</label>
             <div class="uapp-pp"><span>Production Planning</span><select class="field" id="uPpRole" aria-label="Production Planning role"><option value="">No access</option><option value="approver">Approver</option><option value="planner">Planner</option><option value="floor">Floor Team</option></select>
               <select class="field" id="uPpRegion" aria-label="Production Planning region"><option value="">Erode and Ambur</option><option value="E">Erode</option><option value="A">Ambur</option></select></div></div>
           <span class="hint">They see only the apps given here; with one app they go straight into it. Admins get every app.</span><span class="err" id="uEApps" hidden>Give at least one app.</span></div>
@@ -1392,7 +1392,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function prefsLocal(id) { try { var j = JSON.parse(localStorage.getItem(prefKey(id)) || "null"); return j && typeof j === "object" ? j : null; } catch (e) { return null; } }
   var DARK_MQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
   function applyPrefs(p) {
-    p = Object.assign({}, PREF0, p || {}); S.prefs = p;
+    p = Object.assign({}, PREF0, p || {}); S.prefs = p; if (!S.prefDraft) S.prefSaved = p;
     var r = document.documentElement, dark = p.theme === "dark" || (p.theme === "system" && DARK_MQ && DARK_MQ.matches);
     r.setAttribute("data-theme", dark ? "dark" : "light"); r.setAttribute("data-accent", p.accent || "green");
     r.classList.toggle("compact", p.density === "compact"); if (window.kkskTextSize) window.kkskTextSize(Number(p.text || 100) / 100); else r.style.zoom = p.text && p.text !== "100" ? Number(p.text) / 100 : "";
@@ -1411,6 +1411,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (S.tab === "Personalise" && !$("secPrefs").hidden) renderPrefs();
     }, function () {});
   }
+  /* Personalise: choices show straight away but are kept only when Save is pressed; leaving unsaved goes back to the last saved look. */
+  function pickPref(patch) { S.prefDraft = Object.assign({}, S.prefDraft || S.prefs, patch); applyPrefs(S.prefDraft); renderPrefs(); }
+  function savePrefDraft() { var d = S.prefDraft; if (!d) return; S.prefDraft = null; savePrefs(d, "Personalise saved. It follows you to every device and app."); }
+  function dropPrefDraft(quiet) { if (!S.prefDraft) return; S.prefDraft = null; applyPrefs(S.prefSaved); renderPrefs(); if (!quiet) toast("Personalise changes weren't saved; the last saved look is back."); }
   function savePrefs(patch, msg) {
     var id = S.me && S.me.id, p = Object.assign({}, S.prefs, patch, { updatedAt: Date.now() });
     applyPrefs(p); try { localStorage.setItem(prefKey(id), JSON.stringify(p)); localStorage.setItem(prefKey(), JSON.stringify(Object.assign({}, p, { avatar: "" }))); } catch (e) {}
@@ -1449,20 +1453,25 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (window.bvAccount) window.bvAccount.email().then(function (m) { em.textContent = m; }, function () {});
     var fi = el("input", { type: "file", accept: "image/*", hidden: "" }), up = el("button", { type: "button", class: "btn sm" }, p.avatar ? "Change Picture" : "Add a Picture");
     up.addEventListener("click", function () { fi.click(); });
-    fi.addEventListener("change", function () { var f = fi.files && fi.files[0]; if (!f) return; avatarFrom(f).then(function (d) { return savePrefs({ avatar: d }, "Profile picture saved."); }, function () { toast("Choose a photo (JPG, PNG or WebP)."); }); });
+    fi.addEventListener("change", function () { var f = fi.files && fi.files[0]; if (!f) return; avatarFrom(f).then(function (d) { pickPref({ avatar: d }); }, function () { toast("Choose a photo (JPG, PNG or WebP)."); }); });
     var ab = el("div", { class: "acts", style: "margin-top:8px" }); ab.appendChild(up); ab.appendChild(fi);
-    if (p.avatar) { var rm = el("button", { type: "button", class: "btn sm" }, "Remove"); rm.addEventListener("click", function () { savePrefs({ avatar: "" }, "Profile picture removed."); }); ab.appendChild(rm); }
+    if (p.avatar) { var rm = el("button", { type: "button", class: "btn sm" }, "Remove"); rm.addEventListener("click", function () { pickPref({ avatar: "" }); }); ab.appendChild(rm); }
     who.appendChild(ab); pr.appendChild(who); c1.appendChild(pr); box.appendChild(c1);
     /* appearance */
     var c2 = el("div", { class: "card pcard" }); c2.appendChild(el("h3", null, "Appearance"));
-    c2.appendChild(prefRow("Mode", "Light, dark, or follow this device.", prefSeg(THEMES, p.theme, function (v) { savePrefs({ theme: v }); }, "Mode")));
+    c2.appendChild(prefRow("Mode", "Light, dark, or follow this device.", prefSeg(THEMES, p.theme, function (v) { pickPref({ theme: v }); }, "Mode")));
     var sw = el("div", { class: "swatches", role: "radiogroup", "aria-label": "Colour" });
-    ACCENTS.forEach(function (a) { var b = el("button", { type: "button", class: "swatch", role: "radio", "aria-checked": p.accent === a[0] ? "true" : "false", title: a[1], "aria-label": a[1], style: "--sw:" + a[2] }); b.appendChild(el("span", { class: "sr" }, a[1])); b.addEventListener("click", function () { savePrefs({ accent: a[0] }); }); sw.appendChild(b); });
+    ACCENTS.forEach(function (a) { var b = el("button", { type: "button", class: "swatch", role: "radio", "aria-checked": p.accent === a[0] ? "true" : "false", title: a[1], "aria-label": a[1], style: "--sw:" + a[2] }); b.appendChild(el("span", { class: "sr" }, a[1])); b.addEventListener("click", function () { pickPref({ accent: a[0] }); }); sw.appendChild(b); });
     c2.appendChild(prefRow("Colour", (ACCENTS.filter(function (a) { return a[0] === p.accent; })[0] || ACCENTS[0])[1] + ". Used for the menu bar, buttons and highlights.", sw));
-    c2.appendChild(prefRow("Text Size", "Makes everything on screen bigger or smaller.", prefSeg(TEXTS, p.text, function (v) { savePrefs({ text: v }); }, "Text size")));
-    c2.appendChild(prefRow("Tables", "Compact fits more rows on screen.", prefSeg(DENS, p.density, function (v) { savePrefs({ density: v }); }, "Tables")));
+    c2.appendChild(prefRow("Text Size", "Makes everything on screen bigger or smaller.", prefSeg(TEXTS, p.text, function (v) { pickPref({ text: v }); }, "Text size")));
+    c2.appendChild(prefRow("Tables", "Compact fits more rows on screen.", prefSeg(DENS, p.density, function (v) { pickPref({ density: v }); }, "Tables")));
     c2.appendChild(el("p", { class: "sub", style: "margin:12px 0 0" }, "Only your screen changes. PDFs and Excel downloads always keep the standard KKSK format."));
     box.appendChild(c2);
+    var c4 = el("div", { class: "card pcard" }), sa = el("div", { class: "acts" }), sv = el("button", { type: "button", class: "btn primary", id: "prefSave" }, "Save");
+    sv.disabled = !S.prefDraft; sv.addEventListener("click", savePrefDraft); sa.appendChild(sv);
+    if (S.prefDraft) { var dc = el("button", { type: "button", class: "btn" }, "Discard Changes"); dc.addEventListener("click", function () { dropPrefDraft(true); }); sa.appendChild(dc); }
+    sa.appendChild(el("span", { class: "tsub", style: "align-self:center" }, S.prefDraft ? "Unsaved changes. Save to keep them on every device; leaving this page without saving goes back to your last saved look." : "Everything here is saved."));
+    c4.appendChild(sa); box.appendChild(c4);
     /* password */
     if (window.bvAccount) {
       var c3 = el("div", { class: "card pcard" }); c3.appendChild(el("h3", null, "Password"));
@@ -1490,8 +1499,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
      Accounts keeps the books for every division (ledgers, accounting, notes, companies). Finance approves and pays for every division,
      except a division that pays in its own app (Renewable Energy), which Finance still sees. Every entry carries the division it came from. */
   var APP = window.BV_APP || "mnt";
-  var DIVS = { mnt: { name: "Maintenance", payIn: "fin" }, re: { name: "Renewable Energy", payIn: "re" } };
-  var APP_NAMES = { mnt: "Maintenance", re: "Renewable Energy", acc: "Accounts", fin: "Finance", apr: "Approvals" };
+  var DIVS = { mnt: { name: "Maintenance & Civil", payIn: "fin" }, re: { name: "Renewable Energy", payIn: "re" } };
+  var APP_NAMES = { mnt: "Maintenance & Civil", re: "Renewable Energy", acc: "Accounts", fin: "Finance", apr: "Approvals" };
   var APP_KEYS = ["mnt", "re", "acc", "fin", "apr"];
   function appName(k) { return APP_NAMES[k || APP] || ""; }
   /* The division this page works in, or null in Accounts and Finance (every division). */
@@ -1595,6 +1604,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     slideTo(nav, nav.querySelector(".grp-on"), "G"); slideTo(subn, subn.querySelector('[aria-current="page"]'), "T");
   }
   function setTab(t) {
+    if (S.prefDraft && t !== "Personalise") dropPrefDraft();
     if (S.tab === "Bills" && t !== "Bills") { readCard(); doSave(); }
     S.tab = t; var gg = groupOf(t); if (gg) LAST_IN[gg.h] = t;
     S.editing = null; S.userEditing = null; S.stmtId = null; VE.id = null; CK.viewId = null; VC.viewId = null; VH.id = null; renderNav();
@@ -2074,7 +2084,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (appBv && !cos.length) { $("uECos").hidden = false; ok = false; }
     /* Each app only for the responsibilities that belong in it. */
     var misfit = APP_KEYS.filter(function (k) { return ma[k] && !rolesFit(roles, k); });
-    if (misfit.length) { $("uEApps").textContent = misfit.map(function (k) { return APP_NAMES[k]; }).join(", ") + (misfit.length > 1 ? " don't" : " doesn't") + " match their responsibilities below. " + ({ mnt: "Maintenance is for purchasers.", re: "Renewable Energy is for its purchasers, financier and energy billing.", acc: "Accounts is for accountants.", fin: "Finance is for financiers.", apr: "Approvals is for approvers." })[misfit[0]] + " Untick it, or give the matching responsibility."; $("uEApps").hidden = false; ok = false; }
+    if (misfit.length) { $("uEApps").textContent = misfit.map(function (k) { return APP_NAMES[k]; }).join(", ") + (misfit.length > 1 ? " don't" : " doesn't") + " match their responsibilities below. " + ({ mnt: "Maintenance & Civil is for purchasers.", re: "Renewable Energy is for its purchasers, financier and energy billing.", acc: "Accounts is for accountants.", fin: "Finance is for financiers.", apr: "Approvals is for approvers." })[misfit[0]] + " Untick it, or give the matching responsibility."; $("uEApps").hidden = false; ok = false; }
     var dept = usDept.value(); if (!dept) { $("uEDept").hidden = false; ok = false; }
     var jobs = readChecks($("uJobs")); if (appBv && !jobs.length) { $("uJobsE").hidden = false; ok = false; }
     var purch = appBv && jobs.indexOf("purchaser") >= 0, defAppr = purch ? $("uAppr").value : "";

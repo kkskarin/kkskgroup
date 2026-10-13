@@ -5,7 +5,7 @@
 | Path | What | Supabase project |
 | --- | --- | --- |
 | `/` (`web/index.html`, `web/portal.js`) | KKSK Group home: sign-in, then a tile per app (straight into the app when a person has only one) | KKSK Group |
-| `/maintenance/` | Maintenance: the division's bills, proformas, imports, cash vouchers and checking reports | KKSK Group |
+| `/maintenance/` | Maintenance & Civil: the division's bills, proformas, imports, cash vouchers and checking reports | KKSK Group |
 | `/renewable/` | Renewable Energy: the same for that division, plus its own Payment Entry and energy billing for solar plants and windmills | KKSK Group |
 | `/accounts/` | Accounts: every division's accounting, ledgers, debit and credit notes, ledger books, companies | KKSK Group |
 | `/finance/` | Finance: Payment Entry and advances, payables | KKSK Group |

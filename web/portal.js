@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   var APPS = [
-    { key: "mnt", name: "Maintenance", path: "maintenance/", desc: "Bills, proformas and imports, cash vouchers and checking reports for the maintenance division.",
+    { key: "mnt", name: "Maintenance & Civil", path: "maintenance/", desc: "Bills, proformas and imports, cash vouchers and checking reports for the maintenance and civil division.",
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3 17.8V21h3.2l6.3-6.3a4 4 0 0 0 5.2-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>' },
     { key: "re", name: "Renewable Energy", path: "renewable/", desc: "Solar and windmill bills of supply from TNPDCL statements, receipts, and the division's own bills, proformas, vouchers and payments.",
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' },

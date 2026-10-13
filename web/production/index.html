@@ -506,9 +506,15 @@ let PDOC=null;
 function prefsStart(){
   const id=window.PP_ME&&window.PP_ME.uid;const loc=prefsLocal(id)||prefsLocal();if(loc)S.prefs=fromShared(loc);
   if(!id||!window.claude)return;
-  window.claude.use('db').then(db=>{if(!db)return;PDOC=db.doc('prefs/'+id);PDOC.onSnapshot(d=>{const x=d&&d.exists?d.data():null;if(!x)return;S.prefs=fromShared(x);prefsKeep(x);render()},()=>{})},()=>{});
+  window.claude.use('db').then(db=>{if(!db)return;PDOC=db.doc('prefs/'+id);PDOC.onSnapshot(d=>{const x=d&&d.exists?d.data():null;if(!x||PDIRTY)return;S.prefs=fromShared(x);prefsKeep(x);prefsMark();render()},()=>{})},()=>{});
 }
+/* Personalise choices show straight away but are kept only on Save; leaving without saving goes back to the last saved look. */
+let PSAVED=null,PDIRTY=false;
+function prefsMark(){PSAVED=JSON.stringify(prefs());PDIRTY=false}
+function prefPick(){PDIRTY=true;render()}
+function prefsLeave(){if(!PDIRTY)return;S.prefs=JSON.parse(PSAVED||'{}');PDIRTY=false;toast("Personalise changes weren't saved; the last saved look is back.")}
 function savePrefs(msg){
+  prefsMark();
   const x=Object.assign(toShared(prefs()),{updatedAt:Date.now()});prefsKeep(x);render();
   if(!PDOC)return;PDOC.set(x).then(()=>{if(msg)toast(msg)},()=>toast('Saved in this browser only. Check the connection.'));
 }
@@ -541,6 +547,7 @@ function vSettings(){
   h+='<div class="setrow"><div class="lb">Text Size</div>'+seg('size',[[90,'Small'],[100,'Standard'],[110,'Large'],[120,'Extra Large']])+'</div>';
   h+='<div class="setrow"><div class="lb">Tables</div>'+seg('density',[['comfortable','Comfortable'],['compact','Compact']])+'</div>';
   h+='</div></div>';
+  h+='<div class="card form"><div class="row" style="gap:10px;align-items:center"><button class="btn" data-act="prefSave"'+(PDIRTY?'':' disabled')+'>Save</button>'+(PDIRTY?'<button class="btn small" data-act="prefDrop">Discard Changes</button>':'')+'<span class="hint" style="margin:0">'+(PDIRTY?'Unsaved changes. Save to keep them on every device; leaving this page without saving goes back to your last saved look.':'Everything here is saved.')+'</span></div></div>';
   h+='<div class="card form"><h3 style="margin:0 0 12px">Password</h3><div class="field"><label for="pwNew">New Password</label><input type="password" id="pwNew" autocomplete="new-password" maxlength="72"><p class="hint">At least 8 characters.</p></div><div class="field"><label for="pwAgain">Type It Again</label><input type="password" id="pwAgain" autocomplete="new-password" maxlength="72"></div><div class="row"><button class="btn" data-act="pwSave">Change Password</button><button class="btn ghost" data-act="signout">Sign Out</button></div></div>';
   h+='<p class="hint">Signed in as '+esc(r.label)+(r.region?' ('+REG[r.region]+' only)':' (both plants)')+'.</p>';
   return h;
@@ -559,7 +566,7 @@ function avatarFrom(file){return new Promise((res,rej)=>{if(!file||!/^image\//.t
 function moneyApps(u){const a=(u&&u.apps)||{},bv=a.bv!==false,st=k=>!u.roles||Object.keys(u.roles).some(c=>(u.roles[c]||[]).indexOf(k)>=0);
   const fit=ks=>!u.roles||Object.keys(u.roles).some(c=>(u.roles[c]||[]).some(x=>ks.indexOf(x)>=0)),E=['bills','bcr','adv','vouchers','vcr','cash'];
   const on={apr:bv&&!!u.roles&&st('appr')&&(a.apr!=null?!!a.apr:true),mnt:bv&&(a.mnt!=null?!!a.mnt:true)&&fit(E),re:bv&&!!a.re&&fit(E.concat(['txn','solar'])),acc:bv&&(a.acc!=null?!!a.acc:true)&&fit(['acct']),fin:bv&&(a.fin!=null?!!a.fin:true)&&fit(['txn'])};
-  return [['mnt','Maintenance'],['re','Renewable Energy'],['acc','Accounts'],['fin','Finance'],['apr','Approvals']].filter(x=>on[x[0]]).map(x=>x[1]).join(', ')||'None'}
+  return [['mnt','Maintenance & Civil'],['re','Renewable Energy'],['acc','Accounts'],['fin','Finance'],['apr','Approvals']].filter(x=>on[x[0]]).map(x=>x[1]).join(', ')||'None'}
 const PPR={approver:'Approver',planner:'Planner',floor:'Floor Team'};
 let PEOPLE=null;
 function loadPeople(){
@@ -1295,7 +1302,7 @@ app.addEventListener('click',e=>{
   if(['role','src','fill','itype','kind','pdate','showAll','saveDef'].includes(a))return;
   const r=R(),sh=UI.sheet;
   switch(a){
-    case 'tab':S.tab=t.dataset.v;UI.sheet=null;save();render();try{window.scrollTo(0,0)}catch(e){}break;
+    case 'tab':if(t.dataset.v!=='settings'&&t.dataset.v!==S.tab)prefsLeave();S.tab=t.dataset.v;UI.sheet=null;save();render();try{window.scrollTo(0,0)}catch(e){}break;
     case 'region':S.region=t.dataset.v;save();render();break;
     case 'reset':if(!LIVE()&&confirm('Reset the demo to its starting data?')){seed();save();UI.sheet=null;render();toast('Demo reset')}break;
     case 'close':closeSheet();break;
@@ -1309,8 +1316,10 @@ app.addEventListener('click',e=>{
     case 'doCrust':doCrust();break;
     case 'doMeasure':doMeasure();break;
     case 'upd':UI.upd=t.dataset.v;render();break;
-    case 'pref':{const p=prefs();const k=t.dataset.k;p[k]=k==='size'?+t.dataset.v:t.dataset.v;savePrefs();break}
-    case 'picRemove':prefs().avatar='';savePrefs('Profile picture removed.');break;
+    case 'pref':{const p=prefs();const k=t.dataset.k;p[k]=k==='size'?+t.dataset.v:t.dataset.v;prefPick();break}
+    case 'picRemove':prefs().avatar='';prefPick();break;
+    case 'prefSave':savePrefs('Personalise saved. It follows you to every device and app.');break;
+    case 'prefDrop':PDIRTY=true;prefsLeave();render();break;
     case 'picAdd':document.getElementById('picFile').click();break;
     case 'pwSave':changePw();break;
     case 'uAdd':UI.uadd=UI.uadd?null:{name:'',mail:'',pw:'',role:'planner',region:'E'};render();break;
@@ -1349,7 +1358,7 @@ app.addEventListener('change',e=>{
   const t=e.target,a=t.dataset.act,sh=UI.sheet;
   if(a==='role'){S.role=t.value;S.viewAs=t.value!=='super';const r=ROLES[S.role];if(r.region)S.region=r.region;UI.sheet=null;save();render();return}
   if(a==='showAll'){UI.showAll=t.checked;render();return}
-  if(t.id==='picFile'){const f=t.files&&t.files[0];if(f)avatarFrom(f).then(d=>{prefs().avatar=d;savePrefs('Profile picture saved.')},()=>toast('Choose a photo (JPG, PNG or WebP).'));return}
+  if(t.id==='picFile'){const f=t.files&&t.files[0];if(f)avatarFrom(f).then(d=>{prefs().avatar=d;prefPick()},()=>toast('Choose a photo (JPG, PNG or WebP).'));return}
   if(t.dataset.ua){UI.uadd[t.dataset.ua]=t.value;return}
   if(t.dataset.ur||t.dataset.ug)return;
   if(t.dataset.fp){setPath(t.dataset.fp,t.value);const p=t.dataset.fp;if(/\.lot$/.test(p)&&t.value){const q=p.replace(/\.lot$/,'.qty');const parts=q.split('.');let o=UI.fm;for(let i=0;i<parts.length-1;i++)o=o[parts[i]];if(o&&'qty' in o&&!o.qty)o.qty=String(curQty(lotOf(t.value)))}if(/\.sku$/.test(p)){const f=FM(p.split('.')[0]);f.sel={}}render();return}
@@ -1393,7 +1402,7 @@ window.__ppStart=function(me){
     if(!(me.super&&S.role&&ROLES[S.role]&&S.viewAs))S.role=key;
     if(ROLES[S.role].region)S.region=ROLES[S.role].region;
     window.__pp={get S(){return S},render,coverage,pools,proj,histFor,seed};
-    prefsStart();
+    prefsStart();prefsMark();
     render();
   };
   const L=window.PPLive;

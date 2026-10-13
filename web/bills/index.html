@@ -409,7 +409,7 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .modal.wide{max-width:520px;max-height:calc(100vh - 32px);overflow:auto}
 .mform{display:grid;gap:2px}
 .mbar{margin:18px 0 -4px}.mbar .seg{margin:0;flex-wrap:wrap}
-.rehtsc{padding:12px 14px;margin:10px 0}.rerows{margin-top:10px;display:grid;gap:6px}.rerow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rerow .field{flex:1 1 140px;min-width:0}
+.rehtsc{padding:12px 14px;margin:10px 0}.rerows{margin-top:10px;display:grid;gap:6px}.rerow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rerow .field{flex:1 1 140px;min-width:0}.resub{margin:2px 0 8px 22px;padding-left:10px;border-left:2px solid var(--line)}
 .solgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 16px}.solgrid .f.wide{grid-column:1/-1}
 .soldocs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 14px}
 .soldoc{padding:12px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border-left:4px solid var(--line)}.soldoc .k{font-size:12.5px;color:var(--muted)}
@@ -1526,7 +1526,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   ];
   var NAV_BY_APP = {
     mnt: DIV_NAV.concat([SET_TABS]),
-    re: [{ h: "Energy Billing", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices & Receipts"], ["Solar Reports", "Reports"]] }].concat(DIV_NAV).concat([{ h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] }, SET_TABS]),
+    /* Renewable Energy: Reports first, then Energy Billing, then one Expenses group for bills, proformas and vouchers. */
+    re: [DIV_NAV[0], { h: "Energy Billing", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices & Receipts"], ["Solar Reports", "Data"]] },
+      { h: "Expenses", tabs: DIV_NAV[1].tabs.concat(DIV_NAV[2].tabs, DIV_NAV[3].tabs) }].concat([{ h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] }, SET_TABS]),
     acc: [
       { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]].concat(MASTERS) },
       { h: "Accounts", tabs: [["Accounts", "To Account"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Books"]] },
@@ -1544,7 +1546,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
   var LAST_M = "";
-  var HOME_TAB = { acc: "Accounts", fin: "Payables", apr: "Approvals", re: "Solar Month" }[APP] || "Transactions", LAST_IN = {};
+  var HOME_TAB = { acc: "Accounts", fin: "Payables", apr: "Approvals", }[APP] || "Transactions", LAST_IN = {};
   var DATA_TABS = ["Cash Approvals", "Approvals", "Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
   /* Admins oversee rather than enter: the entry screens (and the accountant's queue) are left out for them.
      Reports > Transactions shows every item, where it stands and who is responsible. "View as" still opens a person's screens. */
@@ -2460,7 +2462,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var ua = c ? coApps(c) : DIV ? [DIV] : [], fa = $("fApps"); fa.textContent = "";
     Object.keys(DIVS).forEach(function (k) { var lb = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: k }); cb.checked = ua.indexOf(k) >= 0; cb.disabled = !!DIV && k === DIV; lb.appendChild(cb); lb.appendChild(el("span", null, DIVS[k].name)); fa.appendChild(lb); });
     $("fAppsH").textContent = DIV ? "It always stays in " + DIVS[DIV].name + " while you work here; tick another division to use it there too." : "The divisions whose apps list this company. Accounts and Finance always see every company.";
-    S.coRe = APP === "re" ? JSON.parse(JSON.stringify((c && c.re) || { kind: "solar", htscs: [], tpl: {} })) : null; renderCoRe();
+    S.coRe = APP === "re" ? reNorm(JSON.parse(JSON.stringify((c && c.re) || { kind: "solar", htscs: [], tpl: {} }))) : null; renderCoRe();
     var tg = $("toggle"); tg.hidden = !c;
     if (c) { var off = c.active === false; tg.textContent = off ? "Reactivate company" : "Deactivate company"; tg.className = "btn" + (off ? "" : " danger"); }
     setLogoPreview(); show("secEdit"); $("fName").focus();
@@ -2909,7 +2911,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function learnedAcr() {
     var m = {};
     function add(s) { String(s || "").split(/[\s\/\-&,.()]+/).forEach(function (w) { if (/^[A-Z]{2,8}$/.test(w)) m[w.toLowerCase()] = 1; }); }
-    Object.keys(S.companies || {}).forEach(function (k) { var c = S.companies[k]; add(c.name); add(c.internalName); add(c.shortName); });
+    Object.keys(S.companies || {}).forEach(function (k) { var c = S.companies[k]; add(c.name); add(c.internalName); });   // a short name like ARA is a code, not a sign that the word "Ara" is an acronym
     Object.keys(S.vendors || {}).forEach(function (k) { add(S.vendors[k].name); });
     Object.keys(S.locations || {}).forEach(function (k) { add(S.locations[k].name); });
     return m;
@@ -8071,7 +8073,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Short Name", cell: function (c, td) { txt(td, c.shortName); } },
       { label: "Base Location", cell: function (c, td) { txt(td, locNameOf(c) || "Not set"); } },
       !DIV ? { label: "Used In", cell: function (c, td) { txt(td, coApps(c).map(function (k) { return DIVS[k] ? DIVS[k].name : k; }).join(", ")); } } : null,
-      APP === "re" ? { label: "Generators", cell: function (c, td) { var r = c.re || {}, n = (r.htscs || []).length; txt(td, n ? (r.kind === "wind" ? "Windmill" : "Solar") + " · " + plural(n, "HTSC") : "Not set up"); if (!n) sub(td, "Add at least one HTSC to finish setting it up", "color:var(--bad)"); } } : null,
+      APP === "re" ? { label: "Generators", cell: function (c, td) { var r = c.re || {}, n = (r.htscs || []).length; txt(td, n ? (r.kind === "wind" ? "Windmill" : "Solar") + " · " + plural(n, "HTSC") : "Not set up"); if (n) sub(td, reCapText(r)); if (!n) sub(td, "Add at least one HTSC to finish setting it up", "color:var(--bad)"); } } : null,
       false && { label: "Outstanding", cls: "r num", cell: function (c, td) {
           var b = el("button", { class: "amt", "aria-label": "Outstanding for " + c.name + ", open statement" }, mixMoney(c._tot, "outstanding")); b.addEventListener("click", function () { openStatement(c.id); }); td.appendChild(b); } },
       false && { label: "Overdue", cls: "r num", cell: function (c, td) {
@@ -10671,7 +10673,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ---- Reports ---- */
   function solReports(box) {
-    var hd = el("div", { class: "head" }), h = el("div"); h.appendChild(el("h2", null, "Reports")); h.appendChild(el("p", { class: "sub" }, "Generation and realisation by month, deductions by charge, and line loss by consumer, from the invoices issued and the documents read. The year is that of the energy month.")); hd.appendChild(h); hd.appendChild(el("span", { class: "grow" }));
+    var hd = el("div", { class: "head" }), h = el("div"); h.appendChild(el("h2", null, "Data")); h.appendChild(el("p", { class: "sub" }, "Generation and realisation by month, deductions by charge, and line loss by consumer, from the invoices issued and the documents read. The year is that of the energy month.")); hd.appendChild(h); hd.appendChild(el("span", { class: "grow" }));
     /* The year of the energy month, so April to March of generation lines up with the TNPDCL statements. */
     var fys = {}; solList(SOL.inv).forEach(function (i) { fys[fyFromMonth(i.month)] = 1; }); var fl = Object.keys(fys).sort().reverse(); if (!SOL.rfy || !fys[SOL.rfy]) SOL.rfy = fl[0] || fyOf(todayYmd());
     var fs = el("select", { class: "field", "aria-label": "Financial year", style: "width:auto" }); fillSelect(fs, (fl.length ? fl : [SOL.rfy]).map(function (y) { return [y, "FY 20" + y]; }), SOL.rfy); fs.addEventListener("change", function () { SOL.rfy = fs.value; solRender(); }); hd.appendChild(fs);
@@ -10713,7 +10715,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ---- A Renewable Energy company: generator type, its HTSCs and what is at each, and its invoice wording ---- */
   /* Makes typed before are offered again; windmill, inverter and panel makes are separate lists. */
-  function reMakes(kind) { var m = {}; Object.keys(S.companies || {}).forEach(function (k) { ((S.companies[k].re || {}).htscs || []).forEach(function (h) { (h[kind] || []).forEach(function (x) { if (x.make) m[x.make] = 1; }); }); }); ((S.coRe || {}).htscs || []).forEach(function (h) { (h[kind] || []).forEach(function (x) { if (x.make) m[x.make] = 1; }); }); return Object.keys(m).sort(natCmp); }
+  function reRows(h, kind) { return kind === "panels" ? [].concat.apply([], (h.inverters || []).map(function (v) { return v.panels || []; })) : h[kind] || []; }
+  function reMakes(kind) { var m = {}, add = function (h) { reRows(h, kind).forEach(function (x) { if (x.make) m[x.make] = 1; }); }; Object.keys(S.companies || {}).forEach(function (k) { ((S.companies[k].re || {}).htscs || []).forEach(add); }); ((S.coRe || {}).htscs || []).forEach(add); return Object.keys(m).sort(natCmp); }
+  /* Solar panels sit under the inverter they feed; panels saved under the HTSC before that go under its first inverter. */
+  function reNorm(r) { (r.htscs || []).forEach(function (h) { if (h.panels && h.panels.length && (h.inverters || []).length && !h.inverters.some(function (v) { return (v.panels || []).length; })) h.inverters[0].panels = h.panels; delete h.panels; }); return r; }
+  /* DC: every panel's capacity times the number of panels. AC: the capacity given for the company. */
+  function reDcKw(r) { return round2((r.htscs || []).reduce(function (s0, h) { return s0 + reRows(h, "panels").reduce(function (s1, x) { return s1 + n0(x.kw) * n0(x.count); }, 0); }, 0)); }
+  function mwTxt(kw) { return (Math.round(kw) / 1000).toLocaleString("en-IN", { maximumFractionDigits: 3 }); }
+  function reCapText(r) { var ac = n0(r.acMw), dc = r.kind === "wind" ? 0 : reDcKw(r); return [ac ? ac.toLocaleString("en-IN", { maximumFractionDigits: 3 }) + " MW" + (r.kind === "wind" ? "" : " AC") : "", dc ? mwTxt(dc) + " MWp DC" : ""].filter(Boolean).join(" · "); }
   function makeList(kind) { var id = "mk_" + kind, dl = $(id); if (!dl) { dl = el("datalist", { id: id }); document.body.appendChild(dl); } dl.textContent = ""; reMakes(kind).forEach(function (v) { dl.appendChild(el("option", { value: v })); }); return id; }
   function renderCoRe() {
     var box = $("coRe"); box.hidden = !S.coRe; box.textContent = ""; if (!S.coRe) return;
@@ -10721,31 +10730,36 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     box.appendChild(el("h3", { style: "margin:6px 0 4px" }, "Renewable Energy"));
     var ks = el("select", { class: "field", id: "reKind", style: "max-width:260px" }); fillSelect(ks, [["solar", "Solar plant"], ["wind", "Windmill"]], R.kind || "solar");
     ks.addEventListener("change", function () { R.kind = ks.value; renderCoRe(); }); box.appendChild(fld("Generator type", ks, "Every HTSC of this company is of this type. It decides the HT bill row billed (SOLAR or WIND) and the wording on the bill."));
+    var ac = inp("reAc", R.acMw == null ? "" : String(R.acMw), { inputmode: "decimal", class: "field num", style: "max-width:160px" }), acH = el("span", { class: "hint" });
+    var acSay = function () { var dc = wind ? 0 : reDcKw(R), a = n0(R.acMw); acH.textContent = wind ? "The company's total windmill capacity." : "The plant's AC capacity (what it may export). Installed panels: " + (dc ? mwTxt(dc) + " MWp DC" + (a ? ", DC to AC " + (dc / 1000 / a).toFixed(2) : "") : "none yet") + "."; };
+    ac.addEventListener("input", function () { R.acMw = ac.value.trim(); acSay(); }); acSay();
+    var acF = fld(wind ? "Capacity (MW)" : "Capacity (MW AC)", ac); acF.appendChild(acH); box.appendChild(acF);
     box.appendChild(el("span", { class: "lb", style: "margin-top:10px;display:block" }, "Generator HTSCs"));
-    box.appendChild(el("span", { class: "hint" }, "At least one is needed to finish setting the company up. Each HTSC has a location and " + (wind ? "one or more windmills, each with its make and capacity." : "its inverters (make, capacity) and solar panels (make, number, capacity).")));
+    box.appendChild(el("span", { class: "hint" }, "Each HTSC is a transformer. At least one is needed to finish setting the company up. Each has a location and " + (wind ? "the windmills on it, each with its make and capacity." : "the inverters on it (make, capacity), and under each inverter the solar panels it takes (make, number of panels, capacity of one panel).")));
     R.htscs = R.htscs || [];
     R.htscs.forEach(function (h, hi) {
       var cd = el("div", { class: "card rehtsc" }), top = el("div", { class: "solgrid" });
       var hi1 = inp("reH_" + hi, h.htsc || "", { maxlength: "20", class: "field mono" }); hi1.addEventListener("input", function () { h.htsc = hi1.value; }); top.appendChild(fld("HTSC", hi1));
       var lo = inp("reL_" + hi, h.location || "", { maxlength: "60" }); lo.addEventListener("input", function () { h.location = lo.value; }); top.appendChild(fld("Location", lo));
       cd.appendChild(top);
-      function rows(key, label, cols) {
-        h[key] = h[key] || []; var w = el("div", { class: "rerows" }); w.appendChild(el("b", null, label + " (" + h[key].length + ")"));
+      function rows(key, label, cols, o, into, sub0) {
+        o = o || h; into = into || cd; o[key] = o[key] || []; var w = el("div", { class: "rerows" + (sub0 ? " resub" : "") }); w.appendChild(el(sub0 ? "span" : "b", sub0 ? { class: "lb" } : null, label + " (" + (key === "panels" ? o[key].reduce(function (s0, x) { return s0 + Math.round(n0(x.count)); }, 0).toLocaleString("en-IN") + " panels" : o[key].length) + ")"));
         var lid = makeList(key);
-        h[key].forEach(function (x, xi) {
+        o[key].forEach(function (x, xi) {
           var r = el("div", { class: "rerow" });
-          cols.forEach(function (c) { var i = inp("", x[c[0]] == null ? "" : String(x[c[0]]), Object.assign({ placeholder: c[1], "aria-label": c[1] }, c[0] === "make" ? { list: lid, maxlength: "40" } : { inputmode: "decimal", class: "field num" })); i.removeAttribute("id"); i.addEventListener("input", function () { x[c[0]] = c[0] === "make" ? i.value : i.value.trim(); }); r.appendChild(i); });
-          var rm = el("button", { type: "button", class: "btn sm", "aria-label": "Remove" }, "Remove"); rm.addEventListener("click", function () { h[key].splice(xi, 1); renderCoRe(); }); r.appendChild(rm); w.appendChild(r);
+          cols.forEach(function (c) { var i = inp("", x[c[0]] == null ? "" : String(x[c[0]]), Object.assign({ placeholder: c[1], "aria-label": c[1] }, c[0] === "make" ? { list: lid, maxlength: "40" } : { inputmode: "decimal", class: "field num" })); i.removeAttribute("id"); i.addEventListener("input", function () { x[c[0]] = c[0] === "make" ? i.value : i.value.trim(); }); if (c[0] !== "make") i.addEventListener("change", renderCoRe); r.appendChild(i); });
+          var rm = el("button", { type: "button", class: "btn sm", "aria-label": "Remove" }, "Remove"); rm.addEventListener("click", function () { o[key].splice(xi, 1); renderCoRe(); }); r.appendChild(rm); w.appendChild(r);
+          if (key === "inverters") rows("panels", "Solar panels on this inverter", [["make", "Panel make"], ["count", "No. of panels"], ["kw", "kW per panel"]], x, w, true);
         });
-        var ad = el("button", { type: "button", class: "btn sm" }, "Add " + label.replace(/s$/, "").toLowerCase()); ad.addEventListener("click", function () { h[key].push({}); renderCoRe(); }); w.appendChild(ad); cd.appendChild(w);
+        var ad = el("button", { type: "button", class: "btn sm" }, key === "panels" ? "Add panels" : "Add " + label.replace(/s$/, "").toLowerCase()); ad.addEventListener("click", function () { o[key].push(key === "inverters" ? { panels: [{}] } : {}); renderCoRe(); }); w.appendChild(ad); into.appendChild(w);
       }
       if (wind) rows("windmills", "Windmills", [["make", "Make"], ["kw", "Capacity (kW)"]]);
-      else { rows("inverters", "Inverters", [["make", "Make"], ["kw", "Capacity (kW)"]]); rows("panels", "Solar panels", [["make", "Make"], ["count", "No. of panels"], ["kw", "Capacity (kW)"]]); }
-      var cap = htscKw(R.kind, h); cd.appendChild(el("span", { class: "hint" }, cap ? "Capacity " + cap.toLocaleString("en-IN") + " kW" : ""));
+      else rows("inverters", "Inverters", [["make", "Inverter make"], ["kw", "Capacity (kW)"]]);
+      var cap = htscKw(R.kind, h), dc = wind ? 0 : reDcKw({ htscs: [h] }); cd.appendChild(el("span", { class: "hint" }, [cap ? (wind ? "Windmills " : "Inverters ") + cap.toLocaleString("en-IN") + " kW" + (wind ? "" : " AC") : "", dc ? "panels " + dc.toLocaleString("en-IN") + " kWp DC" : ""].filter(Boolean).join(" · ")));
       var del = el("button", { type: "button", class: "link-btn", style: "color:var(--bad)" }, "Remove this HTSC"); del.addEventListener("click", function () { R.htscs.splice(hi, 1); renderCoRe(); }); cd.appendChild(del);
       box.appendChild(cd);
     });
-    var ah = el("button", { type: "button", class: "btn" }, "Add HTSC"); ah.addEventListener("click", function () { R.htscs.push(wind ? { windmills: [{}] } : { inverters: [{}], panels: [{}] }); renderCoRe(); }); box.appendChild(ah);
+    var ah = el("button", { type: "button", class: "btn" }, "Add HTSC"); ah.addEventListener("click", function () { R.htscs.push(wind ? { windmills: [{}] } : { inverters: [{ panels: [{}] }] }); renderCoRe(); }); box.appendChild(ah);
     /* invoice wording */
     R.tpl = R.tpl || {};
     box.appendChild(el("h3", { style: "margin:18px 0 4px" }, "Invoice wording"));
@@ -10759,6 +10773,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function coReCheck() {
     var R = S.coRe; if (!R) return "";
+    if (!(n0(R.acMw) > 0)) return R.kind === "wind" ? "Enter the company's capacity in MW." : "Enter the company's AC capacity in MW.";
     if (!(R.htscs || []).length) return "Add at least one generator HTSC.";
     var seen = {}, own = {};
     Object.keys(S.companies).forEach(function (k) { if (k === S.editing) return; ((S.companies[k].re || {}).htscs || []).forEach(function (h) { own[htscOf(h.htsc)] = S.companies[k].name; }); });
@@ -10770,14 +10785,16 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (!String(h.location || "").trim()) return "Type the location of HTSC " + k + ".";
       var list = R.kind === "wind" ? h.windmills || [] : h.inverters || [];
       if (!list.length) return R.kind === "wind" ? "Add the windmills of HTSC " + k + "." : "Add the inverters of HTSC " + k + ".";
-      var bad = list.concat(R.kind === "wind" ? [] : h.panels || []).some(function (x) { return !String(x.make || "").trim() || !(n0(x.kw) > 0) || (x.count != null && x.count !== "" && !(n0(x.count) > 0)); });
+      if (R.kind !== "wind" && list.some(function (v) { return !(v.panels || []).length; })) return "Add the solar panels under every inverter of HTSC " + k + ".";
+      var bad = list.concat(R.kind === "wind" ? [] : reRows(h, "panels")).some(function (x) { return !String(x.make || "").trim() || !(n0(x.kw) > 0); });
       if (bad) return "Every " + (R.kind === "wind" ? "windmill" : "inverter and panel row") + " of HTSC " + k + " needs a make and a capacity in kW.";
+      if (reRows(h, "panels").some(function (x) { return !(Math.round(n0(x.count)) > 0); })) return "Enter the number of panels on every panel row of HTSC " + k + ".";
     }
     return "";
   }
   function coReOut() {
-    var R = S.coRe, clean = function (a, cnt) { return (a || []).map(function (x) { var o = { make: String(x.make || "").trim(), kw: round2(n0(x.kw)) }; if (cnt) o.count = Math.round(n0(x.count)); return o; }); };
-    return { kind: R.kind === "wind" ? "wind" : "solar", htscs: (R.htscs || []).map(function (h) { var o = { htsc: htscOf(h.htsc), location: String(h.location || "").trim() }; if (R.kind === "wind") o.windmills = clean(h.windmills); else { o.inverters = clean(h.inverters); o.panels = clean(h.panels, true); } return o; }),
+    var R = S.coRe, clean = function (a, cnt) { return (a || []).map(function (x) { var o = { make: String(x.make || "").trim(), kw: Math.round(n0(x.kw) * 1000) / 1000 }; if (cnt) o.count = Math.round(n0(x.count)); return o; }); };
+    return { kind: R.kind === "wind" ? "wind" : "solar", htscs: (R.htscs || []).map(function (h) { var o = { htsc: htscOf(h.htsc), location: String(h.location || "").trim() }; if (R.kind === "wind") o.windmills = clean(h.windmills); else o.inverters = clean(h.inverters).map(function (v, vi) { v.panels = clean((h.inverters[vi] || {}).panels, true); return v; }); return o; }), acMw: Math.round(n0(R.acMw) * 1000) / 1000,
       tpl: { letter: (R.tpl || {}).letter || "", line: (R.tpl || {}).line || "", footer: (R.tpl || {}).footer || "" } };
   }
   /* A sample bill in this wording, with made-up figures. */

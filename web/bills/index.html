@@ -409,7 +409,7 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .modal.wide{max-width:520px;max-height:calc(100vh - 32px);overflow:auto}
 .mform{display:grid;gap:2px}
 .mbar{margin:18px 0 -4px}.mbar .seg{margin:0;flex-wrap:wrap}
-.rehtsc{padding:12px 14px;margin:10px 0}.rerows{margin-top:10px;display:grid;gap:6px}.rerow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rerow .field{flex:1 1 140px;min-width:0}.resub{margin:2px 0 8px 22px;padding-left:10px;border-left:2px solid var(--line)}
+.rehtsc{padding:12px 14px;margin:10px 0}.rerows{margin-top:10px;display:grid;gap:6px}.rerow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rerow .field{flex:1 1 140px;min-width:0}.tplkeys{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;position:sticky;top:0;z-index:6;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line)}.chipbtn{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:999px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}.chipbtn:hover{border-color:var(--accent,#00704a)}.tplpage{padding:12px 14px;margin:10px 0}.tpltools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.tpled{background:#fff;color:#1e2823;border:1px solid var(--line);border-radius:8px;padding:16px 18px;min-height:240px;max-height:620px;overflow:auto;font-family:Lato,Arial,sans-serif;font-size:13px;line-height:1.45;outline:none}.tpled:focus{border-color:#00704a;box-shadow:0 0 0 3px rgba(0,112,74,.15)}.tpled table{border-collapse:collapse}.resub{margin:2px 0 8px 22px;padding-left:10px;border-left:2px solid var(--line)}
 .solgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 16px}.solgrid .f.wide{grid-column:1/-1}
 .soldocs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 14px}
 .soldoc{padding:12px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border-left:4px solid var(--line)}.soldoc .k{font-size:12.5px;color:var(--muted)}
@@ -10638,33 +10638,27 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
 
   /* ---- The bill of supply PDF: covering letter, Original for Recipient, Triplicate for Supplier ---- */
+  /* ---- The bill of supply PDF: the company's pages, each written as HTML, laid on its A4 letterpad within its margins ---- */
   function solInvoicePdf(iv, btn) {
     if (!S.downloads) { toast("Downloads aren't available here."); return; }
-    var label = btn ? btn.textContent : "", doc = null; if (btn) { btn.disabled = true; btn.textContent = "Preparing"; }
-    return loadScript(JSPDF).then(function () {
-      var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
-      doc = newPdf(jsPDF);
-      solLetter(doc, iv);
-      var html = coTpl(iv.companyId).html, pages = Promise.resolve();
-      if (html) pages = loadScript(H2C).then(function () { if (!window.html2canvas) throw { kind: "lib" }; var c2 = Promise.resolve(); ["ORIGINAL FOR RECIPIENT", "TRIPLICATE FOR SUPPLIER"].forEach(function (cp) { c2 = c2.then(function () { return htmlPage(doc, iv, html, cp); }); }); return c2; });
-      else { doc.addPage(); solBill(doc, iv, "ORIGINAL FOR RECIPIENT"); doc.addPage(); solBill(doc, iv, "TRIPLICATE FOR SUPPLIER"); }
-      return pages;
+    var label = btn ? btn.textContent : "", doc = null, tp = coTpl(iv.companyId); if (btn) { btn.disabled = true; btn.textContent = "Preparing"; }
+    return Promise.all([loadScript(JSPDF), loadScript(H2C), padImage(tp.pad)]).then(function (r) {
+      var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF || !window.html2canvas) throw { kind: "lib" };
+      doc = newPdf(jsPDF); var c = Promise.resolve();
+      tp.pages.forEach(function (pg, i) { c = c.then(function () { if (i) doc.addPage(); return htmlPage(doc, iv, pg, tp.m, r[2]); }); });
+      return c;
     }).then(function () {
       return S.downloads.save({ filename: "Bill of Supply " + iv.no.replace(/\//g, "-") + " " + safeName(iv.consSnap.name) + " " + monthShort(iv.month) + ".pdf", data: doc.output("blob") });
     }).then(function () { toast("Invoice PDF ready."); }, function (e) { var k = e && (e.code || e.kind); toast(k === "declined" ? "Download cancelled." : k === "lib" ? "The PDF maker didn't load. Check the connection and try again." : "The PDF couldn't be made (" + (k || "error") + ")."); })
       .then(function () { if (btn) { btn.disabled = false; btn.textContent = label; } });
   }
-  function solHead(doc, iv) {
-    var co = S.companies[iv.companyId] || {}, pl = PL()[iv.plant] || {}, L = 42, R = 553, y = 40;
-    if (co.logo) { try { doc.addImage(co.logo, L, y, 46, 46); } catch (e) {} }
-    var x = co.logo ? L + 58 : L;
-    doc.setFont("Lato", "bold"); doc.setFontSize(15); doc.setTextColor(16, 40, 31); doc.text(co.name || "", x, y + 16);
-    doc.setFont("Lato", "normal"); doc.setFontSize(8.5); doc.setTextColor(70, 84, 76);
-    var ad = doc.splitTextToSize(co.address || "", R - x); doc.text(ad.slice(0, 3), x, y + 29);
-    var ids = ["GSTIN " + (co.gstin || "-"), "State code " + (co.stateCode || "33")].join("   ");
-    doc.text(ids, x, y + 29 + Math.min(ad.length, 3) * 10);
-    doc.setDrawColor(0, 112, 74); doc.setLineWidth(1.2); doc.line(L, 108, R, 108);
-    return 124;
+  /* The letterpad's first page as a picture, kept while the page is open. */
+  var PADS = {};
+  function padImage(pad) {
+    if (!pad || !pad.path || !window.bvFiles) return Promise.resolve(null);
+    if (!PADS[pad.path]) PADS[pad.path] = window.bvFiles.get(pad.path).then(openPdf).then(function (pdf) { return pdf.getPage(1); }).then(function (pg) { return renderPdfCanvas(pg, 2400); }).then(function (cv) { return cv.toDataURL("image/jpeg", 0.9); })
+      .catch(function () { delete PADS[pad.path]; toast("The letterpad couldn't be opened; the pages are made without it."); return null; });
+    return PADS[pad.path];
   }
   /* The company's own wording, with {fields} filled in. A line wrapped in ** is printed bold. */
   var TPL_FIELDS = ["Company Name", "Invoice No", "Invoice Date", "Due Date", "Month", "Energy", "ENERGY", "Generator HTSC", "Generator Location", "Consumer Name", "Consumer Address", "Consumer HTSC", "Consumer GSTIN", "Addressee", "Units", "Rate", "Energy Charges", "Deductions", "Net", "Net in Words"];
@@ -10673,10 +10667,24 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     line: "Energy charges for adjusted units from our {ENERGY} HTSC {Generator HTSC} to your HTSC {Consumer HTSC} for the month of {Month}",
     footer: "Electrical energy is exempt from GST; this is a bill of supply. Payment due by {Due Date}.\n\n**Bank details**\nBank:\nAccount number:\nIFSC:\nPAN:\n\n**For {Company Name}**\n\n\n\nAuthorised Signatory"
   };
-  function coTpl(cid) { var t = ((S.companies[cid] || {}).re || {}).tpl || {}; return { letter: t.letter || TPL0.letter, line: t.line || TPL0.line, footer: t.footer || TPL0.footer, html: t.html || "" }; }
+  /* The company's pages; a company set up before pages existed gets its letter and footer turned into pages. */
+  function coTpl(cid) { var t = ((S.companies[cid] || {}).re || {}).tpl || {}; return { pages: t.pages && t.pages.length ? t.pages : defPages(t), pad: t.pad || null, m: tplMargins(t), line: t.line || TPL0.line }; }
+  function tplMargins(t) { var d = t.pad ? { t: 45, b: 25, l: 20, r: 20 } : { t: 15, b: 15, l: 15, r: 15 }, m = t.margins || {}, o = {}; ["t", "b", "l", "r"].forEach(function (k) { o[k] = m[k] != null && m[k] !== "" ? n0(m[k]) : d[k]; }); return o; }
+  function txtHtml(t) { return String(t || "").split("\n").map(function (l) { var b = /^\*\*.*\*\*$/.test(l.trim()), x = escH(b ? l.trim().slice(2, -2) : l); return b ? "<b>" + x + "</b>" : x; }).join("<br>"); }
+  var HEAD_HTML = "<div style=\"display:flex;gap:14px;align-items:center;border-bottom:2px solid #00704a;padding-bottom:10px;margin-bottom:14px\">{Logo}<div><b style=\"font-size:20px\">{Company Name}</b><br><span style=\"font-size:11px\">{Company Address}<br>GSTIN {Company GSTIN} &nbsp; State code {Company State Code}</span></div></div>";
+  function billHtml(copy, foot) {
+    return "<p style=\"text-align:center;font-size:18px;margin:4px 0\"><b>BILL OF SUPPLY</b></p><p style=\"text-align:right;color:#00704a;margin:0\"><b>" + copy + "</b></p>"
+      + "<p>Invoice No. <b>{Invoice No}</b> &nbsp;&nbsp; Invoice date <b>{Invoice Date}</b></p>"
+      + "<table style=\"width:100%;border:1px solid #d2e0d8;border-collapse:collapse;margin:8px 0\"><tr><td style=\"padding:8px 10px;vertical-align:top\"><span style=\"font-size:11px\">BILLED TO</span><br><b>{Consumer Name}</b><br>{Consumer Address}</td><td style=\"padding:8px 10px;vertical-align:top\">GSTIN: {Consumer GSTIN}<br>PAN: {Consumer PAN}<br>State code: {Consumer State Code}<br>HTSC: {Consumer HTSC}</td></tr></table>"
+      + "<p>{Amounts Table}</p><p>" + foot + "</p>";
+  }
+  function defPages(t) {
+    t = t || {}; var hd = t.pad ? "" : HEAD_HTML, foot = txtHtml(t.footer || TPL0.footer), bill = function (cp) { return t.html ? String(t.html).replace(/\{Copy\}/g, cp) : hd + billHtml(cp, foot); };
+    return [{ name: "Covering letter", html: hd + txtHtml(t.letter || TPL0.letter) }, { name: "Original for Recipient", html: bill("ORIGINAL FOR RECIPIENT") }, { name: "Triplicate for Supplier", html: bill("TRIPLICATE FOR SUPPLIER") }];
+  }
   /* ---- The bill page from the company's own HTML (pages 2 and 3: Original for Recipient, Triplicate for Supplier) ---- */
   var H2C = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
-  var HTML_FIELDS = ["Copy", "Logo", "Company Address", "Company GSTIN", "Company State Code", "Consumer PAN", "Consumer State Code", "Bill Line", "Amounts Table"];
+  var HTML_FIELDS = ["Logo", "Company Address", "Company GSTIN", "Company State Code", "Consumer PAN", "Consumer State Code", "Bill Line", "Amounts Table"];
   function escH(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   /* Admin-written HTML, made safe to show: no scripts, frames, forms or event handlers; links and images only to https or embedded images. */
   function cleanHtml(h) {
@@ -10699,10 +10707,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var diff = round2(iv.A - iv.B);
     rows += line("Total charges (B)", amtPdf(iv.B), true) + line("A - B", amtPdf(diff, true)) + line("Rounding", amtPdf(round2(iv.net - diff), true));
     rows += "<tr style='background:#ecf5f0'><td></td><td colspan='3' style='padding:8px;font-weight:700;font-size:15px'>Net total</td><td style='padding:8px;font-weight:700;font-size:15px;white-space:nowrap;" + r + "'>Rs. " + amtPdf(iv.net) + "</td></tr>";
-    return "<table style='width:100%;border-collapse:collapse;font-size:12.5px'><thead><tr style='background:#ecf5f0'><th style='" + td + "text-align:left'>HSN</th><th style='" + td + "text-align:left'>Particulars</th><th style='" + td + r + "'>Units</th><th style='" + td + r + "'>Rate (Rs.)</th><th style='" + td + r + "'>Amount (Rs.)</th></tr></thead><tbody>" + rows + "</tbody></table>"
+    return "<table style='width:100%;border-collapse:collapse;font-size:12.5px;background:#fff'><thead><tr style='background:#ecf5f0'><th style='" + td + "text-align:left'>HSN</th><th style='" + td + "text-align:left'>Particulars</th><th style='" + td + r + "'>Units</th><th style='" + td + r + "'>Rate (Rs.)</th><th style='" + td + r + "'>Amount (Rs.)</th></tr></thead><tbody>" + rows + "</tbody></table>"
       + "<p style='margin:8px 0 0;font-size:12.5px'>Amount in words: " + escH(inWords(iv.net)) + "</p>";
   }
   function htmlFill(html, iv, copy) {
+    html = String(html || "").replace(/<p>\s*\{Amounts Table\}\s*<\/p>/g, "{Amounts Table}");
     var co = S.companies[iv.companyId] || {}, cs = iv.consSnap, tv = tplVals(iv), tp = coTpl(iv.companyId), v = {};
     Object.keys(tv).forEach(function (k) { v[k] = escH(tv[k]).replace(/\n/g, "<br>"); });
     v["Copy"] = escH(copy); v["Logo"] = co.logo ? "<img src='" + escH(co.logo) + "' alt='' style='height:64px;width:auto'>" : "";
@@ -10711,18 +10720,20 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     v["Bill Line"] = escH(tplFill(tp.line, tv)); v["Amounts Table"] = amountsHtml(iv, tv, tp);
     return cleanHtml(html).replace(/\{([^{}<>]+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; });
   }
-  /* Lays the filled HTML out at A4 width off screen, takes a picture of it and puts it on its own page. */
-  function htmlPage(doc, iv, html, copy) {
-    var host = el("div", { "aria-hidden": "true", style: "position:absolute;left:0;top:0;z-index:-5;width:794px;background:#fff;color:#1e2823;font-family:Lato,Arial,sans-serif;font-size:13px;line-height:1.4;padding:40px 46px;box-sizing:border-box;display:flow-root;min-height:1123px" });
-    host.innerHTML = htmlFill(html, iv, copy); document.body.appendChild(host);
+  /* Lays a page's filled HTML out at the width between the margins, takes a picture of it and puts it on the page,
+     over the letterpad when there is one. A page longer than the space is shrunk to fit. */
+  function htmlPage(doc, iv, pg, m, bg) {
+    var W = 595.28, H = 841.89, MM = 72 / 25.4, bw = W - (m.l + m.r) * MM, bh = H - (m.t + m.b) * MM;
+    if (bg) doc.addImage(bg, "JPEG", 0, 0, W, H);
+    var host = el("div", { "aria-hidden": "true", style: "position:absolute;left:0;top:0;z-index:-5;width:" + Math.round(bw / 0.75) + "px;background:transparent;color:#1e2823;font-family:Lato,Arial,sans-serif;font-size:13px;line-height:1.4;display:flow-root" });
+    host.innerHTML = htmlFill(pg.html, iv, String(pg.name || "").toUpperCase()); document.body.appendChild(host);
     var imgs = Array.prototype.map.call(host.querySelectorAll("img"), function (im) { return im.decode ? im.decode().catch(function () {}) : null; }).filter(Boolean);
-    return Promise.all(imgs).then(function () { return window.html2canvas(host, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 1200, windowHeight: Math.max(1400, host.scrollHeight + 100) }); }).then(function (cv) {
-      host.remove(); doc.addPage();
-      var W = 595.28, H = 841.89, h = cv.height * W / cv.width, w = W; if (h > H) { w = W * H / h; h = H; }
-      doc.addImage(cv.toDataURL("image/jpeg", 0.92), "JPEG", (W - w) / 2, 0, w, h);
+    return Promise.all(imgs).then(function () { return window.html2canvas(host, { scale: 2, backgroundColor: null, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 1400, windowHeight: Math.max(1400, host.scrollHeight + 100) }); }).then(function (cv) {
+      host.remove(); if (!cv.width || !cv.height) return;
+      var h = cv.height * bw / cv.width, w = bw; if (h > bh) { w = bw * bh / h; h = bh; }
+      doc.addImage(cv.toDataURL("image/png"), "PNG", m.l * MM, m.t * MM, w, h);
     }, function (e) { host.remove(); throw e; });
   }
-  var HTML_SAMPLE = "<style>\n  .top { display:flex; gap:14px; align-items:center; border-bottom:2px solid #00704a; padding-bottom:10px; }\n  .box { border:1px solid #d2e0d8; padding:10px 12px; margin:12px 0; display:flex; justify-content:space-between; }\n  h1 { text-align:center; font-size:20px; margin:14px 0 4px; }\n</style>\n<div class=\"top\">{Logo}<div><b style=\"font-size:20px\">{Company Name}</b><br><small>{Company Address}<br>GSTIN {Company GSTIN} &nbsp; State code {Company State Code}</small></div></div>\n<h1>BILL OF SUPPLY</h1>\n<p style=\"text-align:right;color:#00704a;margin:0\"><b>{Copy}</b></p>\n<p>Invoice No. <b>{Invoice No}</b> &nbsp;&nbsp; Invoice date <b>{Invoice Date}</b></p>\n<div class=\"box\"><div><small>BILLED TO</small><br><b>{Consumer Name}</b><br>{Consumer Address}</div><div>GSTIN: {Consumer GSTIN}<br>PAN: {Consumer PAN}<br>State code: {Consumer State Code}<br>HTSC: {Consumer HTSC}</div></div>\n{Amounts Table}\n<p>Electrical energy is exempt from GST; this is a bill of supply. Payment due by {Due Date}.</p>\n<p><b>Bank details</b><br>Bank:<br>Account number:<br>IFSC:<br>PAN:</p>\n<p style=\"margin-top:28px\"><b>For {Company Name}</b><br><br><br>Authorised Signatory</p>";
   function tplVals(iv, ln) {
     var co = S.companies[iv.companyId] || {}, cs = iv.consSnap, pl = iv.plantSnap, k = kindWord(pl.kind);
     if (ln) { cs = Object.assign({}, cs, { htsc: ln.htsc }); pl = Object.assign({}, pl, { htsc: ln.plant, location: (PL()[ln.plant] || {}).location || pl.location }); }
@@ -10731,61 +10742,6 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       "Energy Charges": Math.round(n0(iv.A)).toLocaleString("en-IN"), "Deductions": Math.round(n0(iv.B)).toLocaleString("en-IN"), "Net": Math.round(n0(iv.net)).toLocaleString("en-IN"), "Net in Words": inWords(iv.net) };
   }
   function tplFill(t, v) { return String(t || "").replace(/\{([^{}]+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; }); }
-  /* Prints template text from y, wrapping each line; returns where it ended. */
-  function tplPrint(doc, text, x, y, w, lh) {
-    String(text).split("\n").forEach(function (ln) {
-      var b = /^\*\*.*\*\*$/.test(ln.trim()); if (b) ln = ln.trim().slice(2, -2);
-      doc.setFont("Lato", b ? "bold" : "normal");
-      if (!ln.trim()) { y += lh * 0.7; return; }
-      doc.splitTextToSize(ln, w).forEach(function (l2) { if (y > 800) { doc.addPage(); y = 50; } doc.text(l2, x, y); y += lh; });
-    });
-    doc.setFont("Lato", "normal"); return y;
-  }
-  function solLetter(doc, iv) {
-    var L = 42, R = 553, y = solHead(doc, iv) + 6;
-    doc.setTextColor(30, 40, 35); doc.setFontSize(10.5);
-    tplPrint(doc, tplFill(coTpl(iv.companyId).letter, tplVals(iv)), L, y, R - L, 14.5);
-  }
-  function solBill(doc, iv, copy) {
-    var L = 42, R = 553, y = solHead(doc, iv), cs = iv.consSnap, pl = iv.plantSnap, co = S.companies[iv.companyId] || {}, tv = tplVals(iv), tp = coTpl(iv.companyId);
-    doc.setTextColor(16, 40, 31); doc.setFont("Lato", "bold"); doc.setFontSize(14); doc.text("BILL OF SUPPLY", (L + R) / 2, y + 4, { align: "center" });
-    doc.setFontSize(8.5); doc.setTextColor(0, 112, 74); doc.text(copy, R, y + 4, { align: "right" }); y += 22;
-    doc.setTextColor(30, 40, 35); doc.setFontSize(10);
-    doc.setFont("Lato", "normal"); doc.text("Invoice No.", L, y); doc.setFont("Lato", "bold"); doc.text(iv.no, L + 70, y);
-    doc.setFont("Lato", "normal"); doc.text("Invoice date", 360, y); doc.setFont("Lato", "bold"); doc.text(fmtDate(iv.date), 440, y); y += 18;
-    doc.setFontSize(10); var hsl = doc.splitTextToSize(cs.htsc || "", R - 432), xh = Math.max(0, hsl.length - 1) * 13;
-    doc.setDrawColor(210, 224, 216); doc.setLineWidth(0.6); doc.rect(L, y, R - L, 74 + xh);
-    doc.setFont("Lato", "normal"); doc.setFontSize(8.5); doc.setTextColor(94, 110, 102); doc.text("BILLED TO", L + 8, y + 13); doc.setTextColor(30, 40, 35); doc.setFontSize(10);
-    doc.setFont("Lato", "bold"); doc.text(cs.name, L + 8, y + 27); doc.setFont("Lato", "normal");
-    doc.splitTextToSize(cs.address || "", 290).slice(0, 3).forEach(function (ln, i) { doc.text(ln, L + 8, y + 40 + i * 11); });
-    [["GSTIN", cs.gstin || "-"], ["PAN", cs.pan || (cs.gstin ? cs.gstin.slice(2, 12) : "-")], ["State code", cs.stateCode || "33"], [hsl.length > 1 || (cs.htsc || "").indexOf(",") > 0 ? "HTSCs" : "HTSC", ""]].forEach(function (r, i) { doc.text(r[0], 360, y + 18 + i * 13); if (r[0].indexOf("HTSC") === 0) { doc.text(":", 420, y + 18 + i * 13); hsl.forEach(function (l2, j) { doc.text(l2.trim(), 428, y + 18 + (i + j) * 13); }); } else doc.text(": " + r[1], 420, y + 18 + i * 13); });
-    y += 88 + xh;
-    /* line item */
-    var cols = [L, L + 58, 330, 400, 470, R];
-    doc.setFillColor(236, 245, 240); doc.rect(L, y, R - L, 18, "F"); doc.setFont("Lato", "bold"); doc.setFontSize(9);
-    [["HSN", 0, "left"], ["Particulars", 1, "left"], ["Units", 2, "right"], ["Rate (Rs.)", 3, "right"], ["Amount (Rs.)", 4, "right"]].forEach(function (h) { doc.text(h[0], h[2] === "right" ? cols[h[1] + 1] - 6 : cols[h[1]] + 6, y + 12, { align: h[2] }); });
-    y += 18; doc.setFont("Lato", "normal"); doc.setFontSize(9.5);
-    /* one row for each consumer HTSC and generator HTSC pair */
-    (iv.lines && iv.lines.length ? iv.lines : [{ plant: pl.htsc, htsc: cs.htsc, units: iv.units, rate: iv.rate, A: iv.A, one: true }]).forEach(function (l) {
-      var part = doc.splitTextToSize(tplFill(tp.line, l.one ? tv : tplVals(iv, l)), cols[2] - cols[1] - 12), h0 = Math.max(26, part.length * 12 + 10);
-      doc.text(SOL_HSN, cols[0] + 6, y + 14); part.forEach(function (ln, i) { doc.text(ln, cols[1] + 6, y + 14 + i * 12); });
-      doc.text(units(l.units), cols[3] - 6, y + 14, { align: "right" }); doc.text(n0(l.rate).toFixed(2), cols[4] - 6, y + 14, { align: "right" }); doc.text(amtPdf(l.A), cols[5] - 6, y + 14, { align: "right" });
-      y += h0;
-    });
-    doc.line(L, y, R, y);
-    doc.setFont("Lato", "bold"); doc.text("Energy charges (A)", cols[1] + 6, y + 14); doc.text(amtPdf(iv.A), R - 6, y + 14, { align: "right" }); y += 22;
-    doc.setFont("Lato", "normal"); doc.text("Less: open-access charges paid to TNPDCL on our behalf", cols[1] + 6, y + 6); y += 16;
-    SOL_DED.forEach(function (d, i) { doc.text((i + 1) + ". " + d[1], cols[1] + 16, y + 6); doc.text(amtPdf(iv.ded[d[0]]), R - 6, y + 6, { align: "right" }); y += 14; });
-    doc.line(cols[1], y, R, y); y += 4;
-    doc.setFont("Lato", "bold"); doc.text("Total charges (B)", cols[1] + 6, y + 10); doc.text(amtPdf(iv.B), R - 6, y + 10, { align: "right" }); y += 16;
-    var diff = round2(iv.A - iv.B), rnd = round2(iv.net - diff);
-    doc.setFont("Lato", "normal"); doc.text("A - B", cols[1] + 6, y + 10); doc.text(amtPdf(diff, true), R - 6, y + 10, { align: "right" }); y += 14;
-    doc.text("Rounding", cols[1] + 6, y + 10); doc.text(amtPdf(rnd, true), R - 6, y + 10, { align: "right" }); y += 16;
-    doc.setFillColor(236, 245, 240); doc.rect(L, y, R - L, 22, "F"); doc.setFont("Lato", "bold"); doc.setFontSize(11); doc.text("Net total", cols[1] + 6, y + 15); doc.text("Rs. " + amtPdf(iv.net), R - 6, y + 15, { align: "right" }); y += 30;
-    doc.setFont("Lato", "normal"); doc.setFontSize(9.5); doc.splitTextToSize("Amount in words: " + inWords(iv.net), R - L).forEach(function (ln) { doc.text(ln, L, y); y += 12; }); y += 4;
-    doc.setTextColor(30, 40, 35); doc.setFontSize(9.5);
-    tplPrint(doc, tplFill(tp.footer, tv), L, y + 6, R - L, 12.5);
-  }
   function amtPdf(n, signed) { var v = round2(n0(n)); return (signed && v < 0 ? "-" : "") + Math.abs(v).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
   /* ---- Invoices & Receipts ---- */
@@ -10951,24 +10907,91 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       box.appendChild(cd);
     });
     var ah = el("button", { type: "button", class: "btn" }, "Add HTSC"); ah.addEventListener("click", function () { R.htscs.push(wind ? { windmills: [{}] } : { inverters: [{ panels: [{}] }] }); renderCoRe(); }); box.appendChild(ah);
-    /* invoice wording */
-    R.tpl = R.tpl || {};
-    box.appendChild(el("h3", { style: "margin:18px 0 4px" }, "Invoice wording"));
-    box.appendChild(el("p", { class: "hint", style: "margin:0 0 8px" }, "Edit the covering letter, the line on the bill and the bill's footer (bank details, PAN, signatory). Fields in braces are filled in: " + TPL_FIELDS.map(function (f) { return "{" + f + "}"; }).join(" ") + ". Wrap a whole line in ** to print it bold. The amounts table is always added by the app."));
-    [["letter", "Covering letter", 14], ["line", "Line on the bill", 2], ["footer", "Bill footer", 9]].forEach(function (t) {
-      var ta = el("textarea", { class: "field", id: "reT_" + t[0], rows: String(t[2]), style: "font-family:inherit" }); ta.value = R.tpl[t[0]] || TPL0[t[0]];
-      ta.addEventListener("input", function () { R.tpl[t[0]] = ta.value; }); box.appendChild(fld(t[1], ta, "", true));
+    renderTplEditor(box, R);
+  }
+  /* ---- The invoice's pages: a letterpad (optional), margins, and each page's wording ---- */
+  function renderTplEditor(box, R) {
+    var T = R.tpl = R.tpl || {}; if (!T.pages || !T.pages.length) T.pages = defPages(T);
+    box.appendChild(el("h3", { style: "margin:18px 0 4px" }, "Invoice pages"));
+    box.appendChild(el("p", { class: "hint", style: "margin:0 0 8px" }, "The PDF has one page for each page below, in this order. Write each page as you want it printed; click a field button to put it where the cursor is, and it is filled in for each bill. With a letterpad, every page is printed on it, inside the margins."));
+    /* letterpad */
+    var lp = el("div", { class: "card", style: "padding:12px 14px;margin-bottom:10px" }); box.appendChild(lp);
+    lp.appendChild(el("b", null, "Letterpad (A4 PDF, optional)"));
+    var lpr = el("div", { class: "acts", style: "margin-top:8px;align-items:center" }), lfi = el("input", { type: "file", accept: "application/pdf", hidden: "" }), lbt = el("button", { type: "button", class: "btn sm" }, T.pad ? "Replace Letterpad" : "Upload Letterpad");
+    if (T.pad) { lpr.appendChild(el("span", null, T.pad.name || "letterpad.pdf")); lpr.appendChild(solFileBtn(T.pad)); var lrm = el("button", { type: "button", class: "link-btn", style: "color:var(--bad)" }, "Remove"); lrm.addEventListener("click", function () { T.pad = null; renderCoRe(); }); lpr.appendChild(lrm); }
+    lbt.addEventListener("click", function () { lfi.click(); }); lfi.addEventListener("change", function () { var f = lfi.files && lfi.files[0]; lfi.value = ""; if (f) padUpload(f, T, lbt); });
+    lpr.appendChild(lbt); lpr.appendChild(lfi); lp.appendChild(lpr);
+    lp.appendChild(el("span", { class: "hint" }, "Its first page (logo, name, address, GSTIN, background) is put behind every page. It must be A4 portrait."));
+    var mg = el("div", { class: "solgrid", style: "margin-top:10px" }), cm = tplMargins(T);
+    [["t", "Top"], ["b", "Bottom"], ["l", "Left"], ["r", "Right"]].forEach(function (x) { var i = inp("reM_" + x[0], String(cm[x[0]]), { inputmode: "decimal", class: "field num" }); i.addEventListener("input", function () { T.margins = T.margins || tplMargins(T); T.margins[x[0]] = i.value.trim(); }); mg.appendChild(fld(x[1] + " margin (mm)", i)); });
+    lp.appendChild(mg);
+    /* fields */
+    var lg = el("div", { class: "tplkeys" }); lg.appendChild(el("span", { class: "lb", style: "width:100%" }, "Fields"));
+    TPL_FIELDS.concat(HTML_FIELDS).forEach(function (f) { var b = el("button", { type: "button", class: "chipbtn", title: f === "Amounts Table" ? "The table of units, rate, deductions and net, made by the app" : "Put {" + f + "} here" }, f); b.addEventListener("mousedown", function (e) { e.preventDefault(); }); b.addEventListener("click", function () { tplInsert("{" + f + "}"); }); lg.appendChild(b); });
+    box.appendChild(lg);
+    /* pages */
+    T.pages.forEach(function (pg, pi) {
+      var cd = el("div", { class: "card tplpage" }), top = el("div", { class: "acts", style: "align-items:center;margin-bottom:8px" });
+      top.appendChild(el("b", null, "Page " + (pi + 1)));
+      var nm = inp("", pg.name || "", { maxlength: "40", placeholder: "Name, e.g. Covering letter", "aria-label": "Page " + (pi + 1) + " name", style: "max-width:260px" }); nm.removeAttribute("id"); nm.addEventListener("input", function () { pg.name = nm.value; }); top.appendChild(nm);
+      top.appendChild(el("span", { class: "grow" }));
+      if (pi > 0) { var up = el("button", { type: "button", class: "btn sm" }, "Move up"); up.addEventListener("click", function () { T.pages.splice(pi - 1, 0, T.pages.splice(pi, 1)[0]); renderCoRe(); }); top.appendChild(up); }
+      if (pi < T.pages.length - 1) { var dn = el("button", { type: "button", class: "btn sm" }, "Move down"); dn.addEventListener("click", function () { T.pages.splice(pi + 1, 0, T.pages.splice(pi, 1)[0]); renderCoRe(); }); top.appendChild(dn); }
+      if (T.pages.length > 1) { var rm = el("button", { type: "button", class: "btn sm danger" }, "Remove"); rm.addEventListener("click", function () { T.pages.splice(pi, 1); renderCoRe(); }); top.appendChild(rm); }
+      cd.appendChild(top);
+      var html = !!pg._src || /<style/i.test(pg.html || ""), tb = el("div", { class: "tpltools" });
+      function tool(lbl, title, fn) { var b = el("button", { type: "button", class: "btn sm", title: title, "aria-label": title }, lbl); b.addEventListener("mousedown", function (e) { e.preventDefault(); }); b.addEventListener("click", fn); tb.appendChild(b); return b; }
+      var ed, ta;
+      if (!html) {
+        [["B", "Bold", "bold"], ["I", "Italic", "italic"], ["U", "Underline", "underline"], ["Left", "Align left", "justifyLeft"], ["Centre", "Centre", "justifyCenter"], ["Right", "Align right", "justifyRight"], ["• List", "Bulleted list", "insertUnorderedList"]].forEach(function (t) { tool(t[0], t[1], function () { ed.focus(); document.execCommand(t[2], false, null); pg.html = ed.innerHTML; }); });
+        var fs = el("select", { class: "field", "aria-label": "Text size", style: "width:auto;height:30px;padding:0 6px" }); fillSelect(fs, [["", "Size"], ["2", "Small"], ["3", "Normal"], ["4", "Large"], ["5", "Larger"]], ""); fs.addEventListener("change", function () { if (!fs.value) return; ed.focus(); document.execCommand("fontSize", false, fs.value); pg.html = ed.innerHTML; fs.value = ""; }); tb.appendChild(fs);
+      }
+      tool(html ? "Visual editor" : "Edit as HTML", html ? "Back to the visual editor" : "Edit this page's HTML", function () { pg._src = !html; renderCoRe(); });
+      cd.appendChild(tb);
+      if (html) {
+        ta = el("textarea", { class: "field mono", rows: "14", spellcheck: "false", style: "font-size:12.5px", "aria-label": "Page " + (pi + 1) + " HTML" }); ta.value = pg.html || "";
+        ta.addEventListener("input", function () { pg.html = ta.value; }); ta.addEventListener("focus", function () { S.tplFocus = { ta: ta, pg: pg }; });
+        cd.appendChild(ta);
+      } else {
+        ed = el("div", { class: "tpled", contenteditable: "true", role: "textbox", "aria-multiline": "true", "aria-label": "Page " + (pi + 1) + " wording", spellcheck: "true" }); ed.innerHTML = cleanHtml(pg.html || "");
+        ed.addEventListener("input", function () { pg.html = ed.innerHTML; }); ed.addEventListener("focus", function () { S.tplFocus = { ed: ed, pg: pg }; });
+        cd.appendChild(ed);
+      }
+      box.appendChild(cd);
     });
-    var hta = el("textarea", { class: "field mono", id: "reT_html", rows: "12", spellcheck: "false", style: "font-size:12.5px" }); hta.value = R.tpl.html || "";
-    hta.addEventListener("input", function () { R.tpl.html = hta.value; });
-    var hf = fld("Bill page as HTML (optional)", hta, "When filled, pages 2 and 3 of the PDF (Original for Recipient, Triplicate for Supplier) are made from this HTML instead of the standard layout; the covering letter above stays page 1. Besides the fields above you can use " + HTML_FIELDS.map(function (f) { return "{" + f + "}"; }).join(" ") + ". {Amounts Table} is the app's table of units, rates, deductions and net. Scripts, forms and outside links are taken out; images must be https or embedded.", true);
-    var smp = el("button", { type: "button", class: "link-btn" }, R.tpl.html ? "Replace with the sample HTML" : "Start from the sample HTML"); smp.addEventListener("click", function () { R.tpl.html = HTML_SAMPLE; renderCoRe(); });
-    hf.appendChild(smp); box.appendChild(hf);
-    var pa = el("div", { class: "acts" }), pv = el("button", { type: "button", class: "btn" }, "Preview PDF"), rs = el("button", { type: "button", class: "link-btn" }, "Put back the standard wording");
-    pv.addEventListener("click", function () { coRePreview(pv); }); rs.addEventListener("click", function () { R.tpl = { html: R.tpl.html || "" }; renderCoRe(); }); pa.appendChild(pv); pa.appendChild(rs); box.appendChild(pa);
+    var pa = el("div", { class: "acts", style: "margin-top:10px" }), ad = el("button", { type: "button", class: "btn" }, "Add Page"), pv = el("button", { type: "button", class: "btn" }, "Preview PDF"), rs = el("button", { type: "button", class: "link-btn" }, "Put back the standard pages");
+    ad.addEventListener("click", function () { T.pages.push({ name: "Page " + (T.pages.length + 1), html: "" }); renderCoRe(); });
+    pv.addEventListener("click", function () { coRePreview(pv); }); rs.addEventListener("click", function () { T.pages = defPages({ pad: T.pad }); renderCoRe(); });
+    pa.appendChild(ad); pa.appendChild(pv); pa.appendChild(rs); box.appendChild(pa);
+  }
+  /* Puts a field where the cursor was in the page last worked on. */
+  function tplInsert(txt0) {
+    var f = S.tplFocus; if (!f || !document.body.contains(f.ed || f.ta)) { toast("Click in a page first, where the field should go."); return; }
+    if (f.ta) { var a = f.ta.selectionStart, b = f.ta.selectionEnd; f.ta.setRangeText(txt0, a, b, "end"); f.ta.focus(); f.pg.html = f.ta.value; return; }
+    var sel = window.getSelection(); if (!sel.rangeCount || !f.ed.contains(sel.anchorNode)) { f.ed.focus(); var r = document.createRange(); r.selectNodeContents(f.ed); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); }
+    document.execCommand("insertText", false, txt0); f.pg.html = f.ed.innerHTML;
+  }
+  /* A letterpad must be an A4 portrait PDF; it is kept with the bill files. */
+  function padUpload(f, T, btn) {
+    if (fileType(f) !== "application/pdf") { toast("Choose the letterpad as a PDF."); return; }
+    if (!window.bvFiles) { toast("Files can't be kept here."); return; }
+    var lb = btn.textContent; btn.disabled = true; btn.textContent = "Checking";
+    openPdf(f).then(function (pdf) { return pdf.getPage(1); }).then(function (pg) {
+      var v = pg.getViewport({ scale: 1 }); if (Math.abs(v.width - 595.28) > 12 || Math.abs(v.height - 841.89) > 12) throw { kind: "size", w: Math.round(v.width / 72 * 25.4), h: Math.round(v.height / 72 * 25.4) };
+      var path = (S.mode === "demo" ? "demo" : "live") + "/letterpads/" + (S.editing || "new") + "/" + Date.now().toString(36) + "-" + fileSafeName(f.name);
+      return window.bvFiles.put(path, f, "application/pdf").then(function () { return path; });
+    }).then(function (path) {
+      var had = !!T.pad; T.pad = { path: path, name: str(f.name, 160), type: "application/pdf", size: f.size || 0, at: Date.now(), by: meId() };
+      if (!had && !T.margins) T.margins = tplMargins({ pad: true });
+      /* the letterpad carries the company's heading, so the standard heading comes off the pages */
+      var hh = cleanHtml(HEAD_HTML), cut = 0; (T.pages || []).forEach(function (pg) { var c = cleanHtml(pg.html || ""); if (c.indexOf(hh) === 0) { pg.html = c.slice(hh.length); cut++; } });
+      toast("Letterpad added" + (cut ? "; the company heading was taken off the pages, as the letterpad has it" : "") + ". Set the margins so the wording stays clear of its design."); renderCoRe();
+    }, function (e) { btn.disabled = false; btn.textContent = lb; toast(e && e.kind === "size" ? "That page is " + e.w + " × " + e.h + " mm; the letterpad must be A4 (210 × 297 mm), upright." : "The PDF couldn't be opened or kept."); });
   }
   function coReCheck() {
     var R = S.coRe; if (!R) return "";
+    var mm = tplMargins(R.tpl || {}); if (["t", "b", "l", "r"].some(function (k) { return !(mm[k] >= 0 && mm[k] <= 100); }) || mm.l + mm.r > 150 || mm.t + mm.b > 230) return "Set the page margins between 0 and 100 mm, leaving room for the wording.";
+    if (!((R.tpl || {}).pages || []).some(function (pg) { return String(pg.html || "").replace(/<[^>]*>/g, "").trim(); })) return "Write at least one invoice page.";
     if (!(n0(R.acMw) > 0)) return R.kind === "wind" ? "Enter the company's capacity in MW." : "Enter the company's AC capacity in MW.";
     if (!(R.htscs || []).length) return "Add at least one generator HTSC.";
     var seen = {}, own = {};
@@ -10991,7 +11014,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function coReOut() {
     var R = S.coRe, clean = function (a, cnt) { return (a || []).map(function (x) { var o = { make: String(x.make || "").trim(), kw: Math.round(n0(x.kw) * 1000) / 1000 }; if (cnt) o.count = Math.round(n0(x.count)); return o; }); };
     return { kind: R.kind === "wind" ? "wind" : "solar", htscs: (R.htscs || []).map(function (h) { var o = { htsc: htscOf(h.htsc), location: String(h.location || "").trim() }; if (R.kind === "wind") o.windmills = clean(h.windmills); else o.inverters = clean(h.inverters).map(function (v, vi) { v.panels = clean((h.inverters[vi] || {}).panels, true); return v; }); return o; }), acMw: Math.round(n0(R.acMw) * 1000) / 1000,
-      tpl: { letter: (R.tpl || {}).letter || "", line: (R.tpl || {}).line || "", footer: (R.tpl || {}).footer || "", html: String((R.tpl || {}).html || "").trim().slice(0, 60000) } };
+      tpl: { pages: ((R.tpl || {}).pages || []).slice(0, 12).map(function (pg) { return { name: String(pg.name || "").trim().slice(0, 40), html: cleanHtml(pg.html || "").slice(0, 80000) }; }), pad: (R.tpl || {}).pad || null, margins: tplMargins(R.tpl || {}) } };
   }
   /* A sample bill in this wording, with made-up figures. */
   function coRePreview(btn) {

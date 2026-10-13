@@ -180,10 +180,14 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   capacity in MW (AC for solar; the DC figure is worked out as panels × capacity per panel), and its generator HTSCs
   (transformers), each with a location and either its inverters, with the solar panels under each inverter (make, number,
   kW per panel), or its windmills (make, capacity); at least one HTSC finishes setting it up. Makes typed before are offered
-  again (separate lists for windmills, inverters and panels). The company's invoice wording (covering letter, the line on the
-  bill, the bill footer with bank, PAN and signatory) is edited there, with {fields} filled in. Optionally an admin can give the
-  bill page as HTML: pages 2 and 3 of the PDF are then made from it (with {Copy}, {Logo}, {Amounts Table} and the other
-  fields); scripts, forms, event handlers and outside links are removed before it is shown. Preview PDF shows a sample.
+  again (separate lists for windmills, inverters and panels). The invoice is set up as **pages** (by default Covering letter, Original for Recipient,
+  Triplicate for Supplier; pages can be added, removed, renamed and reordered). Each page is written in a visual editor
+  (bold, italic, underline, alignment, lists, text size) or as HTML, and the field buttons ({Invoice No}, {Consumer Name},
+  {Amounts Table}, {Net in Words}…) put a field at the cursor; fields are filled in for each bill. An optional **letterpad**
+  (an A4 portrait PDF with the logo, name, address, GSTIN and background) is put behind every page, with top, bottom, left
+  and right margins in mm; the wording stays inside them and a long page is shrunk to fit. Adding a letterpad takes the
+  standard company heading off the pages. Scripts, forms, event handlers and outside links are removed from the HTML.
+  Preview PDF shows a sample. Older companies' letter and footer wording are turned into pages.
 - **Consumers** (one or more HTSCs, address, GSTIN, injection voltage, credit days) and **PPA Rates** (per consumer, for
   all their HTSCs, optionally per generator HTSC, from a month).
 - **Monthly Billing**: choose the company and the month and upload all its documents at once: each generator HTSC's
@@ -202,8 +206,7 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   present, low net (< 20% of A). The HT bill is only compared (units credited, wheeling and every other charge, consumer):
   a difference is a check to look at, never a blocker, and billing goes ahead without it.
 - **Issue**: number SHORT-NNN-YY/YY (e.g. ARA-001-26/27), one series per company per financial year, suggested and editable when
-  issuing but never one already used; the PDF holds the covering letter, the
-  bill of supply (Original for Recipient) and the Triplicate for Supplier. An issued invoice is locked; cancel it (admin, with a
+  issuing but never one already used; the PDF holds the company's pages. An issued invoice is locked; cancel it (admin, with a
   reason) and issue a new one for corrections.
 - **Invoices & Receipts**: register, receipts with TDS under 194Q, ageing 0–30/31–60/61–90/90+, Excel.
   **Data**: generation and realisation by company and month, deductions by charge, line loss by consumer (year of the energy month).

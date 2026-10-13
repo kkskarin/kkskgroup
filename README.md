@@ -23,7 +23,10 @@
   A Purchaser who is also the Accountant for a company accounts a bill as they record it (ledgers and TDS on the bill form);
   it skips To Account but still goes to approval. The accountant "accounts" entries; only the Approver step "approves".
 - **Approvals** happen only in the Approvals app, for admins and people with Approval. An Approver sees and approves only the
-  checking reports and cash advances that name them; checking reports are made one per approver. No approving while viewing as someone.
+  checking reports and cash advances that name them; checking reports are made one per approver. A **Financier who is also an
+  Approver** approves every checking report and cash advance in the divisions given to them, whoever is named: Maintenance & Civil
+  when they have the Finance (or Maintenance & Civil) app, Renewable Energy when they have that app, and only for companies where
+  they hold Approval. No approving while viewing as someone.
 - **TDS** is entered when an entry is accounted. The vendor is paid the total less TDS; the vendor statement and Ledger Books
   show it. Checking reports and their PDFs don't.
 - **Reports › Masters** (every app with purchases or accounting, and Finance): Companies, Vendors, Ledgers, and in Renewable

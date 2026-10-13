@@ -5514,7 +5514,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function noApprove(label) { return label === "Approve for payment" || label === "Undo approval"; }
   function canApprove(cid) { return S.isAdmin || (APP === "apr" && (!cid || canStep("appr", cid))); }
   function apprCos(r) { return r.kind === "vcr" ? r.companyIds || [] : [r.companyId]; }
-  function apprMine(r) { if (S.isAdmin) return true; return APP === "apr" && reportApproverId(r) === meId() && apprCos(r).some(function (cid) { return canApprove(cid); }); }
+  /* An approver approves what names them. A financier who is also an approver approves everything in the divisions given to
+     them: Maintenance & Civil when they have the Finance (or Maintenance & Civil) app, Renewable Energy when they have that app. */
+  function finApprover() { return !S.isAdmin && canDo("appr") && canDo("txn"); }
+  function myDivs() { var a = (S.myUser && S.myUser.apps) || null; if (!a) return ["mnt"]; return Object.keys(DIVS).filter(function (k) { return !!(a[k] || a[DIVS[k].payIn]); }); }
+  function apprForMe(x, namedId) { return finApprover() ? myDivs().indexOf(divOf(x)) >= 0 : namedId === meId(); }
+  function apprMine(r) { if (S.isAdmin) return true; return APP === "apr" && apprForMe(r, reportApproverId(r)) && apprCos(r).some(function (cid) { return canApprove(cid); }); }
   /* The approver a checking report is for: saved on it, or (older reports) the one most of its entries name. */
   function reportApproverId(r) { return r.approverId || reportApprover(r); }
   function apprKind(r) { return r.kind === "vcr" ? "Vouchers CR" : r.kind === "inst" ? "Advance CR" : "Bills CR"; }
@@ -5537,7 +5542,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function openAppr(r) { if (r.kind === "vcr") openVcr(r.id); else openReport(r.id); }
   function renderApprovals() {
     var ds = $("apDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), APV.div); APV.div = ds.value;
-    $("apSub").textContent = S.isAdmin ? "Checking reports from every division waiting to be approved for payment. Open one to approve it bill by bill." : "Checking reports that name you as approver, waiting to be approved for payment. Open one to approve it bill by bill.";
+    $("apSub").textContent = S.isAdmin ? "Checking reports from every division waiting to be approved for payment. Open one to approve it bill by bill." : (finApprover() ? "Every checking report from " + myDivs().map(function (k) { return DIVS[k].name; }).join(" and ") + " waiting to be approved for payment. Open one to approve it bill by bill." : "Checking reports that name you as approver, waiting to be approved for payment. Open one to approve it bill by bill.");
     var w = apprWaiting(), done = apprRecent(), tot = {};
     w.forEach(function (r) { curAdd(tot, r.currency || "INR", r.kind === "vcr" ? (r.payable != null ? r.payable : r.total) : r.kind === "inst" ? r.total : payableOf(r)); });
     statBoxes($("apStats"), [["Waiting", String(w.length), plural(w.length, "report")], ["Amount waiting", curSum(tot) || money(0), ""], ["Approved, 30 days", String(done.length), done.filter(function (r) { return r.onBehalf; }).length + " on behalf"]]);
@@ -5563,13 +5568,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* ---- Approvals › Cash Advances: requests from every division ---- */
   var CAP = { div: "" };
-  function capMine(a) { return (S.isAdmin || (canStep("appr", a.companyId) && caApproverId(a) === meId())) && (!CAP.div || divOf(a) === CAP.div); }
+  function capMine(a) { return (S.isAdmin || (canStep("appr", a.companyId) && apprForMe(a, caApproverId(a)))) && (!CAP.div || divOf(a) === CAP.div); }
   /* A cash advance is approved by the approver named on it, or else the person's default approver. */
   function caApproverId(a) { if (a.approverId) return a.approverId; var u = (S.users || {})[a.uid] || (S.profiles || {})[a.uid]; return (u && u.defaultApproverId) || ""; }
   function capPending() { return caList().filter(function (a) { return a.status === "pending" && capMine(a); }); }
   function renderCashAppr() {
     var ds = $("capDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), CAP.div); CAP.div = ds.value;
-    $("capSub").textContent = S.isAdmin ? "Cash advances people have asked for, from every division. Approve one, or change the amount; the financier then pays it out in Finance." : "Cash advances that name you as approver. Approve one, or change the amount; the financier then pays it out in Finance.";
+    $("capSub").textContent = S.isAdmin ? "Cash advances people have asked for, from every division. Approve one, or change the amount; the financier then pays it out in Finance." : (finApprover() ? "Cash advances asked for in " + myDivs().map(function (k) { return DIVS[k].name; }).join(" and ") + "." : "Cash advances that name you as approver.") + " Approve one, or change the amount; the financier then pays it out in Finance.";
     var pend = capPending().sort(function (a, b) { return (a.requestedAt || 0) - (b.requestedAt || 0); });
     var appr = caList().filter(function (a) { return a.status === "approved" && capMine(a); }).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); });
     $("capPendN").textContent = pend.length ? "(" + pend.length + ")" : "";

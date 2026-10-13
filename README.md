@@ -175,25 +175,36 @@ Monthly bills of supply from a solar plant or windmill to each consumer it suppl
 "Solar Invoicing & Finance App" specification. Each generator is marked Solar plant or Windmill; that decides which HT bill
 row (SOLAR or WIND) is billed and the wording on the bill.
 
-- **Companies** (Reports › Masters, admins): each Renewable Energy company has a generator type (solar or windmill) and its
-  generator HTSCs, each with a location and its inverters and solar panels (make, number, capacity) or its windmills (make,
-  capacity); at least one HTSC finishes setting it up. Makes typed before are offered again (separate lists for windmills,
-  inverters and panels). The company's invoice wording (covering letter, the line on the bill, the bill footer with bank, PAN and
-  signatory) is edited there, with {fields} filled in, and can be previewed as a PDF.
-- **Consumers** (HTSC, address, GSTIN, injection voltage, credit days) and **PPA Rates** (per consumer, optionally per HTSC, from a month).
-- **Monthly Billing**: upload the generation statement, energy allotment order, energy adjusted report and each consumer's
-  HT bill, in any order and all at once. Claude works out which is which and reads it (text PDFs as text, scans as
-  images); everything read for a generator and month is kept in `solar_months/<generator HTSC>_<YYYY-MM>`, with the files in
-  the `bill-files` bucket under `<live|demo>/solar/`. Only the HT bill's OA rows for our generator are used.
-- **Bill**: billed units = solar units credited in the HT bill; A = units × PPA rate; B = the nine deductions copied from the
-  HT bill (self-generation tax is our share only, units × ₹0.10); net = A − B, rounded.
-- **Checks** (pass, check, or blocks the invoice): all documents present, units tie out per slot, loss applied, adjustment
-  posted (±3 units), charges tie out with the generation statement once every HT bill is in, wheeling = gross × 0.49967,
-  self-generation tax share, HT bill figures changed by hand, consumer HTSC in Masters, rate present, low net (< 20% of A).
+- **Companies** (Reports › Masters, admins): each Renewable Energy company has a generator type (solar or windmill), its
+  capacity in MW (AC for solar; the DC figure is worked out as panels × capacity per panel), and its generator HTSCs
+  (transformers), each with a location and either its inverters, with the solar panels under each inverter (make, number,
+  kW per panel), or its windmills (make, capacity); at least one HTSC finishes setting it up. Makes typed before are offered
+  again (separate lists for windmills, inverters and panels). The company's invoice wording (covering letter, the line on the
+  bill, the bill footer with bank, PAN and signatory) is edited there, with {fields} filled in. Optionally an admin can give the
+  bill page as HTML: pages 2 and 3 of the PDF are then made from it (with {Copy}, {Logo}, {Amounts Table} and the other
+  fields); scripts, forms, event handlers and outside links are removed before it is shown. Preview PDF shows a sample.
+- **Consumers** (one or more HTSCs, address, GSTIN, injection voltage, credit days) and **PPA Rates** (per consumer, for
+  all their HTSCs, optionally per generator HTSC, from a month).
+- **Monthly Billing**: choose the company and the month and upload all its documents at once: each generator HTSC's
+  generation statement, energy allotment order and energy adjusted report, and, if you have them, the consumers' HT bills.
+  Claude works out which is which and reads it (text PDFs as text, scans as images); each document is filed under its
+  generator HTSC in `solar_months/<generator HTSC>_<YYYY-MM>` (an HT bill listing several of our HTSCs under each of them),
+  with the files in the `bill-files` bucket under `<live|demo>/solar/`. **Discard Uploads** deletes chosen documents (or
+  everything for the month) with their files and what was read from them; not while a bill of supply is issued for the month.
+- **Bill**: one bill of supply per consumer per company per month, with a row for each consumer HTSC and generator HTSC pair.
+  Units = units adjusted in the energy adjusted report; A = units × PPA rate; B = the charges the allotment order puts on the
+  consumer, wheeling = gross allotted × 0.49967, self-generation tax = units adjusted × ₹0.10; net = A − B, rounded.
+  Deductions can be changed by hand on Review (noted on the checks).
+- **Checks** (pass, check, or blocks the invoice): the generation statement, allotment order and adjusted report present,
+  units and charges tie out with the generation statement, loss applied, units adjusted, consumer HTSC in Masters, rate
+  present, low net (< 20% of A). The HT bill is only compared (units credited, wheeling and every other charge, consumer):
+  a difference is a check to look at, never a blocker, and billing goes ahead without it.
 - **Issue**: number NN/YY-YY, one series per company per financial year, never reused; the PDF holds the covering letter, the
   bill of supply (Original for Recipient) and the Triplicate for Supplier. An issued invoice is locked; cancel it (admin, with a
   reason) and issue a new one for corrections.
 - **Invoices & Receipts**: register, receipts with TDS under 194Q, ageing 0–30/31–60/61–90/90+, Excel.
-  **Reports**: generation and realisation by month, deductions by charge, line loss by consumer (year of the energy month).
+  **Data**: generation and realisation by company and month, deductions by charge, line loss by consumer (year of the energy month).
+- Tabs in Renewable Energy: Reports (Transactions, Payables, Masters), Energy Billing (Monthly Billing, Invoices & Receipts,
+  Data), Expenses (bills, proformas, imports, vouchers and their checking reports, cash advances), Payments, Settings.
 - Who may use it: the Renewable Energy app plus the Energy Billing responsibility for the generator's company.
   The division's own expenses go through its Bills and Cash Vouchers, so they reach Accounts like any other.

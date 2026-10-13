@@ -409,7 +409,7 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .modal.wide{max-width:520px;max-height:calc(100vh - 32px);overflow:auto}
 .mform{display:grid;gap:2px}
 .mbar{margin:18px 0 -4px}.mbar .seg{margin:0;flex-wrap:wrap}
-.rehtsc{padding:12px 14px;margin:10px 0}.rerows{margin-top:10px;display:grid;gap:6px}.rerow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rerow .field{flex:1 1 140px;min-width:0}.tplkeys{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;position:sticky;top:0;z-index:6;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line)}.chipbtn{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:999px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}.chipbtn:hover{border-color:var(--accent,#00704a)}.tplpage{padding:12px 14px;margin:10px 0}.tpltools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.tpled{background:#fff;color:#1e2823;border:1px solid var(--line);border-radius:8px;padding:16px 18px;min-height:240px;max-height:620px;overflow:auto;font-family:Lato,Arial,sans-serif;font-size:13px;line-height:1.45;outline:none}.tpled:focus{border-color:#00704a;box-shadow:0 0 0 3px rgba(0,112,74,.15)}.tpled table{border-collapse:collapse}.resub{margin:2px 0 8px 22px;padding-left:10px;border-left:2px solid var(--line)}
+.rehtsc{padding:12px 14px;margin:10px 0}.rerows{margin-top:10px;display:grid;gap:6px}.rerow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rerow .field{flex:1 1 140px;min-width:0}.tplkeys{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;position:sticky;top:0;z-index:6;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line)}.chipbtn{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:999px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}.chipbtn:hover{border-color:var(--accent,#00704a)}.tplpage{padding:12px 14px;margin:10px 0}.tpltools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.tpled{background:#fff;color:#1e2823;border:1px dashed #9fb3a8;border-radius:2px;padding:0;max-width:100%;box-sizing:content-box;overflow:auto;font-family:Lato,Arial,sans-serif;font-size:13px;line-height:1.45;outline:none}.tpled:focus{border-color:#00704a;box-shadow:0 0 0 3px rgba(0,112,74,.15)}.tpled table{border-collapse:collapse}.tpled>:first-child{margin-top:0}.tpled>:last-child{margin-bottom:0}.resub{margin:2px 0 8px 22px;padding-left:10px;border-left:2px solid var(--line)}
 .solgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 16px}.solgrid .f.wide{grid-column:1/-1}
 .soldocs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 14px}
 .soldoc{padding:12px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border-left:4px solid var(--line)}.soldoc .k{font-size:12.5px;color:var(--muted)}
@@ -10727,6 +10727,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (bg) doc.addImage(bg, "JPEG", 0, 0, W, H);
     var host = el("div", { "aria-hidden": "true", style: "position:absolute;left:0;top:0;z-index:-5;width:" + Math.round(bw / 0.75) + "px;background:transparent;color:#1e2823;font-family:Lato,Arial,sans-serif;font-size:13px;line-height:1.4;display:flow-root" });
     host.innerHTML = htmlFill(pg.html, iv, String(pg.name || "").toUpperCase()); document.body.appendChild(host);
+    if (host.firstElementChild) host.firstElementChild.style.marginTop = "0"; if (host.lastElementChild) host.lastElementChild.style.marginBottom = "0";
     var imgs = Array.prototype.map.call(host.querySelectorAll("img"), function (im) { return im.decode ? im.decode().catch(function () {}) : null; }).filter(Boolean);
     return Promise.all(imgs).then(function () { return window.html2canvas(host, { scale: 2, backgroundColor: null, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 1400, windowHeight: Math.max(1400, host.scrollHeight + 100) }); }).then(function (cv) {
       host.remove(); if (!cv.width || !cv.height) return;
@@ -10923,8 +10924,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     lpr.appendChild(lbt); lpr.appendChild(lfi); lp.appendChild(lpr);
     lp.appendChild(el("span", { class: "hint" }, "Its first page (logo, name, address, GSTIN, background) is put behind every page. It must be A4 portrait."));
     var mg = el("div", { class: "solgrid", style: "margin-top:10px" }), cm = tplMargins(T);
-    [["t", "Top"], ["b", "Bottom"], ["l", "Left"], ["r", "Right"]].forEach(function (x) { var i = inp("reM_" + x[0], String(cm[x[0]]), { inputmode: "decimal", class: "field num" }); i.addEventListener("input", function () { T.margins = T.margins || tplMargins(T); T.margins[x[0]] = i.value.trim(); }); mg.appendChild(fld(x[1] + " margin (mm)", i)); });
+    [["t", "Top"], ["b", "Bottom"], ["l", "Left"], ["r", "Right"]].forEach(function (x) { var i = inp("reM_" + x[0], String(cm[x[0]]), { inputmode: "decimal", class: "field num" }); i.addEventListener("input", function () { T.margins = T.margins || tplMargins(T); T.margins[x[0]] = i.value.trim(); tplSize(T); }); mg.appendChild(fld(x[1] + " margin (mm)", i)); });
     lp.appendChild(mg);
+    lp.appendChild(el("span", { class: "hint", id: "reArea" }));
     /* fields */
     var lg = el("div", { class: "tplkeys" }); lg.appendChild(el("span", { class: "lb", style: "width:100%" }, "Fields"));
     TPL_FIELDS.concat(HTML_FIELDS).forEach(function (f) { var b = el("button", { type: "button", class: "chipbtn", title: f === "Amounts Table" ? "The table of units, rate, deductions and net, made by the app" : "Put {" + f + "} here" }, f); b.addEventListener("mousedown", function (e) { e.preventDefault(); }); b.addEventListener("click", function () { tplInsert("{" + f + "}"); }); lg.appendChild(b); });
@@ -10963,6 +10965,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     ad.addEventListener("click", function () { T.pages.push({ name: "Page " + (T.pages.length + 1), html: "" }); renderCoRe(); });
     pv.addEventListener("click", function () { coRePreview(pv); }); rs.addEventListener("click", function () { T.pages = defPages({ pad: T.pad }); renderCoRe(); });
     pa.appendChild(ad); pa.appendChild(pv); pa.appendChild(rs); box.appendChild(pa);
+    tplSize(T);
+  }
+  /* Each page's editing box is exactly the space inside the margins, at the size it prints; the wording needs no margins of its own. */
+  function tplSize(T) {
+    var m = tplMargins(T), w = Math.max(40, 210 - m.l - m.r), h = Math.max(40, 297 - m.t - m.b), px = 96 / 25.4;
+    var a = $("reArea"); if (a) a.textContent = "Space for the wording on each page: " + Math.round(w) + " × " + Math.round(h) + " mm (A4 less the margins). The page boxes below are that size; a page that runs longer is shrunk to fit.";
+    Array.prototype.forEach.call(document.querySelectorAll("#coRe .tpled"), function (ed) { ed.style.width = Math.round(w * px) + "px"; ed.style.height = Math.round(h * px) + "px"; });
   }
   /* Puts a field where the cursor was in the page last worked on. */
   function tplInsert(txt0) {

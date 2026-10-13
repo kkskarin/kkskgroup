@@ -185,7 +185,8 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   (bold, italic, underline, alignment, lists, text size) or as HTML, and the field buttons ({Invoice No}, {Consumer Name},
   {Amounts Table}, {Net in Words}…) put a field at the cursor; fields are filled in for each bill. An optional **letterpad**
   (an A4 portrait PDF with the logo, name, address, GSTIN and background) is put behind every page, with top, bottom, left
-  and right margins in mm; the wording stays inside them and a long page is shrunk to fit. Adding a letterpad takes the
+  and right margins in mm; the wording needs no margins of its own: it is laid out in the space inside them (each page's
+  editing box is that size), and a page that runs longer is shrunk to fit. Adding a letterpad takes the
   standard company heading off the pages. Scripts, forms, event handlers and outside links are removed from the HTML.
   Preview PDF shows a sample. Older companies' letter and footer wording are turned into pages.
 - **Consumers** (one or more HTSCs, address, GSTIN, injection voltage, credit days) and **PPA Rates** (per consumer, for

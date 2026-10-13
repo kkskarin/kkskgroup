@@ -26,6 +26,11 @@
   checking reports and cash advances that name them; checking reports are made one per approver. No approving while viewing as someone.
 - **TDS** is entered when an entry is accounted. The vendor is paid the total less TDS; the vendor statement and Ledger Books
   show it. Checking reports and their PDFs don't.
+- **Reports › Masters** (every app with purchases or accounting, and Finance): Companies, Vendors, Ledgers, and in Renewable
+  Energy also Consumers and PPA Rates. One company list for the group (`companies/*`, logo required); each company lists the
+  divisions that use it (`apps`) and keeps its own order per app (`orders`). A division app shows only its companies; Accounts and
+  Finance see them all. Only admins add or change companies. Vendors (`apps`) and ledgers (`apps`) are kept apart by division the
+  same way (none named means Maintenance & Civil); a vendor found by GSTIN from another division joins that division too.
 - **Admins** do the same work as the Super Admin and can view as a Purchaser, Accountant or Financier. The Super Admin alone adds
   admins and edits the app. Admins can delete a person for good (Settings › Users › Delete): their login goes, their entries stay.
 - **Vendors and ledgers are kept by the Accountant** (or an admin, also when viewing as them), in any app. A vendor is added from
@@ -170,8 +175,12 @@ Monthly bills of supply from a solar plant or windmill to each consumer it suppl
 "Solar Invoicing & Finance App" specification. Each generator is marked Solar plant or Windmill; that decides which HT bill
 row (SOLAR or WIND) is billed and the wording on the bill.
 
-- **Masters**: generators (HTSC, the company that bills, its PAN, bank account and signatory), consumers (HTSC, address,
-  GSTIN, credit days) and PPA rates (per consumer, optionally per generator, in force from a month).
+- **Companies** (Reports › Masters, admins): each Renewable Energy company has a generator type (solar or windmill) and its
+  generator HTSCs, each with a location and its inverters and solar panels (make, number, capacity) or its windmills (make,
+  capacity); at least one HTSC finishes setting it up. Makes typed before are offered again (separate lists for windmills,
+  inverters and panels). The company's invoice wording (covering letter, the line on the bill, the bill footer with bank, PAN and
+  signatory) is edited there, with {fields} filled in, and can be previewed as a PDF.
+- **Consumers** (HTSC, address, GSTIN, injection voltage, credit days) and **PPA Rates** (per consumer, optionally per HTSC, from a month).
 - **Monthly Billing**: upload the generation statement, energy allotment order, energy adjusted report and each consumer's
   HT bill, in any order and all at once. Claude works out which is which and reads it (text PDFs as text, scans as
   images); everything read for a generator and month is kept in `solar_months/<generator HTSC>_<YYYY-MM>`, with the files in

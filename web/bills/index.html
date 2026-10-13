@@ -408,6 +408,8 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .costgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:6px}
 .modal.wide{max-width:520px;max-height:calc(100vh - 32px);overflow:auto}
 .mform{display:grid;gap:2px}
+.mbar{margin:18px 0 -4px}.mbar .seg{margin:0;flex-wrap:wrap}
+.rehtsc{padding:12px 14px;margin:10px 0}.rerows{margin-top:10px;display:grid;gap:6px}.rerow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.rerow .field{flex:1 1 140px;min-width:0}
 .solgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 16px}.solgrid .f.wide{grid-column:1/-1}
 .soldocs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 14px}
 .soldoc{padding:12px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border-left:4px solid var(--line)}.soldoc .k{font-size:12.5px;color:var(--muted)}
@@ -722,6 +724,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 <nav class="navbar" id="navbar" aria-label="Sections" hidden><div class="wrap" id="nav"></div><div class="subbar"><div class="wrap" id="subnav"></div></div></nav>
 
 <main class="wrap">
+  <div id="mastersBar" class="mbar" hidden></div>
   <section id="vLoading" class="panel"><h2>Opening</h2><p>Checking your access.</p></section>
   <section id="vUnavailable" class="panel" hidden><h2 id="failTitle">This page couldn't load its data</h2><p id="failText"></p>
     <p class="code" id="failCode"></p>
@@ -805,7 +808,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secList" hidden>
     <div class="head">
-      <div><h2>Companies</h2><p class="sub">Only the admin can add or change a company. Purchases point to a company by a permanent ID, so a change here shows on every old and new record. Drag a company by its handle, or use the arrows, to set the order every list in the app follows.</p></div>
+      <div><h2>Companies</h2><p class="sub">One company list for the group: each app shows the companies its division uses, in its own order. Only an admin can add or change a company. Purchases point to a company by a permanent ID, so a change here shows on every old and new record. Drag a company by its handle, or use the arrows, to set the order every list in the app follows.</p></div>
       <span class="grow"></span>
       <label class="check"><input type="checkbox" id="showOff"> Show deactivated</label>
       <button class="btn primary" id="add">Add company</button>
@@ -837,11 +840,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
             <button class="btn" id="logoPick">Choose image</button>
             <button class="link-btn" id="logoClear" hidden>Remove logo</button>
           </div>
-          <span class="hint">PNG or JPG. It is resized to fit before saving.</span>
+          <span class="hint">Needed: it heads every bill, voucher and report. PNG or JPG, resized to fit before saving.</span><span class="err" id="eLogo" hidden></span>
         </div>
-        <div class="f wide"><span class="lb">Accessed By</span><div class="field ro" id="fAccess"></div><span class="hint">Not set here. It lists the active users you gave this company to on the Users tab.</span></div>
-        <div class="f"><span class="lb">Outstanding</span><div class="field ro calc num"><span id="fOut"></span><button class="link-btn" id="openOut" hidden>Open statement</button></div><span class="hint">Calculated: everything currently owed on this company's bills.</span></div>
-        <div class="f"><span class="lb">Overdue</span><div class="field ro calc num"><span id="fOd"></span><button class="link-btn" id="openOd" hidden>Open statement</button></div><span class="hint">Calculated: the part of Outstanding past its due date.</span></div>
+        <div class="f wide" id="fAppsF"><span class="lb">Used In</span><div class="checks" id="fApps"></div><span class="hint" id="fAppsH"></span><span class="err" id="eApps" hidden></span></div>
+        <div class="f wide" id="coRe" hidden></div>
       </div>
       <div class="form-foot">
         <button class="btn primary" id="save">Save company</button>
@@ -937,6 +939,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       <div class="acts2"><button class="btn" id="vXls" type="button">Download Excel</button><button class="btn" id="vExport" type="button">Export payables PDF</button></div>
     </div>
     <div class="filters">
+      <select class="field" id="vCo" aria-label="Filter by company" style="width:auto;min-width:180px"></select>
       <input class="field" id="vQ" type="search" placeholder="Search name, GSTIN or PAN" aria-label="Search vendors" autocomplete="off">
       <label class="check"><input type="checkbox" id="vNeeds"> Needs details only</label>
       <label class="check"><input type="checkbox" id="vOff"> Show deactivated</label>
@@ -1512,19 +1515,22 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function payHere(x) { return (DIVS[typeof x === "string" ? x : divOf(x)] || DIVS.mnt).payIn === APP; }
   /* Headings, each with its own tabs. Tab keys stay the same inside the app; labels are what people see. */
   var SET_TABS = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Personalise", "Personalise"]] };
+  /* Reports › Masters: one entry in the menu, with buttons for each master list. The fourth item marks a master. */
+  var MASTERS = [["Companies", "Companies", 0, "m"], ["Vendors", "Vendors", 0, "m"], ["Ledgers", "Ledgers", 0, "m"]];
+  var MASTERS_RE = MASTERS.concat([["Consumers", "Consumers", 0, "m"], ["PPA Rates", "PPA Rates", 0, "m"]]);
   var DIV_NAV = [
-    { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"], ["Vendors", "Vendors"], ["Ledgers", "Ledgers"]] },
+    { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]].concat(APP === "re" ? MASTERS_RE : MASTERS) },
     { h: "Bills", tabs: [["Bills", "Enter Bills"], ["Checking Report", "Bills CR"]] },
     { h: "Proformas", tabs: [["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance CR"]] },
     { h: "Vouchers", tabs: [["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Vouchers CR"], ["Cash Advance", "Cash Advance"]] }
   ];
   var NAV_BY_APP = {
     mnt: DIV_NAV.concat([SET_TABS]),
-    re: [{ h: "Energy Billing", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices & Receipts"], ["Solar Reports", "Reports"], ["Solar Masters", "Masters"]] }].concat(DIV_NAV).concat([{ h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] }, SET_TABS]),
+    re: [{ h: "Energy Billing", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices & Receipts"], ["Solar Reports", "Reports"]] }].concat(DIV_NAV).concat([{ h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] }, SET_TABS]),
     acc: [
-      { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"], ["Vendors", "Vendors"], ["Ledgers", "Ledgers"]] },
+      { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]].concat(MASTERS) },
       { h: "Accounts", tabs: [["Accounts", "To Account"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Books"]] },
-      { h: "Settings", tabs: [["Companies", "Companies", true], ["Users", "Users", true], ["Change Log", "Change Log", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] }
+      { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] }
     ],
     apr: [
       { h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] },
@@ -1532,23 +1538,24 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     ],
     fin: [
       { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] },
-      { h: "Reports", tabs: [["Payables", "Payables"], ["Transactions", "Transactions"], ["Vendors", "Vendors"]] },
+      { h: "Reports", tabs: [["Payables", "Payables"], ["Transactions", "Transactions"]].concat(MASTERS) },
       SET_TABS
     ]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
+  var LAST_M = "";
   var HOME_TAB = { acc: "Accounts", fin: "Payables", apr: "Approvals", re: "Solar Month" }[APP] || "Transactions", LAST_IN = {};
   var DATA_TABS = ["Cash Approvals", "Approvals", "Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
   /* Admins oversee rather than enter: the entry screens (and the accountant's queue) are left out for them.
      Reports > Transactions shows every item, where it stands and who is responsible. "View as" still opens a person's screens. */
   var ADMIN_HIDE = { "Bills": 1, "Plan Advance": 1, "Imports": 1, "Cash Voucher": 1, "Accounts": 1, "Mark Transaction": 1 };
   /* A financier who only pays out sees Reports (Transactions, Payables) and Payments, nothing else. */
-  var FIN_TABS = { "Cash Approvals": 1, "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1 };
+  var FIN_TABS = { "Companies": 1, "Vendors": 1, "Ledgers": 1, "Cash Approvals": 1, "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1 };
   function finOnly() { return !S.isAdmin && canDo("txn") && STEPS.every(function (st) { return st[0] === "txn" || !canDo(st[0]); }); }
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {
       var fo = finOnly();
-      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (fo && !FIN_TABS[t[0]]) return false; return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
+      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
         /* The financier's Reports: Payables first, then Payments (Transactions showing payments only). */
         .map(function (t) { return fo && t[0] === "Transactions" ? [t[0], "Payments"] : t; }).sort(function (x, y) { return fo ? (x[0] === "Payables" ? -1 : y[0] === "Payables" ? 1 : 0) : 0; }) };
     }).filter(function (g) { return g.tabs.length; });
@@ -1594,13 +1601,21 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       b.addEventListener("click", function () { if (on) return; var last = LAST_IN[g.h]; setTab(last && groupOf(last) === g ? last : g.tabs[0][0]); });
       nav.appendChild(b);
     });
+    var ms = cg ? cg.tabs.filter(function (t) { return t[3] === "m"; }) : [], onM = ms.some(function (t) { return t[0] === S.tab; }), mDone = false;
     if (cg) cg.tabs.forEach(function (t) {
+      if (t[3] === "m") {
+        if (mDone) return; mDone = true;
+        var mb = el("button", onM ? { type: "button", "aria-current": "page" } : { type: "button" }, "Masters"), mbd = tabBadge("Vendors"); if (mbd && ms.some(function (x) { return x[0] === "Vendors"; })) mb.appendChild(badgeEl(mbd));
+        mb.addEventListener("click", function () { setTab(ms.some(function (x) { return x[0] === LAST_M; }) ? LAST_M : ms[0][0]); }); subn.appendChild(mb); return;
+      }
       var b = el("button", S.tab === t[0] ? { type: "button", "aria-current": "page" } : { type: "button" }, t[1]), bd = tabBadge(t[0]);
       if (bd) { if (bd.warn) { var wi = warnIcon(bd.label); wi.style.marginRight = "6px"; b.insertBefore(wi, b.firstChild); } b.appendChild(badgeEl(bd)); }
       b.addEventListener("click", function () { setTab(t[0]); });
       subn.appendChild(b);
     });
     subn.parentNode.style.display = cg && cg.tabs.length > 1 ? "" : "none";
+    var bar = $("mastersBar"); bar.textContent = ""; bar.hidden = !onM;
+    if (onM) { LAST_M = S.tab; var sg = el("div", { class: "seg", role: "tablist", "aria-label": "Masters" }); ms.forEach(function (t) { var b = el("button", { type: "button", role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false" }, t[1]), bd = tabBadge(t[0]); if (bd) b.appendChild(badgeEl(bd)); b.addEventListener("click", function () { if (S.tab !== t[0]) setTab(t[0]); }); sg.appendChild(b); }); bar.appendChild(sg); }
     slideTo(nav, nav.querySelector(".grp-on"), "G"); slideTo(subn, subn.querySelector('[aria-current="page"]'), "T");
   }
   function setTab(t) {
@@ -1639,7 +1654,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (t === "Users" && S.isAdmin) { renderUsers(); renderSupers(); show("secUsers"); }
     else if (t === "Change Log" && S.isAdmin) { auditSub(); renderAudit(); show("secAudit"); }
     else if (t === "Archive" && S.isAdmin) { if (dataReady()) { renderArchive(); show("secArch"); } else show("vLoading"); }
-    else if (t === "Companies" && S.isAdmin) { if (S.loaded) { renderList(); show("secList"); } else show("vLoading"); }
+    else if (t === "Companies") { if (S.loaded || Object.keys(S.companies || {}).length) { renderList(); show("secList"); } else show("vLoading"); }
     else { $("soonTitle").textContent = tabLabel(t); show("secSoon"); }
   }
   function show(id) {
@@ -1741,15 +1756,19 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ---------------- company ticks (multi-select) ---------------- */
   /* Companies always follow the admin's own order (saved as "order" on each company); any without one follow, by name. */
-  function coRank(c) { return c && typeof c.order === "number" ? c.order : 1e6; }
+  /* One company list for the group. Each company is used by one or more divisions (apps; none means Maintenance & Civil, where
+     companies began). A division app lists only its companies; Accounts and Finance see them all. Each app keeps its own order. */
+  function coApps(c) { return c && c.apps && c.apps.length ? c.apps : ["mnt"]; }
+  function coInApp(c) { return !DIV || coApps(c).indexOf(DIV) >= 0; }
+  function coRank(c) { if (!c) return 1e6; if (c.orders && typeof c.orders[APP] === "number") return c.orders[APP]; return typeof c.order === "number" ? c.order : 1e6; }
   function coCmp(a, b) { return coRank(a) - coRank(b) || natCmp(a && a.name, b && b.name); }
   function coCmpId(x, y) { if (x === y) return 0; if (!x) return 1; if (!y) return -1; return coCmp(S.companies[x], S.companies[y]); }
-  function activeCompanies() {
-    return Object.keys(S.companies).map(function (id) { return S.companies[id]; }).filter(function (c) { return c.active !== false; }).sort(coCmp);
+  function activeCompanies(all) {
+    return Object.keys(S.companies).map(function (id) { return S.companies[id]; }).filter(function (c) { return c.active !== false && (all || coInApp(c)); }).sort(coCmp);
   }
-  function buildChecks(box, selected) {
+  function buildChecks(box, selected, all) {
     selected = selected || []; box.textContent = "";
-    var list = activeCompanies();
+    var list = activeCompanies(all);
     selected.forEach(function (id) { var c = S.companies[id]; if (c && c.active === false) list.push(c); });   // keep ones already given
     if (!list.length) { box.appendChild(el("span", { class: "hint" }, "No companies have been set up yet.")); return; }
     list.forEach(function (c) {
@@ -1785,7 +1804,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function stepsForJobs(js) { var m = {}; (js || []).forEach(function (k) { (JOB_STEPS[k] || []).forEach(function (st) { m[st] = 1; }); }); return STEPS.map(function (s) { return s[0]; }).filter(function (k) { return m[k]; }); }
   function myJobs() { var u = S.myUser; if (u && u.jobRoles && u.jobRoles.length) return u.jobRoles; return !S.actId && S.myReq && S.myReq.jobRoles ? S.myReq.jobRoles : []; }
   var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bills CR"], ["vouchers", "Cash Vouchers"], ["vcr", "Vouchers CR"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance CR"], ["appr", "Approval"], ["txn", "Payment Entry"], ["solar", "Energy Billing"]];
-  var TAB_STEP = { "Cash Approvals": "appr", "Solar Month": "solar", "Solar Invoices": "solar", "Solar Reports": "solar", "Solar Masters": "solar", "Approvals": "appr", "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
+  var TAB_STEP = { "Cash Approvals": "appr", "Solar Month": "solar", "Solar Invoices": "solar", "Solar Reports": "solar", "Approvals": "appr", "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
   /* A user saved before responsibilities existed does every step for their companies until the admin sets them. */
   function userHas(u, step, cid) {
     if (!u || u.active === false || (u.companyIds || []).indexOf(cid) < 0) return false;
@@ -2038,7 +2057,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var ap = appsWith(src); $("uAppMnt").checked = ap.mnt; $("uAppRe").checked = ap.re; $("uAppAcc").checked = ap.acc; $("uAppFin").checked = ap.fin; $("uAppApr").checked = ap.apr; $("uPpRole").value = (ap.pp && ap.pp.role) || ""; $("uPpRegion").value = (ap.pp && ap.pp.region) || ""; $("uEApps").hidden = true; syncAppsF();
     var ua = $("uAppr"); ua.parentNode.replaceChild(approverSelect("uAppr", src.defaultApproverId || ""), ua); $("uAppr").options[0].textContent = "Choose the default approver"; syncApprF();
     if (!roles && js.length) { roles = {}; (src.companyIds || []).forEach(function (cid) { roles[cid] = stepsForJobs(js); }); }
-    $("uName").value = src.name || ""; usLoc.close(); usLoc.fill(src.locationId || ""); usDept.close(); usDept.fill(src.deptId || ""); buildChecks($("uCos"), src.companyIds || []);
+    $("uName").value = src.name || ""; usLoc.close(); usLoc.fill(src.locationId || ""); usDept.close(); usDept.fill(src.deptId || ""); buildChecks($("uCos"), src.companyIds || [], true);
     S.userEditing.roles = roles; S.userEditing.balUid = balUid;
     renderRoleGrid(readChecks($("uCos")), roles); renderUserOpenings(balUid, src.companyIds || []);
   }
@@ -2216,7 +2235,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     sel.appendChild(el("option", { value: "" }, "Choose a location"));
     locList().forEach(function (l) { sel.appendChild(el("option", { value: l.id }, l.name)); });
     sel.value = locValue && S.locations[locValue] ? locValue : "";
-    buildChecks($("rqCos"), cos.filter(function (id) { return S.companies[id] && S.companies[id].active !== false; }));
+    buildChecks($("rqCos"), cos.filter(function (id) { return S.companies[id] && S.companies[id].active !== false; }), true);
   }
   function sendRequest() {
     if (S.busy) return;
@@ -2340,7 +2359,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     fL.appendChild(el("label", { for: "prLoc" }, "Location")); fL.appendChild(sl); fL.appendChild(el("span", { class: "err", id: "prLocE", hidden: "" })); body.appendChild(fL);
     var fJ = el("div", { class: "f wide" }), jb = el("div", { class: "checks", id: "prJobs" }); fJ.appendChild(el("span", { class: "lb" }, "Role")); fJ.appendChild(jb); fJ.appendChild(el("span", { class: "err", id: "prJobsE", hidden: "" })); body.appendChild(fJ); jobChecks(jb, []);
     var fC = el("div", { class: "f wide" }), ck = el("div", { class: "checks", id: "prCos" }); fC.appendChild(el("span", { class: "lb" }, "Companies")); fC.appendChild(ck); fC.appendChild(el("span", { class: "err", id: "prCosE", hidden: "" })); body.appendChild(fC);
-    buildChecks(ck, (base.companyIds || []).filter(function (id) { return S.companies[id]; }));
+    buildChecks(ck, (base.companyIds || []).filter(function (id) { return S.companies[id]; }), true);
     popForm("Request a New Person", "The admin approves it, sets what they do, and adds them to this shared login. They then choose their name here, set their PIN and enter their opening cash.", body, "Send request", function () {
       errClear(body);
       var nm = $("prName").value.trim().replace(/\s+/g, " "), dp = $("prDept").value, lc = $("prLoc").value, cos = readChecks(ck), ok = true;
@@ -2420,7 +2439,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     return b;
   }
   function sorted() {
-    return Object.keys(S.companies).map(function (id) { return S.companies[id]; })
+    return Object.keys(S.companies).map(function (id) { return S.companies[id]; }).filter(coInApp)
       .sort(function (a, b) { return (a.active === false) - (b.active === false) || coCmp(a, b); });
   }
 
@@ -2429,7 +2448,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (S.draftLogo) { var im = el("img", { alt: "Logo preview" }); im.src = S.draftLogo; box.appendChild(im); } else box.textContent = "No logo";
     $("logoClear").hidden = !S.draftLogo;
   }
-  function clearErrors() { ["eName", "eShort"].forEach(function (id) { $(id).hidden = true; }); $("fName").classList.remove("bad"); $("fShort").classList.remove("bad"); }
+  function clearErrors() { ["eName", "eShort", "eLogo", "eApps"].forEach(function (id) { $(id).hidden = true; }); $("fName").classList.remove("bad"); $("fShort").classList.remove("bad"); }
   function openEdit(id) {
     var c = id ? S.companies[id] : null;
     S.editing = id || "new"; S.draftLogo = (c && c.logo) || ""; clearErrors();
@@ -2437,9 +2456,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("editSub").textContent = c ? "Changes apply to every purchase that points to this company." : "The company gets a permanent ID when you save it.";
     $("fName").value = c ? c.name || "" : ""; $("fInternal").value = c ? c.internalName || "" : ""; $("fShort").value = c ? c.shortName || "" : ""; $("fGstin").value = c ? c.gstin || "" : ""; $("fState").value = c ? c.stateCode || "" : ""; $("fAddr").value = c ? c.address || "" : "";
     coLoc.close(); coLoc.fill(locIdOf(c));
-    var acc = id ? accessNames(id) : []; $("fAccess").textContent = acc.length ? acc.join(", ") : "Nobody yet";
-    var tot = totals(id); $("fOut").textContent = mixMoney(tot, "outstanding"); $("fOd").textContent = mixMoney(tot, "overdue");
-    $("openOut").hidden = $("openOd").hidden = !c;
+    /* Which divisions use it: chosen in Accounts and Finance; a company added in a division app starts in that division. */
+    var ua = c ? coApps(c) : DIV ? [DIV] : [], fa = $("fApps"); fa.textContent = "";
+    Object.keys(DIVS).forEach(function (k) { var lb = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: k }); cb.checked = ua.indexOf(k) >= 0; cb.disabled = !!DIV && k === DIV; lb.appendChild(cb); lb.appendChild(el("span", null, DIVS[k].name)); fa.appendChild(lb); });
+    $("fAppsH").textContent = DIV ? "It always stays in " + DIVS[DIV].name + " while you work here; tick another division to use it there too." : "The divisions whose apps list this company. Accounts and Finance always see every company.";
+    S.coRe = APP === "re" ? JSON.parse(JSON.stringify((c && c.re) || { kind: "solar", htscs: [], tpl: {} })) : null; renderCoRe();
     var tg = $("toggle"); tg.hidden = !c;
     if (c) { var off = c.active === false; tg.textContent = off ? "Reactivate company" : "Deactivate company"; tg.className = "btn" + (off ? "" : " danger"); }
     setLogoPreview(); show("secEdit"); $("fName").focus();
@@ -2485,11 +2506,17 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var clash = Object.keys(S.companies).some(function (id) { return id !== S.editing && String(S.companies[id].shortName || "").toLowerCase() === short.toLowerCase(); });
       if (clash) { $("eShort").textContent = "Another company already uses this short name."; $("eShort").hidden = false; $("fShort").classList.add("bad"); ok = false; }
     }
+    if (!S.draftLogo) { $("eLogo").textContent = "Choose the company's logo."; $("eLogo").hidden = false; ok = false; }
+    var apps = Array.prototype.filter.call($("fApps").querySelectorAll("input"), function (x) { return x.checked; }).map(function (x) { return x.value; });
+    if (DIV && apps.indexOf(DIV) < 0) apps.push(DIV);
+    if (!apps.length) { $("eApps").textContent = "Tick at least one division."; $("eApps").hidden = false; ok = false; }
+    var reErr = APP === "re" ? coReCheck() : ""; if (reErr) { toast(reErr); ok = false; }
     if (!ok) return;
     var isNew = S.editing === "new";
     var id = isNew ? "c_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) : S.editing;
     var locId = coLoc.value();
     var body = { gstin: normId($("fGstin").value), stateCode: $("fState").value.trim(), address: $("fAddr").value.trim(), name: name, internalName: internal, shortName: short, baseLocationId: locId, baseLocation: locId ? S.locations[locId].name : "", logo: S.draftLogo || "", updatedAt: Date.now(), updatedBy: (S.me && S.me.id) || "" };
+    body.apps = apps; if (APP === "re") body.re = coReOut();
     var ref = S.db.doc("companies/" + id);
     S.busy = true; $("save").disabled = true;
     retry(function () {
@@ -2685,8 +2712,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ================= companies the viewer may work with ================= */
   function myCompanyIds() {
-    if (S.isAdmin) return Object.keys(S.companies);
-    return ((S.myUser && S.myUser.companyIds) || []).filter(function (id) { return S.companies[id]; });
+    if (S.isAdmin) return Object.keys(S.companies).filter(function (id) { return coInApp(S.companies[id]); });
+    return ((S.myUser && S.myUser.companyIds) || []).filter(function (id) { return S.companies[id] && coInApp(S.companies[id]); });
   }
   function canSee(cid) { return !!cid && myCompanyIds().indexOf(cid) >= 0; }
   function canStep(step, cid) { return canSee(cid) && hasRole(step, cid); }
@@ -2865,6 +2892,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var mine = myCompanyIds(), linked = {};
     ledgersFor(function () { return true; }).forEach(function (r) { (linked[r.vid] = linked[r.vid] || []).push(r.cid); });
     return Object.keys(S.vendors).map(function (id) { return S.vendors[id]; }).filter(function (v) {
+      if (!vendorInApp(v)) return false;
       var cs = linked[v.id]; if (S.isAdmin || !cs || !cs.length) return true;
       return cs.some(function (c) { return mine.indexOf(c) >= 0; });
     });
@@ -3927,9 +3955,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (cur && S.companies[cur] && !o.some(function (x) { return x[0] === cur; })) o.push([cur, S.companies[cur].name + " (no access)"]);
     return o;
   }
+  /* Vendors and ledgers are kept apart by division: a division app shows only its own (none named means Maintenance & Civil).
+     Accounts and Finance see them all. A vendor found by GSTIN from another division joins this one too. */
+  function vendorInApp(v) { return !DIV || ((v && v.apps && v.apps.length) ? v.apps : ["mnt"]).indexOf(DIV) >= 0; }
+  function vendorJoin(v) { if (!v || !DIV || vendorInApp(v)) return; var a = ((v.apps && v.apps.length) ? v.apps : ["mnt"]).concat([DIV]); v.apps = a; retry(function () { return S.db.doc("vendors/" + v.id).update({ apps: a, updatedAt: Date.now(), updatedBy: meId() }); }).catch(function () {}); }
   function vendorOpts(D) {
     var nm = D.vNew.name.trim(), o = [["", "Choose a vendor"], ["new", nm ? "New vendor: " + nm : "New vendor"]];
-    Object.keys(S.vendors).map(function (id) { return S.vendors[id]; }).filter(function (v) { return v.active !== false || v.id === D.vendorChoice; })
+    Object.keys(S.vendors).map(function (id) { return S.vendors[id]; }).filter(function (v) { return (v.active !== false && vendorInApp(v)) || v.id === D.vendorChoice; })
       .sort(function (a, b) { return natCmp(a.name, b.name); })
       .forEach(function (v) { o.push([v.id, v.name + (v.gstin ? " (" + v.gstin + ")" : "") + (v.active === false ? ", deactivated" : "")]); });
     return o;
@@ -4226,10 +4258,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var D = B.D, doc = keepLock(draftToDoc(D), b), now = Date.now(), vid = doc.vendorId, days = r.ti.days, job = B.savePromise || Promise.resolve(), madeVendor = "";
     if (D.vendorChoice === "new") {
       var g = normId(D.vNew.gstin), ex = g && vendorByGstin(g);
-      if (ex) vid = ex.id;
+      if (ex) { vid = ex.id; vendorJoin(ex); }
       else {
         vid = newId("v"); madeVendor = D.vNew.name.trim();
-        var vdoc = { address: String(D.vNew.addr || "").trim(), name: madeVendor, gstin: g, pan: panOfNew(D), type: D.vNew.type, termDays: intOrNull(D.vNew.termDays), active: true, openings: {},
+        var vdoc = { apps: [DIV || "mnt"], address: String(D.vNew.addr || "").trim(), name: madeVendor, gstin: g, pan: panOfNew(D), type: D.vNew.type, termDays: intOrNull(D.vNew.termDays), active: true, openings: {},
           createdAt: now, createdBy: meId(), firstBillId: b.id, updatedAt: now, updatedBy: meId() };
         job = job.then(function () { return retry(function () { return S.db.doc("vendors/" + vid).set(vdoc); }); }).then(function () { S.vendors[vid] = Object.assign({ id: vid }, vdoc); invalidate(); });
       }
@@ -4455,7 +4487,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (IMP.busy) return; /* an upload redraws once it is done */
     var box = $("vList"); box.textContent = ""; if (canImport()) impButtons("vendors", $("vExport").parentNode);
     var q = $("vQ").value.trim().toLowerCase(), onlyNeeds = $("vNeeds").checked, showOff = $("vOff").checked;
-    var all = visibleVendors();
+    var vc = $("vCo"), vcv = vc.value; fillSelect(vc, [["", "All companies"]].concat(myCompanies().map(function (c) { return [c.id, c.shortName || c.name]; })), vcv); vcv = vc.value;
+    var inCo = {}; if (vcv) ledgersFor(function (r) { return r.cid === vcv && (r.opening || r.bills.length || r.advs.length || r.txs.length); }).forEach(function (r) { inCo[r.vid] = 1; });
+    var all = visibleVendors().filter(function (v) { return !vcv || inCo[v.id] || (v.openings && v.openings[vcv]); });
     var rows = all.map(function (v) { return { v: v, n: v.active !== false ? vendorNeeds(v) : { list: [], since: 0 } }; }).filter(function (r) {
       if (!showOff && r.v.active === false) return false;
       if (onlyNeeds && !r.n.list.length) return false;
@@ -5934,7 +5968,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function advVendorOpts(D) {
     var imp = ADV.kind === "import", nm = D.vNew.name.trim(), o = [["", "Choose a vendor"], ["new", nm ? "New vendor: " + nm : "New vendor"]];
-    Object.keys(S.vendors).map(function (id) { return S.vendors[id]; }).filter(function (v) { return (v.active !== false || v.id === D.vendorChoice) && (imp ? v.type === "overseas" || v.id === D.vendorChoice : v.type !== "overseas" || v.id === D.vendorChoice); })
+    Object.keys(S.vendors).map(function (id) { return S.vendors[id]; }).filter(function (v) { return ((v.active !== false && vendorInApp(v)) || v.id === D.vendorChoice) && (imp ? v.type === "overseas" || v.id === D.vendorChoice : v.type !== "overseas" || v.id === D.vendorChoice); })
       .sort(function (a, b) { return natCmp(a.name, b.name); })
       .forEach(function (v) { o.push([v.id, v.name + (v.gstin ? " (" + v.gstin + ")" : v.country ? " (" + v.country + ")" : "")]); });
     return o;
@@ -6134,10 +6168,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var vid = D.vendorChoice !== "new" ? D.vendorChoice : null, job = Promise.resolve(), madeVendor = "";
     if (!vid) {
       var ex = g && vendorByGstin(g); if (!ex && !g) { var bn = vendorByName(D.vNew.name); if (bn && (imp ? bn.type === "overseas" : bn.type !== "overseas")) ex = bn; }
-      if (ex) vid = ex.id;
+      if (ex) { vid = ex.id; vendorJoin(ex); }
       else {
         vid = newId("v"); madeVendor = smartCase(D.vNew.name);
-        var vdoc = { address: String(D.vNew.addr || "").trim(), name: madeVendor, gstin: imp ? "" : g, pan: !imp && g ? panFromGstin(g) : "", type: imp ? "overseas" : D.vNew.type, country: imp ? smartCase(D.vNew.country) : "", termDays: null, active: true, openings: {}, createdAt: now, createdBy: meId(), updatedAt: now, updatedBy: meId() };
+        var vdoc = { apps: [DIV || "mnt"], address: String(D.vNew.addr || "").trim(), name: madeVendor, gstin: imp ? "" : g, pan: !imp && g ? panFromGstin(g) : "", type: imp ? "overseas" : D.vNew.type, country: imp ? smartCase(D.vNew.country) : "", termDays: null, active: true, openings: {}, createdAt: now, createdBy: meId(), updatedAt: now, updatedBy: meId() };
         job = retry(function () { return S.db.doc("vendors/" + vid).set(vdoc); }).then(function () { S.vendors[vid] = Object.assign({ id: vid }, vdoc); invalidate(); });
       }
     } else fillVendorAddr(S.vendors[vid], D.ex && D.ex.vendorAddress, Date.now());
@@ -8010,6 +8044,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* ================= Companies list (admin) ================= */
   function renderList() {
     var box = $("list");
+    $("add").hidden = !S.isAdmin;
+    var ue = $("coUse"); if (!ue) { ue = el("button", { class: "btn", type: "button", id: "coUse" }, "Use an Existing Company"); ue.addEventListener("click", useCompanyForm); $("add").parentNode.insertBefore(ue, $("add")); }
+    var others = Object.keys(S.companies).map(function (k) { return S.companies[k]; }).filter(function (c) { return c.active !== false && !coInApp(c); });
+    ue.hidden = !S.isAdmin || !DIV || !others.length;
     var all = sorted(), showOff = $("showOff").checked;
     var rows = all.filter(function (c) { return showOff || c.active !== false; });
     box.textContent = "";
@@ -8032,13 +8070,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
           co.appendChild(tx); td.appendChild(co); } },
       { label: "Short Name", cell: function (c, td) { txt(td, c.shortName); } },
       { label: "Base Location", cell: function (c, td) { txt(td, locNameOf(c) || "Not set"); } },
-      { label: "Accessed By", cell: function (c, td) { var acc = accessNames(c.id); txt(td, acc.length ? acc.join(", ") : "Nobody yet"); } },
-      { label: "Outstanding", cls: "r num", cell: function (c, td) {
+      !DIV ? { label: "Used In", cell: function (c, td) { txt(td, coApps(c).map(function (k) { return DIVS[k] ? DIVS[k].name : k; }).join(", ")); } } : null,
+      APP === "re" ? { label: "Generators", cell: function (c, td) { var r = c.re || {}, n = (r.htscs || []).length; txt(td, n ? (r.kind === "wind" ? "Windmill" : "Solar") + " · " + plural(n, "HTSC") : "Not set up"); if (!n) sub(td, "Add at least one HTSC to finish setting it up", "color:var(--bad)"); } } : null,
+      false && { label: "Outstanding", cls: "r num", cell: function (c, td) {
           var b = el("button", { class: "amt", "aria-label": "Outstanding for " + c.name + ", open statement" }, mixMoney(c._tot, "outstanding")); b.addEventListener("click", function () { openStatement(c.id); }); td.appendChild(b); } },
-      { label: "Overdue", cls: "r num", cell: function (c, td) {
+      false && { label: "Overdue", cls: "r num", cell: function (c, td) {
           var b = el("button", { class: "amt" + (anyOver(c._tot, "overdue") ? " od" : ""), "aria-label": "Overdue for " + c.name + ", open statement" }, mixMoney(c._tot, "overdue")); b.addEventListener("click", function () { openStatement(c.id); }); td.appendChild(b); } },
       { label: "Status", cell: function (c, td) { var off = c.active === false; td.appendChild(el("span", { class: "chip " + (off ? "off" : "on") }, off ? "Deactivated" : "Active")); } },
-      { label: "", kind: "act", cls: "r", cell: function (c, td) { var b = el("button", { class: "btn" }, "Edit"); b.addEventListener("click", function () { openEdit(c.id); }); td.appendChild(b); } }
+      { label: "", kind: "act", cls: "r", cell: function (c, td) { if (!S.isAdmin) return; var b = el("button", { class: "btn" }, "Edit"); b.addEventListener("click", function () { openEdit(c.id); }); td.appendChild(b); } }
     ], rows, { sortIndex: -1, rowClass: function (c) { return c.active === false ? "off" : ""; } });
     /* Drag a row by its handle to move it; the new order is saved for everyone. */
     var trs = box.querySelectorAll("tbody tr"), dragId = null;
@@ -8061,18 +8100,29 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       });
     });
   }
+  /* A company already in the group list, switched on for this division too. */
+  function useCompanyForm() {
+    var others = Object.keys(S.companies).map(function (k) { return S.companies[k]; }).filter(function (c) { return c.active !== false && !coInApp(c); }).sort(function (a, b) { return natCmp(a.name, b.name); });
+    var body = el("div", { class: "mform" }), sel = el("select", { class: "field", id: "coUseSel" }); fillSelect(sel, [["", "Choose the company"]].concat(others.map(function (c) { return [c.id, c.name + (c.shortName ? " (" + c.shortName + ")" : "")]; })), "");
+    body.appendChild(fld("Company", sel, "Its details stay the same everywhere; only admins change them."));
+    popForm("Use an existing company in " + appName(), "", body, "Use it here", function () {
+      errClear(body); var c = S.companies[sel.value]; if (!c) { errOn("coUseSel", "Choose the company."); return false; }
+      var apps = coApps(c).concat([DIV]);
+      return retry(function () { return S.db.doc("companies/" + c.id).update({ apps: apps, updatedAt: Date.now(), updatedBy: meId() }); }).then(function () { c.apps = apps; toast(c.name + " is now used in " + appName() + "."); renderList(); if (APP === "re") openEdit(c.id); return true; }, function (e) { toast(explain(e)); return false; });
+    });
+  }
   function moveCompany(id, targetId, where) {
     if (!S.isAdmin || id === targetId) return;
     var list = sorted().map(function (c) { return c.id; }).filter(function (x) { return x !== id; });
     var at = list.indexOf(targetId); if (at < 0) return;
     list.splice(where === "after" ? at + 1 : at, 0, id);
     var changes = [];
-    list.forEach(function (cid, i) { var c = S.companies[cid]; if (c.order !== i) { changes.push([cid, i, c.order]); c.order = i; } });
+    list.forEach(function (cid, i) { var c = S.companies[cid]; if (coRank(c) !== i) { c.orders = Object.assign({}, c.orders || {}); c.orders[APP] = i; changes.push([cid, c.orders]); } });
     if (!changes.length) return;
     renderList();
     var by = meId(), now = Date.now();
-    Promise.all(changes.map(function (ch) { return retry(function () { return S.db.doc("companies/" + ch[0]).update({ order: ch[1], updatedAt: now, updatedBy: by }); }); }))
-      .then(function () { toast("Company order saved. Every list now shows companies in this order."); },
+    Promise.all(changes.map(function (ch) { return retry(function () { return S.db.doc("companies/" + ch[0]).update({ orders: ch[1], updatedAt: now, updatedBy: by }); }); }))
+      .then(function () { toast("Company order saved for " + appName() + ". Every list in this app now shows companies in this order."); },
         function (e) { changes.forEach(function (ch) { var c = S.companies[ch[0]]; if (c) { if (ch[2] == null) delete c.order; else c.order = ch[2]; } }); renderList(); toast(explain(e)); });
   }
 
@@ -9481,8 +9531,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function ledCmp(a, b) { return LED_MAINS.indexOf(a.main) - LED_MAINS.indexOf(b.main) || natCmp(a.sub, b.sub) || natCmp(a.name, b.name); }
   function ledFor(cid) { return ledAll().filter(function (l) { return l.active !== false && ledInApp(l) && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
   /* Accounts decides which divisions may use a ledger; a ledger with none ticked is open to every division. */
-  function ledInApp(l) { return !DIV || !(l.apps && l.apps.length) || l.apps.indexOf(DIV) >= 0; }
-  function ledAppsText(l) { return l.apps && l.apps.length ? l.apps.map(function (k) { return divName(k); }).join(", ") : "Every division"; }
+  function ledInApp(l) { return !DIV || ((l.apps && l.apps.length) ? l.apps : ["mnt"]).indexOf(DIV) >= 0; }
+  function ledAppsText(l) { return ((l.apps && l.apps.length) ? l.apps : ["mnt"]).map(function (k) { return divName(k); }).join(", "); }
   /* A name used by more than one ledger (e.g. Travelling Expenses under two sub groups) carries its sub group. */
   function ledName(id) {
     var l = S.ledgers && S.ledgers[id]; if (!l) return "";
@@ -9694,7 +9744,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var sel = $("lgmCo"), cur = sel.value;
     fillSelect(sel, [["", "All companies"]].concat(activeCompanies().map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
     $("lgmAdd").hidden = !canLedgers(); if (canImport()) impButtons("ledgers", $("lgmAdd").parentNode);
-    var all = ledAll(), q = $("lgmQ").value.trim().toLowerCase(), cid = sel.value;
+    var all = ledAll().filter(ledInApp), q = $("lgmQ").value.trim().toLowerCase(), cid = sel.value;
     LED_MAINS.forEach(function (m, i) { var b = $(i ? "lgmSideI" : "lgmSideD"); b.setAttribute("aria-selected", LGM.side === m ? "true" : "false"); b.querySelector("span").textContent = "(" + all.filter(function (l) { return l.main === m && l.active !== false && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).length + ")"; });
     var rows = all.filter(function (l) { return l.main === LGM.side && (!cid || (l.companyIds || []).indexOf(cid) >= 0) && (!q || (l.name + " " + l.sub).toLowerCase().indexOf(q) >= 0); }).sort(ledCmp);
     var use = ledUse(), box = $("lgmList"); box.textContent = "";
@@ -9728,8 +9778,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var cf = el("div", { class: "f wide" }), ck = el("div", { class: "checks", id: "lfCos" }); cf.appendChild(el("span", { class: "lb" }, "Companies that use it")); cf.appendChild(ck); cf.appendChild(el("span", { class: "hint" }, "Tick several to share one ledger between companies.")); cf.appendChild(el("span", { class: "err", id: "lfCosE", hidden: "" })); body.appendChild(cf);
     buildChecks(ck, l.companyIds || []);
     var dv = el("div", { class: "f wide" }), dk = el("div", { class: "checks", id: "lfApps" }); dv.appendChild(el("span", { class: "lb" }, "Divisions that use it")); dv.appendChild(dk);
-    Object.keys(DIVS).forEach(function (k) { var lb = el("label", { class: "check" }), cb = el("input", { type: "checkbox", value: k }); cb.checked = (l.apps || []).indexOf(k) >= 0; lb.appendChild(cb); lb.appendChild(document.createTextNode(" " + DIVS[k].name)); dk.appendChild(lb); });
-    dv.appendChild(el("span", { class: "hint" }, "Purchasers in a division see only its ledgers. Leave all unticked to let every division use it.")); body.appendChild(dv);
+    var la = isNew ? (DIV ? [DIV] : []) : (l.apps && l.apps.length ? l.apps : ["mnt"]);
+    Object.keys(DIVS).forEach(function (k) { var lb = el("label", { class: "check" }), cb = el("input", { type: "checkbox", value: k }); cb.checked = la.indexOf(k) >= 0; if (DIV && k === DIV) cb.disabled = true; lb.appendChild(cb); lb.appendChild(document.createTextNode(" " + DIVS[k].name)); dk.appendChild(lb); });
+    dv.appendChild(el("span", { class: "hint" }, "Each division sees only its own ledgers; tick both to share one.")); body.appendChild(dv);
     var af = el("label", { class: "check" }), ac = el("input", { type: "checkbox", id: "lfAct" }); ac.checked = l.active !== false; af.appendChild(ac); af.appendChild(document.createTextNode(" Active (shown when choosing ledgers)")); if (!isNew) body.appendChild(af);
     /* A ledger nothing has used yet can be deleted; one in use can only be turned off. */
     var close0 = null;
@@ -9749,6 +9800,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (!nm) { errOn("lfName", "Type the ledger name."); ok = false; }
       else if (ledAll().some(function (x) { return x.id !== l.id && x.main === main && normName(x.sub) === normName(sb) && normName(x.name) === normName(nm) && (x.companyIds || []).some(function (c) { return cos.indexOf(c) >= 0; }); })) { errOn("lfName", "This ledger already exists in this sub group for one of these companies."); ok = false; }
       if (!cos.length) { errOn("lfCos", "Tick at least one company."); ok = false; }
+      if (!Array.prototype.some.call(dk.querySelectorAll("input"), function (x) { return x.checked; })) { toast("Tick the division that uses this ledger."); ok = false; }
       if (!ok) return false;
       var id = l.id || ("lg_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)), doc = { main: main, sub: sb, name: nm, companyIds: cos, apps: Array.prototype.filter.call(dk.querySelectorAll("input"), function (x) { return x.checked; }).map(function (x) { return x.value; }), active: isNew ? true : ac.checked, updatedAt: Date.now(), by: meId() };
       if (isNew) doc.createdAt = Date.now();
@@ -10091,9 +10143,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
      less the open-access charges the consumer paid to TNPDCL on the generator's behalf. The figures come from four TNPDCL documents
      (generation statement, energy allotment order, energy adjusted report, one HT bill per consumer); Claude reads them, the app checks
      them against each other, and issues the bill of supply with its covering letter. The rate per unit is the only figure kept here,
-     per consumer, from the Power Purchase Agreement. Records: solar_plants, solar_consumers, solar_rates, solar_months
+     per consumer, from the Power Purchase Agreement. The generators are the Renewable Energy companies' HTSCs (company.re). Records: solar_consumers, solar_rates, solar_months
      (<plant HTSC>_<YYYY-MM>, everything read for that month), solar_invoices and solar_receipts. */
-  var SOL_TABS = ["Solar Month", "Solar Invoices", "Solar Reports", "Solar Masters"];
+  var SOL_TABS = ["Solar Month", "Solar Invoices", "Solar Reports", "Consumers", "PPA Rates"];
   var SLOTS = ["C1", "C2", "C3", "C4", "C5"];
   /* The nine deductions on the bill of supply, in their fixed order, and where each comes from in the HT bill's OA abstract. */
   var SOL_DED = [["amr", "Service (AMR meter reading) charges", "C001"], ["trans", "Transmission charges", "C003"], ["sysop", "System operation charges", "C004"], ["rkvah", "RKVAh (PF) penalty", "C005"],
@@ -10102,9 +10154,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var SOL_GCH = [["C001", "MR", "AMR / meter reading"], ["C002", "OM", "O&M"], ["C003", "TRC", "Transmission"], ["C004", "SO", "System operation"], ["C005", "RK", "RKVAh penalty"], ["C006", "NE", "Import energy"], ["C007", "SH", "Scheduling"], ["C008", "O", "Other"], ["C010", "DC", "DSM"]];
   var WHEEL_RATE = 0.49967, SGT_RATE = 0.10, SOL_HSN = "27160000";
   var SOL = { plants: {}, cons: {}, rates: {}, months: {}, inv: {}, rcpt: {}, got: {}, plant: "", month: "", view: "month", htsc: "", log: [], busy: false, mside: "plants", ishow: "open" };
-  function solReady() { return ["solar_plants", "solar_consumers", "solar_rates", "solar_months", "solar_invoices", "solar_receipts"].every(function (k) { return SOL.got[k]; }); }
+  function solReady() { return ["solar_consumers", "solar_rates", "solar_months", "solar_invoices", "solar_receipts"].every(function (k) { return SOL.got[k]; }); }
   function solStart() {
-    [["solar_plants", "plants"], ["solar_consumers", "cons"], ["solar_rates", "rates"], ["solar_months", "months"], ["solar_invoices", "inv"], ["solar_receipts", "rcpt"]].forEach(function (c) {
+    [["solar_consumers", "cons"], ["solar_rates", "rates"], ["solar_months", "months"], ["solar_invoices", "inv"], ["solar_receipts", "rcpt"]].forEach(function (c) {
       S.db.collection(c[0]).onSnapshot(function (snap) {
         var m = {}; snap.docs.forEach(function (d) { var x = Object.assign({}, d.data() || {}); x.id = d.id; m[d.id] = x; });
         SOL[c[1]] = m; SOL.got[c[0]] = true; solRefresh();
@@ -10121,7 +10173,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function solRender() {
     var box = $("solBody"); box.textContent = ""; SOL.stale = false;
     if (!solReady()) { box.appendChild(el("div", { class: "card empty" }, "Opening energy billing.")); return; }
-    if (S.tab === "Solar Masters") solMasters(box);
+    if (S.tab === "Consumers" || S.tab === "PPA Rates") { SOL.mside = S.tab === "Consumers" ? "cons" : "rates"; solMasters(box); }
     else if (S.tab === "Solar Invoices") solInvoices(box);
     else if (S.tab === "Solar Reports") solReports(box);
     else if (SOL.view === "review" && SOL.htsc) solReview(box);
@@ -10138,11 +10190,22 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function monthShort(m) { if (!/^\d{4}-\d{2}$/.test(m || "")) return m || ""; var d = new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1); return d.toLocaleDateString("en-IN", { month: "short" }) + "-" + m.slice(2, 4); }
   function prevMonth() { var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return d.getFullYear() + "-" + pad(d.getMonth() + 1); }
   function solList(m) { return Object.keys(m).map(function (k) { return m[k]; }); }
-  function solPlants() { return solList(SOL.plants).filter(function (p) { return p.active !== false && (S.isAdmin || canStep("solar", p.companyId)); }).sort(function (a, b) { return natCmp(a.name, b.name); }); }
+  function solPlants() { return solList(PL()).filter(function (p) { return p.active !== false && (S.isAdmin || canStep("solar", p.companyId)); }).sort(function (a, b) { return natCmp(a.name, b.name); }); }
   /* Solar or Wind: from the generator, or from what an invoice saved. */
-  function plantKind(h) { var p = SOL.plants[h]; return p && p.kind === "wind" ? "wind" : "solar"; }
+  /* Each Renewable Energy company is a generator owner: its type (solar or windmill) and its HTSCs, each at a location,
+     with its inverters and panels, or its windmills. Monthly billing, invoices and checks work per HTSC. */
+  function PL() {
+    var m = {};
+    Object.keys(S.companies || {}).forEach(function (cid) {
+      var c = S.companies[cid], r = c.re; if (!r || coApps(c).indexOf("re") < 0) return;
+      (r.htscs || []).forEach(function (h) { var k = htscOf(h.htsc); if (!k) return; m[k] = { htsc: k, companyId: cid, name: (c.shortName || c.name) + (h.location ? " · " + h.location : ""), kind: r.kind === "wind" ? "wind" : "solar", location: h.location || "", capacityKw: htscKw(r.kind, h), active: c.active !== false }; });
+    });
+    return m;
+  }
+  function htscKw(kind, h) { return round2((kind === "wind" ? h.windmills || [] : h.inverters || []).reduce(function (s0, x) { return s0 + n0(x.kw); }, 0)); }
+  function plantKind(h) { var p = PL()[h]; return p && p.kind === "wind" ? "wind" : "solar"; }
   function kindWord(k) { return k === "wind" ? "wind" : "solar"; }
-  function plantName(h) { var p = SOL.plants[h]; return p ? p.name + " (" + h + ")" : h; }
+  function plantName(h) { var p = PL()[h]; return p ? p.name + " (" + h + ")" : h; }
   function consName(h) { var c = SOL.cons[h]; return c ? c.name : h; }
   function monthDoc(plant, month) { return SOL.months[plant + "_" + month] || null; }
   /* The PPA rate for a consumer in a month: the latest one in force, for this generator or for any. */
@@ -10201,8 +10264,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var ps = solPlants();
     var hd = el("div", { class: "head" }), ht = el("div"); ht.appendChild(el("h2", null, "Monthly Billing")); ht.appendChild(el("p", { class: "sub" }, "For solar plants and windmills alike. Upload the month's TNPDCL documents: the generation statement, energy allotment order, energy adjusted report and each consumer's HT bill. Claude reads them, the app checks them against each other, and each consumer's bill of supply is issued from here."));
     hd.appendChild(ht); box.appendChild(hd);
-    if (!ps.length) { var e0 = el("div", { class: "card empty" }, "Add the solar plant or windmill (its HTSC, company and bank details) in Masters first."); box.appendChild(e0); if (canSolar()) { var b0 = el("button", { class: "btn primary", type: "button", style: "margin-top:12px" }, "Open Masters"); b0.addEventListener("click", function () { setTab("Solar Masters"); }); box.appendChild(b0); } return; }
-    if (!SOL.plant || !SOL.plants[SOL.plant]) SOL.plant = ps[0].htsc;
+    if (!ps.length) { var e0 = el("div", { class: "card empty" }, "Set up a company with its generator HTSCs first: Reports › Masters › Companies (an admin does this)."); box.appendChild(e0); var b0 = el("button", { class: "btn primary", type: "button", style: "margin-top:12px" }, "Open Companies"); b0.addEventListener("click", function () { setTab("Companies"); }); box.appendChild(b0); return; }
+    if (!SOL.plant || !PL()[SOL.plant]) SOL.plant = ps[0].htsc;
     if (!SOL.month) { var ms = solList(SOL.months).filter(function (m) { return m.plant === SOL.plant; }).map(function (m) { return m.month; }).sort(); SOL.month = ms.length ? ms[ms.length - 1] : prevMonth(); }
     var bar = el("div", { class: "head", style: "margin-top:0;align-items:flex-end;flex-wrap:wrap;gap:10px" });
     var psel = el("select", { class: "field", id: "solPlant", "aria-label": "Generator", style: "width:auto;min-width:240px" }); fillSelect(psel, ps.map(function (p) { return [p.htsc, p.name + " · " + p.htsc]; }), SOL.plant);
@@ -10265,7 +10328,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     return b;
   }
   /* Consumer details as read from the HT bill or allotment order, to start a master record. */
-  function consFromRead(md, h) { var ht = (md.ht || {})[h] || {}, al = (((md.allot || {}).consumers) || {})[h] || {}; return { htsc: h, name: ht.name || al.name || "", address: ht.address || "", gstin: ht.gstin || "", circle: ht.circle || al.circle || "" }; }
+  function consFromRead(md, h) { var ht = (md.ht || {})[h] || {}, al = (((md.allot || {}).consumers) || {})[h] || {}; return { htsc: h, name: ht.name || al.name || "", address: ht.address || "", gstin: ht.gstin || "" }; }
 
   /* ---- Review: one consumer's figures, editable, with each check ---- */
   function solReview(box) {
@@ -10287,7 +10350,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     SOL_DED.forEach(function (d) { if (d[0] === "sgt") return; g.appendChild(fld(d[1], inp("svD_" + d[0], String(c.ded[d[0]]), { inputmode: "decimal", class: "field num" }))); });
     g.appendChild(fld("Self-generation tax, whole bill", inp("svSgt", String(n0(ht.sgtWhole)), { inputmode: "decimal", class: "field num" }), "Only " + units(c.billed) + " × ₹" + SGT_RATE + " is deducted."));
     Array.prototype.forEach.call(g.querySelectorAll("input"), function (i) { i.disabled = locked; });
-    var meta = el("p", { class: "sub", style: "margin:10px 0 0" }, "HT bill " + (ht.billNo || "") + (ht.billDate ? " of " + fmtDate(ht.billDate) : "") + (ht.circle ? " · " + ht.circle : "") + ". Change a figure only to match the printed HT bill; the change is noted on the checks."); f.appendChild(meta);
+    var meta = el("p", { class: "sub", style: "margin:10px 0 0" }, "HT bill " + (ht.billNo || "") + (ht.billDate ? " of " + fmtDate(ht.billDate) : "") + ". Change a figure only to match the printed HT bill; the change is noted on the checks."); f.appendChild(meta);
     if (ht.file) f.appendChild(solFileBtn(ht.file));
     if (!locked) {
       var acts = el("div", { class: "acts", style: "margin-top:12px" }), sv = el("button", { class: "btn primary", type: "button" }, "Save Figures");
@@ -10311,7 +10374,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ---- Reading the uploads with Claude ---- */
   function solPrompt(text, scanned) {
-    var mine = solList(SOL.plants).map(function (p) { return p.htsc; });
+    var mine = solList(PL()).map(function (p) { return p.htsc; });
     return [
       "You are reading one document issued by TNPDCL (Tamil Nadu's power distribution company) for a solar plant's or windmill's (wind energy generator, WEG) monthly open-access billing in India.",
       mine.length ? "Our generators' HTSC numbers: " + JSON.stringify(mine) + "." : "",
@@ -10363,12 +10426,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (["generation", "allotment", "adjusted", "htbill"].indexOf(type) < 0) { it.st = "warn"; it.msg = "Not a TNPDCL statement this app uses; left out."; return; }
       var month = /^\d{4}-\d{2}$/.test(r.month || "") ? r.month : SOL.month, plant = htscOf(r.generator_htsc);
       if (type === "htbill") {
-        var mine = (r.oa || []).filter(function (o) { return SOL.plants[htscOf(o.generator_htsc)]; });
+        var mine = (r.oa || []).filter(function (o) { return PL()[htscOf(o.generator_htsc)]; });
         plant = mine.length ? htscOf((mine.filter(function (o) { return htscOf(o.generator_htsc) === SOL.plant; })[0] || mine[0]).generator_htsc) : SOL.plant;
       }
-      if (!SOL.plants[plant]) {
-        if (type === "generation" && plant && canSolar()) { it.st = "warn"; it.msg = "Generator " + plant + " isn't in Masters. Add it, then upload again."; plantForm(null, { htsc: plant, name: r.company || "", capacityKw: n0(r.capacity_kw), circle: r.circle || "", voltage: r.voltage || "" }); return; }
-        if (!plant || !SOL.plants[plant]) plant = SOL.plant;
+      if (!PL()[plant]) {
+        if (type === "generation" && plant) { it.st = "warn"; it.msg = "Generator HTSC " + plant + " isn't under any company. Add it to the company in Reports › Masters › Companies, then upload again."; return; }
+        if (!plant || !PL()[plant]) plant = SOL.plant;
       }
       it.msg = "Keeping the file"; solRender();
       var path = (S.mode === "demo" ? "demo" : "live") + "/solar/" + plant + "/" + month + "/" + Date.now().toString(36) + "-" + fileSafeName(it.f.name), t = fileType(it.f);
@@ -10381,7 +10444,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
             SOL_GCH.forEach(function (g) { d.gen.charges[g[0]] = n0((r.charges || {})[g[0]]); });
             what = "Generation statement, net " + units(d.gen.netTotal) + " units";
           } else if (type === "allotment") {
-            var cs = {}; (r.consumers || []).forEach(function (c) { var h = htscOf(c.htsc); if (!h) return; var ch = {}; SOL_GCH.forEach(function (g) { ch[g[0]] = n0((c.charges || {})[g[1]]); }); cs[h] = { name: c.name || "", circle: c.circle || "", slots: arr5(c.slots), total: n0(c.total) || sum5(c.slots), charges: ch, banking: n0(c.banking) }; });
+            var cs = {}; (r.consumers || []).forEach(function (c) { var h = htscOf(c.htsc); if (!h) return; var ch = {}; SOL_GCH.forEach(function (g) { ch[g[0]] = n0((c.charges || {})[g[1]]); }); cs[h] = { name: c.name || "", slots: arr5(c.slots), total: n0(c.total) || sum5(c.slots), charges: ch, banking: n0(c.banking) }; });
             d.allot = { consumers: cs, file: file, readAt: now }; what = "Allotment order, " + plural(Object.keys(cs).length, "consumer");
           } else if (type === "adjusted") {
             var ca = {}; (r.consumers || []).forEach(function (c) { var h = htscOf(c.htsc); if (!h) return; ca[h] = { name: c.name || "", loss: n0(c.loss_pct), gross: arr5(c.gross), net: arr5(c.net), adjusted: arr5(c.adjusted), surplus: n0(c.surplus) }; });
@@ -10389,7 +10452,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
           } else {
             var h = htscOf(r.consumer_htsc), row = (r.oa || []).filter(function (o) { return htscOf(o.generator_htsc) === plant; })[0] || {}, oa = { wheeling: n0(row.wheeling) };
             SOL_GCH.forEach(function (g) { oa[g[0]] = n0(row[g[0]]); });
-            d.ht = d.ht || {}; d.ht[h] = { consumer: h, name: r.name || "", address: r.address || "", gstin: normId(r.gstin || ""), circle: r.circle || "", billNo: r.bill_no || "", billDate: r.bill_date || "", dueDate: r.due_date || "", solar: arr5(plantKind(plant) === "wind" ? r.wind_units : r.solar_units), wind: arr5(r.wind_units), solarRaw: arr5(r.solar_units), otherUnits: n0(r.other_sources_units), oa: oa, sgtWhole: n0(r.self_generation_tax), netPayable: n0(r.net_payable), gens: (r.oa || []).map(function (o) { return htscOf(o.generator_htsc); }), file: file, readAt: now };
+            d.ht = d.ht || {}; d.ht[h] = { consumer: h, name: r.name || "", address: r.address || "", gstin: normId(r.gstin || ""), billNo: r.bill_no || "", billDate: r.bill_date || "", dueDate: r.due_date || "", solar: arr5(plantKind(plant) === "wind" ? r.wind_units : r.solar_units), wind: arr5(r.wind_units), solarRaw: arr5(r.solar_units), otherUnits: n0(r.other_sources_units), oa: oa, sgtWhole: n0(r.self_generation_tax), netPayable: n0(r.net_payable), gens: (r.oa || []).map(function (o) { return htscOf(o.generator_htsc); }), file: file, readAt: now };
             what = "HT bill, " + (r.name || h) + ", " + units(sum5(plantKind(plant) === "wind" ? r.wind_units : r.solar_units)) + " " + kindWord(plantKind(plant)) + " units" + (row.generator_htsc ? "" : " (no OA rows for " + plant + ")");
           }
         }).then(function () {
@@ -10409,7 +10472,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     return { seq: top + 1, fy: fy, no: (top + 1) + "/" + fy };
   }
   function issueForm(md, c) {
-    var pl = SOL.plants[md.plant], co = pl && S.companies[pl.companyId], cn = SOL.cons[c.htsc];
+    var pl = PL()[md.plant], co = pl && S.companies[pl.companyId], cn = SOL.cons[c.htsc];
     if (!pl || !co || !cn) { toast("Set up the generator's company and the consumer in Masters first."); return; }
     c = solCalc(md, c.htsc); if (c.blocks) { toast("Clear the checks marked Blocks first."); return; }
     var body = el("div", { class: "mform" }), d0 = todayYmd(), nx = nextInvNo(pl.companyId, d0);
@@ -10429,8 +10492,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var n = nextInvNo(pl.companyId, dt), id = newId("si"), now = Date.now();
       var doc = { companyId: pl.companyId, plant: md.plant, consumer: c.htsc, month: md.month, no: n.no, seq: n.seq, fy: n.fy, date: dt, dueDate: addDays(dt, days), creditDays: days,
         units: c.billed, rate: n0(c.rate.rate), rateRef: c.rate.ref || "", A: c.A, ded: c.ded, B: c.B, net: c.net, gross: c.gross, loss: c.loss,
-        plantSnap: { name: pl.name, htsc: pl.htsc, circle: pl.circle || "", capacityKw: pl.capacityKw || 0, kind: plantKind(pl.htsc) },
-        consSnap: { name: cn.name, htsc: cn.htsc, address: cn.address || "", gstin: cn.gstin || "", pan: cn.pan || "", stateCode: cn.stateCode || "33", circle: cn.circle || "", addressee: cn.addressee || "The Managing Director" },
+        plantSnap: { name: pl.name, htsc: pl.htsc, location: pl.location || "", capacityKw: pl.capacityKw || 0, kind: plantKind(pl.htsc) },
+        consSnap: { name: cn.name, htsc: cn.htsc, address: cn.address || "", gstin: cn.gstin || "", pan: cn.pan || "", stateCode: cn.stateCode || "33", voltage: cn.voltage || "", addressee: cn.addressee || "The Managing Director" },
         checks: c.checks.map(function (x) { return { lvl: x.lvl, label: x.label, msg: x.msg }; }), status: "issued", issuedAt: now, issuedBy: meId(), issuedByName: pnm(preparedByText()) };
       return retry(function () { return S.db.doc("solar_invoices/" + id).set(doc); }).then(function () {
         SOL.inv[id] = Object.assign({ id: id }, doc); toast("Invoice " + n.no + " issued."); solRender();
@@ -10453,43 +10516,49 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       .then(function () { if (btn) { btn.disabled = false; btn.textContent = label; } });
   }
   function solHead(doc, iv) {
-    var co = S.companies[iv.companyId] || {}, pl = SOL.plants[iv.plant] || {}, L = 42, R = 553, y = 40;
+    var co = S.companies[iv.companyId] || {}, pl = PL()[iv.plant] || {}, L = 42, R = 553, y = 40;
     if (co.logo) { try { doc.addImage(co.logo, L, y, 46, 46); } catch (e) {} }
     var x = co.logo ? L + 58 : L;
     doc.setFont("Lato", "bold"); doc.setFontSize(15); doc.setTextColor(16, 40, 31); doc.text(co.name || "", x, y + 16);
     doc.setFont("Lato", "normal"); doc.setFontSize(8.5); doc.setTextColor(70, 84, 76);
     var ad = doc.splitTextToSize(co.address || "", R - x); doc.text(ad.slice(0, 3), x, y + 29);
-    var ids = ["GSTIN " + (co.gstin || "-"), pl.pan ? "PAN " + pl.pan : "", "State code " + (co.stateCode || "33")].filter(Boolean).join("   ");
+    var ids = ["GSTIN " + (co.gstin || "-"), "State code " + (co.stateCode || "33")].join("   ");
     doc.text(ids, x, y + 29 + Math.min(ad.length, 3) * 10);
     doc.setDrawColor(0, 112, 74); doc.setLineWidth(1.2); doc.line(L, 108, R, 108);
     return 124;
   }
-  function solLetter(doc, iv) {
-    var L = 42, R = 553, y = solHead(doc, iv), cs = iv.consSnap, pl = iv.plantSnap, co = S.companies[iv.companyId] || {}, p = SOL.plants[iv.plant] || {};
-    doc.setTextColor(30, 40, 35); doc.setFont("Lato", "normal"); doc.setFontSize(10.5);
-    doc.text("Date: " + fmtDate(iv.date), R, y + 6, { align: "right" }); y += 24;
-    doc.text("To", L, y); y += 15; doc.setFont("Lato", "bold"); doc.text(cs.addressee || "The Managing Director", L, y); y += 14; doc.text(cs.name, L, y); y += 14; doc.setFont("Lato", "normal");
-    doc.splitTextToSize(cs.address || "", 300).slice(0, 4).forEach(function (ln) { doc.text(ln, L, y); y += 13; }); y += 12;
-    doc.setFont("Lato", "bold");
-    var subj = doc.splitTextToSize("Sub: Bill of supply for " + kindWord(pl.kind) + " energy adjusted for the month of " + monthLabel(iv.month) + " from our " + kindWord(pl.kind).toUpperCase() + " HTSC " + pl.htsc + (pl.circle ? " (" + pl.circle + ")" : "") + " to your HTSC " + cs.htsc + (cs.circle ? " (" + cs.circle + ")" : ""), R - L);
-    subj.forEach(function (ln) { doc.text(ln, L, y); y += 14; }); y += 10; doc.setFont("Lato", "normal");
-    doc.text("Dear Sir,", L, y); y += 20;
-    var para = "We enclose our bill of supply No. " + iv.no + " dated " + fmtDate(iv.date) + " for " + units(iv.units) + " units of " + kindWord(pl.kind) + " energy adjusted in your HT bill for " + monthLabel(iv.month) + ", for a net amount of " + rupeePdf(iv.net) + " (" + inWords(iv.net) + "), after deducting the open-access charges paid by you to TNPDCL on our behalf.";
-    doc.splitTextToSize(para, R - L).forEach(function (ln) { doc.text(ln, L, y); y += 15; }); y += 6;
-    doc.splitTextToSize("Kindly arrange payment by " + fmtDate(iv.dueDate) + " to our account below and send us the payment details.", R - L).forEach(function (ln) { doc.text(ln, L, y); y += 15; }); y += 8;
-    y = solBank(doc, p, L, y);
-    y += 30; doc.text("Thanking you,", L, y); y += 15; doc.text("Yours faithfully,", L, y); y += 15; doc.setFont("Lato", "bold"); doc.text("For " + (co.name || ""), L, y); y += 46; doc.setFont("Lato", "normal");
-    doc.text(p.signName || "Authorised Signatory", L, y); if (p.signRole) doc.text(p.signRole, L, y + 13);
-    doc.setFontSize(9); doc.setTextColor(94, 110, 102); doc.text("Encl: Bill of supply No. " + iv.no, L, 790);
+  /* The company's own wording, with {fields} filled in. A line wrapped in ** is printed bold. */
+  var TPL_FIELDS = ["Company Name", "Invoice No", "Invoice Date", "Due Date", "Month", "Energy", "ENERGY", "Generator HTSC", "Generator Location", "Consumer Name", "Consumer Address", "Consumer HTSC", "Consumer GSTIN", "Addressee", "Units", "Rate", "Energy Charges", "Deductions", "Net", "Net in Words"];
+  var TPL0 = {
+    letter: "Date: {Invoice Date}\n\nTo\n**{Addressee}**\n**{Consumer Name}**\n{Consumer Address}\n\n**Sub: Bill of supply for {Energy} energy adjusted for the month of {Month} from our {ENERGY} HTSC {Generator HTSC} to your HTSC {Consumer HTSC}**\n\nDear Sir,\n\nWe enclose our bill of supply No. {Invoice No} dated {Invoice Date} for {Units} units of {Energy} energy adjusted in your HT bill for {Month}, for a net amount of Rs. {Net} ({Net in Words}), after deducting the open-access charges paid by you to TNPDCL on our behalf.\n\nKindly arrange payment by {Due Date} to our account below and send us the payment details.\n\nBank:\nAccount number:\nIFSC:\n\nThanking you,\nYours faithfully,\n**For {Company Name}**\n\n\n\nAuthorised Signatory",
+    line: "Energy charges for adjusted units from our {ENERGY} HTSC {Generator HTSC} to your HTSC {Consumer HTSC} for the month of {Month}",
+    footer: "Electrical energy is exempt from GST; this is a bill of supply. Payment due by {Due Date}.\n\n**Bank details**\nBank:\nAccount number:\nIFSC:\nPAN:\n\n**For {Company Name}**\n\n\n\nAuthorised Signatory"
+  };
+  function coTpl(cid) { var t = ((S.companies[cid] || {}).re || {}).tpl || {}; return { letter: t.letter || TPL0.letter, line: t.line || TPL0.line, footer: t.footer || TPL0.footer }; }
+  function tplVals(iv) {
+    var co = S.companies[iv.companyId] || {}, cs = iv.consSnap, pl = iv.plantSnap, k = kindWord(pl.kind);
+    return { "Company Name": co.name || "", "Invoice No": iv.no, "Invoice Date": fmtDate(iv.date), "Due Date": fmtDate(iv.dueDate), "Month": monthLabel(iv.month), "Energy": k, "ENERGY": k.toUpperCase(), "Generator HTSC": pl.htsc, "Generator Location": pl.location || "",
+      "Consumer Name": cs.name, "Consumer Address": cs.address || "", "Consumer HTSC": cs.htsc, "Consumer GSTIN": cs.gstin || "", "Addressee": cs.addressee || "The Managing Director", "Units": units(iv.units), "Rate": String(iv.rate),
+      "Energy Charges": Math.round(n0(iv.A)).toLocaleString("en-IN"), "Deductions": Math.round(n0(iv.B)).toLocaleString("en-IN"), "Net": Math.round(n0(iv.net)).toLocaleString("en-IN"), "Net in Words": inWords(iv.net) };
   }
-  function rupeePdf(n) { return "Rs. " + Math.round(n0(n)).toLocaleString("en-IN"); }
-  function solBank(doc, p, L, y) {
-    doc.setFont("Lato", "bold"); doc.setFontSize(10); doc.text("Bank details", L, y); y += 14; doc.setFont("Lato", "normal");
-    [["Bank", (p.bank || "") + (p.branch ? ", " + p.branch : "")], ["Account number", p.acNo || ""], ["IFSC", p.ifsc || ""]].forEach(function (r) { doc.text(r[0], L, y); doc.text(": " + r[1], L + 90, y); y += 13; });
-    return y;
+  function tplFill(t, v) { return String(t || "").replace(/\{([^{}]+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; }); }
+  /* Prints template text from y, wrapping each line; returns where it ended. */
+  function tplPrint(doc, text, x, y, w, lh) {
+    String(text).split("\n").forEach(function (ln) {
+      var b = /^\*\*.*\*\*$/.test(ln.trim()); if (b) ln = ln.trim().slice(2, -2);
+      doc.setFont("Lato", b ? "bold" : "normal");
+      if (!ln.trim()) { y += lh * 0.7; return; }
+      doc.splitTextToSize(ln, w).forEach(function (l2) { if (y > 800) { doc.addPage(); y = 50; } doc.text(l2, x, y); y += lh; });
+    });
+    doc.setFont("Lato", "normal"); return y;
+  }
+  function solLetter(doc, iv) {
+    var L = 42, R = 553, y = solHead(doc, iv) + 6;
+    doc.setTextColor(30, 40, 35); doc.setFontSize(10.5);
+    tplPrint(doc, tplFill(coTpl(iv.companyId).letter, tplVals(iv)), L, y, R - L, 14.5);
   }
   function solBill(doc, iv, copy) {
-    var L = 42, R = 553, y = solHead(doc, iv), cs = iv.consSnap, pl = iv.plantSnap, co = S.companies[iv.companyId] || {}, p = SOL.plants[iv.plant] || {};
+    var L = 42, R = 553, y = solHead(doc, iv), cs = iv.consSnap, pl = iv.plantSnap, co = S.companies[iv.companyId] || {}, tv = tplVals(iv), tp = coTpl(iv.companyId);
     doc.setTextColor(16, 40, 31); doc.setFont("Lato", "bold"); doc.setFontSize(14); doc.text("BILL OF SUPPLY", (L + R) / 2, y + 4, { align: "center" });
     doc.setFontSize(8.5); doc.setTextColor(0, 112, 74); doc.text(copy, R, y + 4, { align: "right" }); y += 22;
     doc.setTextColor(30, 40, 35); doc.setFontSize(10);
@@ -10506,7 +10575,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     doc.setFillColor(236, 245, 240); doc.rect(L, y, R - L, 18, "F"); doc.setFont("Lato", "bold"); doc.setFontSize(9);
     [["HSN", 0, "left"], ["Particulars", 1, "left"], ["Units", 2, "right"], ["Rate (Rs.)", 3, "right"], ["Amount (Rs.)", 4, "right"]].forEach(function (h) { doc.text(h[0], h[2] === "right" ? cols[h[1] + 1] - 6 : cols[h[1]] + 6, y + 12, { align: h[2] }); });
     y += 18; doc.setFont("Lato", "normal"); doc.setFontSize(9.5);
-    var part = doc.splitTextToSize("Energy charges for adjusted units from our " + kindWord(pl.kind).toUpperCase() + " HTSC " + pl.htsc + (pl.circle ? "/" + pl.circle : "") + " to your HTSC " + cs.htsc + (cs.circle ? "/" + cs.circle : "") + " for the month of " + monthLabel(iv.month), cols[2] - cols[1] - 12);
+    var part = doc.splitTextToSize(tplFill(tp.line, tv), cols[2] - cols[1] - 12);
     var h0 = Math.max(26, part.length * 12 + 10);
     doc.text(SOL_HSN, cols[0] + 6, y + 14); part.forEach(function (ln, i) { doc.text(ln, cols[1] + 6, y + 14 + i * 12); });
     doc.text(units(iv.units), cols[3] - 6, y + 14, { align: "right" }); doc.text(String(iv.rate.toFixed(2)), cols[4] - 6, y + 14, { align: "right" }); doc.text(amtPdf(iv.A), cols[5] - 6, y + 14, { align: "right" });
@@ -10521,11 +10590,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     doc.text("Rounding", cols[1] + 6, y + 10); doc.text(amtPdf(rnd, true), R - 6, y + 10, { align: "right" }); y += 16;
     doc.setFillColor(236, 245, 240); doc.rect(L, y, R - L, 22, "F"); doc.setFont("Lato", "bold"); doc.setFontSize(11); doc.text("Net total", cols[1] + 6, y + 15); doc.text("Rs. " + amtPdf(iv.net), R - 6, y + 15, { align: "right" }); y += 30;
     doc.setFont("Lato", "normal"); doc.setFontSize(9.5); doc.splitTextToSize("Amount in words: " + inWords(iv.net), R - L).forEach(function (ln) { doc.text(ln, L, y); y += 12; }); y += 4;
-    doc.setFontSize(8.5); doc.setTextColor(94, 110, 102); doc.text("Electrical energy is exempt from GST; this is a bill of supply. Payment due by " + fmtDate(iv.dueDate) + ".", L, y); y += 20;
     doc.setTextColor(30, 40, 35); doc.setFontSize(9.5);
-    var yb = solBank(doc, p, L, y);
-    doc.setFont("Lato", "normal"); doc.text("GSTIN " + (co.gstin || "-") + "   PAN " + (p.pan || "-") + "   State code " + (co.stateCode || "33"), L, yb + 4);
-    doc.setFont("Lato", "bold"); doc.text("For " + (co.name || ""), R, y + 2, { align: "right" }); doc.setFont("Lato", "normal"); doc.text(p.signName || "Authorised Signatory", R, y + 52, { align: "right" }); if (p.signRole) doc.text(p.signRole, R, y + 64, { align: "right" });
+    tplPrint(doc, tplFill(tp.footer, tv), L, y + 6, R - L, 12.5);
   }
   function amtPdf(n, signed) { var v = round2(n0(n)); return (signed && v < 0 ? "-" : "") + Math.abs(v).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
@@ -10577,7 +10643,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     body.appendChild(fld("Date received", inp("srDate", todayYmd(), { type: "date" })));
     body.appendChild(fld("Amount received (₹)", inp("srAmt", fmtInput(String(Math.max(0, r0.bal))), { inputmode: "decimal", class: "field num" }), "Balance due " + rs(r0.bal) + "."));
     body.appendChild(fld("TDS deducted under 194Q (₹)", inp("srTds", "", { inputmode: "decimal", class: "field num" }), "Leave blank if none. It counts towards the invoice, and is claimed through Form 26AS."));
-    body.appendChild(fld("Bank", inp("srBank", (SOL.plants[iv.plant] || {}).bank || "", { maxlength: "60" })));
+    body.appendChild(fld("Bank", inp("srBank", "", { maxlength: "60" })));
     body.appendChild(fld("UTR / reference", inp("srUtr", "", { maxlength: "40" })));
     body.appendChild(fld("Note", inp("srNote", "", { maxlength: "160" })));
     popForm("Record receipt", iv.no + " · " + iv.consSnap.name + " · net " + rs(iv.net), body, "Save", function () {
@@ -10645,68 +10711,108 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
   }
 
-  /* ---- Masters ---- */
+  /* ---- A Renewable Energy company: generator type, its HTSCs and what is at each, and its invoice wording ---- */
+  /* Makes typed before are offered again; windmill, inverter and panel makes are separate lists. */
+  function reMakes(kind) { var m = {}; Object.keys(S.companies || {}).forEach(function (k) { ((S.companies[k].re || {}).htscs || []).forEach(function (h) { (h[kind] || []).forEach(function (x) { if (x.make) m[x.make] = 1; }); }); }); ((S.coRe || {}).htscs || []).forEach(function (h) { (h[kind] || []).forEach(function (x) { if (x.make) m[x.make] = 1; }); }); return Object.keys(m).sort(natCmp); }
+  function makeList(kind) { var id = "mk_" + kind, dl = $(id); if (!dl) { dl = el("datalist", { id: id }); document.body.appendChild(dl); } dl.textContent = ""; reMakes(kind).forEach(function (v) { dl.appendChild(el("option", { value: v })); }); return id; }
+  function renderCoRe() {
+    var box = $("coRe"); box.hidden = !S.coRe; box.textContent = ""; if (!S.coRe) return;
+    var R = S.coRe, wind = R.kind === "wind";
+    box.appendChild(el("h3", { style: "margin:6px 0 4px" }, "Renewable Energy"));
+    var ks = el("select", { class: "field", id: "reKind", style: "max-width:260px" }); fillSelect(ks, [["solar", "Solar plant"], ["wind", "Windmill"]], R.kind || "solar");
+    ks.addEventListener("change", function () { R.kind = ks.value; renderCoRe(); }); box.appendChild(fld("Generator type", ks, "Every HTSC of this company is of this type. It decides the HT bill row billed (SOLAR or WIND) and the wording on the bill."));
+    box.appendChild(el("span", { class: "lb", style: "margin-top:10px;display:block" }, "Generator HTSCs"));
+    box.appendChild(el("span", { class: "hint" }, "At least one is needed to finish setting the company up. Each HTSC has a location and " + (wind ? "one or more windmills, each with its make and capacity." : "its inverters (make, capacity) and solar panels (make, number, capacity).")));
+    R.htscs = R.htscs || [];
+    R.htscs.forEach(function (h, hi) {
+      var cd = el("div", { class: "card rehtsc" }), top = el("div", { class: "solgrid" });
+      var hi1 = inp("reH_" + hi, h.htsc || "", { maxlength: "20", class: "field mono" }); hi1.addEventListener("input", function () { h.htsc = hi1.value; }); top.appendChild(fld("HTSC", hi1));
+      var lo = inp("reL_" + hi, h.location || "", { maxlength: "60" }); lo.addEventListener("input", function () { h.location = lo.value; }); top.appendChild(fld("Location", lo));
+      cd.appendChild(top);
+      function rows(key, label, cols) {
+        h[key] = h[key] || []; var w = el("div", { class: "rerows" }); w.appendChild(el("b", null, label + " (" + h[key].length + ")"));
+        var lid = makeList(key);
+        h[key].forEach(function (x, xi) {
+          var r = el("div", { class: "rerow" });
+          cols.forEach(function (c) { var i = inp("", x[c[0]] == null ? "" : String(x[c[0]]), Object.assign({ placeholder: c[1], "aria-label": c[1] }, c[0] === "make" ? { list: lid, maxlength: "40" } : { inputmode: "decimal", class: "field num" })); i.removeAttribute("id"); i.addEventListener("input", function () { x[c[0]] = c[0] === "make" ? i.value : i.value.trim(); }); r.appendChild(i); });
+          var rm = el("button", { type: "button", class: "btn sm", "aria-label": "Remove" }, "Remove"); rm.addEventListener("click", function () { h[key].splice(xi, 1); renderCoRe(); }); r.appendChild(rm); w.appendChild(r);
+        });
+        var ad = el("button", { type: "button", class: "btn sm" }, "Add " + label.replace(/s$/, "").toLowerCase()); ad.addEventListener("click", function () { h[key].push({}); renderCoRe(); }); w.appendChild(ad); cd.appendChild(w);
+      }
+      if (wind) rows("windmills", "Windmills", [["make", "Make"], ["kw", "Capacity (kW)"]]);
+      else { rows("inverters", "Inverters", [["make", "Make"], ["kw", "Capacity (kW)"]]); rows("panels", "Solar panels", [["make", "Make"], ["count", "No. of panels"], ["kw", "Capacity (kW)"]]); }
+      var cap = htscKw(R.kind, h); cd.appendChild(el("span", { class: "hint" }, cap ? "Capacity " + cap.toLocaleString("en-IN") + " kW" : ""));
+      var del = el("button", { type: "button", class: "link-btn", style: "color:var(--bad)" }, "Remove this HTSC"); del.addEventListener("click", function () { R.htscs.splice(hi, 1); renderCoRe(); }); cd.appendChild(del);
+      box.appendChild(cd);
+    });
+    var ah = el("button", { type: "button", class: "btn" }, "Add HTSC"); ah.addEventListener("click", function () { R.htscs.push(wind ? { windmills: [{}] } : { inverters: [{}], panels: [{}] }); renderCoRe(); }); box.appendChild(ah);
+    /* invoice wording */
+    R.tpl = R.tpl || {};
+    box.appendChild(el("h3", { style: "margin:18px 0 4px" }, "Invoice wording"));
+    box.appendChild(el("p", { class: "hint", style: "margin:0 0 8px" }, "Edit the covering letter, the line on the bill and the bill's footer (bank details, PAN, signatory). Fields in braces are filled in: " + TPL_FIELDS.map(function (f) { return "{" + f + "}"; }).join(" ") + ". Wrap a whole line in ** to print it bold. The amounts table is always added by the app."));
+    [["letter", "Covering letter", 14], ["line", "Line on the bill", 2], ["footer", "Bill footer", 9]].forEach(function (t) {
+      var ta = el("textarea", { class: "field", id: "reT_" + t[0], rows: String(t[2]), style: "font-family:inherit" }); ta.value = R.tpl[t[0]] || TPL0[t[0]];
+      ta.addEventListener("input", function () { R.tpl[t[0]] = ta.value; }); box.appendChild(fld(t[1], ta, "", true));
+    });
+    var pa = el("div", { class: "acts" }), pv = el("button", { type: "button", class: "btn" }, "Preview PDF"), rs = el("button", { type: "button", class: "link-btn" }, "Put back the standard wording");
+    pv.addEventListener("click", function () { coRePreview(pv); }); rs.addEventListener("click", function () { R.tpl = {}; renderCoRe(); }); pa.appendChild(pv); pa.appendChild(rs); box.appendChild(pa);
+  }
+  function coReCheck() {
+    var R = S.coRe; if (!R) return "";
+    if (!(R.htscs || []).length) return "Add at least one generator HTSC.";
+    var seen = {}, own = {};
+    Object.keys(S.companies).forEach(function (k) { if (k === S.editing) return; ((S.companies[k].re || {}).htscs || []).forEach(function (h) { own[htscOf(h.htsc)] = S.companies[k].name; }); });
+    for (var i = 0; i < R.htscs.length; i++) {
+      var h = R.htscs[i], k = htscOf(h.htsc);
+      if (!k) return "Type the HTSC number on every row.";
+      if (seen[k]) return "HTSC " + k + " is entered twice."; seen[k] = 1;
+      if (own[k]) return "HTSC " + k + " is already under " + own[k] + ".";
+      if (!String(h.location || "").trim()) return "Type the location of HTSC " + k + ".";
+      var list = R.kind === "wind" ? h.windmills || [] : h.inverters || [];
+      if (!list.length) return R.kind === "wind" ? "Add the windmills of HTSC " + k + "." : "Add the inverters of HTSC " + k + ".";
+      var bad = list.concat(R.kind === "wind" ? [] : h.panels || []).some(function (x) { return !String(x.make || "").trim() || !(n0(x.kw) > 0) || (x.count != null && x.count !== "" && !(n0(x.count) > 0)); });
+      if (bad) return "Every " + (R.kind === "wind" ? "windmill" : "inverter and panel row") + " of HTSC " + k + " needs a make and a capacity in kW.";
+    }
+    return "";
+  }
+  function coReOut() {
+    var R = S.coRe, clean = function (a, cnt) { return (a || []).map(function (x) { var o = { make: String(x.make || "").trim(), kw: round2(n0(x.kw)) }; if (cnt) o.count = Math.round(n0(x.count)); return o; }); };
+    return { kind: R.kind === "wind" ? "wind" : "solar", htscs: (R.htscs || []).map(function (h) { var o = { htsc: htscOf(h.htsc), location: String(h.location || "").trim() }; if (R.kind === "wind") o.windmills = clean(h.windmills); else { o.inverters = clean(h.inverters); o.panels = clean(h.panels, true); } return o; }),
+      tpl: { letter: (R.tpl || {}).letter || "", line: (R.tpl || {}).line || "", footer: (R.tpl || {}).footer || "" } };
+  }
+  /* A sample bill in this wording, with made-up figures. */
+  function coRePreview(btn) {
+    var R = S.coRe, id = S.editing === "new" ? "__preview" : S.editing, saved = S.companies[id];
+    S.companies[id] = Object.assign({}, saved || {}, { name: $("fName").value.trim() || "Company name", address: $("fAddr").value.trim(), gstin: normId($("fGstin").value), stateCode: $("fState").value.trim(), logo: S.draftLogo || "", re: coReOut() });
+    var h = (R.htscs || [])[0] || {}, ded = {}; SOL_DED.forEach(function (d, i) { ded[d[0]] = [445, 111039, 7212, 4148, 13711, 65332, 3135, 12060, 14934][i]; });
+    var iv = { companyId: id, plant: htscOf(h.htsc) || "079514700620", month: prevMonth(), no: "1/" + fyOf(todayYmd()), date: todayYmd(), dueDate: addDays(todayYmd(), 30), units: 120604, rate: 6.65, A: 802017, ded: ded, B: 232016, net: 570001,
+      plantSnap: { name: "", htsc: htscOf(h.htsc) || "079514700620", location: h.location || "", kind: R.kind }, consSnap: { name: "Sample Consumer Mills", htsc: "079094620227", address: "Mill Road, Virudhunagar 626001, Tamil Nadu", gstin: "33ABCDE1234F1Z5", stateCode: "33", addressee: "The Managing Director" } };
+    var p0 = solInvoicePdf(iv, btn); (p0 && p0.then ? p0 : Promise.resolve()).then(function () { if (saved) S.companies[id] = saved; else delete S.companies[id]; });
+  }
+
+  /* ---- Reports › Masters › Consumers and PPA Rates ---- */
   function solMasters(box) {
-    var hd = el("div", { class: "head" }), h = el("div"); h.appendChild(el("h2", null, "Masters")); h.appendChild(el("p", { class: "sub" }, "Generators (with the company that bills and its bank account), consumers, and each consumer's PPA rate. The rate per unit is the only figure that doesn't come from TNPDCL.")); hd.appendChild(h); box.appendChild(hd);
-    var seg = el("div", { class: "seg", role: "tablist", style: "margin-bottom:14px" });
-    [["plants", "Generators"], ["cons", "Consumers"], ["rates", "PPA Rates"]].forEach(function (o) { var b = el("button", { type: "button", role: "tab", "aria-selected": SOL.mside === o[0] ? "true" : "false" }, o[1] + " (" + solList(SOL[o[0]]).length + ")"); b.addEventListener("click", function () { SOL.mside = o[0]; solRender(); }); seg.appendChild(b); });
-    box.appendChild(seg);
-    var ok = canSolar(), add = el("button", { class: "btn primary", type: "button", style: "margin-bottom:12px" }, SOL.mside === "plants" ? "Add Generator" : SOL.mside === "cons" ? "Add Consumer" : "Add Rate");
-    add.addEventListener("click", function () { if (SOL.mside === "plants") plantForm(); else if (SOL.mside === "cons") consForm(); else rateForm(); }); if (ok) box.appendChild(add);
+    var cons = SOL.mside === "cons", hd = el("div", { class: "head" }), h = el("div");
+    h.appendChild(el("h2", null, cons ? "Consumers" : "PPA Rates")); h.appendChild(el("p", { class: "sub" }, cons ? "The consumers the generators supply, as on their HT bills. They can also be added from Monthly Billing once their HT bill or the allotment order is read." : "Each consumer's rate per unit from the Power Purchase Agreement, from the month it is in force. Generator charges are borne by the consumer, as the TNPDCL statements show.")); hd.appendChild(h); box.appendChild(hd);
+    var ok = canSolar();
+    if (ok) { var add = el("button", { class: "btn primary", type: "button", style: "margin-bottom:12px" }, cons ? "Add Consumer" : "Add Rate"); add.addEventListener("click", function () { if (cons) consForm(); else rateForm(); }); box.appendChild(add); }
     var card = el("div", { class: "card list scroll" }); box.appendChild(card);
     function editBtn(fn) { return { label: "", kind: "act", cls: "r", cell: function (x, td) { if (!ok) return; var b = el("button", { class: "btn sm", type: "button" }, "Edit"); b.addEventListener("click", function () { fn(x); }); td.appendChild(b); } }; }
-    if (SOL.mside === "plants") {
-      var ps = solList(SOL.plants); if (!ps.length) { card.appendChild(el("div", { class: "empty" }, "No generators yet.")); return; }
-      sortTable(card, "solMP", [{ label: "Generator", kind: "co", sort: function (p) { return p.name; }, cell: function (p, td) { td.appendChild(el("b", null, p.name)); sub(td, (p.kind === "wind" ? "Windmill" : "Solar") + " · HTSC " + p.htsc + (p.active === false ? " · turned off" : "")); } },
-        { label: "Company", cell: function (p, td) { txt(td, coLabel(p.companyId)); } }, { label: "Capacity", cls: "r num", cell: function (p, td) { txt(td, p.capacityKw ? units(p.capacityKw) + " kW" : ""); } },
-        { label: "Circle", cell: function (p, td) { txt(td, p.circle || ""); sub(td, p.voltage || ""); } }, { label: "Bank", cls: "desc", cell: function (p, td) { txt(td, p.bank || "Not set"); if (p.acNo) sub(td, p.acNo + " · " + (p.ifsc || "")); } }, editBtn(plantForm)], ps, { sortIndex: 0 });
-    } else if (SOL.mside === "cons") {
-      var cs = solList(SOL.cons); if (!cs.length) { card.appendChild(el("div", { class: "empty" }, "No consumers yet. They can be added from Monthly Billing once their HT bill or the allotment order is read.")); return; }
+    if (cons) {
+      var cs = solList(SOL.cons); if (!cs.length) { card.appendChild(el("div", { class: "empty" }, "No consumers yet.")); return; }
       sortTable(card, "solMC", [{ label: "Consumer", kind: "co", sort: function (c) { return c.name; }, cell: function (c, td) { td.appendChild(el("b", null, c.name)); sub(td, "HTSC " + c.htsc + (c.active === false ? " · turned off" : "")); } },
-        { label: "GSTIN", cell: function (c, td) { txt(td, c.gstin || ""); } }, { label: "Circle", cell: function (c, td) { txt(td, c.circle || ""); } },
+        { label: "GSTIN", cell: function (c, td) { txt(td, c.gstin || ""); } }, { label: "Injection Voltage", cell: function (c, td) { txt(td, c.voltage || "Not set"); } },
         { label: "Rate now", cls: "r num", cell: function (c, td) { var r = rateFor(c.htsc, "", todayYmd().slice(0, 7)); txt(td, r ? "₹" + r.rate : "Not set"); } }, { label: "Credit days", cls: "r num", cell: function (c, td) { txt(td, String(c.creditDays != null ? c.creditDays : 30)); } }, editBtn(consForm)], cs, { sortIndex: 0 });
     } else {
       var rl = solList(SOL.rates); if (!rl.length) { card.appendChild(el("div", { class: "empty" }, "No PPA rates yet.")); return; }
       sortTable(card, "solMR", [{ label: "Consumer", kind: "co", sort: function (r) { return consName(r.consumer); }, cell: function (r, td) { td.appendChild(el("b", null, consName(r.consumer))); sub(td, r.consumer); } },
-        { label: "Generator", cell: function (r, td) { txt(td, r.plant ? plantName(r.plant) : "Any"); } }, { label: "From", sort: function (r) { return r.from; }, cell: function (r, td) { txt(td, monthLabel(r.from)); } },
-        { label: "Rate", cls: "r num", cell: function (r, td) { td.appendChild(el("b", null, "₹" + r.rate)); } }, { label: "PPA", cls: "desc", cell: function (r, td) { txt(td, r.ref || ""); if (r.note) sub(td, r.note); } }, editBtn(rateForm)], rl, { sortIndex: 0 });
+        { label: "Generator HTSC", cell: function (r, td) { txt(td, r.plant ? plantName(r.plant) : "Any"); } }, { label: "From", sort: function (r) { return r.from; }, cell: function (r, td) { txt(td, monthLabel(r.from)); } },
+        { label: "Rate", cls: "r num", cell: function (r, td) { td.appendChild(el("b", null, "₹" + r.rate)); } }, { label: "PPA", cls: "desc", cell: function (r, td) { txt(td, r.ref || ""); } }, editBtn(rateForm)], rl, { sortIndex: 0 });
     }
   }
   function solSaveDoc(col, id, doc, map, msg) {
     doc.updatedAt = Date.now(); doc.by = meId();
     return retry(function () { return S.db.doc(col + "/" + id).set(doc); }).then(function () { SOL[map][id] = Object.assign({ id: id }, doc); toast(msg); solRender(); return true; }, function (e) { toast(explain(e)); return false; });
-  }
-  function plantForm(p, pre) {
-    var isNew = !p; p = p || Object.assign({ active: true }, pre || {});
-    var body = el("div", { class: "mform" }), g = el("div", { class: "solgrid" }); body.appendChild(g);
-    var hi = inp("spHtsc", p.htsc || "", { maxlength: "20" }); hi.disabled = !isNew;
-    g.appendChild(fld("Generator HTSC", hi, isNew ? "As printed by TNPDCL. It can't be changed later." : ""));
-    g.appendChild(fld("Name", inp("spName", p.name || "", { maxlength: "60", placeholder: "e.g. Arin Solar, Tuticorin" })));
-    var ks = el("select", { class: "field", id: "spKind" }); fillSelect(ks, [["solar", "Solar plant"], ["wind", "Windmill"]], p.kind || "solar"); g.appendChild(fld("Generator type", ks, "Decides which row of the HT bill (SOLAR or WIND) is billed, and the wording on the bill."));
-    var cs = el("select", { class: "field", id: "spCo" }); fillSelect(cs, [["", "Choose the company that bills"]].concat(activeCompanies().map(function (c) { return [c.id, c.name]; })), p.companyId || ""); g.appendChild(fld("Company", cs, "Its name, address, GSTIN and logo head the bill."));
-    g.appendChild(fld("Capacity (kW)", inp("spCap", p.capacityKw ? String(p.capacityKw) : "", { inputmode: "numeric", class: "field num" })));
-    g.appendChild(fld("Circle", inp("spCircle", p.circle || "", { maxlength: "40" })));
-    g.appendChild(fld("Injection voltage", inp("spVolt", p.voltage || "", { maxlength: "20" })));
-    g.appendChild(fld("Company PAN", inp("spPan", p.pan || "", { maxlength: "10" })));
-    g.appendChild(fld("Bank", inp("spBank", p.bank || "", { maxlength: "60" })));
-    g.appendChild(fld("Branch", inp("spBranch", p.branch || "", { maxlength: "60" })));
-    g.appendChild(fld("Account number", inp("spAc", p.acNo || "", { maxlength: "30" })));
-    g.appendChild(fld("IFSC", inp("spIfsc", p.ifsc || "", { maxlength: "11" })));
-    g.appendChild(fld("Signatory", inp("spSign", p.signName || "", { maxlength: "60" })));
-    g.appendChild(fld("Signatory's title", inp("spSignR", p.signRole || "", { maxlength: "60", placeholder: "e.g. Partner" })));
-    var af = el("label", { class: "check" }), ac = el("input", { type: "checkbox", id: "spAct" }); ac.checked = p.active !== false; af.appendChild(ac); af.appendChild(document.createTextNode(" Active")); if (!isNew) body.appendChild(af);
-    popForm(isNew ? "Add Generator" : "Edit Generator", "", body, "Save", function () {
-      errClear(body); var h = htscOf($("spHtsc").value), ok = true;
-      if (!h) { errOn("spHtsc", "Type the HTSC."); ok = false; } else if (isNew && SOL.plants[h]) { errOn("spHtsc", "This generator is already added."); ok = false; }
-      if (!$("spName").value.trim()) { errOn("spName", "Type a name."); ok = false; }
-      if (!cs.value) { errOn("spCo", "Choose the company."); ok = false; }
-      var ifsc = $("spIfsc").value.trim().toUpperCase(); if (ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) { errOn("spIfsc", "An IFSC has 11 characters, like SBIN0001234."); ok = false; }
-      if (!ok) return false;
-      var doc = Object.assign({}, p, { htsc: h, name: $("spName").value.trim(), kind: ks.value, companyId: cs.value, capacityKw: n0($("spCap").value), circle: $("spCircle").value.trim(), voltage: $("spVolt").value.trim(), pan: normId($("spPan").value), bank: $("spBank").value.trim(), branch: $("spBranch").value.trim(), acNo: $("spAc").value.trim(), ifsc: ifsc, signName: $("spSign").value.trim(), signRole: $("spSignR").value.trim(), active: isNew ? true : ac.checked });
-      delete doc.id; if (isNew) doc.createdAt = Date.now();
-      if (!SOL.plant) SOL.plant = h;
-      return solSaveDoc("solar_plants", h, doc, "plants", doc.name + " saved.");
-    });
   }
   function consForm(c, pre) {
     var isNew = !c; c = c || Object.assign({ active: true }, pre || {});
@@ -10719,7 +10825,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     g.appendChild(fld("GSTIN", inp("scGstin", c.gstin || "", { maxlength: "15" })));
     g.appendChild(fld("PAN", inp("scPan", c.pan || "", { maxlength: "10" }), "Taken from the GSTIN when left blank."));
     g.appendChild(fld("State code", inp("scState", c.stateCode || "33", { maxlength: "2", inputmode: "numeric" })));
-    g.appendChild(fld("Circle", inp("scCircle", c.circle || "", { maxlength: "40" })));
+    var vi = inp("scVolt", c.voltage || "", { maxlength: "12", list: "voltList", placeholder: "e.g. 22 kV" }); g.appendChild(fld("Injection Voltage", vi, "The voltage it takes supply at."));
+    if (!$("voltList")) { var dl = el("datalist", { id: "voltList" }); ["11 kV", "22 kV", "33 kV", "110 kV", "230 kV"].forEach(function (v) { dl.appendChild(el("option", { value: v })); }); document.body.appendChild(dl); }
     g.appendChild(fld("Letter addressed to", inp("scTo", c.addressee || "The Managing Director", { maxlength: "60" })));
     g.appendChild(fld("Email", inp("scMail", c.email || "", { maxlength: "120", type: "email" })));
     g.appendChild(fld("Credit days", inp("scDays", String(c.creditDays != null ? c.creditDays : 30), { inputmode: "numeric", class: "field num" })));
@@ -10731,7 +10838,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (!$("scAddr").value.trim()) { errOn("scAddr", "Type the address; it goes on the bill."); ok = false; }
       if (gst && gstinCheck(gst) === "format") { errOn("scGstin", "That doesn't look like a GSTIN."); ok = false; }
       if (!ok) return false;
-      var doc = Object.assign({}, c, { htsc: h, name: $("scName").value.trim(), address: $("scAddr").value.trim(), gstin: gst, pan: normId($("scPan").value) || (gst ? panFromGstin(gst) : ""), stateCode: $("scState").value.trim() || "33", circle: $("scCircle").value.trim(), addressee: $("scTo").value.trim() || "The Managing Director", email: $("scMail").value.trim(), creditDays: Math.round(n0($("scDays").value)), active: isNew ? true : ac.checked });
+      var doc = Object.assign({}, c, { htsc: h, name: $("scName").value.trim(), address: $("scAddr").value.trim(), gstin: gst, pan: normId($("scPan").value) || (gst ? panFromGstin(gst) : ""), stateCode: $("scState").value.trim() || "33", voltage: $("scVolt").value.trim(), addressee: $("scTo").value.trim() || "The Managing Director", email: $("scMail").value.trim(), creditDays: Math.round(n0($("scDays").value)), active: isNew ? true : ac.checked });
       delete doc.id; if (isNew) doc.createdAt = Date.now();
       return solSaveDoc("solar_consumers", h, doc, "cons", doc.name + " saved.");
     });
@@ -10740,18 +10847,17 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var isNew = !r; r = r || {};
     var body = el("div", { class: "mform" }), g = el("div", { class: "solgrid" }); body.appendChild(g);
     var cs = el("select", { class: "field", id: "srCons" }); fillSelect(cs, [["", "Choose the consumer"]].concat(solList(SOL.cons).sort(function (a, b) { return natCmp(a.name, b.name); }).map(function (c) { return [c.htsc, c.name + " · " + c.htsc]; })), r.consumer || ""); g.appendChild(fld("Consumer", cs));
-    var ps = el("select", { class: "field", id: "srPlant" }); fillSelect(ps, [["", "Any of our generators"]].concat(solList(SOL.plants).map(function (p) { return [p.htsc, p.name + " · " + p.htsc]; })), r.plant || ""); g.appendChild(fld("Generator", ps));
+    var ps = el("select", { class: "field", id: "srPlant" }); fillSelect(ps, [["", "Any of our generator HTSCs"]].concat(solList(PL()).map(function (p) { return [p.htsc, p.name + " · " + p.htsc]; })), r.plant || ""); g.appendChild(fld("Generator HTSC", ps));
     g.appendChild(fld("In force from", inp("srFrom", r.from || todayYmd().slice(0, 7), { type: "month" })));
     g.appendChild(fld("Rate per unit (₹)", inp("srRate", r.rate != null ? String(r.rate) : "", { inputmode: "decimal", class: "field num" })));
     g.appendChild(fld("PPA reference", inp("srRef", r.ref || "", { maxlength: "60" })));
-    g.appendChild(fld("Who bears the generator charges", inp("srNote", r.note || "", { maxlength: "120", placeholder: "e.g. Consumer pays, deducted from our bill" })));
     popForm(isNew ? "Add PPA Rate" : "Edit PPA Rate", "A new rate from a later month replaces the old one from then on; keep the old one for past months.", body, "Save", function () {
       errClear(body); var ok = true, rt = num($("srRate").value), fr = $("srFrom").value;
       if (!cs.value) { errOn("srCons", "Choose the consumer."); ok = false; }
       if (!/^\d{4}-\d{2}$/.test(fr)) { errOn("srFrom", "Choose the month."); ok = false; }
       if (rt == null || rt <= 0 || rt > 50) { errOn("srRate", "Type the rate per unit, like 6.50."); ok = false; }
       if (!ok) return false;
-      var id = r.id || newId("sp"), doc = { consumer: cs.value, plant: ps.value, from: fr, rate: round2(rt), ref: $("srRef").value.trim(), note: $("srNote").value.trim(), active: true };
+      var id = r.id || newId("sp"), doc = { consumer: cs.value, plant: ps.value, from: fr, rate: round2(rt), ref: $("srRef").value.trim(), active: true };
       if (isNew) doc.createdAt = Date.now();
       return solSaveDoc("solar_rates", id, doc, "rates", "Rate saved.");
     });
@@ -10767,6 +10873,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (lk !== !$("secLock").hidden || (!$("vLoading").hidden && DATA_TABS.indexOf(t) < 0)) { setTab(t); return; }
       if (lk) { var ae0 = document.activeElement; if (!(ae0 && $("secLock").contains(ae0) && ae0.tagName === "INPUT")) renderLock(); return; }
     }
+    if (SOL_TABS.indexOf(t) >= 0) { solRefresh(); return; }
     if (DATA_TABS.indexOf(t) >= 0 && !$("vLoading").hidden) { if (dataReady()) setTab(t); return; }
     if (t === "Archive" && S.isAdmin) { if (!$("vLoading").hidden && dataReady()) setTab(t); else if (!$("secArch").hidden && !AR.busy) renderArchive(); return; }
     if (t === "Accounts") { if (!$("secAcct").hidden) renderAcct(); else if (!$("secAcctOne").hidden && AC.id && !(AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id])) backToAcct(); return; }
@@ -10806,7 +10913,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       renderVendorHead(v); renderVendorStatements();
     }
     else if (t === "Companies" && S.isAdmin && !$("secStmt").hidden && S.stmtId) renderStatement(S.stmtId);
-    else if (t === "Companies" && S.isAdmin && S.loaded && !S.editing && !$("secList").hidden) renderList();
+    else if (t === "Companies" && !S.editing && !$("secList").hidden) renderList();
   }
 
   function wireAcct() {
@@ -10919,14 +11026,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("lgSideV").addEventListener("click", function () { LG.side = "vendors"; LG.limit = 100; renderLedger(); }); $("lgSideC").addEventListener("click", function () { LG.side = "vouchers"; LG.limit = 100; renderLedger(); });
     $("lgCo").addEventListener("change", renderLedger); $("lgQ").addEventListener("input", renderLedger);
     $("bDoneQ").addEventListener("input", function () { B.doneLimit = 100; renderDone(); });
-    $("vExport").addEventListener("click", function () { downloadVendorPayables($("vExport")); }); $("vQ").addEventListener("input", renderVendors); $("vNeeds").addEventListener("change", renderVendors); $("vOff").addEventListener("change", renderVendors);
+    $("vExport").addEventListener("click", function () { downloadVendorPayables($("vExport")); }); $("vQ").addEventListener("input", renderVendors); $("vCo").addEventListener("change", renderVendors); $("vNeeds").addEventListener("change", renderVendors); $("vOff").addEventListener("change", renderVendors);
     $("vBack").addEventListener("click", backToVendors); $("veCancel").addEventListener("click", backToVendors);
     $("veSave").addEventListener("click", saveVendor); $("veToggle").addEventListener("click", toggleVendor);
     $("veGstin").addEventListener("input", function () { var g = normId(this.value); $("vePan").value = g && gstinCheck(g) !== "format" ? panFromGstin(g) : ""; });
     $("veGstin").addEventListener("blur", function () { this.value = normId(this.value); });
     $("veOb").addEventListener("focusout", function (e) { var t = e.target; if (t && t.tagName === "INPUT") t.value = fmtInput(t.value); });
     $("secVendor").addEventListener("input", function (e) { var t = e.target; if (t && t.id) { var er = $(t.id + "E"); if (er) er.hidden = true; t.classList.remove("bad"); } });
-    $("openOut").addEventListener("click", function () { openStatement(S.editing); }); $("openOd").addEventListener("click", function () { openStatement(S.editing); });
+
     $("logoPick").addEventListener("click", function () { $("logoFile").click(); });
     $("logoClear").addEventListener("click", function () { S.draftLogo = ""; setLogoPreview(); });
     $("logoFile").addEventListener("change", function () {

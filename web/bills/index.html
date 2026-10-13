@@ -2041,9 +2041,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* Bills & Vouchers details (roles, companies, responsibilities) are only asked when Bills & Vouchers is given. */
   /* The money apps a person has. Someone saved before the split keeps Maintenance, and gets Accounts or Finance if they do accounts or payments. */
   function hasStepAny(u, step) { if (!u || !u.roles) return true; return Object.keys(u.roles).some(function (k) { return (u.roles[k] || []).indexOf(step) >= 0; }); }
+  /* An app opens only for someone whose responsibilities belong in it (and whose tick is on): an accountant never lands in
+     Maintenance just because it was ticked. The KKSK Group home (app_portal) applies the same rule. */
+  var APP_STEPS = { mnt: ["bills", "bcr", "adv", "vouchers", "vcr", "cash"], re: ["bills", "bcr", "adv", "vouchers", "vcr", "cash", "txn", "solar"], acc: ["acct"], fin: ["txn"], apr: ["appr"] };
+  function rolesFit(roles, k) { if (!roles) return k !== "apr"; return Object.keys(roles).some(function (c) { return (roles[c] || []).some(function (st) { return APP_STEPS[k].indexOf(st) >= 0; }); }); }
   function appsWith(u) {
-    var a = (u && u.apps) || {}, bv = a.bv !== false;
-    return { mnt: a.mnt != null ? !!a.mnt : bv, re: !!a.re, acc: a.acc != null ? !!a.acc : bv && hasStepAny(u, "acct"), fin: a.fin != null ? !!a.fin : bv && hasStepAny(u, "txn"), apr: bv && !!(u && u.roles) && hasStepAny(u, "appr") && (a.apr != null ? !!a.apr : true) };
+    var a = (u && u.apps) || {}, bv = a.bv !== false, r = u && u.roles, on = function (k, def) { return bv && (a[k] != null ? !!a[k] : def) && rolesFit(r, k); };
+    return { mnt: on("mnt", true), re: on("re", false), acc: on("acc", true), fin: on("fin", true), apr: on("apr", true) };
   }
   function readApps() { return { mnt: $("uAppMnt").checked, re: $("uAppRe").checked, acc: $("uAppAcc").checked, fin: $("uAppFin").checked, apr: $("uAppApr").checked }; }
   function anyMoneyApp(a) { return !!(a.mnt || a.re || a.acc || a.fin || a.apr); }
@@ -2068,8 +2072,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var ma = readApps(), appBv = anyMoneyApp(ma), ppRole = $("uPpRole").value, apps = { bv: appBv, mnt: ma.mnt, re: ma.re, acc: ma.acc, fin: ma.fin, apr: ma.apr, pp: ppRole ? { role: ppRole, region: $("uPpRegion").value || null } : null };
     $("uEApps").hidden = true; $("uEApps").textContent = "Give at least one app."; if (!appBv && !ppRole) { $("uEApps").hidden = false; ok = false; }
     if (appBv && !cos.length) { $("uECos").hidden = false; ok = false; }
-    /* The Approvals app is for admins and people who approve. */
-    if (ma.apr && !Object.keys(roles).some(function (k) { return (roles[k] || []).indexOf("appr") >= 0; })) { $("uEApps").textContent = "Approvals is only for approvers: give them Approval for a company, or untick Approvals."; $("uEApps").hidden = false; ok = false; }
+    /* Each app only for the responsibilities that belong in it. */
+    var misfit = APP_KEYS.filter(function (k) { return ma[k] && !rolesFit(roles, k); });
+    if (misfit.length) { $("uEApps").textContent = misfit.map(function (k) { return APP_NAMES[k]; }).join(", ") + (misfit.length > 1 ? " don't" : " doesn't") + " match their responsibilities below. " + ({ mnt: "Maintenance is for purchasers.", re: "Renewable Energy is for its purchasers, financier and energy billing.", acc: "Accounts is for accountants.", fin: "Finance is for financiers.", apr: "Approvals is for approvers." })[misfit[0]] + " Untick it, or give the matching responsibility."; $("uEApps").hidden = false; ok = false; }
     var dept = usDept.value(); if (!dept) { $("uEDept").hidden = false; ok = false; }
     var jobs = readChecks($("uJobs")); if (appBv && !jobs.length) { $("uJobsE").hidden = false; ok = false; }
     var purch = appBv && jobs.indexOf("purchaser") >= 0, defAppr = purch ? $("uAppr").value : "";
@@ -2173,6 +2178,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     else if (r && (r.status === "pending" || r.status === "approved")) state = "wait";
     else state = "form";
     if (state === "in" && !myJobs().length && S.canWrite !== false) state = "jobs";
+    /* Not this person's app (an accountant in Maintenance, say): back to the KKSK Group home, which lists their apps. */
+    if (state === "in" && window.bvPortal && ![S.loginUser || u].concat(Object.keys(S.profiles || {}).map(function (k) { return S.profiles[k]; })).some(function (x) { return x && appsWith(x)[APP]; })) { location.replace(window.BV_HOME || "../"); return; }
     if (profileList().length && !S.picked && S.canWrite !== false) state = "pick";
     if (state === "pick") S.memberState = "pick";
     renderMe();

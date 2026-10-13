@@ -10224,42 +10224,44 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function chkTag(lvl) { return el("span", { class: "chk " + lvl }, { pass: "Pass", warn: "Check", block: "Blocks", info: "Note" }[lvl] || lvl); }
 
   /* ---- working out one consumer's bill for a month, with every check ---- */
+  /* Units billed are the units adjusted, from the energy adjusted report. Deductions are the charges the allotment order puts on the consumer,
+     wheeling at gross allotted × the wheeling rate, and self-generation tax at ₹0.10 × units adjusted. The HT bill is only compared against
+     these: a difference is shown to look at, never a blocker. Figures changed by hand on Review replace the worked-out ones. */
   function solCalc(md, htsc) {
-    var plant = md.plant, month = md.month, gen = md.gen || null, al = ((md.allot || {}).consumers || {})[htsc] || null, ad = ((md.adj || {}).consumers || {})[htsc] || null, ht = (md.ht || {})[htsc] || null;
+    var plant = md.plant, month = md.month, gen = md.gen || null, al = ((md.allot || {}).consumers || {})[htsc] || null, ad = ((md.adj || {}).consumers || {})[htsc] || null, ht = (md.ht || {})[htsc] || null, ov = ((md.over || {})[htsc]) || null;
     var gross = al ? n0(al.total) || sum5(al.slots) : ad ? sum5(ad.gross) : 0, loss = ad ? n0(ad.loss) : 0, netAl = ad ? sum5(ad.net) : 0, adjU = ad ? sum5(ad.adjusted) : 0;
-    var ours = ((ht && ht.gens) || []).filter(function (g, i, a) { return PL()[g] && a.indexOf(g) === i; }), shared = ours.length > 1;
-    var billed = ht ? (shared ? adjU : sum5(ht.solar)) : 0, rate = rateFor(htsc, plant, month), oa = ht && ht.oa || {};
-    var ded = {}, B = 0;
-    SOL_DED.forEach(function (d) { var v = d[0] === "sgt" ? Math.round(billed * SGT_RATE) : n0(d[2] === "wheeling" ? oa.wheeling : oa[d[2]]); if (ht && ht.ded && ht.ded[d[0]] != null) v = n0(ht.ded[d[0]]); ded[d[0]] = round2(v); B += v; });
+    var billed = adjU, rate = rateFor(htsc, plant, month), ach = (al && al.charges) || {}, oa = (ht && ht.oa) || {};
+    var calc = {}, ded = {}, B = 0;
+    SOL_DED.forEach(function (d) { calc[d[0]] = round2(d[0] === "sgt" ? billed * SGT_RATE : d[2] === "wheeling" ? Math.round(gross * WHEEL_RATE) : n0(ach[d[2]])); var v = d[0] !== "sgt" && ov && ov.ded && ov.ded[d[0]] != null ? n0(ov.ded[d[0]]) : calc[d[0]]; ded[d[0]] = round2(v); B += v; });
     B = round2(B);
-    var A = rate ? Math.round(billed * n0(rate.rate)) : 0, net = Math.round(A - B), ck = [], allHt = true;
-    var need = []; if (!gen) need.push("generation statement"); if (!md.allot) need.push("allotment order"); if (!md.adj) need.push("adjusted report"); if (!ht) need.push("HT bill");
-    ck.push(need.length ? solChk("block", "All documents present", "Waiting for the " + need.join(", ") + ".") : solChk("pass", "All documents present"));
+    var A = rate ? Math.round(billed * n0(rate.rate)) : 0, net = Math.round(A - B), ck = [];
+    var need = []; if (!gen) need.push("generation statement"); if (!md.allot) need.push("allotment order"); if (!md.adj) need.push("adjusted report");
+    ck.push(need.length ? solChk("block", "All documents present", "Waiting for the " + need.join(", ") + ".") : solChk("pass", "All documents present", ht ? "With the HT bill to compare against." : "No HT bill; nothing is compared against it."));
     if (gen && md.allot) {
       var bad = []; SLOTS.forEach(function (s, i) { var t = 0; Object.keys(md.allot.consumers || {}).forEach(function (k) { t += n0((md.allot.consumers[k].slots || [])[i]); }); if (Math.abs(t - n0((gen.net || [])[i])) > 1) bad.push(s + ": allotted " + units(t) + ", generated " + units((gen.net || [])[i])); });
       ck.push(bad.length ? solChk("block", "Units tie out", bad.join("; ") + ". A document may be misread.") : solChk("pass", "Units tie out", "Allotted units equal net generation in every slot."));
+      var off = []; SOL_GCH.forEach(function (g) { var t = 0; Object.keys(md.allot.consumers || {}).forEach(function (k) { t += n0((md.allot.consumers[k].charges || {})[g[0]]); }); var gv = n0((gen.charges || {})[g[0]]); if (Math.abs(t - gv) > 1) off.push(g[2] + ": allotted " + rs(t) + ", generation statement " + rs(gv)); });
+      ck.push(off.length ? solChk("block", "Charges tie out", off.join("; ") + ". A document may be misread.") : solChk("pass", "Charges tie out", "The charges the allotment order spreads over the consumers add up to the generation statement."));
     }
     if (ad && al) { var want = Math.round(gross * (1 - loss / 100)); ck.push(Math.abs(want - netAl) <= 5 ? solChk("pass", "Loss applied correctly", loss + "% loss") : solChk("warn", "Loss applied correctly", "Gross " + units(gross) + " less " + loss + "% is " + units(want) + "; the adjusted report shows " + units(netAl) + ".")); }
-    if (shared) ck.push(solChk("info", "Shared HT bill", "This HT bill credits units from " + ours.length + " of our generator HTSCs (" + ours.join(", ") + "); " + plant + "'s share, " + units(adjU) + " units, is taken from its energy adjusted report."));
-    if (ad && ht && !shared) ck.push(adjU <= 0 ? solChk("block", "Adjustment posted", "The adjusted report shows no units adjusted for this consumer.") : Math.abs(billed - netAl) > 3 ? solChk("block", "Adjustment posted", "HT bill solar credit " + units(billed) + " differs from net allotted " + units(netAl) + " by more than 3 units.") : solChk("pass", "Adjustment posted", "HT bill credits " + units(billed) + " units."));
-    if (gen && md.allot) {
-      var cs = Object.keys(md.allot.consumers || {}).filter(function (k) { return n0(md.allot.consumers[k].total) > 0 || sum5(md.allot.consumers[k].slots) > 0; });
-      allHt = cs.every(function (k) { return (md.ht || {})[k]; });
-      if (!allHt) ck.push(solChk("warn", "Charges tie out", "Checked once every consumer's HT bill is in."));
-      else {
-        var off = []; SOL_GCH.forEach(function (g) { var t = 0; cs.forEach(function (k) { t += n0(((md.ht[k] || {}).oa || {})[g[0]]); }); var gv = n0((gen.charges || {})[g[0]]); if (Math.abs(t - gv) > 1) off.push(g[2] + ": HT bills " + rs(t) + ", generation statement " + rs(gv)); });
-        ck.push(off.length ? solChk("block", "Charges tie out", off.join("; ") + ".") : solChk("pass", "Charges tie out", "Every charge in the HT bills adds up to the generation statement."));
-      }
-    }
-    if (ht && gross) { var wh = gross * WHEEL_RATE; ck.push(Math.abs(n0(oa.wheeling) - wh) <= 1.5 ? solChk("pass", "Wheeling formula", "Gross " + units(gross) + " × " + WHEEL_RATE) : solChk("warn", "Wheeling formula", "HT bill wheeling " + rs(oa.wheeling) + "; gross × " + WHEEL_RATE + " is " + rs(wh) + ".")); }
-    if (ht) ck.push(n0(ht.sgtWhole) > ded.sgt + 1 ? solChk("info", "Self-generation tax share", "The HT bill's tax (" + rs(ht.sgtWhole) + ") covers other sources too; only this generator's share, " + units(billed) + " × ₹" + SGT_RATE + " = " + rs(ded.sgt) + ", is deducted.") : solChk("pass", "Self-generation tax share", units(billed) + " × ₹" + SGT_RATE));
-    if (ht && (n0(oa.C002) || n0(oa.C008))) ck.push(solChk("warn", "Charges outside the bill format", "The HT bill has O&M " + rs(oa.C002) + " and other " + rs(oa.C008) + " against this generator; the bill of supply has no line for them."));
-    if (ht && ht.edited) ck.push(solChk("warn", "HT bill figures used as they are", "Figures were changed by hand after reading" + (ht.editedByName ? " (" + ht.editedByName + ")" : "") + ". Make sure they match the HT bill."));
-    ck.push(!consOfHtsc(htsc) ? solChk("block", "Consumer HTSC on the invoice", "Add HTSC " + htsc + " to a consumer in Masters first.") : ht && ht.consumer && htscOf(ht.consumer) !== htsc ? solChk("block", "Consumer HTSC on the invoice", "The HT bill is for " + ht.consumer + ".") : solChk("pass", "Consumer HTSC on the invoice", htsc));
+    if (ad) ck.push(adjU <= 0 ? solChk("block", "Units adjusted", "The energy adjusted report shows no units adjusted for this consumer.") : solChk("pass", "Units adjusted", units(adjU) + " units, from the energy adjusted report."));
+    ck.push(solChk("pass", "Self-generation tax", units(billed) + " units adjusted × ₹" + SGT_RATE.toFixed(2) + " = " + rs(calc.sgt)));
+    /* comparing with the HT bill */
+    if (ht) {
+      var ours = (ht.gens || []).filter(function (g, i, a) { return PL()[g] && a.indexOf(g) === i; }), hu = sum5(ht.solar);
+      if (ours.length <= 1 && Math.abs(hu - adjU) > 3) ck.push(solChk("warn", "HT bill: units", "The HT bill credits " + units(hu) + " units; the adjusted report says " + units(adjU) + ". The adjusted report's figure is billed."));
+      else ck.push(solChk("pass", "HT bill: units", ours.length > 1 ? "The HT bill credits units from " + ours.length + " of our generator HTSCs together." : "The HT bill credits the same units."));
+      var diff = []; SOL_DED.forEach(function (d) { if (d[0] === "sgt") return; var hv = n0(d[2] === "wheeling" ? oa.wheeling : oa[d[2]]); if (Math.abs(hv - ded[d[0]]) > 1) diff.push(d[1] + ": HT bill " + rs(hv) + ", bill of supply " + rs(ded[d[0]])); });
+      ck.push(diff.length ? solChk("warn", "HT bill: charges", diff.join("; ") + ".") : solChk("pass", "HT bill: charges", "Wheeling and every other charge match the HT bill."));
+      if (ht.consumer && htscOf(ht.consumer) !== htsc) ck.push(solChk("warn", "HT bill: consumer", "The HT bill is for " + ht.consumer + "."));
+    } else ck.push(solChk("info", "HT bill", "Not uploaded, so wheeling and the other charges aren't compared with it. Billing can go ahead."));
+    if (n0(ach.C002) || n0(ach.C008)) ck.push(solChk("warn", "Charges outside the bill format", "The allotment order puts O&M " + rs(ach.C002) + " and other " + rs(ach.C008) + " on this consumer; the bill of supply has no line for them."));
+    if (ov && ov.edited) ck.push(solChk("warn", "Figures changed by hand", "Deductions were changed after reading" + (ov.editedByName ? " (" + ov.editedByName + ")" : "") + "."));
+    ck.push(!consOfHtsc(htsc) ? solChk("block", "Consumer HTSC on the invoice", "Add HTSC " + htsc + " to a consumer in Masters first.") : solChk("pass", "Consumer HTSC on the invoice", htsc));
     ck.push(rate ? solChk("pass", "Rate present", "₹" + rate.rate + " per unit" + (rate.ref ? ", " + rate.ref : "")) : solChk("block", "Rate present", "No PPA rate for this consumer in " + monthLabel(month) + ". Add it in Masters."));
     if (A > 0 && net < 0.2 * A) ck.push(solChk("warn", "Low net", "Net " + rs(net) + " is under 20% of the energy charges."));
     var blocks = ck.filter(function (c) { return c.lvl === "block"; }).length, warns = ck.filter(function (c) { return c.lvl === "warn"; }).length;
-    return { plant: plant, htsc: htsc, name: (al && al.name) || (ht && ht.name) || consName(htsc), gross: gross, loss: loss, netAl: netAl, adjU: adjU, billed: billed, rate: rate, A: A, ded: ded, B: B, net: net, checks: ck, blocks: blocks, warns: warns, ht: ht, al: al, ad: ad };
+    return { plant: plant, htsc: htsc, name: (al && al.name) || (ad && ad.name) || (ht && ht.name) || consName(htsc), gross: gross, loss: loss, netAl: netAl, adjU: adjU, billed: billed, rate: rate, A: A, calc: calc, ded: ded, B: B, net: net, checks: ck, blocks: blocks, warns: warns, ht: ht, al: al, ad: ad, ov: ov };
   }
   function monthConsumers(md) {
     var m = {}; Object.keys(((md || {}).allot || {}).consumers || {}).forEach(function (k) { m[k] = 1; }); Object.keys(((md || {}).adj || {}).consumers || {}).forEach(function (k) { m[k] = 1; }); Object.keys((md || {}).ht || {}).forEach(function (k) { m[k] = 1; });
@@ -10278,7 +10280,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function consAgg(k, L) {
     var c = SOL.cons[k] || null, o = { key: k, cons: c, name: c ? c.name : L[0].name, lines: L, htscs: [], plants: [], gross: 0, billed: 0, A: 0, B: 0, ded: {}, blocks: 0, warns: 0 };
     L.forEach(function (l) { if (o.htscs.indexOf(l.htsc) < 0) o.htscs.push(l.htsc); if (o.plants.indexOf(l.plant) < 0) o.plants.push(l.plant); o.gross += l.gross; o.billed += l.billed; o.A += l.A; o.B += l.B; o.blocks += l.blocks; o.warns += l.warns; SOL_DED.forEach(function (d) { o.ded[d[0]] = round2((o.ded[d[0]] || 0) + n0(l.ded[d[0]])); }); });
-    o.B = round2(o.B); o.net = Math.round(o.A - o.B); o.allHt = L.every(function (l) { return l.ht; }); o.rateOk = L.every(function (l) { return l.rate; });
+    o.B = round2(o.B); o.net = Math.round(o.A - o.B); o.ready = L.every(function (l) { return l.ad; }); o.rateOk = L.every(function (l) { return l.rate; });
     var rs0 = L.map(function (l) { return l.rate ? n0(l.rate.rate) : 0; }); o.rate = rs0.every(function (r) { return r === rs0[0]; }) ? rs0[0] : o.billed ? round2(o.A / o.billed) : 0; o.mixed = rs0.some(function (r) { return r !== rs0[0]; });
     return o;
   }
@@ -10286,7 +10288,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* ---- Monthly Billing: one company, one month, all its documents ---- */
   function solMonth(box) {
     var cos = solCos();
-    var hd = el("div", { class: "head" }), ht = el("div"); ht.appendChild(el("h2", null, "Monthly Billing")); ht.appendChild(el("p", { class: "sub" }, "Choose the company and the month, and upload all of that month's TNPDCL documents together: each generator HTSC's generation statement, energy allotment order and energy adjusted report, and the consumers' HT bills. Claude reads them and files each under its generator HTSC, the app checks them against each other, and each consumer gets one bill of supply covering all their HTSCs."));
+    var hd = el("div", { class: "head" }), ht = el("div"); ht.appendChild(el("h2", null, "Monthly Billing")); ht.appendChild(el("p", { class: "sub" }, "Choose the company and the month, and upload all of that month's TNPDCL documents together: each generator HTSC's generation statement, energy allotment order and energy adjusted report, and and, if you have them, the consumers' HT bills to compare against. Claude reads them and files each under its generator HTSC, the app checks them against each other, and each consumer gets one bill of supply covering all their HTSCs."));
     hd.appendChild(ht); box.appendChild(hd);
     if (!cos.length) { var e0 = el("div", { class: "card empty" }, "Set up a company with its generator HTSCs first: Reports › Masters › Companies (an admin does this)."); box.appendChild(e0); var b0 = el("button", { class: "btn primary", type: "button", style: "margin-top:12px" }, "Open Companies"); b0.addEventListener("click", function () { setTab("Companies"); }); box.appendChild(b0); return; }
     if (!SOL.co || cos.indexOf(SOL.co) < 0) SOL.co = cos[0];
@@ -10301,6 +10303,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (canSolar()) {
       var fi = el("input", { type: "file", accept: "application/pdf,image/*", multiple: "", hidden: "", id: "solFiles" }), up = el("button", { class: "btn primary", type: "button", id: "solUpload" }, "Upload Documents");
       up.addEventListener("click", function () { fi.click(); }); fi.addEventListener("change", function () { var fs = Array.prototype.slice.call(fi.files || []); fi.value = ""; if (fs.length) solUpload(fs); });
+      if (solMonthDocs(SOL.co, SOL.month).length) { var dc0 = el("button", { class: "btn", type: "button", id: "solDiscard" }, "Discard Uploads"); dc0.addEventListener("click", function () { discardForm(SOL.co, SOL.month); }); bar.appendChild(dc0); }
       bar.appendChild(up); bar.appendChild(fi);
     }
     box.appendChild(bar);
@@ -10321,7 +10324,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     sortTable(dc, "solDocs", [
       { label: "Generator HTSC", cell: function (r, td) { td.appendChild(el("b", { class: "mono" }, r.pl)); sub(td, (PL()[r.pl] || {}).location || ""); } },
       { label: "Generation statement", cell: docCell("gen") }, { label: "Allotment order", cell: docCell("allot") }, { label: "Adjusted report", cell: docCell("adj") },
-      { label: "HT bills", cell: function (r, td) { var ok = r.alC.length && r.nHt === r.alC.length; td.appendChild(chkTag(ok ? "pass" : r.nAny ? "warn" : "block")); td.lastChild.textContent = r.alC.length ? r.nHt + " of " + r.alC.length : r.nAny ? r.nAny + " in" : "Waiting"; } },
+      { label: "HT bills (to compare)", cell: function (r, td) { var ok = r.alC.length && r.nHt === r.alC.length; td.appendChild(chkTag(ok ? "pass" : "info")); td.lastChild.textContent = r.alC.length ? r.nHt + " of " + r.alC.length : r.nAny ? r.nAny + " in" : "None"; } },
       { label: "Net generation", cls: "r num", cell: function (r, td) { var g = r.md.gen; txt(td, g ? units(n0(g.netTotal) || sum5(g.net)) : ""); if (g && g.injLoss) sub(td, g.injLoss + "% injection loss"); } }
     ], drows, { sortIndex: -1 });
     if (gAny) statBoxes(box.appendChild(el("div", { class: "stats", style: "margin-top:14px" })), [["Net generation", units(gNet), "kWh, " + monthLabel(SOL.month)], ["Generator HTSCs", String(pls.length), plural(drows.filter(function (r) { return r.md.gen; }).length, "statement") + " in"], ["Generator charges", rs(gCh), "C001 to C010"]]);
@@ -10333,11 +10336,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     sortTable(card, "solCons", [
       { label: "Consumer", kind: "co", sort: function (c) { return c.name; }, cell: function (c, td) { td.appendChild(el("b", null, c.name)); sub(td, (c.htscs.length > 1 ? "HTSCs " : "HTSC ") + c.htscs.join(", ") + (c.cons ? "" : " · not in Masters")); } },
       { label: "Gross allotted", cls: "r num", cell: function (c, td) { txt(td, units(c.gross)); } },
-      { label: "Billed units", cls: "r num", cell: function (c, td) { txt(td, c.allHt ? units(c.billed) : "Awaiting HT bill"); } },
+      { label: "Billed units", cls: "r num", cell: function (c, td) { txt(td, c.ready ? units(c.billed) : "Awaiting adjusted report"); } },
       { label: "Rate", cls: "r num", cell: function (c, td) { txt(td, c.rateOk ? "₹" + c.rate + (c.mixed ? " avg." : "") : "Not set"); } },
-      { label: "A (energy)", cls: "r num", cell: function (c, td) { txt(td, c.allHt && c.rateOk ? rs(c.A) : ""); } },
-      { label: "B (deductions)", cls: "r num", cell: function (c, td) { txt(td, c.allHt ? rs(c.B) : ""); } },
-      { label: "Net", cls: "r num", cell: function (c, td) { td.appendChild(el("b", null, c.allHt && c.rateOk ? rs(c.net) : "")); } },
+      { label: "A (energy)", cls: "r num", cell: function (c, td) { txt(td, c.ready && c.rateOk ? rs(c.A) : ""); } },
+      { label: "B (deductions)", cls: "r num", cell: function (c, td) { txt(td, c.ready ? rs(c.B) : ""); } },
+      { label: "Net", cls: "r num", cell: function (c, td) { td.appendChild(el("b", null, c.ready && c.rateOk ? rs(c.net) : "")); } },
       { label: "Checks", cell: function (c, td) { td.appendChild(chkTag(c.blocks ? "block" : c.warns ? "warn" : "pass")); if (c.blocks || c.warns) sub(td, (c.blocks ? plural(c.blocks, "blocker") : "") + (c.blocks && c.warns ? ", " : "") + (c.warns ? plural(c.warns, "check") : "")); } },
       { label: "Invoice", cell: function (c, td) { var iv = invFor(SOL.co, SOL.month, c.key); if (iv) { td.appendChild(el("b", { class: "mono" }, iv.no)); sub(td, fmtDate(iv.date)); } else txt(td, "Not issued"); } },
       { label: "", kind: "act", cls: "r", cell: function (c, td) {
@@ -10346,9 +10349,44 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
           if (!c.cons && canSolar()) { var ad = el("button", { class: "btn sm", type: "button" }, "Add to Masters"); ad.addEventListener("click", function () { htscToMasters(c.lines[0]); }); a.appendChild(ad); }
           var iv = invFor(SOL.co, SOL.month, c.key);
           if (iv && S.downloads) { var pd = el("button", { class: "btn sm", type: "button" }, "PDF"); pd.addEventListener("click", function () { solInvoicePdf(iv, pd); }); a.appendChild(pd); }
-          else if (!iv && !c.blocks && c.allHt && canSolar()) { var is = el("button", { class: "btn sm primary", type: "button" }, "Issue"); is.addEventListener("click", function () { issueForm(c.key); }); a.appendChild(is); }
+          else if (!iv && !c.blocks && c.ready && canSolar()) { var is = el("button", { class: "btn sm primary", type: "button" }, "Issue"); is.addEventListener("click", function () { issueForm(c.key); }); a.appendChild(is); }
           td.appendChild(a); } }
     ], rows, { sortIndex: -1 });
+  }
+  /* Every document read for a company's month: [generator HTSC, key, label, file]. */
+  function solMonthDocs(cid, month) {
+    var out = [];
+    coPlants(cid).forEach(function (pl) {
+      var md = monthDoc(pl, month); if (!md) return;
+      [["gen", "Generation statement"], ["allot", "Energy allotment order"], ["adj", "Energy adjusted report"]].forEach(function (d) { if (md[d[0]]) out.push({ pl: pl, k: d[0], label: d[1], file: md[d[0]].file }); });
+      Object.keys(md.ht || {}).sort().forEach(function (h) { out.push({ pl: pl, k: "ht", h: h, label: "HT bill of " + h + (md.ht[h].name ? " (" + md.ht[h].name + ")" : ""), file: md.ht[h].file }); });
+    });
+    return out;
+  }
+  /* Throw away what was read, with its files, to upload again. Not once a bill of supply is out for the month: cancel it first. */
+  function discardForm(cid, month) {
+    if (solList(SOL.inv).some(function (i) { return i.companyId === cid && i.month === month && i.status !== "cancelled"; })) { toast("A bill of supply is issued for " + monthLabel(month) + ". Cancel it in Invoices & Receipts first."); return; }
+    var docs = solMonthDocs(cid, month), body = el("div", { class: "mform" }), many = coPlants(cid).length > 1, boxes = [];
+    body.appendChild(el("p", { class: "sub", style: "margin:0 0 8px" }, "The ticked documents, their files and everything read from them are deleted. Changed deductions go with the allotment order. Upload again afterwards."));
+    var all = el("label", { class: "check" }), ac = el("input", { type: "checkbox" }); ac.checked = true; all.appendChild(ac); all.appendChild(document.createTextNode(" Everything for " + monthLabel(month))); body.appendChild(all);
+    var lst = el("div", { style: "display:grid;gap:4px;margin:6px 0 0 18px" }); body.appendChild(lst);
+    docs.forEach(function (d) { var lb = el("label", { class: "check" }), cb = el("input", { type: "checkbox" }); cb.checked = true; lb.appendChild(cb); lb.appendChild(document.createTextNode(" " + d.label + (many ? " · HTSC " + d.pl : "") + (d.file && d.file.name ? " · " + d.file.name : ""))); lst.appendChild(lb); boxes.push([cb, d]); cb.addEventListener("change", function () { ac.checked = boxes.every(function (b) { return b[0].checked; }); }); });
+    ac.addEventListener("change", function () { boxes.forEach(function (b) { b[0].checked = ac.checked; }); });
+    popForm("Discard uploads", coLabel(cid) + " · " + monthLabel(month), body, "Discard", function () {
+      var pick = boxes.filter(function (b) { return b[0].checked; }).map(function (b) { return b[1]; }); if (!pick.length) { toast("Tick what to discard."); return false; }
+      var byPl = {}; pick.forEach(function (d) { (byPl[d.pl] || (byPl[d.pl] = [])).push(d); });
+      var chain = Promise.resolve();
+      Object.keys(byPl).forEach(function (pl) { chain = chain.then(function () {
+        var id = pl + "_" + month, cur = JSON.parse(JSON.stringify(SOL.months[id] || {})); delete cur.id;
+        byPl[pl].forEach(function (d) { if (d.k === "ht") delete (cur.ht || {})[d.h]; else delete cur[d.k]; if (d.k === "allot") delete cur.over; });
+        var left = cur.gen || cur.allot || cur.adj || Object.keys(cur.ht || {}).length;
+        return retry(function () { return left ? S.db.doc("solar_months/" + id).set(Object.assign(cur, { updatedAt: Date.now(), updatedBy: meId() })) : S.db.doc("solar_months/" + id).delete(); }).then(function () {
+          if (left) SOL.months[id] = Object.assign({ id: id }, cur); else delete SOL.months[id];
+          byPl[pl].forEach(function (d) { if (d.file && d.file.path && window.bvFiles) window.bvFiles.remove(d.file.path).catch(function () {}); });
+        });
+      }); });
+      return chain.then(function () { SOL.log = []; toast(plural(pick.length, "document") + " discarded."); solRender(); return true; }, function (e) { toast(explain(e)); return false; });
+    });
   }
   /* An HTSC not yet in Masters: add it to a consumer already there, or start a new consumer with it. */
   function htscToMasters(l) {
@@ -10382,30 +10420,30 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var ck = el("div", { class: "card list" }); box.appendChild(el("h3", null, "Checks")); box.appendChild(ck);
     sortTable(ck, "solChk", [{ label: "Check", cell: function (x, td) { td.appendChild(el("b", null, x.label)); if (x.pair) sub(td, x.pair); } }, { label: "Result", cell: function (x, td) { td.appendChild(chkTag(x.lvl)); } }, { label: "", cls: "desc", cell: function (x, td) { txt(td, x.msg); } }], all, { sortIndex: -1 });
     c.lines.forEach(function (l, li) {
-      var ht = l.ht || {}, f = el("div", { class: "card form", style: "margin-top:14px" });
-      box.appendChild(el("h3", { style: "margin-top:18px" }, "HT bill of HTSC " + l.htsc + (many ? " · from our HTSC " + l.plant : "")));
+      var ht = l.ht || {}, oa = ht.oa || {}, f = el("div", { class: "card form", style: "margin-top:14px" }), sfx = "_" + li;
+      box.appendChild(el("h3", { style: "margin-top:18px" }, "HTSC " + l.htsc + (many ? " · from our HTSC " + l.plant : "")));
       box.appendChild(f);
-      f.appendChild(el("p", { class: "sub", style: "margin:0 0 10px" }, units(l.billed) + " units" + (l.rate ? " × ₹" + l.rate.rate + " = " + rs(l.A) : "") + ", deductions " + rs(l.B) + "."));
-      if (!l.ht) { f.appendChild(el("p", { class: "sub" }, "This HT bill hasn't been read yet. Upload it on Monthly Billing.")); return; }
-      var g = el("div", { class: "solgrid" }), sfx = "_" + li; f.appendChild(g);
-      SLOTS.forEach(function (s, i) { g.appendChild(fld((plantKind(l.plant) === "wind" ? "Wind" : "Solar") + " units " + s, inp("svU" + i + sfx, String(n0((ht.solar || [])[i])), { inputmode: "decimal", class: "field num" }))); });
-      SOL_DED.forEach(function (d) { if (d[0] === "sgt") return; g.appendChild(fld(d[1], inp("svD_" + d[0] + sfx, String(l.ded[d[0]]), { inputmode: "decimal", class: "field num" }))); });
-      g.appendChild(fld("Self-generation tax, whole bill", inp("svSgt" + sfx, String(n0(ht.sgtWhole)), { inputmode: "decimal", class: "field num" }), "Only " + units(l.billed) + " × ₹" + SGT_RATE + " is deducted."));
-      Array.prototype.forEach.call(g.querySelectorAll("input"), function (i) { i.disabled = locked; });
-      f.appendChild(el("p", { class: "sub", style: "margin:10px 0 0" }, "HT bill " + (ht.billNo || "") + (ht.billDate ? " of " + fmtDate(ht.billDate) : "") + ". Change a figure only to match the printed HT bill; the change is noted on the checks."));
-      if (ht.file) f.appendChild(solFileBtn(ht.file));
+      f.appendChild(el("p", { class: "sub", style: "margin:0 0 10px" }, units(l.billed) + " units adjusted" + (l.rate ? " × ₹" + l.rate.rate + " = " + rs(l.A) : "") + ". Deductions come from the allotment order, wheeling is gross " + units(l.gross) + " × " + WHEEL_RATE + ", and self-generation tax is units adjusted × ₹" + SGT_RATE.toFixed(2) + "." + (l.ht ? " The HT bill is shown alongside to compare." : " No HT bill was uploaded to compare.")));
+      var tb = el("div", { class: "list scroll" }); f.appendChild(tb);
+      sortTable(tb, "solFig" + li, [
+        { label: "Deduction", cell: function (d, td) { txt(td, d[1]); } },
+        { label: "Worked out", cls: "r num", cell: function (d, td) { txt(td, rs(l.calc[d[0]])); } },
+        { label: "On the bill", cls: "r num", cell: function (d, td) { if (d[0] === "sgt" || locked) { td.appendChild(el("b", null, rs(l.ded[d[0]]))); return; } var x = inp("svD_" + d[0] + sfx, String(l.ded[d[0]]), { inputmode: "decimal", class: "field num", style: "max-width:140px;margin-left:auto", "aria-label": d[1] }); td.appendChild(x); } },
+        { label: "HT bill", cls: "r num", cell: function (d, td) { if (!l.ht || d[0] === "sgt") { txt(td, d[0] === "sgt" && l.ht ? rs(ht.sgtWhole) + " whole bill" : ""); return; } var hv = n0(d[2] === "wheeling" ? oa.wheeling : oa[d[2]]); txt(td, rs(hv)); if (Math.abs(hv - l.ded[d[0]]) > 1) sub(td, "Differs", "color:var(--warn)"); } }
+      ], SOL_DED, { sortIndex: -1 });
+      if (l.ht) { f.appendChild(el("p", { class: "sub", style: "margin:10px 0 0" }, "HT bill " + (ht.billNo || "") + (ht.billDate ? " of " + fmtDate(ht.billDate) : "") + ": " + units(sum5(ht.solar)) + " units credited.")); if (ht.file) f.appendChild(solFileBtn(ht.file)); }
       if (!locked) {
-        var acts = el("div", { class: "acts", style: "margin-top:12px" }), sv = el("button", { class: "btn primary", type: "button" }, "Save Figures");
+        var acts = el("div", { class: "acts", style: "margin-top:12px" }), sv = el("button", { class: "btn primary", type: "button" }, "Save Deductions"), rs0 = el("button", { class: "link-btn", type: "button" }, "Use the worked-out figures");
         sv.addEventListener("click", function () {
-          var solar = SLOTS.map(function (s, i) { return n0($("svU" + i + sfx).value); }), ded = {};
-          SOL_DED.forEach(function (d) { if (d[0] !== "sgt") ded[d[0]] = n0($("svD_" + d[0] + sfx).value); });
-          var ch = { solar: solar, sgtWhole: n0($("svSgt" + sfx).value), ded: ded, edited: true, editedAt: Date.now(), editedBy: meId(), editedByName: pnm(preparedByText()) };
-          solSaveMonth(l.plant, SOL.month, function (d) { d.ht = d.ht || {}; d.ht[l.htsc] = Object.assign({}, d.ht[l.htsc] || {}, ch); }).then(function () { toast("Figures saved."); solRender(); });
+          var dd = {}; SOL_DED.forEach(function (d) { if (d[0] !== "sgt") dd[d[0]] = n0($("svD_" + d[0] + sfx).value); });
+          var same = SOL_DED.every(function (d) { return d[0] === "sgt" || Math.abs(dd[d[0]] - l.calc[d[0]]) < 0.005; });
+          solSaveMonth(l.plant, SOL.month, function (d) { d.over = d.over || {}; if (same) delete d.over[l.htsc]; else d.over[l.htsc] = { ded: dd, edited: true, editedAt: Date.now(), editedBy: meId(), editedByName: pnm(preparedByText()) }; }).then(function () { toast("Deductions saved."); solRender(); });
         });
-        acts.appendChild(sv); f.appendChild(acts);
+        rs0.addEventListener("click", function () { solSaveMonth(l.plant, SOL.month, function (d) { if (d.over) delete d.over[l.htsc]; }).then(function () { toast("Back to the worked-out figures."); solRender(); }); });
+        acts.appendChild(sv); if (l.ov) acts.appendChild(rs0); f.appendChild(acts);
       }
     });
-    if (!locked && !c.blocks && c.allHt) { var is = el("button", { class: "btn primary", type: "button", style: "margin-top:16px" }, "Issue Invoice"); is.addEventListener("click", function () { issueForm(c.key); }); box.appendChild(is); }
+    if (!locked && !c.blocks && c.ready) { var is = el("button", { class: "btn primary", type: "button", style: "margin-top:16px" }, "Issue Invoice"); is.addEventListener("click", function () { issueForm(c.key); }); box.appendChild(is); }
   }
   /* Read, change and write back one month's record. */
   function solSaveMonth(plant, month, fn) {
@@ -10519,7 +10557,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function issueForm(key) {
     var cid = SOL.co, co = S.companies[cid], c = coMonthRows(cid, SOL.month).filter(function (r) { return r.key === key; })[0], cn = SOL.cons[key], month = SOL.month;
     if (!co || !c || !cn) { toast("Set up the company and the consumer in Masters first."); return; }
-    if (c.blocks || !c.allHt) { toast("Clear the checks marked Blocks first."); return; }
+    if (c.blocks || !c.ready) { toast("Clear the checks marked Blocks first."); return; }
     var body = el("div", { class: "mform" }), d0 = todayYmd(), nx = nextInvNo(cid, d0);
     body.appendChild(fld("Invoice date", inp("siDate", d0, { type: "date" })));
     var noEl = el("div", { class: "f" }); noEl.appendChild(el("span", { class: "lb" }, "Invoice number")); var nb = el("b", { class: "mono", id: "siNo" }, nx.no); noEl.appendChild(nb); noEl.appendChild(el("span", { class: "hint" }, "Next in " + (co.shortName || co.name) + "'s series for the year. Numbers are never skipped or reused."));

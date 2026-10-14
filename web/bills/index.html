@@ -786,7 +786,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <div id="lgmList"></div>
   </section>
   <section id="secAcct" hidden>
-    <div class="head"><div class="grow"><h2>To Account</h2><p class="sub">Every submitted bill and voucher comes here first. Set the ledgers and TDS and account it; only then can it go into a checking report. Postpone it to come back later, or send it back with a note.</p></div></div>
+    <div class="head"><div class="grow"><h2>Accounting</h2><p class="sub">Every submitted bill and voucher comes here first. Set the ledgers and TDS and account it; only then can it go into a checking report. Postpone it to come back later, or send it back with a note.</p></div></div>
     <div class="filters">
       <div class="seg" role="tablist" aria-label="Show"><button type="button" role="tab" id="acSideB" aria-selected="true">Bills <span id="acNB"></span></button><button type="button" role="tab" id="acSideV" aria-selected="false">Vouchers <span id="acNV"></span></button></div>
       <select class="field" id="acSt" aria-label="Status"><option value="pending">Waiting</option><option value="held">Postponed by me</option><option value="back">Sent back</option><option value="approved">Accounted</option><option value="all">All</option></select>
@@ -798,12 +798,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <div class="card list scroll" id="acList"></div>
   </section>
   <section id="secAcctOne" hidden>
-    <div class="head"><div><button class="link-btn" id="aoBack" type="button">Back to To Account</button><h2 id="aoTitle"></h2><p class="sub" id="aoSub"></p></div></div>
+    <div class="head"><div><button class="link-btn" id="aoBack" type="button">Back to Accounting</button><h2 id="aoTitle"></h2><p class="sub" id="aoSub"></p></div></div>
     <div id="aoBody"></div>
     <div class="form-foot" id="aoActs"></div>
   </section>
   <section id="secBooks" hidden>
-    <div class="head"><div class="grow"><h2>Ledger Books</h2><p class="sub">Approved bills, proforma and import tax bills, and vouchers, posted to their ledgers. Choose a ledger to see its entries.</p></div><div class="acts2"><button class="btn" id="bkXls" type="button">Download Excel</button></div></div>
+    <div class="head"><div class="grow"><h2>Ledger Statements</h2><p class="sub">Approved bills, proforma and import tax bills, and vouchers, posted to their ledgers. Choose a ledger to see its entries.</p></div><div class="acts2"><button class="btn" id="bkXls" type="button">Download Excel</button></div></div>
     <div class="filters">
       <div class="seg" role="tablist" aria-label="Book"><button type="button" role="tab" id="bkSide_bills" aria-selected="true">Bills</button><button type="button" role="tab" id="bkSide_proformas" aria-selected="false">Proformas</button><button type="button" role="tab" id="bkSide_vouchers" aria-selected="false">Vouchers</button></div>
       <select class="field" id="bkCo" aria-label="Company"></select>
@@ -940,7 +940,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <div id="bOpen"></div>
     <div id="bNext"></div>
     <div id="bPostWrap" hidden><h3>Postponed</h3><div class="card" id="bPost"></div></div>
-    <h3>Submitted, waiting for a Bills CR</h3>
+    <h3>Submitted, waiting for a Bill Checking Report</h3>
     <div class="filters">
       <select class="field" id="bDoneCo" aria-label="Filter by company"></select>
       <input class="field" id="bDoneQ" type="search" placeholder="Search vendor or bill number" aria-label="Search submitted bills" autocomplete="off">
@@ -1018,7 +1018,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secChecks" hidden>
     <div class="head">
-      <div><h2>Bills Checking Report</h2><p class="sub">Bills CR (bill checking report): one vendor, one company, one preparer. Only bills the accountant has accounted can go in. It is then printed, and the admin approves it for payment, bill by bill. A vendor's bills can't go into a report until its opening balance for that company is captured.</p></div>
+      <div><h2>Bills Checking Report</h2><p class="sub">Bill Checking Report (bill checking report): one vendor, one company, one preparer. Only bills the accountant has accounted can go in. It is then printed, and the admin approves it for payment, bill by bill. A vendor's bills can't go into a report until its opening balance for that company is captured.</p></div>
       <span class="grow"></span>
       <select class="field" id="ckCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
@@ -1030,19 +1030,19 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   </section>
 
   <section id="secCheckNew" hidden>
-    <div class="head"><div><button class="link-btn" id="cnBack">Back to Bills CR</button><h2 id="cnTitle"></h2><p class="sub" id="cnSub"></p></div></div>
+    <div class="head"><div><button class="link-btn" id="cnBack">Back to Bill Checking</button><h2 id="cnTitle"></h2><p class="sub" id="cnSub"></p></div></div>
     <div class="stats" id="cnStats"></div>
     <div class="card">
       <div class="list scroll" id="cnBills"></div>
       <div class="form-foot" style="align-items:center">
-        <button class="btn primary" id="cnCreate">Generate Bills CR</button>
+        <button class="btn primary" id="cnCreate">Generate Bill Checking Report</button>
         <button class="btn" id="cnCancel">Cancel</button>
       </div>
     </div>
   </section>
 
   <section id="secCheckView" hidden>
-    <div class="head"><div><button class="link-btn" id="cvBack">Back to Bills CR</button><h2 id="cvTitle" class="mono"></h2><p class="sub" id="cvSub"></p></div></div>
+    <div class="head"><div><button class="link-btn" id="cvBack">Back to Bill Checking</button><h2 id="cvTitle" class="mono"></h2><p class="sub" id="cvSub"></p></div></div>
     <div class="stats" id="cvStats"></div>
     <div class="card">
       <div class="list scroll" id="cvBills"></div>
@@ -1137,7 +1137,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secVch" hidden>
     <div class="head">
-      <div><h2>Cash Vouchers</h2><p class="sub">Cash paid on the spot, in full, to people who are not on the vendor list. Each voucher is either settled from your cash advance, or sent through a Vouchers CR for the financier to pay by cash or cheque.</p></div>
+      <div><h2>Cash Vouchers</h2><p class="sub">Cash paid on the spot, in full, to people who are not on the vendor list. Each voucher is either settled from your cash advance, or sent through a Voucher Checking Report for the financier to pay by cash or cheque.</p></div>
       <span class="grow"></span>
       <div class="acts2"><button class="btn primary" id="vhNew">New voucher</button></div>
     </div>
@@ -1199,19 +1199,19 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   </section>
 
   <section id="secVcrNew" hidden>
-    <div class="head"><div><button class="link-btn" id="vnBack">Back to Vouchers CR</button><h2>New Voucher CR</h2><p class="sub">One table per company, in your company order. Untick a company or a voucher to leave it for a later report.</p></div></div>
+    <div class="head"><div><button class="link-btn" id="vnBack">Back to Voucher Checking</button><h2>New Voucher Checking Report</h2><p class="sub">One table per company, in your company order. Untick a company or a voucher to leave it for a later report.</p></div></div>
     <div class="stats" id="vnStats"></div>
     <div id="vnBox"></div>
     <div class="card" style="margin-top:14px">
       <div class="form-foot" style="align-items:center">
-        <button class="btn primary" id="vnCreate">Generate Vouchers CR</button>
+        <button class="btn primary" id="vnCreate">Generate Voucher Checking Report</button>
         <button class="btn" id="vnCancel">Cancel</button>
       </div>
     </div>
   </section>
 
   <section id="secVcrView" hidden>
-    <div class="head"><div><button class="link-btn" id="vvBack">Back to Vouchers CR</button><h2 id="vvTitle" class="mono"></h2><p class="sub" id="vvSub"></p></div></div>
+    <div class="head"><div><button class="link-btn" id="vvBack">Back to Voucher Checking</button><h2 id="vvTitle" class="mono"></h2><p class="sub" id="vvSub"></p></div></div>
     <div class="stats" id="vvStats"></div>
     <div id="vvBox"></div>
     <div class="card" style="margin-top:14px">
@@ -1290,7 +1290,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   </section>
   <section id="secApr" hidden>
     <div class="head">
-      <div><h2>Advances Checking Report</h2><p class="sub">Advance CR (advance planning report): one for each instalment of a proforma or import, with no GST. Generate it when it falls due, or earlier when the payment needs to go sooner. It is then printed, approved on paper and sent for payment.</p></div>
+      <div><h2>Advances Checking Report</h2><p class="sub">Advance Checking Report (advance planning report): one for each instalment of a proforma or import, with no GST. Generate it when it falls due, or earlier when the payment needs to go sooner. It is then printed, approved on paper and sent for payment.</p></div>
       <span class="grow"></span>
       <select class="field" id="apCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
@@ -1536,9 +1536,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* Every app has the same headings in the same order; each person sees the tabs their jobs allow. The app decides the scope:
      a division app (Maintenance & Civil, Renewable Energy) shows that division's work, Accounts and Finance every division's. */
   var REP_TABS = { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]].concat(APP === "re" ? [["Solar Reports", "P&L"]] : []) };
-  var SALES_TABS = { h: "Sales", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices & Receipts"]] };
-  var EXP_TABS = { h: "Expenses", tabs: [["Bills", "Enter Bills"], ["Checking Report", "Bills CR"], ["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance CR"], ["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Vouchers CR"], ["Cash Advance", "Cash Advance"]] };
-  var ACC_TABS = { h: "Accounts", tabs: [["Accounts", "To Account"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Books"]] };
+  var SALES_TABS = { h: "Sales", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices"]] };
+  var EXP_TABS = { h: "Expenses", tabs: [["Bills", "Enter Bills"], ["Checking Report", "Bill Checking"], ["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance Checking"], ["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Voucher Checking"], ["Cash Advance", "Cash Advance"]] };
+  var ACC_TABS = { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Statements"]] };
   var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] };
   /* Masters: its own heading. Companies first, then (Renewable Energy) Consumers and PPA Rates, then Vendors and Ledgers. */
   var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], MASTERS[2]] : MASTERS };
@@ -1803,7 +1803,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ================= responsibilities: who does which step for which company ================= */
   /* Job roles every user must have. Each suggests the steps it usually does; the admin can still change the ticks. */
-  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["approver", "Approver", "Approves checking reports and cash advances that name them, in the Approvals app"], ["recorder", "Approval Recorder", "Records approvals already signed on paper by an admin or approver, in their name; is never named as approver"], ["vmaker", "Voucher Maker", "Makes cash vouchers for other people, chosen from a saved list of names, and their Vouchers CRs"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Sales", "Renewable Energy: reads the TNPDCL statements for solar plants and windmills, issues the bills of supply to consumers and records their receipts"]];
+  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["approver", "Approver", "Approves checking reports and cash advances that name them, in the Approvals app"], ["recorder", "Approval Recorder", "Records approvals already signed on paper by an admin or approver, in their name; is never named as approver"], ["vmaker", "Voucher Maker", "Makes cash vouchers for other people, chosen from a saved list of names, and their Voucher Checking Reports"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Sales", "Renewable Energy: reads the TNPDCL statements for solar plants and windmills, issues the bills of supply to consumers and records their receipts"]];
   var JOB_STEPS = { purchaser: ["bills", "bcr", "adv", "vouchers", "vcr", "cash"], accountant: ["acct"], approver: ["appr"], recorder: ["rec"], vmaker: ["vouchers", "vcr"], financier: ["txn"], solar: ["solar"] };
   function jobChecks(box, sel) {
     sel = sel || []; box.textContent = "";
@@ -1813,7 +1813,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function jobsOf(u) { return (u && u.jobRoles && u.jobRoles.length ? u.jobRoles : null) || ((u && S.requests[u.id]) || {}).jobRoles || []; }
   function stepsForJobs(js) { var m = {}; (js || []).forEach(function (k) { (JOB_STEPS[k] || []).forEach(function (st) { m[st] = 1; }); }); return STEPS.map(function (s) { return s[0]; }).filter(function (k) { return m[k]; }); }
   function myJobs() { var u = S.myUser; if (u && u.jobRoles && u.jobRoles.length) return u.jobRoles; return !S.actId && S.myReq && S.myReq.jobRoles ? S.myReq.jobRoles : []; }
-  var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bills CR"], ["vouchers", "Cash Vouchers"], ["vcr", "Vouchers CR"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance CR"], ["appr", "Approval"], ["rec", "Approval Recorder"], ["txn", "Payment Entry"], ["solar", "Sales"]];
+  var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bill Checking"], ["vouchers", "Cash Vouchers"], ["vcr", "Voucher Checking"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance Checking"], ["appr", "Approval"], ["rec", "Approval Recorder"], ["txn", "Payment Entry"], ["solar", "Sales"]];
   var TAB_STEP = { "Cash Approvals": "appr", "Solar Month": "solar", "Solar Invoices": "solar", "Solar Reports": "solar", "Approvals": "appr", "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
   /* A user saved before responsibilities existed does every step for their companies until the admin sets them. */
   /* Someone allowed to add companies (not an admin) works in a company they added with the same steps they hold elsewhere,
@@ -3810,7 +3810,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   var APPR_HINT = "The approver (or admin) who approves it, in the Approvals app.";
   function prepName(x) { return pnm(x.preparedByName) || (S.isAdmin ? userLabel(prepOf(x)) : prepOf(x) === meId() ? preparedByText() : "") || ""; }
-  /* A final bill started from a proforma or import counts under Proformas, imports, Advance CR as well as Bills. */
+  /* A final bill started from a proforma or import counts under Proformas, imports, Advance Checking Report as well as Bills. */
   function billStep(b) { return b && b.advanceId ? "adv" : "bills"; }
   function billCanCo(b, cid) { return canStep("bills", cid) || (!!(b && b.advanceId) && canStep("adv", cid)); }
   function amountsOf(D) { return inrAmounts(D.currency, 1, num(D.taxable), num(D.gstAmt)); }
@@ -4343,7 +4343,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var la = (b.advanceId || doc.advanceId) && S.advances[b.advanceId || doc.advanceId];
       if (la && !la.taxBillId) retry(function () { return S.db.doc("advances/" + la.id).update({ taxBillId: b.id, updatedAt: Date.now(), updatedBy: meId() }); }).then(function () { la.taxBillId = b.id; invalidate(); }, function () {});
       var os = B.oneStopDone; B.oneStopDone = false;
-      toast("Bill " + doc.billNo + " submitted" + (os ? " and accounted. It can now go into a Bills CR." : oneStop(doc.companyId) ? ". It waits in To Account until the vendor's details are complete." : ".") + (la && !la.taxBillId ? " It is now the final bill of " + (la.kind === "import" ? "import " : "proforma ") + la.piNo + "." : "") + (madeVendor ? " " + madeVendor + " was added to the Vendor list." : ""));
+      toast("Bill " + doc.billNo + " submitted" + (os ? " and accounted. It can now go into a Bill Checking Report." : oneStop(doc.companyId) ? ". It waits in Accounting until the vendor's details are complete." : ".") + (la && !la.taxBillId ? " It is now the final bill of " + (la.kind === "import" ? "import " : "proforma ") + la.piNo + "." : "") + (madeVendor ? " " + madeVendor + " was added to the Vendor list." : ""));
       dropPreviews(b.id); closeCard(b.id);
     }, function (e) { toast(explain(e)); setCardBusy(false); }).then(function () { B.busy = false; });
   }
@@ -4507,7 +4507,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       return true;
     }).sort(function (x, y) { return natCmp(x.billDate || "9999", y.billDate || "9999") || coCmpId(x.companyId, y.companyId) || natCmp(vendorLabelOfBill(x), vendorLabelOfBill(y)) || natCmp(x.billNo, y.billNo); });
     var box = $("bDone");
-    if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, qtx || sel.value ? "No waiting bills match." : "No submitted bills are waiting for a Bills CR. Bills in a report are on the Bills CR tab.")); return; }
+    if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, qtx || sel.value ? "No waiting bills match." : "No submitted bills are waiting for a Bill Checking Report. Bills in a report are on the Bill Checking tab.")); return; }
     /* Always in bill date order, oldest first, so the headings don't re-sort this table. */
     sortTable(box, "bDone", [
       { label: "Bill details", kind: "co", cell: function (b, td) {
@@ -4516,7 +4516,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
           if (ymdOk(b.dueDate)) { var late = daysBetween(b.dueDate, t), dd = el("span", { class: "tsub mob-only" }, "Due " + fmtDate(b.dueDate) + (late > 0 ? " · overdue " + plural(late, "day") : late === 0 ? " · today" : ""));
             if (late > 0) dd.style.cssText = "color:var(--bad);font-weight:600"; td.appendChild(dd); } } },
       { label: "Company", cell: function (b, td) { td.appendChild(el("b", null, coLabel(b.companyId))); } },
-      { label: "Vendor", cell: function (b, td) { txt(td, vendorLabelOfBill(b)); sub(td, acctLabel(b)[0] + (b.acct === "approved" ? "" : ". Waiting for the accountant before a Bills CR.")); } },
+      { label: "Vendor", cell: function (b, td) { txt(td, vendorLabelOfBill(b)); sub(td, acctLabel(b)[0] + (b.acct === "approved" ? "" : ". Waiting for the accountant before a Bill Checking Report.")); } },
       { label: "Total amount", cls: "r num", cell: function (b, td) {
           td.appendChild(el("b", null, bm(b, b.total))); sub(td, bm(b, b.taxable) + " + GST " + bm(b, b.gstAmt));
           if (b.landed) sub(td, "Landed: taxable " + money(b.landed.taxable) + " + GST " + money(b.landed.gst), "color:var(--brand);font-weight:600");
@@ -4800,7 +4800,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function newPdf(jsPDF) { var doc = new jsPDF({ unit: "pt", format: "a4", compress: true }); pdfFonts(doc); return doc; }
   function cellDesc(main, rest) { return (main || "") + (rest ? "\n" + rest : ""); }
 
-  /* ---- Bills CR and Advance CR ---- */
+  /* ---- Bill Checking Report and Advance Checking Report ---- */
   function buildReportPdf(r, jsPDF) {
     var doc = newPdf(jsPDF), P = pdfLook(doc), v = S.vendors[r.vendorId] || { name: "" }, c = S.companies[r.companyId] || { name: "" }, cur = r.currency || "INR";
     var M = function (n) { return amt(n); }, CM = function (n) { return curMoney(cur, n); };
@@ -4848,7 +4848,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     return doc;
   }
 
-  /* ---- Vouchers CR ---- */
+  /* ---- Voucher Checking Report ---- */
   function buildVcrPdf(r, jsPDF) {
     var doc = newPdf(jsPDF), P = pdfLook(doc), cos = r.companyIds || [], one = cos.length === 1 ? S.companies[cos[0]] : null;
     var y = P.head({ logo: one ? one.logo : groupLogo(), name: one ? one.name : "KKSK Group", sub: "Voucher checking report · Internal", big: r.no || "", bigSub: "Checked " + fmtDate(r.checkDate || ymdOfMs(r.createdAt)) + " · Prepared by " + pnm(r.preparedBy),
@@ -5190,9 +5190,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function checkOf(b) { return ridx()[b.id] || null; }
   function awaitingCheck() { return billList().filter(function (b) { return b.status === "done" && b.vendorId && canStep("bcr", b.companyId) && acctOk(b) && (!checkOf(b) || (stageOf(checkOf(b).r) === "payment" && billRest(b) > 0.5)); }); }
-  /* What part of a bill no Bills CR has approved yet (after any payment, discount or advance). */
+  /* What part of a bill no Bill Checking Report has approved yet (after any payment, discount or advance). */
   function billRest(b) { var inf = billInfo(b), ap = billApproved(b); if (ap === Infinity) return 0; return round2(Math.max(0, inf.rem - Math.max(0, ap - inf.pay - inf.disc))); }
-  /* The amount of a bill a Bills CR asks to be paid: the whole bill, or only the rest still to approve after an earlier part approval. */
+  /* The amount of a bill a Bill Checking Report asks to be paid: the whole bill, or only the rest still to approve after an earlier part approval. */
   function crAmt(r, b) { if (r && r.amts && r.amts[b.id] != null) return Number(r.amts[b.id]) || 0; var inf = billInfo(b); return round2(inf.net - inf.adv); }
   /* Why a bill is waiting again: sent back from a report, or part approved. */
   function crBackInfo(b) {
@@ -5239,7 +5239,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var cid = sel.value, groups = checkGroups(cid), nb = groups.reduce(function (s, x) { return s + x.bills.length; }, 0);
     $("ckWaitN").textContent = nb ? "(" + plural(nb, "bill") + ")" : "";
     var wb = $("ckWait");
-    if (!groups.length) { wb.textContent = ""; wb.appendChild(el("div", { class: "empty" }, "No submitted bills are waiting for a Bills CR.")); }
+    if (!groups.length) { wb.textContent = ""; wb.appendChild(el("div", { class: "empty" }, "No submitted bills are waiting for a Bill Checking Report.")); }
     else sortTable(wb, "ckWait", [
       { label: "Company", kind: "co", sort: function (x) { return coRank(S.companies[x.cid]); }, cell: function (x, td) { td.appendChild(el("b", null, coLabel(x.cid))); } },
       { label: "Vendor", sort: function (x) { return S.vendors[x.vid].name; }, cell: function (x, td) {
@@ -5267,7 +5267,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
     $("ckListSub").textContent = S.isAdmin ? "You see every report. Printed reports can be reversed or sent for payment." : "A report leaves this list once its PDF is downloaded for printing. The admin keeps it from then on.";
     var rb = $("ckList");
-    if (!reps.length) { rb.textContent = ""; rb.appendChild(el("div", { class: "empty" }, q ? "No reports match." : S.isAdmin ? "No Bills CR is waiting for approval." : "No Bills CR here. Prepare one from the list above.")); return; }
+    if (!reps.length) { rb.textContent = ""; rb.appendChild(el("div", { class: "empty" }, q ? "No reports match." : S.isAdmin ? "No Bill Checking Report is waiting for approval." : "No Bill Checking Report here. Prepare one from the list above.")); return; }
     sortTable(rb, "ckList", [
       { label: "Report number", kind: "co", sort: function (r) { var fy = r.fy || fyOf(r.checkDate || ymdOfMs(r.createdAt || 0)); return Number(fy.slice(0, 2)) * 10000 + (r.seq || 0); }, desc: true, cell: function (r, td) { td.appendChild(el("b", { class: "mono" }, r.no || "")); sub(td, fmtDay(r.createdAt)); } },
       { label: "Stage", sort: function (r) { return STAGE_ORDER[stageOf(r)]; }, cell: function (r, td) { td.appendChild(stageTag(r)); } },
@@ -5305,7 +5305,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var d = CK.draftId && S.reports[CK.draftId];
     if (CK.draftId && (!d || stageOf(d) !== "draft")) { backToChecks(); return; }
     var bills = newCheckBills(); CK.sig = bills.map(function (b) { return b.id; }).join();
-    $("cnTitle").textContent = d ? "Draft " + d.no : "New Bills CR";
+    $("cnTitle").textContent = d ? "Draft " + d.no : "New Bill Checking Report";
     $("cnSub").textContent = d ? "This report was reversed to draft. Bills submitted since for this vendor are listed and ticked; untick any to leave for later."
       : "Untick any bill to leave it for a later report.";
     var box = $("cnBills");
@@ -5402,7 +5402,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var t = sumBills(bills), cur = billsCur(bills);
     if (bills.some(function (b) { return (b.currency || "INR") !== cur; })) { toast("These bills are in different currencies. Put each currency in its own report."); return; }
     var miss = [];
-    if (miss.length) { toast("Bill " + miss.map(function (b) { return b.billNo; }).join(", ") + (miss.length > 1 ? " have" : " has") + " no TDS yet. The accountant enters it under Accounts, To Account; then generate."); return; }
+    if (miss.length) { toast("Bill " + miss.map(function (b) { return b.billNo; }).join(", ") + (miss.length > 1 ? " have" : " has") + " no TDS yet. The accountant enters it under Accounts, Accounting; then generate."); return; }
     saveGenerated(bills, 0);
   }
   /* Bills already part approved in an earlier report come in for their rest only. */
@@ -5434,7 +5434,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     CK.busy = true; $("cnCreate").disabled = true;
     retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () {
       S.reports[id] = Object.assign({ id: id }, doc); invalidate(); renderNav(); CK.draftId = null;
-      toast("Bills CR " + doc.no + " generated."); openReport(id);
+      toast("Bill Checking Report " + doc.no + " generated."); openReport(id);
     }, function (e) { toast(explain(e)); }).then(function () { CK.busy = false; if (!$("secCheckNew").hidden) updateNewCheck(); });
   }
   function backToChecks() {
@@ -5445,7 +5445,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
 
   /* ---- one report on screen: a plain table, like the screen it was prepared on ---- */
-  function openReport(id) { CK.viewId = id; CK.arm = ""; $("cvBack").textContent = S.tab === "Approvals" ? "Back to Approvals" : S.tab === "Advance Report" ? "Back to Advance CR" : "Back to Bills CR"; renderReport(); show("secCheckView"); window.scrollTo(0, 0); }
+  function openReport(id) { CK.viewId = id; CK.arm = ""; $("cvBack").textContent = S.tab === "Approvals" ? "Back to Approvals" : S.tab === "Advance Report" ? "Back to Advance Checking" : "Back to Bill Checking"; renderReport(); show("secCheckView"); window.scrollTo(0, 0); }
   function renderReport() {
     var r = S.reports[CK.viewId]; if (!r) { backToChecks(); return; }
     if (!teamSees(r)) { toast("Report " + r.no + " has been printed and is with the admin now."); backToChecks(); return; }
@@ -5580,7 +5580,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function apprMine(r) { if (S.isAdmin) return true; return APP === "apr" && apprForMe(r, reportApproverId(r)) && apprCos(r).some(function (cid) { return canApprove(cid); }); }
   /* The approver a checking report is for: saved on it, or (older reports) the one most of its entries name. */
   function reportApproverId(r) { return r.approverId || reportApprover(r); }
-  function apprKind(r) { return r.kind === "vcr" ? (r.direct ? "Vouchers (no CR)" : "Vouchers CR") : r.kind === "inst" ? "Advance CR" : "Bills CR"; }
+  function apprKind(r) { return r.kind === "vcr" ? (r.direct ? "Vouchers (no checking report)" : "Voucher Checking Report") : r.kind === "inst" ? "Advance Checking Report" : "Bill Checking Report"; }
   function apprWho(r) { if (r.kind === "vcr") return pnm(r.preparedBy); return (S.vendors[r.vendorId] || {}).name || ""; }
   function apprAmount(r) { return r.kind === "vcr" ? money(r.payable != null ? r.payable : r.total) : repMoney(r, r.kind === "inst" ? r.total : payableOf(r)); }
   function apprWaiting() {
@@ -5674,9 +5674,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     return Object.keys(n).sort(function (a, b) { return n[b] - n[a]; })[0] || "";
   }
 
-  /* ---- Approving a Bills CR, bill by bill ----
+  /* ---- Approving a Bill Checking Report, bill by bill ----
      Tick the bills to pay and set the amount for each (the whole of it, or a part). An unticked bill goes back to the purchaser;
-     the unpaid rest of a part-approved bill waits for the purchaser too, who may put it in a new Bills CR later. What is approved goes
+     the unpaid rest of a part-approved bill waits for the purchaser too, who may put it in a new Bill Checking Report later. What is approved goes
      straight to the financier's Payment Entry. */
   function crApproveForm(r) {
     if (S._adm) { toast("No approving while viewing as someone. Go back to your admin view to approve."); return; }
@@ -5702,7 +5702,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     behalfField(body, reportApprover(r));
     var nf = tidyField("Note to the purchaser", tidyBox("apNote", "", "reason", 300), "Needed when a bill goes back or is approved in part. The purchaser sees it with the bill."); body.appendChild(nf);
     sync();
-    popForm("Approve " + r.no, "Untick a bill to send it back to the purchaser. Lower the amount to approve part of a bill: the rest goes back to the purchaser, who can put it in a new Bills CR later.", body, "Approve for payment", function () {
+    popForm("Approve " + r.no, "Untick a bill to send it back to the purchaser. Lower the amount to approve part of a bill: the rest goes back to the purchaser, who can put it in a new Bill Checking Report later.", body, "Approve for payment", function () {
       errClear(body); var appr = {}, keep = [], back = [], part = false, bad = "";
       bills.forEach(function (b) { var x = rows[b.id]; if (!x.ck.checked) { back.push(b.id); return; } var n = num(x.amt.value); if (n == null || n <= 0) bad = bad || "Enter the amount to approve for bill " + b.billNo + ", or untick it."; else if (n > x.max + 0.5) bad = bad || "Bill " + b.billNo + " can be approved for up to " + bm(b, x.max) + "."; else { appr[b.id] = round2(n); keep.push(b); if (n < x.max - 0.5) part = true; } });
       if (bad) { toast(bad); return false; }
@@ -5724,11 +5724,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var keep = r.billIds.concat(back), bs = keep.map(function (id) { return S.bills[id]; }).filter(Boolean), t = sumBills(bs);
     setStage(r, "printed", { appr: null, billIds: keep, sentBack: (r.sentBack || []).filter(function (id) { return back.indexOf(id) < 0; }), lastBack: [], backNote: "", taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to });
   }
-  /* ---- Approving an Advance CR: the whole instalment, or a part (the rest waits for a new Advance CR) ---- */
+  /* ---- Approving an Advance Checking Report: the whole instalment, or a part (the rest waits for a new Advance Checking Report) ---- */
   function instApproveForm(r) {
     if (S._adm) { toast("No approving while viewing as someone. Go back to your admin view to approve."); return; }
     var a = S.advances[r.advanceId], max = round2(Number(r.total) || 0), cur = r.currency || "INR", body = el("div", { class: "mform" });
-    body.appendChild(fld("Amount to approve" + (cur !== "INR" ? " (" + cur + ")" : ""), inp("iaAmt", fmtInput(String(max)), { inputmode: "decimal", class: "field num" }), "Up to " + curMoney(cur, max) + ". Anything less stays due and goes back to the purchaser for a new Advance CR."));
+    body.appendChild(fld("Amount to approve" + (cur !== "INR" ? " (" + cur + ")" : ""), inp("iaAmt", fmtInput(String(max)), { inputmode: "decimal", class: "field num" }), "Up to " + curMoney(cur, max) + ". Anything less stays due and goes back to the purchaser for a new Advance Checking Report."));
     body.appendChild(tidyField("Note to the purchaser", tidyBox("iaNote", "", "reason", 300), "Needed when approving less than the full amount."));
     behalfField(body, reportApprover(r));
     popForm("Approve " + r.no, a ? instLabel(a, r.inst) + " of " + (a.kind === "import" ? "import " : "proforma ") + (a.piNo || "") : "", body, "Approve for payment", function () {
@@ -5925,7 +5925,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function instNeedsDispatch(a, i) { var it = (a.installments || [])[i]; return !!it && i > 0 && (it.when === "beforeDispatch" || it.when === "afterDispatch"); }
   function instReport(a, i) { var rs = instReports(a, i); return rs.length ? rs[rs.length - 1] : null; }
   function instLaterReport(r) { var a = S.advances[r.advanceId], l = a && instReport(a, r.inst); return !!l && l.id !== r.id; }
-  /* The part of an instalment no Advance CR has approved yet. */
+  /* The part of an instalment no Advance Checking Report has approved yet. */
   function instRest(a, i) { return round2(Math.max(0, instAmt(a, i) - Math.max(advPaid(a.id, i), instApproved(a, i)))); }
   function instLabel(a, i) { var n = (a.installments || []).length, it = a.installments[i] || {}; return "Instalment " + (i + 1) + " of " + n + " (" + (Number(it.pct) || 0) + "%)"; }
   function whenText(a, i) {
@@ -6060,7 +6060,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     setTimeout(function () { paintAiFlags(advAiSpecs()); }, 0);
     $("adBack").textContent = imp ? "Back to Imports" : "Back to Proformas";
     $("adTitle").textContent = a ? (imp ? "Import " : "Proforma ") + (a.piNo || "") : imp ? "New import" : "New proforma";
-    $("adSub").textContent = ADV.fromFile ? "Read from " + ADV.fromFile + ". Check every box against the file, then save." : a ? "Changes apply straight away to instalments not yet in an Advance CR." : "Fill in the proforma. Instalments fall due by the dates worked out below.";
+    $("adSub").textContent = ADV.fromFile ? "Read from " + ADV.fromFile + ". Check every box against the file, then save." : a ? "Changes apply straight away to instalments not yet in an Advance Checking Report." : "Fill in the proforma. Instalments fall due by the dates worked out below.";
     var body = $("adBody"); body.textContent = ""; body.className = "bc-body" + (ADV.prev && ADV.prev.length ? "" : " noprev");
     if (ADV.prev && ADV.prev.length) body.appendChild(previewEl(ADV.prev, "Shown while this form is open; the file itself is not kept. Click the image to zoom."));
     var f = el("div", { class: "form", id: "adForm" });
@@ -6085,7 +6085,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (imp) {
       var cs = el("select", { class: "field", id: "adCur" }), list = CURRENCIES.filter(function (c) { return c !== "INR"; }); if (list.indexOf(D.currency) < 0) list.push(D.currency);
       fillSelect(cs, list.map(function (c) { return [c, c]; }), D.currency); if (locked) cs.disabled = true;
-      f.appendChild(fld("Currency", cs, locked ? "Fixed once an instalment is in a report." : "Instalments and their Advance CR use this currency."));
+      f.appendChild(fld("Currency", cs, locked ? "Fixed once an instalment is in a report." : "Instalments and their Advance Checking Report use this currency."));
       var ta = inp("adTotal", D.total, { inputmode: "decimal", class: "field num" }); if (locked) ta.disabled = true;
       f.appendChild(fld("Total amount", ta, "In " + D.currency + "."));
     } else {
@@ -6438,7 +6438,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       tds: 0, payable: amt0, stage: "generated", generatedAt: now, generatedBy: meId(), log: [logEntry("generated", instLabel(a, i))] };
     CK.busy = true; if (btn) btn.disabled = true;
     retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () {
-      S.reports[id] = Object.assign({ id: id }, doc); invalidate(); renderNav(); toast("Advance CR " + doc.no + " generated for " + instLabel(a, i).toLowerCase() + (doc.early ? ", ahead of its due date." : ".")); openReport(id);
+      S.reports[id] = Object.assign({ id: id }, doc); invalidate(); renderNav(); toast("Advance Checking Report " + doc.no + " generated for " + instLabel(a, i).toLowerCase() + (doc.early ? ", ahead of its due date." : ".")); openReport(id);
     }, function (e) { toast(explain(e)); if (btn) btn.disabled = false; }).then(function () { CK.busy = false; });
   }
   /* ---- Advance Planning Reports tab ---- */
@@ -6481,7 +6481,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
     $("apListSub").textContent = S.isAdmin ? "You see every report. Printed reports can be reversed or sent for payment." : "A report leaves this list once its PDF is downloaded for printing. The admin keeps it from then on.";
     var rb = $("apList");
-    if (!reps.length) { rb.textContent = ""; rb.appendChild(el("div", { class: "empty" }, q ? "No reports match." : "No Advance CR here yet.")); return; }
+    if (!reps.length) { rb.textContent = ""; rb.appendChild(el("div", { class: "empty" }, q ? "No reports match." : "No Advance Checking Report here yet.")); return; }
     sortTable(rb, "apList", [
       { label: "Report number", kind: "co", sort: function (r) { return Number(String(r.fy || "00").slice(0, 2)) * 10000 + (r.seq || 0); }, desc: true, cell: function (r, td) { td.appendChild(el("b", { class: "mono" }, r.no || "")); sub(td, fmtDay(r.createdAt) + (r.early ? " · generated early" : "")); } },
       { label: "Stage", sort: function (r) { return STAGE_ORDER[stageOf(r)]; }, cell: function (r, td) { td.appendChild(stageTag(r)); } },
@@ -6536,7 +6536,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function planItemRem(pl, it) { return round2((Number(it.amount) || 0) - planItemPaid(pl.id, it.key)); }
   /* Still to pay on locked plans, for the lines that match. */
   function lockedRem(pred) { var s = 0; payPlans().forEach(function (pl) { if (pl.status !== "locked") return; (pl.items || []).forEach(function (it) { if (pred(it)) s += Math.max(0, planItemRem(pl, it)); }); }); return round2(s); }
-  /* A Bills CR can be taken back from payment only while nothing has been paid to that vendor since it was approved. */
+  /* A Bill Checking Report can be taken back from payment only while nothing has been paid to that vendor since it was approved. */
   function inLockedPlan(reportId) {
     var r = S.reports[reportId]; if (!r || r.kind === "inst" || r.kind === "vcr") return false;
     var at = 0; (r.log || []).forEach(function (l) { if (l.stage === "payment") at = l.at || 0; });
@@ -6558,8 +6558,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function modeText(t) { var m = modeInfo(t.mode); return (m ? m[1] : "") + (t.ref ? (m ? " · " : "") + t.ref : ""); }
   function cashToPayeeOn(payeeKey, date, skipId) { var s = 0; txList().forEach(function (t) { if (t.id !== skipId && t.kind === "payment" && t.mode === "cash" && t.date === date && (t.payeeId || normName(t.payee || "")) === payeeKey) s += Number(t.amount) || 0; }); return round2(s); }
   /* ---- What the admin approved for payment ----
-     A bill counts once a Bills CR holding it is approved (sent for payment): in full, or the amount the admin approved for it on that
-     report. An instalment counts once its Advance CR is approved, in full or the amount approved. The financier pays what is approved
+     A bill counts once a Bill Checking Report holding it is approved (sent for payment): in full, or the amount the admin approved for it on that
+     report. An instalment counts once its Advance Checking Report is approved, in full or the amount approved. The financier pays what is approved
      and still unpaid; nothing needs planning. */
   function payReports(b) { var out = []; Object.keys(S.reports).forEach(function (k) { var r = S.reports[k]; if (r.kind !== "vcr" && r.kind !== "inst" && stageOf(r) === "payment" && (r.billIds || []).indexOf(b.id) >= 0) out.push(r); }); return out; }
   /* Approved so far for a bill: Infinity when a report approved it in full. */
@@ -6681,7 +6681,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("mkTabPay").setAttribute("aria-selected", MK.view !== "done" ? "true" : "false"); $("mkTabDone").setAttribute("aria-selected", MK.view === "done" ? "true" : "false");
     $("mkPay").hidden = MK.view === "done"; $("mkDoneWrap").hidden = MK.view !== "done";
     box.textContent = "";
-    if (!rows.length) box.appendChild(el("div", { class: "card empty" }, side === "vouchers" ? "No cash voucher payments are waiting. Payable vouchers appear here as soon as the admin approves their Vouchers CR." : bk === "now" ? "Nothing approved is due in the next 7 days." + (allRows.length ? " Later dues are under the weeks above." : " Bills appear here as soon as the admin approves their Bills CR.") : "Nothing approved falls due in this week."));
+    if (!rows.length) box.appendChild(el("div", { class: "card empty" }, side === "vouchers" ? "No cash voucher payments are waiting. Payable vouchers appear here as soon as the admin approves their Voucher Checking Report." : bk === "now" ? "Nothing approved is due in the next 7 days." + (allRows.length ? " Later dues are under the weeks above." : " Bills appear here as soon as the admin approves their Bill Checking Report.") : "Nothing approved falls due in this week."));
     sorted().forEach(function (c) {
       var rs = rows.filter(function (x) { return x.cid === c.id; }); if (!rs.length) return;
       var ct = {}; rs.forEach(function (x) { curAdd(ct, x.cur, x.pay); });
@@ -6805,7 +6805,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var px = x || (t ? { type: t.voucherId ? "vch" : isVcr ? "vcr" : isInst ? "inst" : "vendor", cur: cur, payee: t.payee, payeeId: t.payeeId } : null);
     var body = el("div", { class: "mform" });
     var ty = el("select", { class: "field", id: "txKind" }); fillSelect(ty, isInst ? [["payment", "Payment"]] : [["payment", "Payment"], ["discount", "Discount received"]], t ? t.kind : kindDefault || "payment");
-    body.appendChild(fld("Type", ty, isVcr ? "Pays back the cash in this Vouchers CR." : isInst ? "Instalments are paid in full or in part; discounts go against the vendor's bills." : ""));
+    body.appendChild(fld("Type", ty, isVcr ? "Pays back the cash in this Voucher Checking Report." : isInst ? "Instalments are paid in full or in part; discounts go against the vendor's bills." : ""));
     body.appendChild(fld("Date", dateBox("txDate", t ? t.date : todayYmd(), { min: addDays(todayYmd(), -365), max: todayYmd(), label: "Choose the date" }), "Up to today."));
     body.appendChild(fld("Amount" + (cur !== "INR" ? " (" + cur + ")" : ""), inp("txAmt", t ? fmtInput(t.amount) : amountTyped || "", { inputmode: "decimal", class: "field num" }), x ? "Approved to pay: " + curMoney(cur, x.pay) : ""));
     var ms = modesFor(px), md = el("select", { class: "field", id: "txMode" }); fillSelect(md, ms.map(function (m) { return [m, modeInfo(m)[1]]; }), t && t.mode && ms.indexOf(t.mode) >= 0 ? t.mode : ms[0]);
@@ -6864,7 +6864,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: vch ? "Paid to" : "Vendor", cell: function (t, td) {
           txt(td, t.vcrId ? t.payee || "Cash vouchers" : (S.vendors[t.vendorId] || {}).name || "");
           if (t.voucherId && S.vouchers[t.voucherId]) sub(td, "Voucher " + S.vouchers[t.voucherId].voucherNo);
-          else if (t.vcrId) { var vr = S.reports[t.vcrId]; sub(td, "Vouchers CR " + (vr ? vr.no : "")); }
+          else if (t.vcrId) { var vr = S.reports[t.vcrId]; sub(td, "Voucher Checking Report " + (vr ? vr.no : "")); }
           var a = t.advanceId && S.advances[t.advanceId]; if (a) sub(td, (a.kind === "import" ? "Import " : "Proforma ") + (a.piNo || "") + ", instalment " + ((t.inst || 0) + 1));
           else if (t.billId && S.bills[t.billId]) sub(td, "Against bill " + S.bills[t.billId].billNo);
           if (t.reason) sub(td, "Reason: " + t.reason); } },
@@ -6925,7 +6925,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Paid by", cell: function (t, td) { txt(td, t.kind === "discount" ? "Discount" : modeText(t) || "Not recorded"); } },
       { label: side === "vouchers" ? "For" : "Settled", cls: "desc", cell: function (t, td) {
           if (side === "vouchers" && t.voucherId) { var vv = S.vouchers[t.voucherId], vr0 = S.reports[t.vcrId]; txt(td, "Voucher " + (vv ? vv.voucherNo : "") + (vr0 ? " · " + vr0.no : "")); if (vv) sub(td, (vv.narration || "") + " Prepared by " + pnm(vv.preparedByName)); }
-          else if (side === "vouchers") { var vr = S.reports[t.vcrId]; txt(td, "Vouchers CR " + (vr ? vr.no : "")); if (vr) { var vs = vcrVouchers(vr, t.companyId).filter(function (v) { return !v.settle; }); if (vs.length) sub(td, vs.map(function (v) { return v.voucherNo; }).join(", ")); } }
+          else if (side === "vouchers") { var vr = S.reports[t.vcrId]; txt(td, "Voucher Checking Report " + (vr ? vr.no : "")); if (vr) { var vs = vcrVouchers(vr, t.companyId).filter(function (v) { return !v.settle; }); if (vs.length) sub(td, vs.map(function (v) { return v.voucherNo; }).join(", ")); } }
           else allocLines(t).forEach(function (l, i) { var d = el("div", { class: i ? "tsub" : "" }); d.appendChild(document.createTextNode(l[0] + ": ")); d.appendChild(el("b", { style: l[2] ? "color:var(--bad)" : "" }, curMoney(t.currency, l[1]))); td.appendChild(d); });
           if (t.reason) sub(td, "Reason: " + t.reason, "color:var(--warn);font-weight:600"); } }
     ];
@@ -6974,10 +6974,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       else { step = inf.paid + inf.disc > 0 ? "Part paid" : "Sent for payment"; cls = "s-payment"; h = holdersFor("txn", b.companyId, "Financier"); }
     }
     else if (r && (st === "generated" || st === "printed")) { step = "Waiting for approval"; cls = "s-" + st; h = holderAppr(b); }
-    else if (r) { step = "In a Bills CR draft"; cls = "s-" + st; h = holderPrep(b); }
+    else if (r) { step = "In a Bill Checking Report draft"; cls = "s-" + st; h = holderPrep(b); }
     else if (b.acct === "back") { step = "Sent back by the accountant"; cls = "s-tds"; h = holderPrep(b); }
     else if (!acctOk(b)) { step = b.acct === "held" ? "Postponed by the accountant" : "With the accountant"; cls = b.acct === "held" ? "s-tds" : "s-draft"; h = holdersFor("acct", b.companyId, "Accountant"); }
-    else { step = "Waiting for a Bills CR"; cls = "s-draft"; h = holderPrep(b); }
+    else { step = "Waiting for a Bill Checking Report"; cls = "s-draft"; h = holderPrep(b); }
     return { kind: "bill", x: b, id: b.id, no: b.billNo || "(no number yet)", date: b.billDate || "", cid: b.companyId, party: vendorLabelOfBill(b) || "Vendor not chosen", desc: b.narration || "",
       cur: b.currency || "INR", amount: Number(b.total) || 0, paid: round2(inf.paid + inf.disc), bal: b.status === "done" ? inf.rem : Number(b.total) || 0, step: step, cls: cls, ref: r ? r.no : "",
       holder: h, prep: prepName(b) || userLabel(prepOf(b)), appr: approverName(b), open: open, age: ageDays(b.billDate) };
@@ -6991,7 +6991,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var s0 = instState(a, nxt), rr = instReport(a, nxt), lab = "Instalment " + (nxt + 1) + " of " + n; ref = rr ? rr.no : "";
       if (s0 === "payment") { step = lab + ": sent for payment"; cls = "s-payment"; h = holdersFor("txn", a.companyId, "Financier"); }
       else if (s0 === "generated" || s0 === "printed") { step = lab + ": waiting for approval"; cls = "s-" + s0; h = holderAppr(a); }
-      else if (s0 === "draft" || s0 === "tds") { step = lab + ": Advance CR draft"; cls = "s-draft"; h = holderPrep(a); }
+      else if (s0 === "draft" || s0 === "tds") { step = lab + ": Advance Checking Report draft"; cls = "s-draft"; h = holderPrep(a); }
       else if (s0 === "due") { step = lab + ": due " + fmtDate(instDue(a, nxt)); cls = "s-tds"; h = holderPrep(a); }
       else if (s0 === "dispatch") { step = lab + ": waiting for the dispatch date"; cls = "s-draft"; h = holderPrep(a); }
       else { step = lab + (instDue(a, nxt) ? ": due " + fmtDate(instDue(a, nxt)) : ": upcoming"); cls = "s-generated"; h = holderPrep(a); }
@@ -7016,9 +7016,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       else { step = "Sent for payment"; cls = "s-payment"; h = holdersFor("txn", v.companyId, "Financier"); paid = vchPaid(v.id); }
     }
     else if (r && (st === "generated" || st === "printed")) { step = "Waiting for approval"; cls = "s-" + st; h = holderAppr(v); }
-    else if (r) { step = "In a Vouchers CR draft"; cls = "s-draft"; h = holderPrep(v); }
+    else if (r) { step = "In a Voucher Checking Report draft"; cls = "s-draft"; h = holderPrep(v); }
     else if (!acctOk(v)) { step = v.acct === "held" ? "Postponed by the accountant" : v.acct === "back" ? "Sent back by the accountant" : "With the accountant"; cls = v.acct === "back" || v.acct === "held" ? "s-tds" : "s-draft"; h = v.acct === "back" ? holderPrep(v) : holdersFor("acct", v.companyId, "Accountant"); }
-    else { step = "Waiting for a Vouchers CR"; cls = "s-draft"; h = holderPrep(v); }
+    else { step = "Waiting for a Voucher Checking Report"; cls = "s-draft"; h = holderPrep(v); }
     var tot = Number(v.total) || 0;
     return { kind: "voucher", x: v, id: v.id, no: v.voucherNo || "", date: v.voucherDate || "", cid: v.companyId, party: v.payee || "", desc: v.narration || "", cur: "INR", amount: tot,
       paid: paid, bal: open ? round2(vPayable(v) - paid) : 0, step: step, cls: cls, ref: r ? r.no : "", holder: h, prep: pnm(v.preparedByName) || userLabel(prepOf(v)), appr: approverName(v),
@@ -7028,7 +7028,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var v = S.vendors[t.vendorId], a = t.advanceId && S.advances[t.advanceId], vv = t.voucherId && S.vouchers[t.voucherId], rr = t.vcrId && S.reports[t.vcrId], forTxt;
     if (a) forTxt = (a.kind === "import" ? "Import " : "Proforma ") + (a.piNo || "") + (t.inst != null ? ", instalment " + (Number(t.inst) + 1) : "");
     else if (vv) forTxt = "Voucher " + (vv.voucherNo || "") + (rr ? " · " + rr.no : "");
-    else if (rr) forTxt = "Vouchers CR " + (rr.no || "");
+    else if (rr) forTxt = "Voucher Checking Report " + (rr.no || "");
     else forTxt = allocLines(t).map(function (l) { return l[0] + ": " + curMoney(t.currency, l[1]); }).join("; ");
     return { kind: "payment", x: t, id: t.id, no: t.kind === "discount" ? "Discount" : "Payment", date: t.date || "", cid: t.companyId, party: v ? v.name : t.payee || "", desc: forTxt, cur: t.currency || "INR",
       amount: Number(t.amount) || 0, paid: Number(t.amount) || 0, bal: 0, step: t.kind === "discount" ? "Discount received" : modeText(t) || "Paid", cls: t.kind === "discount" ? "s-printed" : "s-payment",
@@ -7805,7 +7805,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     return out.sort(function (a, b) { return natCmp(S.vendors[a.vid].name, S.vendors[b.vid].name); });
   }
   function planOf(key) { return S.plans && S.plans[key]; }
-  /* Payable vouchers the admin approved (Process Payment on their Vouchers CR), still unpaid and not yet in a locked plan. */
+  /* Payable vouchers the admin approved (Process Payment on their Voucher Checking Report), still unpaid and not yet in a locked plan. */
   function ppVchRows(cid) {
     var out = [];
     vcrList().forEach(function (rp) {
@@ -7893,7 +7893,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         [["Opening Balance", tot.o], ["Overdue Amount", tot.od], ["Due in 10 days", tot.d], ["To Pay", tot.p]].forEach(function (k) { var td = el("td", { class: "r num", "data-label": k[0] }); td.appendChild(el("b", null, curSum(k[1]))); tr.appendChild(td); });
         tr.appendChild(el("td")); return tf; } });
     });
-    if (side === "vouchers") { any = vrowsAll.length > 0; renderPlanVouchers(wrap, vrowsAll); if (!any) wrap.appendChild(el("div", { class: "card empty" }, "No approved payable vouchers are waiting. Approve a Vouchers CR with Process Payment and its payable vouchers appear here.")); }
+    if (side === "vouchers") { any = vrowsAll.length > 0; renderPlanVouchers(wrap, vrowsAll); if (!any) wrap.appendChild(el("div", { class: "card empty" }, "No approved payable vouchers are waiting. Approve a Voucher Checking Report with Process Payment and its payable vouchers appear here.")); }
     if (!any && side === "vendors") wrap.appendChild(el("div", { class: "card empty" }, "No vendor has an opening balance owed, a bill sent for payment, or an instalment due in the next 10 days."));
     $("ppTotal").textContent = curSum(grand); $("ppSetN").textContent = setN ? setN + " set" : "Nothing set yet";
     $("ppPdf").disabled = (!setN && !settledNow().length) || !S.downloads; $("ppClear").disabled = !Object.keys(S.plans || {}).length; $("ppLock").disabled = !setN && !settledNow().length;
@@ -7934,7 +7934,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       .then(function () { toast("Plan cleared. Set To Pay again for the next round."); }, function (e) { toast(explain(e)); }).then(function () { PP.busy = false; PP.editing = {}; PP.amts = {}; renderPlanning(); });
   }  /* ---- Locking the plan ---- */
   /* What the current plan would lock: per vendor, To Pay goes first to bills and the opening balance, then to instalments in order;
-     anything over stays on the vendor line. Each Vouchers CR ticked is one line, paid in full. */
+     anything over stays on the vendor line. Each Voucher Checking Report ticked is one line, paid in full. */
   function planItemsNow() {
     var items = [];
     sorted().filter(function (c) { return c.active !== false; }).forEach(function (c) {
@@ -7962,7 +7962,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function lockPlan(btn) {
     if (PP.busy || !S.isAdmin) return;
-    var items = planItemsNow(), settled = settledNow(); if (!items.length && !settled.length) { toast("Set To Pay above zero for at least one vendor first, or approve a Vouchers CR with payable vouchers."); return; }
+    var items = planItemsNow(), settled = settledNow(); if (!items.length && !settled.length) { toast("Set To Pay above zero for at least one vendor first, or approve a Voucher Checking Report with payable vouchers."); return; }
     if (btn.getAttribute("data-arm") !== "1") { btn.setAttribute("data-arm", "1"); var lb = btn.textContent; btn.textContent = "Click again to lock " + plural(items.length, "payment") + (settled.length ? " and " + plural(settled.length, "settlement") : ""); setTimeout(function () { if (btn.isConnected) { btn.removeAttribute("data-arm"); btn.textContent = lb; } }, 4000); return; }
     btn.removeAttribute("data-arm"); PP.busy = true;
     var n = nextPlanNo(), id = newId("pl"), now = Date.now();
@@ -8664,7 +8664,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Total amount", cls: "r num", sort: function (x) { return x.total; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, money(x.total))); } },
       { label: "Oldest waiting", cls: "num", sort: function (x) { return -(x.oldest || 0); }, desc: true, cell: function (x, td) { var d = daysSince(x.oldest); td.appendChild(el("span", { class: d > 7 ? "late" : "" }, d ? plural(d, "day") : "Today")); } },
       { label: "", kind: "act", cls: "r", cell: function (x, td) {
-          /* 3 or fewer vouchers of a person for a company need no checking report: each voucher is signed itself. 4 or more go into a Vouchers CR. */
+          /* 3 or fewer vouchers of a person for a company need no checking report: each voucher is signed itself. 4 or more go into a Voucher Checking Report. */
           var small = Object.keys(x.cos).filter(function (c) { return x.cos[c] <= VCR_MIN - 1; }), big = Object.keys(x.cos).filter(function (c) { return x.cos[c] >= VCR_MIN; }), w = el("div", { class: "acts" });
           if (small.length) { var d = el("button", { class: "btn" + (big.length ? "" : " primary") }, "Send for approval"); d.title = "No checking report: print and sign each voucher"; d.addEventListener("click", function () { sendVouchersDirect(x, small, d); }); w.appendChild(d); }
           if (big.length) { var b = el("button", { class: "btn primary" }, "Prepare report"); b.addEventListener("click", function () { openVcrNew(x.prep, x.appr, big); }); w.appendChild(b); }
@@ -8679,7 +8679,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
     $("vcListSub").textContent = S.isAdmin ? "You see every report. Printed reports can be reversed or sent for payment." : "A report leaves this list once its PDF is downloaded for printing. The admin keeps it from then on.";
     var rb = $("vcList");
-    if (!reps.length) { rb.textContent = ""; rb.appendChild(el("div", { class: "empty" }, q ? "No reports match." : S.isAdmin ? "No Vouchers CR is waiting for approval." : "No Vouchers CR here. Prepare one from the list above.")); return; }
+    if (!reps.length) { rb.textContent = ""; rb.appendChild(el("div", { class: "empty" }, q ? "No reports match." : S.isAdmin ? "No Voucher Checking Report is waiting for approval." : "No Voucher Checking Report here. Prepare one from the list above.")); return; }
     sortTable(rb, "vcList", [
       { label: "Report number", kind: "co", sort: function (r) { return Number(String(r.fy || "00").slice(0, 2)) * 10000 + (r.seq || 0); }, desc: true, cell: function (r, td) { td.appendChild(el("b", { class: "mono" }, r.no || "")); sub(td, fmtDay(r.createdAt)); } },
       { label: "Stage", sort: function (r) { return STAGE_ORDER[stageOf(r)]; }, cell: function (r, td) { td.appendChild(stageTag(r)); } },
@@ -8736,7 +8736,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       periodFrom: t.from, periodTo: t.to, checkDate: day, currency: "INR", stage: "generated", createdAt: now, createdBy: meId(), generatedAt: now, generatedBy: meId(), log: [logEntry("generated")] };
     VC.busy = true; $("vnCreate").disabled = true;
     retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () {
-      S.reports[id] = Object.assign({ id: id }, doc); invalidate(); renderNav(); toast("Vouchers CR " + doc.no + " generated."); openVcr(id);
+      S.reports[id] = Object.assign({ id: id }, doc); invalidate(); renderNav(); toast("Voucher Checking Report " + doc.no + " generated."); openVcr(id);
     }, function (e) { toast(explain(e)); }).then(function () { VC.busy = false; if (!$("secVcrNew").hidden) updVcrNew(); });
   }
   /* Vouchers sent for approval without a checking report: one record per company, so approval and payment work as for a report.
@@ -8779,7 +8779,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var r = S.reports[VC.viewId]; if (!r) { backToVcr(); return; }
     if (!vcrTeamSees(r)) { toast("Report " + r.no + " has been printed and is with the admin now."); backToVcr(); return; }
     var s = stageOf(r), admin = S.isAdmin;
-    $("vvTitle").textContent = r.no; $("vvSub").textContent = (r.direct ? "Vouchers sent for approval without a checking report: each voucher is printed and signed. " : "Vouchers CR, ") + STAGE[s].toLowerCase() + ". " + (r.direct ? "Sent " : "Generated ") + stamp(r.generatedAt || r.createdAt) + ".";
+    $("vvTitle").textContent = r.no; $("vvSub").textContent = (r.direct ? "Vouchers sent for approval without a checking report: each voucher is printed and signed. " : "Voucher Checking Report, ") + STAGE[s].toLowerCase() + ". " + (r.direct ? "Sent " : "Generated ") + stamp(r.generatedAt || r.createdAt) + ".";
     statBoxes($("vvStats"), [whoStat(["Prepared by", pnm(r.preparedBy), ""]), ["Checking date", fmtDate(r.checkDate), ""], ["Period", periodText(r.periodFrom, r.periodTo), ""], ["Stage", stageTag(r), ""]]);
     var box = $("vvBox"); box.textContent = "";
     (r.companyIds || []).forEach(function (cid) {
@@ -8828,8 +8828,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       hint.textContent = r.toPay ? "Approved. Its payable vouchers are on the financier's Payment Entry." : "Everything in this report was settled from the cash advance; nothing is left to pay.";
     }
   }
-  /* ================= Approving a Vouchers CR (Process Payment) ================= */
-  /* Process Payment on a Vouchers CR opens it for approval. Every voucher starts ticked. Approved settled vouchers come off the
+  /* ================= Approving a Voucher Checking Report (Process Payment) ================= */
+  /* Process Payment on a Voucher Checking Report opens it for approval. Every voucher starts ticked. Approved settled vouchers come off the
      preparer's cash; approved payable vouchers go straight to the financier's Payment Entry. An unticked voucher goes back to the preparer with a reason:
      it leaves the report and waits on Cash Vouchers until they change it or send it again as it is. */
   var VA = { rid: null, sel: {}, why: {}, note: {}, busy: false };
@@ -8915,7 +8915,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (VH.busy) return;
     VH.busy = true;
     retry(function () { return S.db.doc("vouchers/" + v.id).update({ sentBack: null, sentBackLog: (v.sentBackLog || []).concat([v.sentBack]), resentAt: Date.now() }); })
-      .then(function () { v.sentBackLog = (v.sentBackLog || []).concat([v.sentBack]); v.sentBack = null; toast("Voucher " + v.voucherNo + " sent again as it is. It waits for the next Vouchers CR."); renderVch(); renderNav(); }, function (e) { toast(explain(e)); })
+      .then(function () { v.sentBackLog = (v.sentBackLog || []).concat([v.sentBack]); v.sentBack = null; toast("Voucher " + v.voucherNo + " sent again as it is. It waits for the next Voucher Checking Report."); renderVch(); renderNav(); }, function (e) { toast(explain(e)); })
       .then(function () { VH.busy = false; });
   }
   function vcrStage(r, stage, extra) {
@@ -9020,7 +9020,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* ================= change log: every change anyone saves, who made it and what it was before ================= */
   var AUDIT_SKIP = { audit: 1, previews: 1, rates: 1, plans: 1 };
   var AUDIT_HIDE = { updatedAt: 1, updatedBy: 1, at: 1, by: 1, log: 1, logo: 1, previewPages: 1, file: 1, ex: 1, createdAt: 1, createdBy: 1, byName: 1, rate: 1, inr: 1, ownerId: 1, vendorNew: 1, byCo: 1, seq: 1, fy: 1 };
-  var AUDIT_COL = { bills: "Bill", vouchers: "Cash voucher", reports: "CR", transactions: "Payment", cashadv: "Cash advance", balances: "Opening balances", vendors: "Vendor",
+  var AUDIT_COL = { bills: "Bill", vouchers: "Cash voucher", reports: "Checking report", transactions: "Payment", cashadv: "Cash advance", balances: "Opening balances", vendors: "Vendor",
     companies: "Company", users: "User", advances: "Proforma or import", requests: "Access request", locations: "Location" };
   function auditPrev(col, id) {
     var m = { bills: S.bills, vouchers: S.vouchers, reports: S.reports, transactions: S.txns, cashadv: S.cashadv, balances: S.balances, vendors: S.vendors, companies: S.companies, users: S.users, advances: S.advances, requests: S.requests, locations: S.locations }[col];
@@ -9210,7 +9210,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function usageRows() {
     function size(m) { try { return JSON.stringify(m || {}).length; } catch (e) { return 0; } }
-    return [["Bills", S.bills], ["Cash vouchers", S.vouchers], ["CRs (bills, advance, vouchers)", S.reports], ["Payments", S.txns], ["Proformas and imports", S.advances], ["Cash advances", S.cashadv], ["Vendors", S.vendors]]
+    return [["Bills", S.bills], ["Cash vouchers", S.vouchers], ["Checking reports (bills, advances, vouchers)", S.reports], ["Payments", S.txns], ["Proformas and imports", S.advances], ["Cash advances", S.cashadv], ["Vendors", S.vendors]]
       .map(function (x) { return { name: x[0], n: Object.keys(x[1] || {}).length, kb: Math.round(size(x[1]) / 1024) }; });
   }
   function renderArchive() {
@@ -9241,7 +9241,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var sm = $("arPlan"); sm.textContent = "";
     if (job && job.status !== "done") { sm.appendChild(el("div", { class: "flag w" }, "Closing " + AR.fy + " was started on " + fmtDay(job.createdAt) + " and did not finish. Press Finish closing to complete it; it carries on where it stopped.")); }
     else {
-      var c = P.count, items = [[c.bills, "bill"], [c.transactions, "payment"], [c.reports, "CR"], [c.vouchers, "cash voucher"], [c.cashadv, "cash advance"]].filter(function (x) { return x[0]; });
+      var c = P.count, items = [[c.bills, "bill"], [c.transactions, "payment"], [c.reports, "checking report"], [c.vouchers, "cash voucher"], [c.cashadv, "cash advance"]].filter(function (x) { return x[0]; });
       sm.appendChild(el("p", { class: "sub", style: "margin:0 0 6px" }, items.length ? "Closing " + AR.fy + " removes " + items.map(function (x) { return plural(x[0], x[1]); }).join(", ") + ", plus that year's change log. Nothing unpaid is touched." : "Nothing in " + AR.fy + " is fully settled yet, so only that year's change log would be removed."));
       var nv = Object.keys(P.vendorOpenings).reduce(function (s0, k) { return s0 + Object.keys(P.vendorOpenings[k]).length; }, 0), np = Object.keys(P.personOpenings).length;
       sm.appendChild(el("p", { class: "sub", style: "margin:0 0 6px" }, "Carried forward so every total stays the same: " + plural(nv, "vendor opening balance") + ", and the cash balance of " + plural(np, "person") .replace("persons", "people") + "."));
@@ -9511,7 +9511,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("bkNow").disabled = BK.busy; $("bkFlush").disabled = BK.busy || !sup; $("bkReset").disabled = BK.busy || !sup; $("bkPick").disabled = BK.busy || !sup;
     $("bkFlush").hidden = $("bkReset").hidden = $("bkPick").hidden = !sup;
     var P = sup && !BK.busy ? resetPlan() : null, c = P && P.count;
-    $("bkResetHint").textContent = P ? "Right now Flush & Reset would fold " + [[c.bills, "bill"], [c.transactions, "payment"], [c.reports, "CR"], [c.vouchers, "voucher"], [c.cashadv, "cash advance"], [c.advances, "closed proforma or import"]].filter(function (x) { return x[0]; }).map(function (x) { return plural(x[0], x[1]); }).join(", ") + (P.del.length ? "" : "nothing") + " into opening balances." : "";
+    $("bkResetHint").textContent = P ? "Right now Flush & Reset would fold " + [[c.bills, "bill"], [c.transactions, "payment"], [c.reports, "checking report"], [c.vouchers, "voucher"], [c.cashadv, "cash advance"], [c.advances, "closed proforma or import"]].filter(function (x) { return x[0]; }).map(function (x) { return plural(x[0], x[1]); }).join(", ") + (P.del.length ? "" : "nothing") + " into opening balances." : "";
     var rb = $("bkRestore"); rb.textContent = "";
     if (BK.restore) {
       var n = Object.keys(BK.restore.data).filter(function (k) { return Object.keys(BK.restore.data[k]).length; }).map(function (k) { return k + " " + Object.keys(BK.restore.data[k]).length; });
@@ -9944,7 +9944,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
   }
 
-  /* ================= Accounts › To Account ================= */
+  /* ================= Accounts › Accounting ================= */
   var AC = { side: "bills", id: null, kind: null, D: null, busy: false, limit: 100 };
   function acctCos() { return S.isAdmin ? activeCompanies() : roleCos("acct"); }
   function acctBills() { return billList().filter(function (b) { return b.status === "done" && b.companyId && (S.isAdmin || canStep("acct", b.companyId)) && !(checkOf(b) && !b.acct); }); }
@@ -10511,7 +10511,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* Throw away what was read, with its files, to upload again. Not once a bill of supply is out for the month: cancel it first. */
   function discardForm(cid, month) {
-    if (solList(SOL.inv).some(function (i) { return i.companyId === cid && i.month === month && i.status !== "cancelled"; })) { toast("A bill of supply is issued for " + monthLabel(month) + ". Cancel it in Invoices & Receipts first."); return; }
+    if (solList(SOL.inv).some(function (i) { return i.companyId === cid && i.month === month && i.status !== "cancelled"; })) { toast("A bill of supply is issued for " + monthLabel(month) + ". Cancel it in Invoices first."); return; }
     var ups = solList(SOL.ups).filter(function (u) { return u.companyId === cid && u.month === month; }).sort(function (a, b) { return a.at - b.at; }), paths = {};
     ups.forEach(function (u) { if (u.file && u.file.path) paths[u.file.path] = 1; });
     var items = ups.map(function (u) { return { label: u.name + " · " + (u.status === "ok" ? (u.msg || "read").split(" · ")[0] : u.status === "bad" ? "not read" : "not used"), up: u, file: u.file, parts: (u.produced || []).filter(function (d) { var md = monthDoc(d.pl, month), x = md && (d.k === "ht" ? (md.ht || {})[d.h] : md[d.k]); return x && (!u.file || !x.file || x.file.path === u.file.path); }) }; });
@@ -10901,10 +10901,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function tplFill(t, v) { return String(t || "").replace(/\{([^{}]+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; }); }
   function amtPdf(n, signed) { var v = round2(n0(n)); return (signed && v < 0 ? "-" : "") + Math.abs(v).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
-  /* ---- Invoices & Receipts ---- */
+  /* ---- Invoices ---- */
   function invReceived(iv) { var a = 0, t = 0; solList(SOL.rcpt).forEach(function (r) { if (r.invoiceId === iv.id) { a += n0(r.amount); t += n0(r.tds); } }); return { amt: round2(a), tds: round2(t), bal: round2(n0(iv.net) - a - t) }; }
   function solInvoices(box) {
-    var hd = el("div", { class: "head" }), h = el("div"); h.appendChild(el("h2", null, "Invoices & Receipts")); h.appendChild(el("p", { class: "sub" }, "Every bill of supply issued, what each consumer has paid (with TDS under section 194Q), and what is still due.")); hd.appendChild(h);
+    var hd = el("div", { class: "head" }), h = el("div"); h.appendChild(el("h2", null, "Invoices")); h.appendChild(el("p", { class: "sub" }, "Every bill of supply issued, what each consumer has paid (with TDS under section 194Q), and what is still due.")); hd.appendChild(h);
     hd.appendChild(el("span", { class: "grow" }));
     var sh = el("select", { class: "field", "aria-label": "Show", style: "width:auto" }); fillSelect(sh, [["open", "Still due"], ["all", "Every invoice"], ["cancelled", "Cancelled"]], SOL.ishow); sh.addEventListener("change", function () { SOL.ishow = sh.value; solRender(); }); hd.appendChild(sh);
     var xl = el("button", { class: "btn", type: "button" }, "Excel"); xl.addEventListener("click", function () { solRegisterXls(xl); }); hd.appendChild(xl);

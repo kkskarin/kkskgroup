@@ -9,7 +9,7 @@
 | `/renewable/` | Renewable Energy: the same for that division, plus its own Payment Entry and energy billing for solar plants and windmills | KKSK Group |
 | `/accounts/` | Accounts: every division's accounting, ledgers, debit and credit notes, ledger books, companies | KKSK Group |
 | `/finance/` | Finance: Payment Entry and advances, payables | KKSK Group |
-| `/approvals/` | Approvals: checking reports (Bills, Advance, Vouchers CR) and cash advances from every division, approved by admins or recorded by the financier on their behalf | KKSK Group |
+| `/approvals/` | Approvals: checking reports (bill, advance and voucher checking reports) and cash advances from every division, approved by admins or recorded by the financier on their behalf | KKSK Group |
 | `/production/` (`web/production/index.html`) | Production Planning (Live on the KKSK-Production tables; Demo sample for admins) | KKSK-Production, through the hand-over |
 
 - **One page, five apps.** Maintenance, Renewable Energy, Accounts and Finance are all `web/bills/index.html`; `netlify.toml`
@@ -26,7 +26,7 @@
   Voucher Maker (vouchers for other people), Financier (payment), Sales (energy billing); any mix may be held, except Approver with
   Approval Recorder. On the bill form GST shows as GST (CGST + SGST) or GST (IGST), from the vendor's and company's states.
   A Purchaser who is also the Accountant for a company accounts a bill as they record it (ledgers and TDS on the bill form);
-  it skips To Account but still goes to approval. The accountant "accounts" entries; only the Approver step "approves".
+  it skips Accounting but still goes to approval. The accountant "accounts" entries; only the Approver step "approves".
 - **Approvals** happen only in the Approvals app, for admins and people with Approval. An Approver sees and approves only the
   checking reports and cash advances that name them; checking reports are made one per approver. An **Approval
   Recorder** records approvals already signed on paper: for every checking report and cash advance in their divisions (Maintenance &
@@ -37,8 +37,8 @@
 - **Vouchers** are made by the person they belong to, or by a **Voucher Maker** for someone else (a person with a login, or a
   name from the saved list `vpeople/*`); the voucher counts as that person's (cash advance only for people with a login, and their
   checking report), and keeps who made it. **3 or fewer** vouchers of a person for a company go for approval without a checking
-  report ("Send for approval"): they are printed one per page and signed. 4 or more go into a Vouchers CR.
-- **TDS** is entered when an entry is accounted. The vendor is paid the total less TDS; the vendor statement and Ledger Books
+  report ("Send for approval"): they are printed one per page and signed. 4 or more go into a Voucher Checking Report.
+- **TDS** is entered when an entry is accounted. The vendor is paid the total less TDS; the vendor statement and Ledger Statements
   show it. Checking reports and their PDFs don't.
 - **Masters** (its own heading in every app with purchases or accounting, and Finance): Companies, Vendors, Ledgers; in
   Renewable Energy Companies, Consumers, PPA Rates, Vendors, Ledgers. One company list for the group (`companies/*`, logo required); each company lists the
@@ -109,7 +109,7 @@ provides the same calls, so the app code did not need rewriting:
 - **Approver**: every bill, proforma, import and voucher names the admin who approves it (the super admin or an
   admin named under Settings › Users). It prints on the voucher and on the checking reports. A named admin sees only
   the work they approve; the super admin sees everything.
-- **Admins** don't see the entry screens (Enter Bills, Proformas, Imports, Cash Vouchers, To Account, Payment Entry)
+- **Admins** don't see the entry screens (Enter Bills, Proformas, Imports, Cash Vouchers, Accounting, Payment Entry)
   or draft checking reports, and don't ask for cash advances on anyone's behalf (switch to the person's profile
   instead). Reports › **Transactions** shows every item, the step it is at and who has it now, with a
   "Who has what open" summary; each view downloads as PDF or Excel. "View as" still opens a person's own screens.
@@ -172,9 +172,9 @@ insert into public.app_super_admins (email) values ('someone@kksk.in');
 ### Paying vendors (from 10 Oct 2026)
 
 - **No TDS.** Bills and vouchers count at their full total; the accountant approves with ledgers only.
-- **Approve bill by bill.** On a Bills CR the admin presses Approve for Payment: untick a bill to send it back to the
+- **Approve bill by bill.** On a Bill Checking Report the admin presses Approve for Payment: untick a bill to send it back to the
   purchaser, or lower its amount to approve part of it (a note to the purchaser is then needed). The unapproved rest
-  waits with the purchaser, who may put it in a new Bills CR. Advance CRs can be approved in part the same way.
+  waits with the purchaser, who may put it in a new Bill Checking Report. Advance Checking Reports can be approved in part the same way.
 - **No Payment Planning.** Whatever the admin approves goes straight to the financier's Payment Entry, by due date:
   overdue and the next 7 days, then 1–2, 2–3, 3–4 weeks and later. Opening balances and credit notes are due now.
   A payment on a vendor line is set against that line's bills (`billAlloc` on the transaction).
@@ -230,7 +230,7 @@ row (SOLAR or WIND) is billed and the wording on the bill.
 - **Issue** (with Preview PDF before issuing): number SHORT-NNN-YY/YY (e.g. ARA-001-26/27), one series per company per financial year, suggested and editable when
   issuing but never one already used; the PDF holds the company's pages. An issued invoice is locked; cancel it (admin, with a
   reason) and issue a new one for corrections.
-- **Invoices & Receipts**: register, receipts with TDS under 194Q, ageing 0–30/31–60/61–90/90+, Excel.
+- **Invoices**: register, receipts with TDS under 194Q, ageing 0–30/31–60/61–90/90+, Excel.
 - **Reports › P&L**: filters for financial year, calendar year, months, season (Winter Jan–Feb, Summer Mar–May, South-west
   monsoon Jun–Sep, North-east monsoon Oct–Dec), solar or windmill, companies, consumers and ledgers (C counts only the chosen
   ledgers' lines; a proforma or import has none until its bill); by company and month: net generated, units
@@ -239,7 +239,7 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   month: submitted bills, proformas and imports until their final tax bill comes (then the bill counts), and cash vouchers;
   cash advances are not counted (the vouchers paid from them are). C is not split by consumer, so it is hidden while
   consumers are filtered.
-- Tabs in Renewable Energy: Reports (Transactions, Payables, P&L), Sales (Monthly Billing, Invoices & Receipts), Expenses
+- Tabs in Renewable Energy: Reports (Transactions, Payables, P&L), Sales (Monthly Billing, Invoices), Expenses
   (bills, proformas, imports, vouchers and their checking reports, cash advances), Accounts, Payments, Masters (Companies,
   Consumers, PPA Rates, Vendors, Ledgers), Settings.
 - Who may use it: the Renewable Energy app plus the Sales job for the generator's company.

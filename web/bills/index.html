@@ -714,7 +714,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* header: logo and app name on the first line, then All Apps, Demo/Live and the person */
   .top .titles{flex:1 1 calc(100% - 70px)}
   .top .titles .t1,.top .titles .t2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .top .appsln{order:3}.top .modesw{order:4}.top .me{order:5;flex:1 1 auto}
+  .top .appsln{order:3}.top .modesw{order:4}.top .me{order:5;flex:1 1 100%;min-width:0;max-width:100%;display:flex;align-items:center;gap:8px}
+  .top .me .mebtn{flex:1 1 auto;min-width:0;max-width:100%;overflow:hidden;text-align:left}
+  .top .wrap>*{min-width:0;max-width:100%}
   /* headings and tabs scroll sideways instead of wrapping; the master buttons too */
   #nav,#subnav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   #nav::-webkit-scrollbar,#subnav::-webkit-scrollbar,.mbar::-webkit-scrollbar{display:none}
@@ -821,7 +823,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secList" hidden>
     <div class="head">
-      <div><h2>Companies</h2><p class="sub">One company list for the group: each app shows the companies its division uses, in its own order. Only an admin can add or change a company. Purchases point to a company by a permanent ID, so a change here shows on every old and new record. Drag a company by its handle, or use the arrows, to set the order every list in the app follows.</p></div>
+      <div><h2>Companies</h2><p class="sub">One company list for the group: each app shows the companies its division uses, in its own order. Only admins, and people allowed to add companies, can add or change a company. Purchases point to a company by a permanent ID, so a change here shows on every old and new record. Drag a company by its handle, or use the arrows, to set the order every list in the app follows.</p></div>
       <span class="grow"></span>
       <label class="check"><input type="checkbox" id="showOff"> Show deactivated</label>
       <button class="btn primary" id="add">Add company</button>

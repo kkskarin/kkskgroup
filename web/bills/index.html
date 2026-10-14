@@ -4194,6 +4194,16 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     cs.disabled = !overseas; var cf0 = cs.closest(".f"); if (cf0) cf0.hidden = !overseas;
     if (h) h.textContent = overseas ? "" : "INR, because the vendor isn't overseas.";
   }
+  /* Within the same state GST is CGST + SGST (half each); from another state, or overseas, it is IGST. The states come from
+     the first two digits of the GSTINs (or the company's state code). */
+  function gstKind(cid, vGstin, overseas) {
+    if (overseas) return "igst";
+    var c = S.companies[cid] || {}, sc = String(c.stateCode || "").trim(), cs = /^\d{1,2}$/.test(sc) ? ("0" + sc).slice(-2) : String(c.gstin || "").slice(0, 2), vs = String(vGstin || "").slice(0, 2);
+    if (!/^\d\d$/.test(vs) || !/^\d\d$/.test(cs)) return "";
+    return vs === cs ? "cgst" : "igst";
+  }
+  function gstLabel(k) { return k === "cgst" ? "GST (CGST + SGST)" : k === "igst" ? "GST (IGST)" : "GST amount"; }
+  function gstSplitText(k, g, cur) { if (g == null || !k) return ""; var f = function (n) { return cur && cur !== "INR" ? fcAmt(cur, n) : money(n); }; return k === "cgst" ? "CGST " + f(round2(g / 2)) + " + SGST " + f(round2(g - round2(g / 2))) : "IGST " + f(g); }
   function updateDynamic() {
     var D = B.D, b = S.bills[B.cardId]; if (!D || !b || !$("bcDue")) return;
     setTimeout(function () { paintAiFlags(billAiSpecs()); }, 0);
@@ -4203,6 +4213,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("bcDue").textContent = bd && days != null ? fmtDate(addDays(bd, days)) : "Set when the bill date and terms are filled in";
     $("bcVPan").value = panOfNew(D);
     $("bcPct").textContent = A.gstPct != null ? A.gstPct + "%" : "";
+    var gv = D.vendorChoice && D.vendorChoice !== "new" ? (S.vendors[D.vendorChoice] || {}).gstin : (D.vNew || {}).gstin, gk = gstKind(D.companyId, gv, vendorTypeOfCard(D) === "overseas"), gf = $("bcGst").closest(".f");
+    B.gstK = gk; if (gf) { var gh = gf.querySelector(".hint"); if (gh) gh.textContent = gk ? (num(D.gstAmt) != null ? gstSplitText(gk, num(D.gstAmt), D.currency) + "." : (gk === "cgst" ? "Vendor and company are in the same state: CGST plus SGST." : "Vendor is in another state: IGST.")) + " Enter 0 if none." : "CGST plus SGST, or IGST. Enter 0 if none."; }
     var ftot = num(D.taxable) != null && num(D.gstAmt) != null ? round2(num(D.taxable) + num(D.gstAmt)) : null;
     $("bcTot").textContent = ftot == null ? "" : foreign ? fcAmt(D.currency, ftot) : money(ftot);
     $("bcTotH").textContent = foreign ? "Taxable amount plus GST, in " + D.currency + "." : "Taxable amount plus GST.";
@@ -4214,7 +4226,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       h.textContent = rf === "bill" && num(D.rate) === b.fxRate ? "Printed on the bill." : last && last.rate > 0 ? "Last used: " + fmtRate(last.rate) + ", for a bill dated " + fmtDate(last.date) + ". Check it against the rate on this bill's date." : "Enter the rate for the bill date. It is remembered for the next " + D.currency + " bill.";
     }
     $("bcTax").previousSibling.textContent = "Taxable amount" + (foreign ? " (" + D.currency + ")" : "");
-    $("bcGst").previousSibling.textContent = "GST amount" + (foreign ? " (" + D.currency + ")" : "");
+    $("bcGst").previousSibling.textContent = gstLabel(B.gstK) + (foreign ? " (" + D.currency + ")" : "");
     Array.prototype.forEach.call(document.querySelectorAll("#bOpen .err"), function (x) { x.hidden = true; });
     Array.prototype.forEach.call(document.querySelectorAll("#bOpen .field.bad"), function (x) { x.classList.remove("bad"); });
     var fl = $("bcFlags"); fl.textContent = "";

@@ -1783,8 +1783,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ================= responsibilities: who does which step for which company ================= */
   /* Job roles every user must have. Each suggests the steps it usually does; the admin can still change the ticks. */
-  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["approver", "Approver", "Approves checking reports and cash advances that name them, in the Approvals app"], ["recorder", "Approval Recorder", "Records approvals already signed on paper by an admin or approver, in their name; is never named as approver"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Energy Billing", "Renewable Energy: reads TNPDCL statements for solar plants and windmills, issues bills of supply, records receipts"]];
-  var JOB_STEPS = { purchaser: ["bills", "bcr", "adv", "vouchers", "vcr", "cash"], accountant: ["acct"], approver: ["appr"], recorder: ["rec"], financier: ["txn"], solar: ["solar"] };
+  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["approver", "Approver", "Approves checking reports and cash advances that name them, in the Approvals app"], ["recorder", "Approval Recorder", "Records approvals already signed on paper by an admin or approver, in their name; is never named as approver"], ["vmaker", "Voucher Maker", "Makes cash vouchers for other people, chosen from a saved list of names, and their Vouchers CRs"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Energy Billing", "Renewable Energy: reads TNPDCL statements for solar plants and windmills, issues bills of supply, records receipts"]];
+  var JOB_STEPS = { purchaser: ["bills", "bcr", "adv", "vouchers", "vcr", "cash"], accountant: ["acct"], approver: ["appr"], recorder: ["rec"], vmaker: ["vouchers", "vcr"], financier: ["txn"], solar: ["solar"] };
   function jobChecks(box, sel) {
     sel = sel || []; box.textContent = "";
     JOBS.forEach(function (j) { var lab = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: j[0] }), tx = el("span"); cb.checked = sel.indexOf(j[0]) >= 0; tx.appendChild(el("b", null, j[1])); tx.appendChild(el("span", null, j[2])); lab.appendChild(cb); lab.appendChild(tx); box.appendChild(lab); });
@@ -8196,7 +8196,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ---- Cash Voucher tab ---- */
   var VH = { id: null, busy: false, limit: 100, D: null, tried: false };
-  function vchVisible(v) { return S.isAdmin || (hasRole("vouchers", v.companyId) && (prepOf(v) === meId() || hasRole("vcr", v.companyId))) || prepOf(v) === meId(); }
+  function vchVisible(v) { return S.isAdmin || (hasRole("vouchers", v.companyId) && (prepOf(v) === meId() || v.madeBy === meId() || hasRole("vcr", v.companyId))) || prepOf(v) === meId(); }
   function vchStatus(v) {
     if (v.sentBack) return { text: "Sent back: " + sendBackText(v.sentBack), cls: "s-tds", r: null, back: true };
     var r = vcrOf(v.id); if (!r) { if (!acctOk(v)) { var al = acctLabel(v); return { text: al[0], cls: al[1], r: null, back: false, acct: true }; } return { text: "Waiting for a report", cls: "s-draft", r: null }; }
@@ -8251,7 +8251,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var cos = roleCos("vouchers");
     var lg0 = ((v && v.ledgers) || [])[0] || {};
     var lines = v ? (v.lines && v.lines.length ? v.lines.map(function (x) { return { d: x.d || "", amt: fmtInput(x.amt), lg: x.lg || ((v.ledgers || []).length === 1 ? lg0.id : ""), touched: true }; }) : [{ d: v.narration || "", amt: fmtInput(v.total), lg: lg0.id || "", touched: true }]) : [{ d: "", amt: "", lg: "", touched: false }];
-    VH.D = v ? { companyId: v.companyId, prepBy: v.preparedBy || "", approverId: v.approverId || "", voucherNo: v.voucherNo || "", voucherDate: v.voucherDate || "", payee: v.payee || "", payeeChoice: v.payee || "", payeeNew: "", settle: v.settle ? "yes" : "no", lines: lines,
+    VH.D = v ? { companyId: v.companyId, prepBy: v.preparedBy || "", forId: v.preparedBy || "", forNew: "", approverId: v.approverId || "", voucherNo: v.voucherNo || "", voucherDate: v.voucherDate || "", payee: v.payee || "", payeeChoice: v.payee || "", payeeNew: "", settle: v.settle ? "yes" : "no", lines: lines,
         vtype: v.vtype || "", supplyOf: v.supplyOf || "", payeeAddr: v.payeeAddr || "" }
       : { companyId: cos.length === 1 ? cos[0].id : "", prepBy: "", approverId: S.isAdmin ? "" : defaultApprover(), voucherNo: "", voucherDate: "", payee: "", payeeChoice: "", payeeNew: "", settle: "", lines: lines, vtype: "", supplyOf: "", payeeAddr: "" };
     $("vfTitle").textContent = v ? "Voucher " + v.voucherNo : "New voucher";
@@ -8265,6 +8265,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var D = VH.D, f = $("vfBody"); f.textContent = "";
     var co = el("select", { class: "field", id: "vfCo" }); fillSelect(co, companyOpts(D.companyId, "vouchers"), D.companyId); f.appendChild(fld("Company", co));
     if (S.isAdmin) f.appendChild(fld("Prepared by", prepSelect("vfPrep", "vouchers", D.companyId, D.prepBy), "Who made the voucher. Only people given vouchers for this company are listed."));
+    if (vMaker()) {
+      var fo = el("select", { class: "field", id: "vfFor" }); fillSelect(fo, vForOpts(D.companyId), D.forId || ""); f.appendChild(fld("Voucher for", fo, "The person whose voucher this is. It counts as theirs: their cash advance and their checking report."));
+      var fn = fld("Name", inp("vfForNew", D.forNew || "", { maxlength: "80", autocomplete: "off", "data-fmt": "name" }), "Saved, and offered next time."); fn.id = "vfForNewF"; fn.hidden = D.forId !== "new"; f.appendChild(fn);
+    }
     f.appendChild(fld("Approver", approverSelect("vfAppr", D.approverId), APPR_HINT));
     var ty = el("select", { class: "field", id: "vfType" }); fillSelect(ty, [["", "Choose the type"]].concat(VTYPES_V), D.vtype); f.appendChild(fld("Type of voucher", ty, "Cash Voucher, Self Invoice, or Freight & Transport."));
     var ps = el("select", { class: "field", id: "vfPayeeSel" }); fillSelect(ps, payeeOpts(D), D.payeeChoice);
@@ -8315,19 +8319,31 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function readVchForm() {
     var D = VH.D; if (!D || !$("vfCo")) return;
-    D.companyId = $("vfCo").value; if ($("vfPrep")) D.prepBy = $("vfPrep").value; if ($("vfAppr")) D.approverId = $("vfAppr").value;
+    D.companyId = $("vfCo").value; if ($("vfPrep")) D.prepBy = $("vfPrep").value; if ($("vfFor")) { D.forId = $("vfFor").value; D.forNew = $("vfForNew").value; } if ($("vfAppr")) D.approverId = $("vfAppr").value;
     var pc0 = D.payeeChoice; D.payeeChoice = $("vfPayeeSel").value; D.payeeNew = $("vfPayee").value;
     if (D.payeeChoice !== pc0) { $("vfAddr").value = D.payeeChoice && D.payeeChoice !== "new" ? payeeAddrOf(D.payeeChoice) : ""; }
     D.payee = D.payeeChoice === "new" ? D.payeeNew : D.payeeChoice; D.vtype = $("vfType").value; D.payeeAddr = $("vfAddr").value; D.supplyOf = $("vfSupply").value;
     D.lines.forEach(function (x, i) { if ($("vfLd" + i)) { x.d = $("vfLd" + i).value; x.amt = $("vfLa" + i).value; x.lg = $("vfLg" + i).value; } });
     var r = document.querySelector('input[name="vfSettle"]:checked'); D.settle = r ? r.value : "";
   }
-  function vchPrep(D) { return S.isAdmin ? D.prepBy : meId(); }
+  /* A Voucher Maker makes vouchers for other people: someone with a login, or a name from the saved list. The voucher counts as
+     theirs (cash advance, checking report); who made it is kept too. */
+  function vMaker() { return !S.isAdmin && myJobs().indexOf("vmaker") >= 0; }
+  function vForOpts(cid) {
+    var o = [["", "Choose who the voucher is for"], [meId(), "Myself"]], seen = {}; seen[meId()] = 1;
+    (cid ? usersWith("vouchers", cid) : []).forEach(function (u) { if (!seen[u.id]) { seen[u.id] = 1; o.push([u.id, userLabel(u.id)]); } });
+    solList(S.vpeople || {}).filter(function (x) { return x.active !== false; }).sort(function (a, b) { return natCmp(a.name, b.name); }).forEach(function (x) { o.push([x.id, x.name]); });
+    o.push(["new", "A new name"]); return o;
+  }
+  function vForName(id) { return id === meId() ? preparedByText() : (S.vpeople || {})[id] ? S.vpeople[id].name : userLabel(id); }
+  function vForIsPerson(id) { return !!id && id !== "new" && !(S.vpeople || {})[id]; }
+  function vchPrep(D) { return S.isAdmin ? D.prepBy : vMaker() ? (vForIsPerson(D.forId) ? D.forId : "") : meId(); }
   function checkVch(D) {
     var errs = [];
     function E(f, m) { errs.push([f, m]); }
     if (!D.companyId) E("vfCo", "Choose the company.");
     else if (!hasRole("vouchers", D.companyId)) E("vfCo", "You don't handle vouchers for this company.");
+    if (vMaker()) { if (!D.forId) E("vfFor", "Choose who the voucher is for."); else if (D.forId === "new" && !String(D.forNew || "").trim()) E("vfForNew", "Type the name."); else if (!vForIsPerson(D.forId) && D.settle === "yes") E("vfSet", "Only someone with a login has a cash advance; the financier pays this one."); }
     if (S.isAdmin && D.companyId) { if (!D.prepBy) E("vfPrep", "Choose who made the voucher."); else if (!userHas(S.users[D.prepBy], "vouchers", D.companyId)) E("vfPrep", "That person doesn't hold vouchers for this company any more. Choose again."); }
     if (!D.approverId) E("vfAppr", "Choose who approves this voucher.");
     if (!D.vtype) E("vfType", "Choose the type of voucher.");
@@ -8390,12 +8406,17 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       narration: lines.map(function (x) { return x.d; }).join(" "), vtype: D.vtype, gstApp: old && other ? old.gstApp || "N/A" : "N/A", gstRate: old && other && old.gstApp === "RCM" ? old.gstRate : null, taxable: total,
       supplyOf: other ? D.supplyOf.trim() : "", payeeAddr: D.payeeAddr.trim(), ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
       settle: D.settle === "yes", acct: "pending", acctNote: "", updatedAt: now, updatedBy: meId() }, prepFields(D.prepBy), approverFields(D.approverId));
+    var newName = null;
+    if (vMaker()) {
+      var fid = D.forId; if (fid === "new") { var nm0 = smartCase(String(D.forNew || "").trim()), ex0 = solList(S.vpeople || {}).filter(function (x) { return normName(x.name) === normName(nm0); })[0]; if (ex0) fid = ex0.id; else { fid = "n_" + Date.now().toString(36); newName = { id: fid, name: nm0 }; } }
+      Object.assign(doc, { preparedBy: fid, preparedByName: newName ? newName.name : vForName(fid), madeBy: meId(), madeByName: preparedByText() });
+    }
     doc.payable = round2(doc.total - doc.tds);
     if (!old) Object.assign(doc, { createdAt: now, createdBy: meId() });
     if (old && old.sentBack) Object.assign(doc, { sentBack: null, sentBackLog: (old.sentBackLog || []).concat([old.sentBack]), resentAt: now, approvedAt: null });
     VH.busy = true; $("vfSave").disabled = true;
     var pk = payeeKey(doc.payee), pOld = S.payees && S.payees[pk];
-    retry(function () { return old ? S.db.doc("vouchers/" + id).update(doc) : S.db.doc("vouchers/" + id).set(doc); }).then(function () {
+    (newName ? retry(function () { return S.db.doc("vpeople/" + newName.id).set({ name: newName.name, active: true, createdAt: now, createdBy: meId() }); }).then(function () { S.vpeople = S.vpeople || {}; S.vpeople[newName.id] = { id: newName.id, name: newName.name, active: true }; }) : Promise.resolve()).then(function () { return retry(function () { return old ? S.db.doc("vouchers/" + id).update(doc) : S.db.doc("vouchers/" + id).set(doc); }); }).then(function () {
       if (doc.payee && (!pOld || pOld.address !== doc.payeeAddr || pOld.name !== doc.payee)) S.db.doc("payees/" + pk).set({ name: doc.payee, address: doc.payeeAddr, updatedAt: now, by: meId() }).catch(function () {});
       S.vouchers[id] = Object.assign({ id: id }, old || {}, doc); toast("Voucher " + (old ? "updated" : "submitted") + ". It now goes to the accountant.");
       backToVch(); renderNav();
@@ -9542,6 +9563,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       S.raw.vouchers = m; applyScope(); S.vcLoaded = true; onData();
     }, function (e) { S.vcLoaded = true; onData(); toast("Vouchers stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     S.db.collection("payees").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data() || {}; }); S.payees = m; }, function () {});
+    S.db.collection("vpeople").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.vpeople = m; }, function () {});
     S.db.collection("cashadv").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var v = Object.assign({}, d.data() || {}); v.id = d.id; if (inDiv(v)) m[d.id] = v; });
       S.cashadv = m; S.caLoaded = true; onData();
@@ -11469,6 +11491,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       readVchForm();
       if (e.target && e.target.id === "vfPayeeSel" && e.target.value === "new") setTimeout(function () { $("vfPayee").focus(); }, 0);
       if (e.target && e.target.id === "vfCo" && S.isAdmin) { var ps = $("vfPrep"), np = prepSelect("vfPrep", "vouchers", VH.D.companyId, VH.D.prepBy); ps.parentNode.replaceChild(np, ps); VH.D.prepBy = np.value; }
+      if (e.target && e.target.id === "vfCo" && $("vfFor")) { var fo0 = $("vfFor"), keep = fo0.value; fillSelect(fo0, vForOpts(VH.D.companyId), keep); VH.D.forId = fo0.value; }
+      if ($("vfForNewF")) $("vfForNewF").hidden = VH.D.forId !== "new";
       updVchForm();
     });
     $("vfBody").addEventListener("focusout", function (e) {

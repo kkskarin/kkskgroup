@@ -16,17 +16,28 @@
   serves it at each address and the address picks the app (`BV_APP`: mnt, re, acc, fin). `/bills/` (the old Bills & Vouchers)
   moves to `/maintenance/`. Every bill, report, proforma, voucher, payment, note and cash advance carries `div` (mnt or re;
   none means mnt). Maintenance and Renewable Energy each see only their own; Accounts and Finance see every division.
-  Maintenance is paid in Finance; Renewable Energy pays in its own app, and Finance shows those as payables only.
+  **The app decides the scope, a person's jobs decide the tabs.** Every app has the same headings in the same order (Reports,
+  [Energy Billing,] Expenses, Accounts, Payments, Settings); a division app (Maintenance & Civil, Renewable Energy) holds all of that
+  division's work for whoever does it there (so a Renewable Energy purchaser + accountant + financier works only in that app);
+  Accounts is accounting for every division and Finance is paying for every division.
   Accounts decides which divisions may use each ledger (Ledgers › Edit › Divisions that use it).
 - **Workflow.** Every bill, voucher, proforma and import goes: data entry → accounting → approval → payment.
-  Jobs: Purchaser (entry), Accountant (accounting), Approver (approval), Financier (payment); any mix may be held.
+  Jobs: Purchaser (entry), Accountant (accounting), Approver (approval), Approval Recorder (records paper approvals),
+  Voucher Maker (vouchers for other people), Financier (payment), Energy Billing; any mix may be held, except Approver with
+  Approval Recorder. On the bill form GST shows as GST (CGST + SGST) or GST (IGST), from the vendor's and company's states.
   A Purchaser who is also the Accountant for a company accounts a bill as they record it (ledgers and TDS on the bill form);
   it skips To Account but still goes to approval. The accountant "accounts" entries; only the Approver step "approves".
 - **Approvals** happen only in the Approvals app, for admins and people with Approval. An Approver sees and approves only the
-  checking reports and cash advances that name them; checking reports are made one per approver. A **Financier who is also an
-  Approver** approves every checking report and cash advance in the divisions given to them, whoever is named: Maintenance & Civil
-  when they have the Finance (or Maintenance & Civil) app, Renewable Energy when they have that app, and only for companies where
-  they hold Approval. No approving while viewing as someone.
+  checking reports and cash advances that name them; checking reports are made one per approver. An **Approval
+  Recorder** records approvals already signed on paper: for every checking report and cash advance in their divisions (Maintenance &
+  Civil with the Finance or Maintenance & Civil app, Renewable Energy with that app; every division if they have none of these),
+  for companies where they hold the Approval Recorder step. They choose who signed (the named approver by default) and it is saved
+  in that person's name, "recorded by" them. An Approval Recorder is never offered as an approver. Approving can be for the full
+  amount or a part. No approving while viewing as someone.
+- **Vouchers** are made by the person they belong to, or by a **Voucher Maker** for someone else (a person with a login, or a
+  name from the saved list `vpeople/*`); the voucher counts as that person's (cash advance only for people with a login, and their
+  checking report), and keeps who made it. **3 or fewer** vouchers of a person for a company go for approval without a checking
+  report ("Send for approval"): they are printed one per page and signed. 4 or more go into a Vouchers CR.
 - **TDS** is entered when an entry is accounted. The vendor is paid the total less TDS; the vendor statement and Ledger Books
   show it. Checking reports and their PDFs don't.
 - **Reports › Masters** (every app with purchases or accounting, and Finance): Companies, Vendors, Ledgers, and in Renewable
@@ -40,7 +51,7 @@
   its first bill or proforma, as read; after that only the accountant changes its details. A bill can't be accounted until its
   vendor's details are complete (type, terms, address, valid GSTIN); its opening balance, entered by the accountant, approves the
   vendor and is needed before a checking report. Ledgers: the accountant adds, edits, imports and deletes (only if unused).
-- **Access per app** is set on each person (Settings › Users › Apps): Maintenance, Renewable Energy, Accounts, Finance, Approvals (approvers only), and a Production Planning
+- **Access per app** is set on each person (Settings › Users › Apps): Maintenance, Renewable Energy, Accounts, Finance, Approvals (approvers and approval recorders), and a Production Planning
   role (Approver, Planner, Floor Team) with a region (Erode, Ambur, or both). Admins and Super Admins get every app.
   `app_portal()` in KKSK Group answers what a signed-in person may open.
 - **Super Admins** are managed by Super Admins in Settings › Users › Super Admins. Someone added becomes a Super Admin

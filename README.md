@@ -190,7 +190,8 @@ Monthly bills of supply from a solar plant or windmill to each consumer it suppl
 row (SOLAR or WIND) is billed and the wording on the bill.
 
 - **Companies** (Reports › Masters; admins, and in Renewable Energy also people given "Can add and edit companies in Renewable
-  Energy" in Users, at present Prabhu): each Renewable Energy company has a generator type (solar or windmill), its
+  Energy" in Users, at present Prabhu; a company they add is put on their own user record with the steps they hold on
+  their other companies, never approving, through `claim_created_company()`): each Renewable Energy company has a generator type (solar or windmill), its
   capacity in MW (AC for solar; the DC figure is worked out as panels × capacity per panel), and its generator HTSCs
   (transformers), each with a location and either its inverters, with the solar panels under each inverter (make, number,
   kW per panel), or its windmills (make, capacity); at least one HTSC finishes setting it up. Makes typed before are offered
@@ -226,7 +227,7 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   units and charges tie out with the generation statement, loss applied, units adjusted, consumer HTSC in Masters, rate
   present, low net (< 20% of A). The HT bill is only compared (units credited, wheeling and every other charge, consumer):
   a difference is a check to look at, never a blocker, and billing goes ahead without it.
-- **Issue**: number SHORT-NNN-YY/YY (e.g. ARA-001-26/27), one series per company per financial year, suggested and editable when
+- **Issue** (with Preview PDF before issuing): number SHORT-NNN-YY/YY (e.g. ARA-001-26/27), one series per company per financial year, suggested and editable when
   issuing but never one already used; the PDF holds the company's pages. An issued invoice is locked; cancel it (admin, with a
   reason) and issue a new one for corrections.
 - **Invoices & Receipts**: register, receipts with TDS under 194Q, ageing 0–30/31–60/61–90/90+, Excel.

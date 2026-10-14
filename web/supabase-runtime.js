@@ -607,6 +607,7 @@
     createLogin: function (email, password, name) { return adminUsers({ action: "create", email: email, password: password, name: name }); },
     setPassword: function (uid, password) { return adminUsers({ action: "password", uid: uid, password: password }); },
     deleteUser: function (uid) { return adminUsers({ action: "delete", uid: uid }); },
+    claimCompany: function (cid) { return ready.then(function () { return sb.rpc("claim_created_company", { p_company: cid }); }).then(function (r) { if (r.error) throw err("permission_denied", r.error.message); return r.data || {}; }); },
     changeMyPassword: function (password) { return ready.then(function () { return sb.auth.updateUser({ password: password }); }).then(function (r) { if (r.error) throw err("invalid_argument", r.error.message); return true; }); },
     email: function () { return ready.then(function (m) { return m.email || ""; }); },
     signOut: function () { return sb.auth.signOut(); }

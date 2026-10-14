@@ -2559,7 +2559,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     retry(function () {
       if (!isNew) return ref.update(body);
       body.active = true; body.createdAt = body.updatedAt; body.createdBy = meId(); body.order = Object.keys(S.companies).reduce(function (m, k) { var o = S.companies[k].order; return typeof o === "number" && o >= m ? o + 1 : m; }, Object.keys(S.companies).length); return ref.set(body);
-    }).then(function () { toast(isNew ? "Company added." : "Company saved."); backToList(); }, function (e) { toast(explain(e)); })
+    }).then(function () {
+      /* a company added by someone allowed to add them goes on their own user record, with the steps they hold elsewhere */
+      if (isNew && !S.isAdmin && window.bvAccount && window.bvAccount.claimCompany) return window.bvAccount.claimCompany(id).then(function () { toast("Company added, and given to you in Users."); backToList(); }, function () { toast("Company added. Ask an admin to give it to you in Users."); backToList(); });
+      toast(isNew ? "Company added." : "Company saved."); backToList();
+    }, function (e) { toast(explain(e)); })
       .then(function () { S.busy = false; $("save").disabled = false; });
   }
   function toggleActive() {
@@ -10737,6 +10741,21 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (c.warns) sm.appendChild(el("p", { class: "sub", style: "margin:6px 0 0" }, plural(c.warns, "check") + " to look at."));
     body.appendChild(sm);
     setTimeout(function () { var di = $("siDate"); if (di) di.addEventListener("change", function () { if (ymdOk(di.value) && !touched) $("siNo").value = nextInvNo(cid, di.value).no; }); }, 0);
+    /* The bill of supply as it will be saved, for issuing or for a preview. */
+    function invDoc(n, dt, days, now) {
+      var kind = plantKind(c.plants[0]);
+      var lines = c.lines.map(function (l) { return { plant: l.plant, htsc: l.htsc, units: l.billed, rate: n0(l.rate.rate), rateRef: l.rate.ref || "", A: l.A, ded: l.ded, B: l.B, gross: l.gross, loss: l.loss }; });
+      var doc = { companyId: cid, plant: c.plants[0], plants: c.plants, consumer: key, month: month, no: n.no, seq: n.seq, fy: n.fy, date: dt, dueDate: addDays(dt, days), creditDays: days,
+        units: c.billed, rate: c.rate, rateRef: lines[0].rateRef, A: c.A, ded: c.ded, B: c.B, net: c.net, gross: c.gross, loss: lines[0].loss, lines: lines,
+        plantSnap: { name: co.shortName || co.name, htsc: c.plants.join(", "), location: c.plants.map(function (p) { return (PL()[p] || {}).location; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; }).join(", "), capacityKw: 0, kind: kind },
+        consSnap: { name: cn.name, htsc: c.htscs.join(", "), address: cn.address || "", gstin: cn.gstin || "", pan: cn.pan || "", stateCode: cn.stateCode || "33", voltage: cn.voltage || "", addressee: cn.addressee || "The Managing Director" },
+        checks: [].concat.apply([], c.lines.map(function (l) { return l.checks.map(function (x) { return { lvl: x.lvl, label: x.label, msg: x.msg, pair: c.lines.length > 1 ? l.htsc + " from " + l.plant : "" }; }); })), status: "issued", issuedAt: now, issuedBy: meId(), issuedByName: pnm(preparedByText()) };
+      return doc;
+    }
+    /* A look at the PDF before it is issued: same figures, the number and date as typed. */
+    var pv = el("button", { type: "button", class: "btn", style: "margin-top:10px" }, "Preview PDF");
+    pv.addEventListener("click", function () { var dt = ymdOk($("siDate").value) ? $("siDate").value : d0, nx2 = nextInvNo(cid, dt), t = $("siNo").value.trim().replace(/\s+/g, "") || nx2.no; var d = invDoc({ no: t, seq: nx2.seq, fy: nx2.fy }, dt, Math.round(n0($("siDays").value)), Date.now()); d.preview = true; solInvoicePdf(d, pv); });
+    body.appendChild(pv);
     popForm("Issue bill of supply", c.name + " · " + monthLabel(month), body, "Issue and download PDF", function () {
       errClear(body); var dt = $("siDate").value, days = Math.round(n0($("siDays").value));
       if (!ymdOk(dt)) { errOn("siDate", "Choose the invoice date."); return false; }
@@ -10745,13 +10764,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (!typed) { errOn("siNo", "Type the invoice number."); return false; }
       if (invNoUsed(cid, typed)) { errOn("siNo", "Invoice " + typed + " is already used by " + (co.shortName || co.name) + "."); return false; }
       if (typed !== n.no) { var mm = /-(\d+)-(\d{2})\/(\d{2})$/.exec(typed); n = { no: typed, fy: mm ? mm[2] + "-" + mm[3] : n.fy, seq: mm ? Number(mm[1]) : n.seq }; }
-      var id = newId("si"), now = Date.now(), kind = plantKind(c.plants[0]);
-      var lines = c.lines.map(function (l) { return { plant: l.plant, htsc: l.htsc, units: l.billed, rate: n0(l.rate.rate), rateRef: l.rate.ref || "", A: l.A, ded: l.ded, B: l.B, gross: l.gross, loss: l.loss }; });
-      var doc = { companyId: cid, plant: c.plants[0], plants: c.plants, consumer: key, month: month, no: n.no, seq: n.seq, fy: n.fy, date: dt, dueDate: addDays(dt, days), creditDays: days,
-        units: c.billed, rate: c.rate, rateRef: lines[0].rateRef, A: c.A, ded: c.ded, B: c.B, net: c.net, gross: c.gross, loss: lines[0].loss, lines: lines,
-        plantSnap: { name: co.shortName || co.name, htsc: c.plants.join(", "), location: c.plants.map(function (p) { return (PL()[p] || {}).location; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; }).join(", "), capacityKw: 0, kind: kind },
-        consSnap: { name: cn.name, htsc: c.htscs.join(", "), address: cn.address || "", gstin: cn.gstin || "", pan: cn.pan || "", stateCode: cn.stateCode || "33", voltage: cn.voltage || "", addressee: cn.addressee || "The Managing Director" },
-        checks: [].concat.apply([], c.lines.map(function (l) { return l.checks.map(function (x) { return { lvl: x.lvl, label: x.label, msg: x.msg, pair: c.lines.length > 1 ? l.htsc + " from " + l.plant : "" }; }); })), status: "issued", issuedAt: now, issuedBy: meId(), issuedByName: pnm(preparedByText()) };
+      var id = newId("si"), now = Date.now(), doc = invDoc(n, dt, days, now);
       return retry(function () { return S.db.doc("solar_invoices/" + id).set(doc); }).then(function () {
         SOL.inv[id] = Object.assign({ id: id }, doc); toast("Invoice " + n.no + " issued."); solRender();
         if (S.downloads) solInvoicePdf(SOL.inv[id]);
@@ -10760,7 +10773,6 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
   }
 
-  /* ---- The bill of supply PDF: covering letter, Original for Recipient, Triplicate for Supplier ---- */
   /* ---- The bill of supply PDF: the company's pages, each written as HTML, laid on its A4 letterpad within its margins ---- */
   function solInvoicePdf(iv, btn) {
     if (!S.downloads) { toast("Downloads aren't available here."); return; }
@@ -10771,7 +10783,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       tp.pages.forEach(function (pg, i) { c = c.then(function () { if (i) doc.addPage(); return htmlPage(doc, iv, pg, tp.m, r[2]); }); });
       return c;
     }).then(function () {
-      return S.downloads.save({ filename: "Bill of Supply " + iv.no.replace(/\//g, "-") + " " + safeName(iv.consSnap.name) + " " + monthShort(iv.month) + ".pdf", data: doc.output("blob") });
+      return S.downloads.save({ filename: (iv.preview ? "PREVIEW " : "") + "Bill of Supply " + iv.no.replace(/\//g, "-") + " " + safeName(iv.consSnap.name) + " " + monthShort(iv.month) + ".pdf", data: doc.output("blob") });
     }).then(function () { toast("Invoice PDF ready."); }, function (e) { var k = e && (e.code || e.kind); toast(k === "declined" ? "Download cancelled." : k === "lib" ? "The PDF maker didn't load. Check the connection and try again." : "The PDF couldn't be made (" + (k || "error") + ")."); })
       .then(function () { if (btn) { btn.disabled = false; btn.textContent = label; } });
   }

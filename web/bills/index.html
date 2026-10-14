@@ -1811,9 +1811,15 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bills CR"], ["vouchers", "Cash Vouchers"], ["vcr", "Vouchers CR"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance CR"], ["appr", "Approval"], ["rec", "Approval Recorder"], ["txn", "Payment Entry"], ["solar", "Energy Billing"]];
   var TAB_STEP = { "Cash Approvals": "appr", "Solar Month": "solar", "Solar Invoices": "solar", "Solar Reports": "solar", "Approvals": "appr", "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
   /* A user saved before responsibilities existed does every step for their companies until the admin sets them. */
+  /* Someone allowed to add companies (not an admin) works in a company they added with the same steps they hold elsewhere,
+     until an admin sets them for it in Users. */
+  function ownCo(u, cid) { var c = S.companies && S.companies[cid], id = u && (u.id || (u === S.myUser ? S.actId || meId() : "")); return !!(id && c && c.createdBy && c.createdBy === id && !(S.admins || {})[id]); }
   function userHas(u, step, cid) {
-    if (!u || u.active === false || (u.companyIds || []).indexOf(cid) < 0) return false;
+    if (!u || u.active === false) return false;
+    var own = ownCo(u, cid) && (u.companyIds || []).indexOf(cid) < 0;
+    if (!own && (u.companyIds || []).indexOf(cid) < 0) return false;
     if (!u.roles) return step !== "appr" && step !== "rec"; /* approving is only ever given on purpose */
+    if (own || !u.roles[cid]) { if (!own) return false; return Object.keys(u.roles).some(function (k) { return k !== cid && (u.roles[k] || []).indexOf(step) >= 0 && step !== "appr" && step !== "rec"; }); }
     return (u.roles[cid] || []).indexOf(step) >= 0;
   }
   function hasRole(step, cid) { if (S.isAdmin) return !!S.companies[cid]; return userHas(S.myUser, step, cid); }
@@ -2552,7 +2558,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     S.busy = true; $("save").disabled = true;
     retry(function () {
       if (!isNew) return ref.update(body);
-      body.active = true; body.createdAt = body.updatedAt; body.order = Object.keys(S.companies).reduce(function (m, k) { var o = S.companies[k].order; return typeof o === "number" && o >= m ? o + 1 : m; }, Object.keys(S.companies).length); return ref.set(body);
+      body.active = true; body.createdAt = body.updatedAt; body.createdBy = meId(); body.order = Object.keys(S.companies).reduce(function (m, k) { var o = S.companies[k].order; return typeof o === "number" && o >= m ? o + 1 : m; }, Object.keys(S.companies).length); return ref.set(body);
     }).then(function () { toast(isNew ? "Company added." : "Company saved."); backToList(); }, function (e) { toast(explain(e)); })
       .then(function () { S.busy = false; $("save").disabled = false; });
   }
@@ -2744,7 +2750,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* ================= companies the viewer may work with ================= */
   function myCompanyIds() {
     if (S.isAdmin) return Object.keys(S.companies).filter(function (id) { return coInApp(S.companies[id]); });
-    return ((S.myUser && S.myUser.companyIds) || []).filter(function (id) { return S.companies[id] && coInApp(S.companies[id]); });
+    var ids = ((S.myUser && S.myUser.companyIds) || []).slice(); Object.keys(S.companies).forEach(function (id) { if (ids.indexOf(id) < 0 && S.myUser && ownCo(Object.assign({ id: S.actId || meId() }, S.myUser), id)) ids.push(id); });
+    return ids.filter(function (id) { return S.companies[id] && coInApp(S.companies[id]); });
   }
   function canSee(cid) { return !!cid && myCompanyIds().indexOf(cid) >= 0; }
   function canStep(step, cid) { return canSee(cid) && hasRole(step, cid); }

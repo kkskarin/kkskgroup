@@ -5524,7 +5524,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function apprMine(r) { if (S.isAdmin) return true; return APP === "apr" && apprForMe(r, reportApproverId(r)) && apprCos(r).some(function (cid) { return canApprove(cid); }); }
   /* The approver a checking report is for: saved on it, or (older reports) the one most of its entries name. */
   function reportApproverId(r) { return r.approverId || reportApprover(r); }
-  function apprKind(r) { return r.kind === "vcr" ? "Vouchers CR" : r.kind === "inst" ? "Advance CR" : "Bills CR"; }
+  function apprKind(r) { return r.kind === "vcr" ? (r.direct ? "Vouchers (no CR)" : "Vouchers CR") : r.kind === "inst" ? "Advance CR" : "Bills CR"; }
   function apprWho(r) { if (r.kind === "vcr") return pnm(r.preparedBy); return (S.vendors[r.vendorId] || {}).name || ""; }
   function apprAmount(r) { return r.kind === "vcr" ? money(r.payable != null ? r.payable : r.total) : repMoney(r, r.kind === "inst" ? r.total : payableOf(r)); }
   function apprWaiting() {
@@ -8583,7 +8583,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Vouchers", cls: "r num", sort: function (x) { return x.vs.length; }, desc: true, cell: function (x, td) { txt(td, x.vs.length); } },
       { label: "Total amount", cls: "r num", sort: function (x) { return x.total; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, money(x.total))); } },
       { label: "Oldest waiting", cls: "num", sort: function (x) { return -(x.oldest || 0); }, desc: true, cell: function (x, td) { var d = daysSince(x.oldest); td.appendChild(el("span", { class: d > 7 ? "late" : "" }, d ? plural(d, "day") : "Today")); } },
-      { label: "", kind: "act", cls: "r", cell: function (x, td) { var b = el("button", { class: "btn primary" }, "Prepare report"); b.addEventListener("click", function () { openVcrNew(x.prep, x.appr); }); td.appendChild(b); } }
+      { label: "", kind: "act", cls: "r", cell: function (x, td) {
+          /* 3 or fewer vouchers of a person for a company need no checking report: each voucher is signed itself. 4 or more go into a Vouchers CR. */
+          var small = Object.keys(x.cos).filter(function (c) { return x.cos[c] <= VCR_MIN - 1; }), big = Object.keys(x.cos).filter(function (c) { return x.cos[c] >= VCR_MIN; }), w = el("div", { class: "acts" });
+          if (small.length) { var d = el("button", { class: "btn" + (big.length ? "" : " primary") }, "Send for approval"); d.title = "No checking report: print and sign each voucher"; d.addEventListener("click", function () { sendVouchersDirect(x, small, d); }); w.appendChild(d); }
+          if (big.length) { var b = el("button", { class: "btn primary" }, "Prepare report"); b.addEventListener("click", function () { openVcrNew(x.prep, x.appr, big); }); w.appendChild(b); }
+          td.appendChild(w); } }
     ], groups, { sortIndex: 0, sortDir: 1 });
     var q = $("vcQ").value.trim().toLowerCase();
     var reps = vcrList().filter(function (r) {
@@ -8605,9 +8610,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     ], reps, { sortIndex: 0, sortDir: -1 });
   }
   function vcrNewList() { return vcrWaiting("").filter(function (v) { return prepOf(v) === VC.prep && (v.approverId || "") === (VC.appr || ""); }); }
-  function openVcrNew(prep, appr) {
+  var VCR_MIN = 4;
+  function openVcrNew(prep, appr, only) {
     VC.prep = prep; VC.appr = appr || ""; VC.sel = {}; VC.cos = {};
-    vcrNewList().forEach(function (v) { VC.sel[v.id] = true; VC.cos[v.companyId] = true; });
+    vcrNewList().forEach(function (v) { VC.sel[v.id] = true; if (!only || only.indexOf(v.companyId) >= 0) VC.cos[v.companyId] = true; });
     renderVcrNew(); show("secVcrNew");
   }
   function renderVcrNew() {
@@ -8653,6 +8659,38 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       S.reports[id] = Object.assign({ id: id }, doc); invalidate(); renderNav(); toast("Vouchers CR " + doc.no + " generated."); openVcr(id);
     }, function (e) { toast(explain(e)); }).then(function () { VC.busy = false; if (!$("secVcrNew").hidden) updVcrNew(); });
   }
+  /* Vouchers sent for approval without a checking report: one record per company, so approval and payment work as for a report.
+     The vouchers themselves are printed and signed. */
+  function sendVouchersDirect(x, cids, btn) {
+    if (VC.busy) return;
+    var all = vcrWaiting("").filter(function (v) { return prepOf(v) === x.prep && (v.approverId || "") === (x.appr || "") && cids.indexOf(v.companyId) >= 0; });
+    if (!all.length) { toast("These vouchers were just sent by someone else."); renderVcr(); return; }
+    VC.busy = true; btn.disabled = true;
+    var now = Date.now(), day = ymdOfMs(now), fy = fyOf(day), used = {}; vcrList().forEach(function (r) { if (r.direct && r.fy === fy && r.seq) used[r.seq] = 1; });
+    var chain = Promise.resolve(), made = [];
+    cids.forEach(function (cid) { chain = chain.then(function () {
+      var vs = all.filter(function (v) { return v.companyId === cid; }).sort(vcrSort); if (!vs.length) return;
+      var seq = 1; while (used[seq]) seq++; used[seq] = 1;
+      var t = vcrSums(vs), id = newId("r"), byCo = {}; byCo[cid] = { total: t.total, tds: t.tds, payable: t.payable, settled: t.settled, toPay: t.toPay };
+      var doc = { kind: "vcr", direct: true, no: serialNo("VCH", seq, day, fy), seq: seq, fy: fy, voucherIds: vs.map(function (v) { return v.id; }), companyIds: [cid], byCo: byCo,
+        preparedById: x.prep, approverId: x.appr || "", preparedBy: pnm(vs[0].preparedByName || prepName(vs[0])), total: t.total, tds: t.tds, payable: t.payable, settled: t.settled, toPay: t.toPay,
+        periodFrom: t.from, periodTo: t.to, checkDate: day, currency: "INR", stage: "generated", createdAt: now, createdBy: meId(), generatedAt: now, generatedBy: meId(), log: [logEntry("generated", "Sent for approval without a checking report")] };
+      return retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () { S.reports[id] = Object.assign({ id: id }, doc); made.push(doc); });
+    }); });
+    chain.then(function () { invalidate(); renderNav(); toast(plural(made.reduce(function (s0, d) { return s0 + d.voucherIds.length; }, 0), "voucher") + " sent for approval. Print each voucher for signature."); renderVcr(); }, function (e) { toast(explain(e)); renderVcr(); }).then(function () { VC.busy = false; });
+  }
+  /* All the vouchers sent together, one per page, to print and sign. */
+  function printVouchers(r, btn) {
+    var vs = vcrVouchers(r); if (!vs.length || !S.downloads) return;
+    var label = btn.textContent; btn.disabled = true; btn.textContent = "Preparing";
+    loadScript(JSPDF).then(function () {
+      var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
+      var doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a5", compress: true }); pdfFonts(doc);
+      vs.forEach(function (v, i) { if (i) doc.addPage("a5", "landscape"); drawVoucher(doc, v); });
+      return S.downloads.save({ filename: "Vouchers " + safeName(r.no) + ".pdf", data: doc.output("blob") });
+    }).then(function () { toast(plural(vs.length, "voucher") + " ready to print and sign."); }, function (e) { var k = e && (e.code || e.kind); toast(k === "declined" ? "Download cancelled." : "The vouchers couldn't be printed (" + (k || "error") + ")."); })
+      .then(function () { btn.disabled = false; btn.textContent = label; });
+  }
   function backToVcr() { VC.viewId = null; if (S.tab === "Approvals") { renderApprovals(); renderNav(); show("secAppr"); return; } renderVcr(); renderNav(); show("secVcr"); }
   function openVcr(id) { VC.viewId = id; CK.arm = ""; renderVcrView(); show("secVcrView"); window.scrollTo(0, 0); }
   function vcrVouchers(r, cid) { return (r.voucherIds || []).map(function (id) { return S.vouchers[id]; }).filter(function (v) { return v && (!cid || v.companyId === cid); }).sort(vcrSort); }
@@ -8661,7 +8699,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var r = S.reports[VC.viewId]; if (!r) { backToVcr(); return; }
     if (!vcrTeamSees(r)) { toast("Report " + r.no + " has been printed and is with the admin now."); backToVcr(); return; }
     var s = stageOf(r), admin = S.isAdmin;
-    $("vvTitle").textContent = r.no; $("vvSub").textContent = "Vouchers CR, " + STAGE[s].toLowerCase() + ". Generated " + stamp(r.generatedAt || r.createdAt) + ".";
+    $("vvTitle").textContent = r.no; $("vvSub").textContent = (r.direct ? "Vouchers sent for approval without a checking report: each voucher is printed and signed. " : "Vouchers CR, ") + STAGE[s].toLowerCase() + ". " + (r.direct ? "Sent " : "Generated ") + stamp(r.generatedAt || r.createdAt) + ".";
     statBoxes($("vvStats"), [whoStat(["Prepared by", pnm(r.preparedBy), ""]), ["Checking date", fmtDate(r.checkDate), ""], ["Period", periodText(r.periodFrom, r.periodTo), ""], ["Stage", stageTag(r), ""]]);
     var box = $("vvBox"); box.textContent = "";
     (r.companyIds || []).forEach(function (cid) {
@@ -8684,12 +8722,17 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var acts = $("vvActs"), hint = $("vvHint"); acts.textContent = ""; hint.textContent = "";
     function actBtn(b0, label, cls, fn, arm) { if (noApprove(label)) return; return actBtnAll(b0, label, cls, fn, arm); }
     if (S.tab === "Approvals" && apprUser()) {
-      if (S.downloads) actBtnAll(acts, "Download PDF", "", function (b) { downloadVcr(r.id, b); });
+      if (S.downloads) { if (r.direct) actBtnAll(acts, "Print vouchers", "", function (b) { printVouchers(r, b); }); else actBtnAll(acts, "Download PDF", "", function (b) { downloadVcr(r.id, b); }); }
       if ((s === "generated" || s === "printed") && apprMine(r)) { actBtnAll(acts, "Approve for payment", "primary", function () { openVcrApprove(r); }); hint.textContent = "Approve it voucher by voucher."; }
       else if (s === "payment") { hint.textContent = apprByText(r) + ", " + stamp(r.approvedAt) + "."; if (admin && !vcrPaid(r.id) && !inLockedPlan(r.id)) actBtnAll(acts, "Undo approval", "", function () { undoVcrApprove(r); }, "Click again to undo"); }
       return;
     }
-    if (s === "generated") {
+    if (s === "generated" && r.direct) {
+      if (S.downloads) actBtn(acts, "Print vouchers", "primary", function (b) { printVouchers(r, b); });
+      if (admin) actBtn(acts, "Approve for payment", "", function () { openVcrApprove(r); });
+      actBtn(acts, "Take back", "danger", function () { cancelVcr(r); }, "Click again to take these vouchers back");
+      hint.textContent = "No checking report: print each voucher and have it signed. It is approved in the Approvals app.";
+    } else if (s === "generated") {
       if (S.downloads) actBtn(acts, "Download PDF to print", "primary", function (b) { downloadVcr(r.id, b); });
       if (admin) actBtn(acts, "Approve for payment", "", function () { openVcrApprove(r); });
       actBtn(acts, "Cancel report", "danger", function () { cancelVcr(r); }, "Click again to delete this report");

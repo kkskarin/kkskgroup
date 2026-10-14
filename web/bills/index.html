@@ -1530,21 +1530,24 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function payHere(x) { return APP === "fin" || (typeof x === "string" ? x : divOf(x)) === APP; }
   /* Headings, each with its own tabs. Tab keys stay the same inside the app; labels are what people see. */
   var SET_TABS = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Personalise", "Personalise"]] };
-  /* Reports › Masters: one entry in the menu, with buttons for each master list. The fourth item marks a master. */
+  /* Masters: its own menu heading, one tab per master list. The fourth item marks a master. */
   var MASTERS = [["Companies", "Companies", 0, "m"], ["Vendors", "Vendors", 0, "m"], ["Ledgers", "Ledgers", 0, "m"]];
   var MASTERS_RE = MASTERS.concat([["Consumers", "Consumers", 0, "m"], ["PPA Rates", "PPA Rates", 0, "m"]]);
   /* Every app has the same headings in the same order; each person sees the tabs their jobs allow. The app decides the scope:
      a division app (Maintenance & Civil, Renewable Energy) shows that division's work, Accounts and Finance every division's. */
-  var REP_TABS = { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]].concat(APP === "re" ? MASTERS_RE : MASTERS) };
+  var REP_TABS = { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]].concat(APP === "re" ? [["Solar Reports", "P&L"]] : []) };
+  var SALES_TABS = { h: "Sales", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices & Receipts"]] };
   var EXP_TABS = { h: "Expenses", tabs: [["Bills", "Enter Bills"], ["Checking Report", "Bills CR"], ["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance CR"], ["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Vouchers CR"], ["Cash Advance", "Cash Advance"]] };
   var ACC_TABS = { h: "Accounts", tabs: [["Accounts", "To Account"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Books"]] };
   var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] };
+  /* Masters: its own heading. Companies first, then (Renewable Energy) Consumers and PPA Rates, then Vendors and Ledgers. */
+  var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], MASTERS[2]] : MASTERS };
   var SET_ALL = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] };
   var NAV_BY_APP = {
-    mnt: [REP_TABS, EXP_TABS, ACC_TABS, PAY_TABS, SET_ALL],
-    re: [REP_TABS, { h: "Energy Billing", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices & Receipts"], ["Solar Reports", "Data"]] }, EXP_TABS, ACC_TABS, PAY_TABS, SET_ALL],
-    acc: [REP_TABS, ACC_TABS, SET_ALL],
-    fin: [REP_TABS, PAY_TABS, SET_ALL],
+    mnt: [REP_TABS, EXP_TABS, ACC_TABS, PAY_TABS, MAS_TABS, SET_ALL],
+    re: [REP_TABS, SALES_TABS, EXP_TABS, ACC_TABS, PAY_TABS, MAS_TABS, SET_ALL],
+    acc: [REP_TABS, ACC_TABS, MAS_TABS, SET_ALL],
+    fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
@@ -1606,9 +1609,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       b.addEventListener("click", function () { if (on) return; var last = LAST_IN[g.h]; setTab(last && groupOf(last) === g ? last : g.tabs[0][0]); });
       nav.appendChild(b);
     });
-    var ms = cg ? cg.tabs.filter(function (t) { return t[3] === "m"; }) : [], onM = ms.some(function (t) { return t[0] === S.tab; }), mDone = false;
+    var ms = cg && cg.h !== "Masters" ? cg.tabs.filter(function (t) { return t[3] === "m"; }) : [], onM = ms.some(function (t) { return t[0] === S.tab; }), mDone = false;
     if (cg) cg.tabs.forEach(function (t) {
-      if (t[3] === "m") {
+      if (t[3] === "m" && cg.h !== "Masters") {
         if (mDone) return; mDone = true;
         var mb = el("button", onM ? { type: "button", "aria-current": "page" } : { type: "button" }, "Masters"), mbd = tabBadge("Vendors"); if (mbd && ms.some(function (x) { return x[0] === "Vendors"; })) mb.appendChild(badgeEl(mbd));
         mb.addEventListener("click", function () { setTab(ms.some(function (x) { return x[0] === LAST_M; }) ? LAST_M : ms[0][0]); }); subn.appendChild(mb); return;
@@ -1800,7 +1803,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ================= responsibilities: who does which step for which company ================= */
   /* Job roles every user must have. Each suggests the steps it usually does; the admin can still change the ticks. */
-  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["approver", "Approver", "Approves checking reports and cash advances that name them, in the Approvals app"], ["recorder", "Approval Recorder", "Records approvals already signed on paper by an admin or approver, in their name; is never named as approver"], ["vmaker", "Voucher Maker", "Makes cash vouchers for other people, chosen from a saved list of names, and their Vouchers CRs"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Energy Billing", "Renewable Energy: reads TNPDCL statements for solar plants and windmills, issues bills of supply, records receipts"]];
+  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["approver", "Approver", "Approves checking reports and cash advances that name them, in the Approvals app"], ["recorder", "Approval Recorder", "Records approvals already signed on paper by an admin or approver, in their name; is never named as approver"], ["vmaker", "Voucher Maker", "Makes cash vouchers for other people, chosen from a saved list of names, and their Vouchers CRs"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Sales", "Renewable Energy: reads the TNPDCL statements for solar plants and windmills, issues the bills of supply to consumers and records their receipts"]];
   var JOB_STEPS = { purchaser: ["bills", "bcr", "adv", "vouchers", "vcr", "cash"], accountant: ["acct"], approver: ["appr"], recorder: ["rec"], vmaker: ["vouchers", "vcr"], financier: ["txn"], solar: ["solar"] };
   function jobChecks(box, sel) {
     sel = sel || []; box.textContent = "";
@@ -1810,7 +1813,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function jobsOf(u) { return (u && u.jobRoles && u.jobRoles.length ? u.jobRoles : null) || ((u && S.requests[u.id]) || {}).jobRoles || []; }
   function stepsForJobs(js) { var m = {}; (js || []).forEach(function (k) { (JOB_STEPS[k] || []).forEach(function (st) { m[st] = 1; }); }); return STEPS.map(function (s) { return s[0]; }).filter(function (k) { return m[k]; }); }
   function myJobs() { var u = S.myUser; if (u && u.jobRoles && u.jobRoles.length) return u.jobRoles; return !S.actId && S.myReq && S.myReq.jobRoles ? S.myReq.jobRoles : []; }
-  var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bills CR"], ["vouchers", "Cash Vouchers"], ["vcr", "Vouchers CR"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance CR"], ["appr", "Approval"], ["rec", "Approval Recorder"], ["txn", "Payment Entry"], ["solar", "Energy Billing"]];
+  var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bills CR"], ["vouchers", "Cash Vouchers"], ["vcr", "Vouchers CR"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance CR"], ["appr", "Approval"], ["rec", "Approval Recorder"], ["txn", "Payment Entry"], ["solar", "Sales"]];
   var TAB_STEP = { "Cash Approvals": "appr", "Solar Month": "solar", "Solar Invoices": "solar", "Solar Reports": "solar", "Approvals": "appr", "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
   /* A user saved before responsibilities existed does every step for their companies until the admin sets them. */
   /* Someone allowed to add companies (not an admin) works in a company they added with the same steps they hold elsewhere,
@@ -10271,7 +10274,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     T(left, sx0, fy); T(right, sx0 + lw0 + gap, fy); var dx = sx0 + lw0 + gap / 2, dy = fy - 1.05;
     doc.setFillColor(SL[0], SL[1], SL[2]); doc.triangle(dx - 1.2, dy, dx, dy - 1.2, dx + 1.2, dy, "F"); doc.triangle(dx - 1.2, dy, dx, dy + 1.2, dx + 1.2, dy, "F");
   }
-  /* ================= Renewable Energy › Energy billing (solar and windmills) =================
+  /* ================= Renewable Energy › Sales (energy billing, solar and windmills) =================
      The same flow serves solar plants and windmills (each generator is marked as one or the other). Each month a generator bills every consumer it supplies: energy charges on the units credited in the consumer's HT bill,
      less the open-access charges the consumer paid to TNPDCL on the generator's behalf. The figures come from four TNPDCL documents
      (generation statement, energy allotment order, energy adjusted report, one HT bill per consumer); Claude reads them, the app checks
@@ -10305,7 +10308,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function solShow(t) { if (SOL.tab !== t) { SOL.view = t === "Solar Month" ? "month" : ""; } SOL.tab = t; solRender(); show("secSol"); }
   function solRender() {
     var box = $("solBody"); box.textContent = ""; SOL.stale = false;
-    if (!solReady()) { box.appendChild(el("div", { class: "card empty" }, "Opening energy billing.")); return; }
+    if (!solReady()) { box.appendChild(el("div", { class: "card empty" }, "Opening sales.")); return; }
     if (S.tab === "Consumers" || S.tab === "PPA Rates") { SOL.mside = S.tab === "Consumers" ? "cons" : "rates"; solMasters(box); }
     else if (S.tab === "Solar Invoices") solInvoices(box);
     else if (S.tab === "Solar Reports") solReports(box);
@@ -10421,7 +10424,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var cos = solCos();
     var hd = el("div", { class: "head" }), ht = el("div"); ht.appendChild(el("h2", null, "Monthly Billing")); ht.appendChild(el("p", { class: "sub" }, "Choose the company and the month, and upload all of that month's TNPDCL documents together: each generator HTSC's generation statement, energy allotment order and energy adjusted report, and and, if you have them, the consumers' HT bills to compare against. Claude reads them and files each under its generator HTSC, the app checks them against each other, and each consumer gets one bill of supply covering all their HTSCs."));
     hd.appendChild(ht); box.appendChild(hd);
-    if (!cos.length) { var e0 = el("div", { class: "card empty" }, "Set up a company with its generator HTSCs first: Reports › Masters › Companies (an admin does this)."); box.appendChild(e0); var b0 = el("button", { class: "btn primary", type: "button", style: "margin-top:12px" }, "Open Companies"); b0.addEventListener("click", function () { setTab("Companies"); }); box.appendChild(b0); return; }
+    if (!cos.length) { var e0 = el("div", { class: "card empty" }, "Set up a company with its generator HTSCs first: Masters › Companies (an admin does this)."); box.appendChild(e0); var b0 = el("button", { class: "btn primary", type: "button", style: "margin-top:12px" }, "Open Companies"); b0.addEventListener("click", function () { setTab("Companies"); }); box.appendChild(b0); return; }
     if (!SOL.co || cos.indexOf(SOL.co) < 0) SOL.co = cos[0];
     var pls = coPlants(SOL.co);
     if (!SOL.month) { var ms = solList(SOL.months).filter(function (m) { return pls.indexOf(m.plant) >= 0; }).map(function (m) { return m.month; }).sort(); SOL.month = ms.length ? ms[ms.length - 1] : prevMonth(); }
@@ -10681,7 +10684,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         if (!targets.length) { if (pls.length !== 1) { it.st = "warn"; it.msg = "The HT bill lists none of our generator HTSCs, so it can't be filed. Check its OA adjustment abstract."; return; } targets = [pls[0]]; }
         plant = targets[0];
       } else if (!PL()[plant]) {
-        if (plant || pls.length !== 1) { it.st = "warn"; it.msg = (plant ? "Generator HTSC " + plant + " isn't under any company. Add it to the company in Reports › Masters › Companies, then upload again." : "No generator HTSC could be read on it, so it can't be filed."); return; }
+        if (plant || pls.length !== 1) { it.st = "warn"; it.msg = (plant ? "Generator HTSC " + plant + " isn't under any company. Add it to the company in Masters › Companies, then upload again." : "No generator HTSC could be read on it, so it can't be filed."); return; }
         plant = targets[0] = pls[0];
       }
       it.msg = "Filing what was read"; solRender(); it.month = month; it.co = (PL()[plant] || {}).companyId || SOL.co;
@@ -10975,43 +10978,61 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* ---- Reports ---- */
   /* Expenses (C): everything raised in the Renewable Energy app, by company and month. Bills as entered; proformas and imports
      until their final tax bill comes (the bill then counts instead); cash vouchers. Cash advances are not counted: the vouchers
-     paid from them are. Amounts in rupees (a foreign-currency bill at its exchange rate). */
+     paid from them are. Amounts in rupees (a foreign-currency bill at its exchange rate). Each keeps its ledger lines, so C can be
+     narrowed to chosen ledgers (a proforma or import has none until its bill). */
   function solExpenses() {
-    var out = [], inr = function (x) { var t = Number(x.total) || 0; return (x.currency && x.currency !== "INR" && Number(x.fxRate)) ? round2(t * Number(x.fxRate)) : t; };
-    billList().forEach(function (b) { if (divOf(b) !== "re" || b.status !== "done" || !b.companyId) return; out.push({ kind: "bill", cid: b.companyId, date: b.billDate || "", amt: inr(b), no: b.billNo || "", party: vendorLabelOfBill(b) || "" }); });
-    Object.keys(S.advances || {}).forEach(function (k) { var a = S.advances[k]; if (divOf(a) !== "re" || !a.companyId || a.taxBillId || a.status === "cancelled" || a.status === "deleted") return; var v = S.vendors[a.vendorId]; out.push({ kind: a.kind === "import" ? "import" : "proforma", cid: a.companyId, date: a.piDate || "", amt: inr(a), no: a.piNo || "", party: v ? v.name : (a.vendorNew && a.vendorNew.name) || "" }); });
-    vchList().forEach(function (v) { if (divOf(v) !== "re" || !v.companyId || v.status === "deleted") return; out.push({ kind: "voucher", cid: v.companyId, date: v.voucherDate || "", amt: Number(v.total) || 0, no: v.voucherNo || "", party: v.payee || "" }); });
+    var out = [], fx = function (x) { return x.currency && x.currency !== "INR" && Number(x.fxRate) ? Number(x.fxRate) : 1; }, inr = function (x) { return round2((Number(x.total) || 0) * fx(x)); };
+    billList().forEach(function (b) { if (divOf(b) !== "re" || b.status !== "done" || !b.companyId) return; out.push({ kind: "bill", cid: b.companyId, date: b.billDate || "", amt: inr(b), no: b.billNo || "", party: vendorLabelOfBill(b) || "", led: (b.ledgers || []).map(function (l) { return { id: l.id, amt: round2((Number(l.amt) || 0) * fx(b)) }; }) }); });
+    Object.keys(S.advances || {}).forEach(function (k) { var a = S.advances[k]; if (divOf(a) !== "re" || !a.companyId || a.taxBillId || a.status === "cancelled" || a.status === "deleted") return; var v = S.vendors[a.vendorId]; out.push({ kind: a.kind === "import" ? "import" : "proforma", cid: a.companyId, date: a.piDate || "", amt: inr(a), no: a.piNo || "", party: v ? v.name : (a.vendorNew && a.vendorNew.name) || "", led: [] }); });
+    vchList().forEach(function (v) { if (divOf(v) !== "re" || !v.companyId || v.status === "deleted") return; out.push({ kind: "voucher", cid: v.companyId, date: v.voucherDate || "", amt: Number(v.total) || 0, no: v.voucherNo || "", party: v.payee || "", led: (v.ledgers || []).map(function (l) { return { id: l.id, amt: Number(l.amt) || 0 }; }) }); });
     return out.filter(function (e) { return /^\d{4}-\d{2}/.test(e.date) && e.amt; });
   }
-  /* ---- Data ---- */
+  /* India's four seasons, by month. */
+  var SEASONS = [["winter", "Winter (Jan–Feb)", [1, 2]], ["summer", "Summer (Mar–May)", [3, 4, 5]], ["swm", "South-west monsoon (Jun–Sep)", [6, 7, 8, 9]], ["nem", "North-east monsoon (Oct–Dec)", [10, 11, 12]]];
+  var MON3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  /* ---- Reports › P&L ---- */
   function solReports(box) {
-    var hd = el("div", { class: "head" }), h = el("div"); h.appendChild(el("h2", null, "Data")); h.appendChild(el("p", { class: "sub" }, "By company and month: generation, units billed, energy charges (A), deductions (B), expenses (C) and what is left (A − B − C). A, B and units come from the bills of supply issued; C is every bill, proforma, import and cash voucher raised in this app. The year is that of the energy month.")); hd.appendChild(h); box.appendChild(hd);
+    var hd = el("div", { class: "head" }), h = el("div"); h.appendChild(el("h2", null, "P&L")); h.appendChild(el("p", { class: "sub" }, "Energy sold against what it cost, by company and month: generation, units billed, energy charges (A), deductions (B), expenses (C) and what is left (A − B − C). A, B and units come from the bills of supply issued (by energy month); C is every bill, proforma, import and cash voucher raised in this app (by its date).")); hd.appendChild(h); box.appendChild(hd);
     var allowed = function (cid) { return S.isAdmin || canStep("solar", cid) || canSee(cid); };
     var exps = solExpenses().filter(function (e) { return allowed(e.cid); });
     var invAll = solList(SOL.inv).filter(function (i) { return i.status !== "cancelled" && (S.isAdmin || canStep("solar", i.companyId)); });
-    var fys = {}; invAll.forEach(function (i) { fys[fyFromMonth(i.month)] = 1; }); exps.forEach(function (e) { fys[fyOf(e.date)] = 1; });
-    var fl = Object.keys(fys).sort().reverse(); if (!SOL.rfy || !fys[SOL.rfy]) SOL.rfy = fl[0] || fyOf(todayYmd());
-    /* filters: year, solar or windmill, companies, consumers */
+    var fys = {}, yrs = {}; invAll.forEach(function (i) { fys[fyFromMonth(i.month)] = 1; yrs[i.month.slice(0, 4)] = 1; }); exps.forEach(function (e) { fys[fyOf(e.date)] = 1; yrs[e.date.slice(0, 4)] = 1; });
+    var fl = Object.keys(fys).sort().reverse(), yl = Object.keys(yrs).sort().reverse();
+    if (SOL.rfy == null) SOL.rfy = fl[0] || fyOf(todayYmd()); if (SOL.rfy && !fys[SOL.rfy]) SOL.rfy = fl[0] || "";
+    if (SOL.ryr == null) SOL.ryr = ""; if (SOL.ryr && !yrs[SOL.ryr]) SOL.ryr = "";
+    var st = msGet("solData"); ["mon", "sea", "led"].forEach(function (k) { st[k] = st[k] || []; });
+    /* filters */
     var bar = el("div", { class: "filters", style: "display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px" });
-    var fs = el("select", { class: "field", "aria-label": "Financial year", style: "width:auto" }); fillSelect(fs, (fl.length ? fl : [SOL.rfy]).map(function (y) { return [y, "FY 20" + y]; }), SOL.rfy); fs.addEventListener("change", function () { SOL.rfy = fs.value; solRender(); }); bar.appendChild(fs);
+    var fs = el("select", { class: "field", "aria-label": "Financial year", style: "width:auto" }); fillSelect(fs, [["", "Every financial year"]].concat(fl.map(function (y) { return [y, "FY 20" + y]; })), SOL.rfy); fs.addEventListener("change", function () { SOL.rfy = fs.value; solRender(); }); bar.appendChild(fs);
+    var ys = el("select", { class: "field", "aria-label": "Calendar year", style: "width:auto" }); fillSelect(ys, [["", "Every calendar year"]].concat(yl.map(function (y) { return [y, y]; })), SOL.ryr); ys.addEventListener("change", function () { SOL.ryr = ys.value; solRender(); }); bar.appendChild(ys);
+    bar.appendChild(msPick("solData", "mon", MON3.map(function (m, i) { return [String(i + 1), m]; }), ["Every month", "months", "Months"], solRender));
+    bar.appendChild(msPick("solData", "sea", SEASONS.map(function (x) { return [x[0], x[1]]; }), ["Every season", "seasons", "Seasons"], solRender));
     var ks = el("select", { class: "field", "aria-label": "Solar or windmill", style: "width:auto" }); fillSelect(ks, [["", "Solar and windmill"], ["solar", "Solar only"], ["wind", "Windmill only"]], SOL.rkind || ""); ks.addEventListener("change", function () { SOL.rkind = ks.value; solRender(); }); bar.appendChild(ks);
     var reCos = Object.keys(S.companies).filter(function (k) { var c = S.companies[k]; return coApps(c).indexOf("re") >= 0 && allowed(k) && (!SOL.rkind || (((c.re || {}).kind === "wind") ? "wind" : "solar") === SOL.rkind); }).sort(function (a, b) { return coRank(a) - coRank(b); });
     bar.appendChild(msPick("solData", "co", reCos.map(function (k) { return [k, S.companies[k].shortName || S.companies[k].name]; }), MS_WORDS.co, solRender));
     bar.appendChild(msPick("solData", "ven", solList(SOL.cons).sort(function (a, b) { return natCmp(a.name, b.name); }).map(function (c) { return [c.id, c.name]; }), ["All consumers", "consumers", "Consumers"], solRender));
-    var xb = el("button", { class: "btn", type: "button" }, "Excel"); bar.appendChild(el("span", { class: "grow" })); bar.appendChild(xb); box.appendChild(bar);
-    var st = msGet("solData"), coOk = function (cid) { return reCos.indexOf(cid) >= 0 && (!st.co.length || st.co.indexOf(cid) >= 0); }, consF = st.ven.length > 0;
-    var inv = invAll.filter(function (i) { return fyFromMonth(i.month) === SOL.rfy && coOk(i.companyId) && (!consF || st.ven.indexOf(i.consumer) >= 0); });
-    var ex = exps.filter(function (e) { return fyOf(e.date) === SOL.rfy && coOk(e.cid); });
+    var ledUsed = {}; exps.forEach(function (e) { e.led.forEach(function (l) { if (l.id) ledUsed[l.id] = 1; }); });
+    bar.appendChild(msPick("solData", "led", Object.keys(ledUsed).map(function (id) { return [id, ledName(id) || id]; }).sort(function (a, b) { return natCmp(a[1], b[1]); }), ["All ledgers (C)", "ledgers", "Ledgers for expenses"], solRender));
+    var xb = el("button", { class: "btn", type: "button" }, "Excel"), clr = el("button", { class: "link-btn", type: "button" }, "Clear filters");
+    clr.addEventListener("click", function () { SOL.rfy = ""; SOL.ryr = ""; SOL.rkind = ""; MS.solData = null; solRender(); });
+    bar.appendChild(clr); bar.appendChild(el("span", { class: "grow" })); bar.appendChild(xb); box.appendChild(bar);
+    /* which months, companies, consumers and ledgers count */
+    var mons = st.mon.map(Number), seaM = []; st.sea.forEach(function (k) { (SEASONS.filter(function (x) { return x[0] === k; })[0] || [0, 0, []])[2].forEach(function (m) { seaM.push(m); }); });
+    function monthOk(ym) { var m = Number(ym.slice(5, 7)); return (!SOL.rfy || fyFromMonth(ym) === SOL.rfy) && (!SOL.ryr || ym.slice(0, 4) === SOL.ryr) && (!mons.length || mons.indexOf(m) >= 0) && (!seaM.length || seaM.indexOf(m) >= 0); }
+    var coOk = function (cid) { return reCos.indexOf(cid) >= 0 && (!st.co.length || st.co.indexOf(cid) >= 0); }, consF = st.ven.length > 0, ledF = st.led.length > 0;
+    var inv = invAll.filter(function (i) { return monthOk(i.month) && coOk(i.companyId) && (!consF || st.ven.indexOf(i.consumer) >= 0); });
+    var ex = exps.filter(function (e) { return monthOk(e.date.slice(0, 7)) && coOk(e.cid); }).map(function (e) { if (!ledF) return e; var a = round2(e.led.reduce(function (s0, l) { return s0 + (st.led.indexOf(l.id) >= 0 ? l.amt : 0); }, 0)); return a ? Object.assign({}, e, { amt: a }) : null; }).filter(Boolean);
+    var periodTxt = [SOL.rfy ? "FY 20" + SOL.rfy : "", SOL.ryr, mons.length ? mons.map(function (m) { return MON3[m - 1]; }).join(", ") : "", st.sea.length ? st.sea.map(function (k) { return (SEASONS.filter(function (x) { return x[0] === k; })[0] || [])[1]; }).join(", ") : ""].filter(Boolean).join(" · ") || "Every period";
     /* by company and month */
     var byM = {}, row = function (cid, month) { var k = cid + "|" + month; return byM[k] || (byM[k] = { cid: cid, month: month, n: 0, units: 0, A: 0, B: 0, C: 0, cx: {} }); };
     inv.forEach(function (i) { var m = row(i.companyId, i.month); m.n++; m.units += n0(i.units); m.A += n0(i.A); m.B += n0(i.B); });
     if (!consF) ex.forEach(function (e) { var m = row(e.cid, e.date.slice(0, 7)); m.C += e.amt; m.cx[e.kind] = (m.cx[e.kind] || 0) + e.amt; });
     var mrows = Object.keys(byM).map(function (k) { var m = byM[k]; m.A = round2(m.A); m.B = round2(m.B); m.C = round2(m.C); m.net = round2(m.A - m.B); m.left = round2(m.net - m.C); m.gen = coPlants(m.cid).reduce(function (s0, p) { var md = monthDoc(p, m.month); return s0 + (md && md.gen ? n0(md.gen.netTotal) || sum5(md.gen.net) : 0); }, 0); return m; }).sort(function (a, b) { return natCmp(a.month, b.month) || coRank(a.cid) - coRank(b.cid); });
     var tot = mrows.reduce(function (t, m) { ["gen", "units", "A", "B", "net", "C", "left"].forEach(function (k) { t[k] += m[k]; }); return t; }, { gen: 0, units: 0, A: 0, B: 0, net: 0, C: 0, left: 0 });
-    statBoxes(box.appendChild(el("div", { class: "stats" })), [["Energy charges (A)", rs(tot.A), units(tot.units) + " units billed"], ["Deductions (B)", rs(tot.B), tot.A ? (100 * tot.B / tot.A).toFixed(1) + "% of A" : ""], ["Expenses (C)", consF ? "Not split by consumer" : rs(tot.C), consF ? "Clear the consumer filter to see C" : ""], ["Left (A − B − C)", consF ? rs(tot.net) + " (A − B)" : rs(tot.left), tot.units ? "₹" + ((consF ? tot.net : tot.left) / tot.units).toFixed(2) + " a unit" : "", "hi"]]);
-    box.appendChild(el("h3", null, "By company and month"));
+    statBoxes(box.appendChild(el("div", { class: "stats" })), [["Energy charges (A)", rs(tot.A), units(tot.units) + " units billed"], ["Deductions (B)", rs(tot.B), tot.A ? (100 * tot.B / tot.A).toFixed(1) + "% of A" : ""], ["Expenses (C)", consF ? "Not split by consumer" : rs(tot.C), consF ? "Clear the consumer filter to see C" : ledF ? "Chosen ledgers only" : ""], ["Left (A − B − C)", consF ? rs(tot.net) + " (A − B)" : rs(tot.left), tot.units ? "₹" + ((consF ? tot.net : tot.left) / tot.units).toFixed(2) + " a unit" : "", "hi"]]);
+    box.appendChild(el("h3", null, "By company and month · " + periodTxt));
     var c1 = el("div", { class: "card list scroll" }); box.appendChild(c1);
-    if (!mrows.length) c1.appendChild(el("div", { class: "empty" }, "Nothing in FY 20" + SOL.rfy + " for this choice."));
+    if (!mrows.length) c1.appendChild(el("div", { class: "empty" }, "Nothing for this choice."));
     else sortTable(c1, "solRepM", [
       { label: "Month", sort: function (m) { return m.month + coRank(m.cid); }, cell: function (m, td) { td.appendChild(el("b", null, monthLabel(m.month))); sub(td, coLabel(m.cid) + " · " + (((S.companies[m.cid] || {}).re || {}).kind === "wind" ? "Windmill" : "Solar")); } },
       { label: "Net generated", cls: "r num", sort: function (m) { return m.gen; }, cell: function (m, td) { txt(td, m.gen ? units(m.gen) : ""); } },
@@ -11024,7 +11045,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     ], mrows, { sortIndex: 0 });
     /* expenses itemised */
     if (!consF) {
-      box.appendChild(el("h3", { style: "margin-top:24px" }, "Expenses (C) in FY 20" + SOL.rfy));
+      box.appendChild(el("h3", { style: "margin-top:24px" }, "Expenses (C)" + (ledF ? " · chosen ledgers" : "")));
       var c4 = el("div", { class: "card list scroll" }); box.appendChild(c4);
       if (!ex.length) c4.appendChild(el("div", { class: "empty" }, "No bills, proformas, imports or vouchers raised in this app for this choice."));
       else sortTable(c4, "solRepX", [
@@ -11032,6 +11053,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         { label: "Type", cell: function (e, td) { txt(td, TX_KIND[e.kind] || e.kind); } },
         { label: "Number", cell: function (e, td) { txt(td, e.no); } },
         { label: "Paid to", cls: "desc", cell: function (e, td) { txt(td, e.party); } },
+        { label: "Ledgers", cls: "desc", cell: function (e, td) { txt(td, e.led.map(function (l) { return ledName(l.id) || ""; }).filter(Boolean).join(", ")); } },
         { label: "Amount", cls: "r num", sort: function (e) { return e.amt; }, cell: function (e, td) { txt(td, rs(e.amt)); } }
       ], ex.sort(function (a, b) { return natCmp(b.date, a.date); }), { sortIndex: 0, sortDir: -1 });
     }
@@ -11039,21 +11061,22 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var dt = {}, A = 0; inv.forEach(function (i) { A += n0(i.A); SOL_DED.forEach(function (d) { dt[d[0]] = (dt[d[0]] || 0) + n0(i.ded[d[0]]); }); });
     box.appendChild(el("h3", { style: "margin-top:24px" }, "Deductions by charge"));
     var c2 = el("div", { class: "card list scroll" }); box.appendChild(c2);
-    sortTable(c2, "solRepD", [{ label: "Charge", cell: function (d, td) { txt(td, d[1]); } }, { label: "This year", cls: "r num", cell: function (d, td) { txt(td, rs(dt[d[0]] || 0)); } }, { label: "% of energy charges", cls: "r num", cell: function (d, td) { txt(td, A ? (100 * (dt[d[0]] || 0) / A).toFixed(2) + "%" : ""); } }], SOL_DED, { sortIndex: -1 });
+    sortTable(c2, "solRepD", [{ label: "Charge", cell: function (d, td) { txt(td, d[1]); } }, { label: "Amount", cls: "r num", cell: function (d, td) { txt(td, rs(dt[d[0]] || 0)); } }, { label: "% of energy charges", cls: "r num", cell: function (d, td) { txt(td, A ? (100 * (dt[d[0]] || 0) / A).toFixed(2) + "%" : ""); } }], SOL_DED, { sortIndex: -1 });
     /* line loss by consumer */
-    var ll = {}; solList(SOL.months).forEach(function (md) { if (fyFromMonth(md.month) !== SOL.rfy || !coOk((PL()[md.plant] || {}).companyId)) return; Object.keys(((md.adj || {}).consumers) || {}).forEach(function (h) { var c = md.adj.consumers[h], k = consKey(h); if (consF && st.ven.indexOf(k) < 0) return; var x = ll[k] || (ll[k] = { h: k, hs: {}, g: 0, n: 0, ls: {} }); x.hs[h] = 1; x.g += sum5(c.gross); x.n += sum5(c.net); x.ls[c.loss] = 1; }); });
+    var ll = {}; solList(SOL.months).forEach(function (md) { if (!monthOk(md.month) || !coOk((PL()[md.plant] || {}).companyId)) return; Object.keys(((md.adj || {}).consumers) || {}).forEach(function (h) { var c = md.adj.consumers[h], k = consKey(h); if (consF && st.ven.indexOf(k) < 0) return; var x = ll[k] || (ll[k] = { h: k, hs: {}, g: 0, n: 0, ls: {} }); x.hs[h] = 1; x.g += sum5(c.gross); x.n += sum5(c.net); x.ls[c.loss] = 1; }); });
     var lr = Object.keys(ll).map(function (k) { return ll[k]; });
     box.appendChild(el("h3", { style: "margin-top:24px" }, "Line loss by consumer"));
     var c3 = el("div", { class: "card list scroll" }); box.appendChild(c3);
     if (!lr.length) c3.appendChild(el("div", { class: "empty" }, "No adjusted reports read for this choice."));
     else sortTable(c3, "solRepL", [{ label: "Consumer", cell: function (x, td) { td.appendChild(el("b", null, consName(x.h))); sub(td, Object.keys(x.hs).join(", ")); } }, { label: "Gross allotted", cls: "r num", cell: function (x, td) { txt(td, units(x.g)); } }, { label: "Net after loss", cls: "r num", cell: function (x, td) { txt(td, units(x.n)); } }, { label: "Loss", cls: "r num", cell: function (x, td) { txt(td, x.g ? (100 * (x.g - x.n) / x.g).toFixed(2) + "%" : ""); sub(td, Object.keys(x.ls).join(", ") + "% applied"); } }], lr, { sortIndex: -1 });
     xb.addEventListener("click", function () {
-      var sh = [{ name: "By month", title: "Energy data · FY 20" + SOL.rfy, sub: [ks.options[ks.selectedIndex].text, st.co.length ? st.co.map(coLabel).join(", ") : "All companies", consF ? st.ven.map(consName).join(", ") : "All consumers"].join(" · ") + " · Generated " + fmtDate(todayYmd()),
+      var fl0 = [periodTxt, ks.options[ks.selectedIndex].text, st.co.length ? st.co.map(coLabel).join(", ") : "All companies", consF ? st.ven.map(consName).join(", ") : "All consumers", ledF ? "Ledgers: " + st.led.map(ledName).join(", ") : ""].filter(Boolean).join(" · ");
+      var sh = [{ name: "P&L", title: "P&L · Renewable Energy", sub: fl0 + " · Generated " + fmtDate(todayYmd()),
         cols: [{ h: "Month", w: 14 }, { h: "Company", w: 14 }, { h: "Type", w: 10 }, { h: "Net generated", t: "int", sum: true }, { h: "Billed units", t: "int", sum: true }, { h: "A energy", t: "money", sum: true }, { h: "B deductions", t: "money", sum: true }, { h: "A - B", t: "money", sum: true }].concat(consF ? [] : [{ h: "C expenses", t: "money", sum: true }, { h: "A - B - C", t: "money", sum: true }]),
         rows: mrows.map(function (m) { return [monthLabel(m.month), coLabel(m.cid), ((S.companies[m.cid] || {}).re || {}).kind === "wind" ? "Windmill" : "Solar", m.gen, m.units, m.A, m.B, m.net].concat(consF ? [] : [m.C, m.left]); }) },
-        { name: "Deductions", title: "Deductions by charge · FY 20" + SOL.rfy, sub: "", cols: [{ h: "Charge", w: 40 }, { h: "Amount", t: "money", sum: true }], rows: SOL_DED.map(function (d) { return [d[1], round2(dt[d[0]] || 0)]; }) }];
-      if (!consF) sh.push({ name: "Expenses", title: "Expenses (C) · FY 20" + SOL.rfy, sub: "", cols: [{ h: "Date", t: "date", w: 12 }, { h: "Company", w: 12 }, { h: "Type", w: 10 }, { h: "Number", w: 18 }, { h: "Paid to", w: 30 }, { h: "Amount", t: "money", sum: true }], rows: ex.map(function (e) { return [e.date, coLabel(e.cid), TX_KIND[e.kind] || e.kind, e.no, e.party, e.amt]; }) });
-      xlDownload(xb, "Energy data FY " + SOL.rfy + ".xlsx", sh);
+        { name: "Deductions", title: "Deductions by charge", sub: fl0, cols: [{ h: "Charge", w: 40 }, { h: "Amount", t: "money", sum: true }], rows: SOL_DED.map(function (d) { return [d[1], round2(dt[d[0]] || 0)]; }) }];
+      if (!consF) sh.push({ name: "Expenses", title: "Expenses (C)", sub: fl0, cols: [{ h: "Date", t: "date", w: 12 }, { h: "Company", w: 12 }, { h: "Type", w: 10 }, { h: "Number", w: 18 }, { h: "Paid to", w: 30 }, { h: "Ledgers", w: 30 }, { h: "Amount", t: "money", sum: true }], rows: ex.map(function (e) { return [e.date, coLabel(e.cid), TX_KIND[e.kind] || e.kind, e.no, e.party, e.led.map(function (l) { return ledName(l.id) || ""; }).filter(Boolean).join(", "), e.amt]; }) });
+      xlDownload(xb, "P&L Renewable Energy " + fmtDate(todayYmd()) + ".xlsx", sh);
     });
   }
 
@@ -11349,7 +11372,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       plantSnap: { name: "", htsc: htscOf(h.htsc) || "079514700620", location: h.location || "", kind: R.kind }, consSnap: { name: "Sample Consumer Mills", htsc: "079094620227", address: "Mill Road, Virudhunagar 626001, Tamil Nadu", gstin: "33ABCDE1234F1Z5", stateCode: "33", addressee: "The Managing Director" } };
   }
 
-  /* ---- Reports › Masters › Consumers and PPA Rates ---- */
+  /* ---- Masters › Consumers and PPA Rates ---- */
   function solMasters(box) {
     var cons = SOL.mside === "cons", hd = el("div", { class: "head" }), h = el("div");
     h.appendChild(el("h2", null, cons ? "Consumers" : "PPA Rates")); h.appendChild(el("p", { class: "sub" }, cons ? "The consumers the generators supply, as on their HT bills. They can also be added from Monthly Billing once their HT bill or the allotment order is read." : "Each consumer's rate per unit from the Power Purchase Agreement, from the month it is in force. Generator charges are borne by the consumer, as the TNPDCL statements show.")); hd.appendChild(h); box.appendChild(hd);

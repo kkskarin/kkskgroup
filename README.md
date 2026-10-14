@@ -17,13 +17,13 @@
   moves to `/maintenance/`. Every bill, report, proforma, voucher, payment, note and cash advance carries `div` (mnt or re;
   none means mnt). Maintenance and Renewable Energy each see only their own; Accounts and Finance see every division.
   **The app decides the scope, a person's jobs decide the tabs.** Every app has the same headings in the same order (Reports,
-  [Energy Billing,] Expenses, Accounts, Payments, Settings); a division app (Maintenance & Civil, Renewable Energy) holds all of that
+  [Sales,] Expenses, Accounts, Payments, Masters, Settings); a division app (Maintenance & Civil, Renewable Energy) holds all of that
   division's work for whoever does it there (so a Renewable Energy purchaser + accountant + financier works only in that app);
   Accounts is accounting for every division and Finance is paying for every division.
   Accounts decides which divisions may use each ledger (Ledgers › Edit › Divisions that use it).
 - **Workflow.** Every bill, voucher, proforma and import goes: data entry → accounting → approval → payment.
   Jobs: Purchaser (entry), Accountant (accounting), Approver (approval), Approval Recorder (records paper approvals),
-  Voucher Maker (vouchers for other people), Financier (payment), Energy Billing; any mix may be held, except Approver with
+  Voucher Maker (vouchers for other people), Financier (payment), Sales (energy billing); any mix may be held, except Approver with
   Approval Recorder. On the bill form GST shows as GST (CGST + SGST) or GST (IGST), from the vendor's and company's states.
   A Purchaser who is also the Accountant for a company accounts a bill as they record it (ledgers and TDS on the bill form);
   it skips To Account but still goes to approval. The accountant "accounts" entries; only the Approver step "approves".
@@ -40,8 +40,8 @@
   report ("Send for approval"): they are printed one per page and signed. 4 or more go into a Vouchers CR.
 - **TDS** is entered when an entry is accounted. The vendor is paid the total less TDS; the vendor statement and Ledger Books
   show it. Checking reports and their PDFs don't.
-- **Reports › Masters** (every app with purchases or accounting, and Finance): Companies, Vendors, Ledgers, and in Renewable
-  Energy also Consumers and PPA Rates. One company list for the group (`companies/*`, logo required); each company lists the
+- **Masters** (its own heading in every app with purchases or accounting, and Finance): Companies, Vendors, Ledgers; in
+  Renewable Energy Companies, Consumers, PPA Rates, Vendors, Ledgers. One company list for the group (`companies/*`, logo required); each company lists the
   divisions that use it (`apps`) and keeps its own order per app (`orders`). A division app shows only its companies; Accounts and
   Finance see them all. Only admins add or change companies. Vendors (`apps`) and ledgers (`apps`) are kept apart by division the
   same way (none named means Maintenance & Civil); a vendor found by GSTIN from another division joins that division too.
@@ -183,13 +183,13 @@ insert into public.app_super_admins (email) values ('someone@kksk.in');
 - **Vendor statement** (Vendors › View Statement, and the PDF): Date, Particulars (Bill, Payment, Discount, Debit
   Note, Credit Note, Voucher), Reference No., Payable, Paid and the running balance.
 
-### Renewable Energy › Energy billing (from 12 Oct 2026)
+### Renewable Energy › Sales (energy billing, from 12 Oct 2026)
 
 Monthly bills of supply from a solar plant or windmill to each consumer it supplies, as set out in the
 "Solar Invoicing & Finance App" specification. Each generator is marked Solar plant or Windmill; that decides which HT bill
 row (SOLAR or WIND) is billed and the wording on the bill.
 
-- **Companies** (Reports › Masters; admins, and in Renewable Energy also people given "Can add and edit companies in Renewable
+- **Companies** (Masters; admins, and in Renewable Energy also people given "Can add and edit companies in Renewable
   Energy" in Users, at present Prabhu; a company they add is put on their own user record with the steps they hold on
   their other companies, never approving, through `claim_created_company()`): each Renewable Energy company has a generator type (solar or windmill), its
   capacity in MW (AC for solar; the DC figure is worked out as panels × capacity per panel), and its generator HTSCs
@@ -231,13 +231,16 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   issuing but never one already used; the PDF holds the company's pages. An issued invoice is locked; cancel it (admin, with a
   reason) and issue a new one for corrections.
 - **Invoices & Receipts**: register, receipts with TDS under 194Q, ageing 0–30/31–60/61–90/90+, Excel.
-  **Data**: filters for the year, solar or windmill, companies and consumers; by company and month: net generated, units
+- **Reports › P&L**: filters for financial year, calendar year, months, season (Winter Jan–Feb, Summer Mar–May, South-west
+  monsoon Jun–Sep, North-east monsoon Oct–Dec), solar or windmill, companies, consumers and ledgers (C counts only the chosen
+  ledgers' lines; a proforma or import has none until its bill); by company and month: net generated, units
   billed, A (energy), B (deductions), A − B, **C (expenses)** and what is left (A − B − C); the expenses itemised; deductions by
   charge; line loss by consumer; all to Excel. C is everything raised in the Renewable Energy app for that company in that
   month: submitted bills, proformas and imports until their final tax bill comes (then the bill counts), and cash vouchers;
   cash advances are not counted (the vouchers paid from them are). C is not split by consumer, so it is hidden while
   consumers are filtered.
-- Tabs in Renewable Energy: Reports (Transactions, Payables, Masters), Energy Billing (Monthly Billing, Invoices & Receipts,
-  Data), Expenses (bills, proformas, imports, vouchers and their checking reports, cash advances), Payments, Settings.
-- Who may use it: the Renewable Energy app plus the Energy Billing responsibility for the generator's company.
+- Tabs in Renewable Energy: Reports (Transactions, Payables, P&L), Sales (Monthly Billing, Invoices & Receipts), Expenses
+  (bills, proformas, imports, vouchers and their checking reports, cash advances), Accounts, Payments, Masters (Companies,
+  Consumers, PPA Rates, Vendors, Ledgers), Settings.
+- Who may use it: the Renewable Energy app plus the Sales job for the generator's company.
   The division's own expenses go through its Bills and Cash Vouchers, so they reach Accounts like any other.

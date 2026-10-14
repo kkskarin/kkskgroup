@@ -1512,37 +1512,25 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function divName(x) { return (DIVS[typeof x === "string" ? x : divOf(x)] || DIVS.mnt).name; }
   function inDiv(x) { return !DIV || divOf(x) === DIV; }
   /* Payments for a division's entries are recorded in one app only; elsewhere they are shown, not paid. */
-  function payHere(x) { return (DIVS[typeof x === "string" ? x : divOf(x)] || DIVS.mnt).payIn === APP; }
+  function payHere(x) { return APP === "fin" || (typeof x === "string" ? x : divOf(x)) === APP; }
   /* Headings, each with its own tabs. Tab keys stay the same inside the app; labels are what people see. */
   var SET_TABS = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Personalise", "Personalise"]] };
   /* Reports › Masters: one entry in the menu, with buttons for each master list. The fourth item marks a master. */
   var MASTERS = [["Companies", "Companies", 0, "m"], ["Vendors", "Vendors", 0, "m"], ["Ledgers", "Ledgers", 0, "m"]];
   var MASTERS_RE = MASTERS.concat([["Consumers", "Consumers", 0, "m"], ["PPA Rates", "PPA Rates", 0, "m"]]);
-  var DIV_NAV = [
-    { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]].concat(APP === "re" ? MASTERS_RE : MASTERS) },
-    { h: "Bills", tabs: [["Bills", "Enter Bills"], ["Checking Report", "Bills CR"]] },
-    { h: "Proformas", tabs: [["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance CR"]] },
-    { h: "Vouchers", tabs: [["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Vouchers CR"], ["Cash Advance", "Cash Advance"]] }
-  ];
+  /* Every app has the same headings in the same order; each person sees the tabs their jobs allow. The app decides the scope:
+     a division app (Maintenance & Civil, Renewable Energy) shows that division's work, Accounts and Finance every division's. */
+  var REP_TABS = { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]].concat(APP === "re" ? MASTERS_RE : MASTERS) };
+  var EXP_TABS = { h: "Expenses", tabs: [["Bills", "Enter Bills"], ["Checking Report", "Bills CR"], ["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance CR"], ["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Vouchers CR"], ["Cash Advance", "Cash Advance"]] };
+  var ACC_TABS = { h: "Accounts", tabs: [["Accounts", "To Account"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Books"]] };
+  var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] };
+  var SET_ALL = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] };
   var NAV_BY_APP = {
-    mnt: DIV_NAV.concat([SET_TABS]),
-    /* Renewable Energy: Reports first, then Energy Billing, then one Expenses group for bills, proformas and vouchers. */
-    re: [DIV_NAV[0], { h: "Energy Billing", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices & Receipts"], ["Solar Reports", "Data"]] },
-      { h: "Expenses", tabs: DIV_NAV[1].tabs.concat(DIV_NAV[2].tabs, DIV_NAV[3].tabs) }].concat([{ h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] }, SET_TABS]),
-    acc: [
-      { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]].concat(MASTERS) },
-      { h: "Accounts", tabs: [["Accounts", "To Account"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Books"]] },
-      { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] }
-    ],
-    apr: [
-      { h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] },
-      SET_TABS
-    ],
-    fin: [
-      { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] },
-      { h: "Reports", tabs: [["Payables", "Payables"], ["Transactions", "Transactions"]].concat(MASTERS) },
-      SET_TABS
-    ]
+    mnt: [REP_TABS, EXP_TABS, ACC_TABS, PAY_TABS, SET_ALL],
+    re: [REP_TABS, { h: "Energy Billing", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices & Receipts"], ["Solar Reports", "Data"]] }, EXP_TABS, ACC_TABS, PAY_TABS, SET_ALL],
+    acc: [REP_TABS, ACC_TABS, SET_ALL],
+    fin: [REP_TABS, PAY_TABS, SET_ALL],
+    apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
   var LAST_M = "";
@@ -1557,7 +1545,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {
       var fo = finOnly();
-      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
+      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && st[0] !== "rec" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (TAB_STEP[t[0]] === "appr" && canDo("rec")) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
         /* The financier's Reports: Payables first, then Payments (Transactions showing payments only). */
         .map(function (t) { return fo && t[0] === "Transactions" ? [t[0], "Payments"] : t; }).sort(function (x, y) { return fo ? (x[0] === "Payables" ? -1 : y[0] === "Payables" ? 1 : 0) : 0; }) };
     }).filter(function (g) { return g.tabs.length; });
@@ -1795,8 +1783,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ================= responsibilities: who does which step for which company ================= */
   /* Job roles every user must have. Each suggests the steps it usually does; the admin can still change the ticks. */
-  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["approver", "Approver", "Approves checking reports and cash advances that name them, in the Approvals app"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Energy Billing", "Renewable Energy: reads TNPDCL statements for solar plants and windmills, issues bills of supply, records receipts"]];
-  var JOB_STEPS = { purchaser: ["bills", "bcr", "adv", "vouchers", "vcr", "cash"], accountant: ["acct"], approver: ["appr"], financier: ["txn"], solar: ["solar"] };
+  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["approver", "Approver", "Approves checking reports and cash advances that name them, in the Approvals app"], ["recorder", "Approval Recorder", "Records approvals already signed on paper by an admin or approver, in their name; is never named as approver"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Energy Billing", "Renewable Energy: reads TNPDCL statements for solar plants and windmills, issues bills of supply, records receipts"]];
+  var JOB_STEPS = { purchaser: ["bills", "bcr", "adv", "vouchers", "vcr", "cash"], accountant: ["acct"], approver: ["appr"], recorder: ["rec"], financier: ["txn"], solar: ["solar"] };
   function jobChecks(box, sel) {
     sel = sel || []; box.textContent = "";
     JOBS.forEach(function (j) { var lab = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: j[0] }), tx = el("span"); cb.checked = sel.indexOf(j[0]) >= 0; tx.appendChild(el("b", null, j[1])); tx.appendChild(el("span", null, j[2])); lab.appendChild(cb); lab.appendChild(tx); box.appendChild(lab); });
@@ -1805,12 +1793,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function jobsOf(u) { return (u && u.jobRoles && u.jobRoles.length ? u.jobRoles : null) || ((u && S.requests[u.id]) || {}).jobRoles || []; }
   function stepsForJobs(js) { var m = {}; (js || []).forEach(function (k) { (JOB_STEPS[k] || []).forEach(function (st) { m[st] = 1; }); }); return STEPS.map(function (s) { return s[0]; }).filter(function (k) { return m[k]; }); }
   function myJobs() { var u = S.myUser; if (u && u.jobRoles && u.jobRoles.length) return u.jobRoles; return !S.actId && S.myReq && S.myReq.jobRoles ? S.myReq.jobRoles : []; }
-  var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bills CR"], ["vouchers", "Cash Vouchers"], ["vcr", "Vouchers CR"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance CR"], ["appr", "Approval"], ["txn", "Payment Entry"], ["solar", "Energy Billing"]];
+  var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bills CR"], ["vouchers", "Cash Vouchers"], ["vcr", "Vouchers CR"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance CR"], ["appr", "Approval"], ["rec", "Approval Recorder"], ["txn", "Payment Entry"], ["solar", "Energy Billing"]];
   var TAB_STEP = { "Cash Approvals": "appr", "Solar Month": "solar", "Solar Invoices": "solar", "Solar Reports": "solar", "Approvals": "appr", "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
   /* A user saved before responsibilities existed does every step for their companies until the admin sets them. */
   function userHas(u, step, cid) {
     if (!u || u.active === false || (u.companyIds || []).indexOf(cid) < 0) return false;
-    if (!u.roles) return step !== "appr"; /* approving is only ever given on purpose */
+    if (!u.roles) return step !== "appr" && step !== "rec"; /* approving is only ever given on purpose */
     return (u.roles[cid] || []).indexOf(step) >= 0;
   }
   function hasRole(step, cid) { if (S.isAdmin) return !!S.companies[cid]; return userHas(S.myUser, step, cid); }
@@ -2074,7 +2062,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function hasStepAny(u, step) { if (!u || !u.roles) return true; return Object.keys(u.roles).some(function (k) { return (u.roles[k] || []).indexOf(step) >= 0; }); }
   /* An app opens only for someone whose responsibilities belong in it (and whose tick is on): an accountant never lands in
      Maintenance just because it was ticked. The KKSK Group home (app_portal) applies the same rule. */
-  var APP_STEPS = { mnt: ["bills", "bcr", "adv", "vouchers", "vcr", "cash"], re: ["bills", "bcr", "adv", "vouchers", "vcr", "cash", "txn", "solar"], acc: ["acct"], fin: ["txn"], apr: ["appr"] };
+  var APP_STEPS = { mnt: ["bills", "bcr", "adv", "vouchers", "vcr", "cash", "acct", "txn"], re: ["bills", "bcr", "adv", "vouchers", "vcr", "cash", "acct", "txn", "solar"], acc: ["acct"], fin: ["txn"], apr: ["appr", "rec"] };
   function rolesFit(roles, k) { if (!roles) return k !== "apr"; return Object.keys(roles).some(function (c) { return (roles[c] || []).some(function (st) { return APP_STEPS[k].indexOf(st) >= 0; }); }); }
   function appsWith(u) {
     var a = (u && u.apps) || {}, bv = a.bv !== false, r = u && u.roles, on = function (k, def) { return bv && (a[k] != null ? !!a[k] : def) && rolesFit(r, k); };
@@ -2105,9 +2093,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (appBv && !cos.length) { $("uECos").hidden = false; ok = false; }
     /* Each app only for the responsibilities that belong in it. */
     var misfit = APP_KEYS.filter(function (k) { return ma[k] && !rolesFit(roles, k); });
-    if (misfit.length) { $("uEApps").textContent = misfit.map(function (k) { return APP_NAMES[k]; }).join(", ") + (misfit.length > 1 ? " don't" : " doesn't") + " match their responsibilities below. " + ({ mnt: "Maintenance & Civil is for purchasers.", re: "Renewable Energy is for its purchasers, financier and energy billing.", acc: "Accounts is for accountants.", fin: "Finance is for financiers.", apr: "Approvals is for approvers." })[misfit[0]] + " Untick it, or give the matching responsibility."; $("uEApps").hidden = false; ok = false; }
+    if (misfit.length) { $("uEApps").textContent = misfit.map(function (k) { return APP_NAMES[k]; }).join(", ") + (misfit.length > 1 ? " don't" : " doesn't") + " match their responsibilities below. " + ({ mnt: "Maintenance & Civil is for people who enter, account or pay its work.", re: "Renewable Energy is for people who enter, account or pay its work, or do its energy billing.", acc: "Accounts is for accountants (every division).", fin: "Finance is for financiers (every division).", apr: "Approvals is for approvers and approval recorders." })[misfit[0]] + " Untick it, or give the matching responsibility."; $("uEApps").hidden = false; ok = false; }
     var dept = usDept.value(); if (!dept) { $("uEDept").hidden = false; ok = false; }
-    var jobs = readChecks($("uJobs")); if (appBv && !jobs.length) { $("uJobsE").hidden = false; ok = false; }
+    var jobs = readChecks($("uJobs")); $("uJobsE").textContent = "Choose at least one job."; if (appBv && !jobs.length) { $("uJobsE").hidden = false; ok = false; }
+    if (jobs.indexOf("recorder") >= 0 && jobs.indexOf("approver") >= 0) { $("uJobsE").textContent = "An Approval Recorder records others' approvals and can't also be an Approver. Untick one."; $("uJobsE").hidden = false; ok = false; }
     var purch = appBv && jobs.indexOf("purchaser") >= 0, defAppr = purch ? $("uAppr").value : "";
     if (purch && !defAppr) { $("uEAppr").hidden = false; ok = false; }
     var accOn = !$("uAccF").hidden, acc = accOn ? $("uAcc").value : "", pin = $("uPin").value.trim(), cur = S.users[uid] || {};
@@ -3736,6 +3725,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     (S.supers || []).forEach(function (p) { if (p && p.id) m[p.id] = { id: p.id, name: pnm(p.name) || "Super Admin" }; });
     Object.keys(S.admins || {}).forEach(function (k) { var a = S.admins[k]; if (a && a.active !== false && !m[k]) m[k] = { id: k, name: pnm(a.name) || userLabel(k) || "Admin" }; });
     var ap = Object.assign({}, S.approvers || {}); Object.keys(S.users || {}).forEach(function (k) { if ((S.users[k].jobRoles || []).indexOf("approver") >= 0) ap[k] = S.users[k]; });
+    Object.keys(ap).forEach(function (k) { var u = (S.users || {})[k] || ap[k]; if ((S.admins || {})[k]) return; if (!u || (u.jobRoles || []).indexOf("approver") < 0 || (u.jobRoles || []).indexOf("recorder") >= 0) delete ap[k]; });
     Object.keys(ap).forEach(function (k) { var u = ap[k]; if (u && u.active !== false && !m[k] && (!cid || userHas(Object.assign({ id: k }, u), "appr", cid))) m[k] = { id: k, name: pnm(u.name) || "Approver" }; });
     return Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return natCmp(a.name, b.name); });
   }
@@ -5518,19 +5508,19 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
      Once a report is approved (by an admin or on their behalf) it leaves the list, so it can't be approved twice. */
   var APV = { div: "" };
   /* Approving is done by admins and Approvers, in the Approvals app. An Approver approves only what names them. */
-  function canBehalf() { return false; }
+  /* An Approval Recorder records an approval already signed on paper, in the name of the admin or approver who signed it. */
+  function canBehalf(named) { return APP === "apr" && !S.isAdmin && !S._adm && canDo("rec") && !(named && named === meId() && canDo("appr")); }
   /* No approving while viewing as someone: approval is never done from another person's seat. */
-  function apprUser() { return APP === "apr" && !S._adm && (S.isAdmin || canDo("appr")); }
+  function apprUser() { return APP === "apr" && !S._adm && (S.isAdmin || canDo("appr") || canDo("rec")); }
   /* Approving (and undoing an approval) happens only in the Approvals app. Elsewhere those buttons are left out. */
   function actBtnAll() { return actBtn.apply(null, arguments); }
   function noApprove(label) { return label === "Approve for payment" || label === "Undo approval"; }
-  function canApprove(cid) { return S.isAdmin || (APP === "apr" && (!cid || canStep("appr", cid))); }
+  function canApprove(cid) { return S.isAdmin || (APP === "apr" && (!cid || canStep("appr", cid) || canStep("rec", cid))); }
   function apprCos(r) { return r.kind === "vcr" ? r.companyIds || [] : [r.companyId]; }
-  /* An approver approves what names them. A financier who is also an approver approves everything in the divisions given to
-     them: Maintenance & Civil when they have the Finance (or Maintenance & Civil) app, Renewable Energy when they have that app. */
-  function finApprover() { return !S.isAdmin && canDo("appr") && canDo("txn"); }
-  function myDivs() { var a = (S.myUser && S.myUser.apps) || null; if (!a) return ["mnt"]; return Object.keys(DIVS).filter(function (k) { return !!(a[k] || a[DIVS[k].payIn]); }); }
-  function apprForMe(x, namedId) { return finApprover() ? myDivs().indexOf(divOf(x)) >= 0 : namedId === meId(); }
+  /* An approver approves what names them. An Approval Recorder records approvals for everything in their divisions: those whose
+     app they have (Maintenance & Civil also through Finance), or every division when they have none of those apps. */
+  function recDivs() { var a = (S.myUser && S.myUser.apps) || {}, l = Object.keys(DIVS).filter(function (k) { return !!(a[k] || (k === "mnt" && a.fin)); }); return l.length ? l : Object.keys(DIVS); }
+  function apprForMe(x, namedId) { return namedId === meId() || (canDo("rec") && recDivs().indexOf(divOf(x)) >= 0); }
   function apprMine(r) { if (S.isAdmin) return true; return APP === "apr" && apprForMe(r, reportApproverId(r)) && apprCos(r).some(function (cid) { return canApprove(cid); }); }
   /* The approver a checking report is for: saved on it, or (older reports) the one most of its entries name. */
   function reportApproverId(r) { return r.approverId || reportApprover(r); }
@@ -5548,13 +5538,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* "Approved by Asha", or "Recorded by Ravi on behalf of management · signed by Asha on paper". */
   function apprByText(r) {
-    if (r.onBehalf) return "Recorded by " + (pnm(r.behalfByName) || userLabel(r.approvedBy) || "the financier") + " on behalf of management" + (r.paperByName ? " · signed by " + pnm(r.paperByName) + " on paper" : "");
+    if (r.onBehalf) return "Signed by " + (pnm(r.paperByName) || "the approver") + " on paper · recorded by " + (pnm(r.behalfByName) || userLabel(r.approvedBy) || "the approval recorder");
     return "Approved by " + (userLabel(r.approvedBy) || approverName({ approverId: r.approvedBy }) || "an admin");
   }
   function openAppr(r) { if (r.kind === "vcr") openVcr(r.id); else openReport(r.id); }
   function renderApprovals() {
     var ds = $("apDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), APV.div); APV.div = ds.value;
-    $("apSub").textContent = S.isAdmin ? "Checking reports from every division waiting to be approved for payment. Open one to approve it bill by bill." : (finApprover() ? "Every checking report from " + myDivs().map(function (k) { return DIVS[k].name; }).join(" and ") + " waiting to be approved for payment. Open one to approve it bill by bill." : "Checking reports that name you as approver, waiting to be approved for payment. Open one to approve it bill by bill.");
+    $("apSub").textContent = S.isAdmin ? "Checking reports from every division waiting to be approved for payment. Open one to approve it bill by bill." : (canDo("rec") ? "Checking reports from " + recDivs().map(function (k) { return DIVS[k].name; }).join(" and ") + " waiting to be approved for payment. Record an approval signed on paper by choosing who signed it." : "Checking reports that name you as approver, waiting to be approved for payment. Open one to approve it bill by bill.");
     var w = apprWaiting(), done = apprRecent(), tot = {};
     w.forEach(function (r) { curAdd(tot, r.currency || "INR", r.kind === "vcr" ? (r.payable != null ? r.payable : r.total) : r.kind === "inst" ? r.total : payableOf(r)); });
     statBoxes($("apStats"), [["Waiting", String(w.length), plural(w.length, "report")], ["Amount waiting", curSum(tot) || money(0), ""], ["Approved, 30 days", String(done.length), done.filter(function (r) { return r.onBehalf; }).length + " on behalf"]]);
@@ -5580,13 +5570,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* ---- Approvals › Cash Advances: requests from every division ---- */
   var CAP = { div: "" };
-  function capMine(a) { return (S.isAdmin || (canStep("appr", a.companyId) && apprForMe(a, caApproverId(a)))) && (!CAP.div || divOf(a) === CAP.div); }
+  function capMine(a) { return (S.isAdmin || ((canStep("appr", a.companyId) || canStep("rec", a.companyId)) && apprForMe(a, caApproverId(a)))) && (!CAP.div || divOf(a) === CAP.div); }
   /* A cash advance is approved by the approver named on it, or else the person's default approver. */
   function caApproverId(a) { if (a.approverId) return a.approverId; var u = (S.users || {})[a.uid] || (S.profiles || {})[a.uid]; return (u && u.defaultApproverId) || ""; }
   function capPending() { return caList().filter(function (a) { return a.status === "pending" && capMine(a); }); }
   function renderCashAppr() {
     var ds = $("capDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), CAP.div); CAP.div = ds.value;
-    $("capSub").textContent = S.isAdmin ? "Cash advances people have asked for, from every division. Approve one, or change the amount; the financier then pays it out in Finance." : (finApprover() ? "Cash advances asked for in " + myDivs().map(function (k) { return DIVS[k].name; }).join(" and ") + "." : "Cash advances that name you as approver.") + " Approve one, or change the amount; the financier then pays it out in Finance.";
+    $("capSub").textContent = S.isAdmin ? "Cash advances people have asked for, from every division. Approve one, or change the amount; the financier then pays it out in Finance." : (canDo("rec") ? "Cash advances asked for in " + recDivs().map(function (k) { return DIVS[k].name; }).join(" and ") + "; record approvals signed on paper." : "Cash advances that name you as approver.") + " Approve one, or change the amount; the financier then pays it out in Finance.";
     var pend = capPending().sort(function (a, b) { return (a.requestedAt || 0) - (b.requestedAt || 0); });
     var appr = caList().filter(function (a) { return a.status === "approved" && capMine(a); }).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); });
     $("capPendN").textContent = pend.length ? "(" + pend.length + ")" : "";
@@ -5608,19 +5598,19 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* In an approval form: who signed it on paper (asked only when the financier records it on management's behalf). */
   function behalfField(body, def) {
-    if (!canBehalf()) return;
+    S._bh = canBehalf(def); if (!S._bh) return;
     var list = approverList(), sel = el("select", { class: "field", id: "bhBy" });
     fillSelect(sel, [["", "Choose who signed it on paper"]].concat(list.map(function (a) { return [a.id, a.name]; })), list.some(function (a) { return a.id === def; }) ? def : "");
-    var f = fld("Signed on paper by", sel, "You are recording an approval management has already given on paper. It is saved as approved on their behalf.");
+    var f = fld("Signed on paper by", sel, "You are recording an approval already given on paper. It is saved in their name, as recorded by you.");
     body.insertBefore(f, body.firstChild);
   }
   function behalfRead() {
-    if (!canBehalf()) return {};
+    if (!S._bh) return {};
     var v = $("bhBy") && $("bhBy").value; if (!v) { errOn("bhBy", "Choose who signed it on paper."); return null; }
     var a = approverList().filter(function (x) { return x.id === v; })[0];
     return { onBehalf: true, paperById: v, paperByName: a ? a.name : "", behalfByName: pnm(preparedByText()) };
   }
-  function behalfNote(x) { return x && x.onBehalf ? "On behalf of management, signed by " + pnm(x.paperByName) + " on paper" : ""; }
+  function behalfNote(x) { return x && x.onBehalf ? "Signed by " + pnm(x.paperByName) + " on paper, recorded by " + pnm(x.behalfByName) : ""; }
   /* The approver most of a report's bills or vouchers name, to suggest who signed it. */
   function reportApprover(r) {
     var n = {}, items = r.kind === "vcr" ? (r.voucherIds || []).map(function (id) { return S.vouchers[id]; }) : r.kind === "inst" ? [S.advances[r.advanceId]] : (r.billIds || []).map(function (id) { return S.bills[id]; });
@@ -8519,7 +8509,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var body = el("div", { class: "mform" });
     body.appendChild(fld("Amount to give (₹)", inp("caApAmt", fmtInput(a.amount), { inputmode: "decimal", class: "field num" }), "Asked for " + money(a.amount) + ". Change it to approve a different amount."));
     body.appendChild(fld("Note (optional)", inp("caApNote", "", { maxlength: "200" })));
-    behalfField(body, "");
+    behalfField(body, caApproverId(a));
     popForm("Approve cash advance", caName(a) + ", " + coLabel(a.companyId) + ". " + (a.purpose || ""), body, "Approve", function () {
       errClear(body); var n = num($("caApAmt").value), bh = behalfRead(); if (!bh) return false;
       if (n == null || n <= 0) { errOn("caApAmt", "Enter the amount to give."); return false; }
@@ -8752,8 +8742,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
             s.id = "vaWhy_" + v.id; td.appendChild(s); td.appendChild(n); } }
       ], list, { sortIndex: -1, rowClass: function (v) { return VA.sel[v.id] ? "" : "skip"; } });
     });
-    if (canBehalf()) {
-      var bw = el("div", { class: "card", style: "padding:14px 16px" }); behalfField(bw, VA.paperBy); box.insertBefore(bw, box.firstChild);
+    if (canBehalf(reportApproverId(r))) {
+      var bw = el("div", { class: "card", style: "padding:14px 16px" }); behalfField(bw, VA.paperBy || reportApproverId(r)); box.insertBefore(bw, box.firstChild);
       $("bhBy").addEventListener("change", function () { VA.paperBy = this.value; this.classList.remove("bad"); });
     }
     var ok = vs.filter(function (v) { return VA.sel[v.id]; }), t = vcrSums(ok), back = vs.length - ok.length;

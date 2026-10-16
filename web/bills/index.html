@@ -1603,7 +1603,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (t === "Advance Requests" && dataReady()) { var nar = arBadge(); if (nar) return { n: nar, cls: "count info", label: nar + " to pay or receive" }; }
     if (t === "Mark Transaction" && dataReady()) { var nm = markBadge(); if (nm) return { n: nm, cls: "count info", label: nm + " to pay" }; }
     if (t === "Advance Report" && dataReady()) { var na2 = dueInstalments("").length; if (na2) return { n: na2, cls: "count info", label: na2 + " instalments due" }; }
-    if (t === "Checking Report" && S.bLoaded && S.rLoaded) { var nk = awaitingCheck().length + Object.keys(S.reports).filter(function (k) { var r = S.reports[k]; return r.kind !== "inst" && r.kind !== "vcr" && stageOf(r) === "draft" && canStep("bcr", r.companyId); }).length; if (nk) return { n: nk, cls: "count info", label: nk + " bills waiting for a check" }; }
+    if (t === "Checking Report" && S.bLoaded && S.rLoaded) { var nk = awaitingCheck().length + Object.keys(S.reports).filter(function (k) { var r = S.reports[k]; return r.kind !== "inst" && r.kind !== "vcr" && stageOf(r) === "draft" && canStep("bcr", r.companyId) && crMine(r); }).length; if (nk) return { n: nk, cls: "count info", label: nk + " bills waiting for a check" }; }
     if (t === "Bills" && S.bLoaded) { var nb = myQueue().length + myPostponed().length; if (nb) return { n: nb, cls: "count info", label: nb + " to check" }; }
     if (t === "Vendors" && S.vLoaded && S.bLoaded && canEditVendors()) { var nv = vendorsNeedingCount(); if (nv) return { n: nv, cls: "count", label: nv + " need details", warn: true }; }
     return null;
@@ -1833,7 +1833,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function jobsOf(u) { return (u && u.jobRoles && u.jobRoles.length ? u.jobRoles : null) || ((u && S.requests[u.id]) || {}).jobRoles || []; }
   function stepsForJobs(js) { var m = {}; (js || []).forEach(function (k) { (JOB_STEPS[k] || []).forEach(function (st) { m[st] = 1; }); }); return STEPS.map(function (s) { return s[0]; }).filter(function (k) { return m[k]; }); }
   function myJobs() { var u = S.myUser; if (u && u.jobRoles && u.jobRoles.length) return u.jobRoles; return !S.actId && S.myReq && S.myReq.jobRoles ? S.myReq.jobRoles : []; }
-  var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bill Checking"], ["vouchers", "Cash Vouchers"], ["vcr", "Voucher Checking"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance Checking"], ["appr", "Approval"], ["rec", "Approval Recorder"], ["txn", "Payment Entry"], ["solar", "Sales"]];
+  var STEPS = [["acct", "Accounts"], ["bills", "Bills & BCR"], ["bcr", "Bill Checking"], ["vouchers", "Vouchers & VCR"], ["vcr", "Voucher Checking"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports & ACR"], ["appr", "Approval"], ["rec", "Approval Recorder"], ["txn", "Payment Entry"], ["solar", "Sales"]];
   var TAB_STEP = { "Cash Approvals": "appr", "Solar Month": "solar", "Solar Invoices": "solar", "Solar Reports": "solar", "Approvals": "appr", "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn", "Advance Requests": "txn" };
   /* A user saved before responsibilities existed does every step for their companies until the admin sets them. */
   /* Someone allowed to add companies (not an admin) works in a company they added with the same steps they hold elsewhere,
@@ -1844,8 +1844,20 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var own = ownCo(u, cid) && (u.companyIds || []).indexOf(cid) < 0;
     if (!own && (u.companyIds || []).indexOf(cid) < 0) return false;
     if (!u.roles) return step !== "appr" && step !== "rec"; /* approving is only ever given on purpose */
-    if (own || !u.roles[cid]) { if (!own) return false; return Object.keys(u.roles).some(function (k) { return k !== cid && (u.roles[k] || []).indexOf(step) >= 0 && step !== "appr" && step !== "rec"; }); }
-    return (u.roles[cid] || []).indexOf(step) >= 0;
+    if (own || !u.roles[cid]) { if (!own) return false; return Object.keys(u.roles).some(function (k) { return k !== cid && stepIn(u.roles[k], step) && step !== "appr" && step !== "rec"; }); }
+    return stepIn(u.roles[cid], step);
+  }
+  /* Entering and making the checking report are one tick: Bills & BCR, Vouchers & VCR (Proformas, Imports & ACR was always one).
+     Either half saved on an older record gives both. */
+  var STEP_PAIR = { bills: "bcr", bcr: "bills", vouchers: "vcr", vcr: "vouchers" };
+  function stepIn(list, step) { list = list || []; return list.indexOf(step) >= 0 || (!!STEP_PAIR[step] && list.indexOf(STEP_PAIR[step]) >= 0); }
+  /* Checking reports: each person makes them from their own bills and vouchers (and those of the profiles linked to their login,
+     or vouchers they made for someone as a Voucher Maker), and sees only those reports. */
+  function workMine(x) { return S.isAdmin || ownWork(x) || (!!x.madeBy && x.madeBy === meId()); }
+  function crMine(r) {
+    if (S.isAdmin) return true; var m = myPeople(); if ((r.preparedById && m[r.preparedById]) || (!r.preparedById && r.createdBy && m[r.createdBy])) return true;
+    var xs = r.kind === "vcr" ? (r.voucherIds || []).map(function (id) { return S.vouchers[id]; }) : (r.billIds || []).map(function (id) { return S.bills[id]; });
+    return xs.some(function (x) { return x && workMine(x); });
   }
   function hasRole(step, cid) { if (S.isAdmin) return !!S.companies[cid]; return userHas(S.myUser, step, cid); }
   function roleCos(step) { return myCompanies().filter(function (c) { return hasRole(step, c.id); }); }
@@ -1862,21 +1874,24 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     fillSelect(sel, [["", cid ? (us.length ? ph || "Choose who prepared it" : "Nobody holds this step for this company") : "Choose the company first"]].concat(us.map(function (u) { return [u.id, userLabel(u.id)]; })), cur || "");
     return sel;
   }
+  /* The ticks shown in Users: one per pair. */
+  function gridSteps() { return STEPS.filter(function (st) { return st[0] !== "bcr" && st[0] !== "vcr"; }); }
   function renderRoleGrid(cos, roles) {
     var t = $("uRoles"); t.textContent = "";
-    var th = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, "Company")); STEPS.forEach(function (st) { hr.appendChild(el("th", { class: "cen" }, st[1])); }); th.appendChild(hr); t.appendChild(th);
+    var th = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, "Company")); gridSteps().forEach(function (st) { hr.appendChild(el("th", { class: "cen" }, st[1])); }); th.appendChild(hr); t.appendChild(th);
     var tb = el("tbody");
-    if (!cos.length) { var er = el("tr"); er.appendChild(el("td", { colspan: String(STEPS.length + 1), class: "empty" }, "Tick at least one company above.")); tb.appendChild(er); }
+    if (!cos.length) { var er = el("tr"); er.appendChild(el("td", { colspan: String(gridSteps().length + 1), class: "empty" }, "Tick at least one company above.")); tb.appendChild(er); }
     cos.forEach(function (cid) {
       var c = S.companies[cid]; if (!c) return;
       var tr = el("tr", { "data-co": cid }); tr.appendChild(el("td", { class: "rco" }, c.shortName || c.name));
-      STEPS.forEach(function (st) { var td = el("td", { class: "cen" }), lb = el("label"), cb = el("input", { type: "checkbox", "data-step": st[0], "aria-label": st[1] + " for " + (c.shortName || c.name) }); cb.checked = !roles || (roles[cid] || []).indexOf(st[0]) >= 0; lb.appendChild(cb); lb.appendChild(el("span", { class: "mob-lb" }, st[1])); td.appendChild(lb); tr.appendChild(td); });
+      gridSteps().forEach(function (st) { var td = el("td", { class: "cen" }), lb = el("label"), cb = el("input", { type: "checkbox", "data-step": st[0], "aria-label": st[1] + " for " + (c.shortName || c.name) }); cb.checked = !roles || stepIn(roles[cid], st[0]); lb.appendChild(cb); lb.appendChild(el("span", { class: "mob-lb" }, st[1])); td.appendChild(lb); tr.appendChild(td); });
       tb.appendChild(tr);
     });
     t.appendChild(tb);
   }
   function readRoleGrid() {
     var out = {}; Array.prototype.forEach.call(document.querySelectorAll("#uRoles tr[data-co]"), function (tr) { out[tr.getAttribute("data-co")] = Array.prototype.filter.call(tr.querySelectorAll("input[data-step]"), function (i) { return i.checked; }).map(function (i) { return i.getAttribute("data-step"); }); });
+    Object.keys(out).forEach(function (cid) { ["bills", "vouchers"].forEach(function (k) { if (out[cid].indexOf(k) >= 0 && out[cid].indexOf(STEP_PAIR[k]) < 0) out[cid].push(STEP_PAIR[k]); }); });
     return out;
   }
   function renderUserOpenings(uid, cos) {
@@ -1898,7 +1913,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function roleGaps() {
     var gaps = [];
     sorted().filter(function (c) { return c.active !== false; }).forEach(function (c) {
-      var miss = STEPS.filter(function (st) { return !usersWith(st[0], c.id).length; }).map(function (st) { return st[1].toLowerCase(); });
+      var miss = gridSteps().filter(function (st) { return !usersWith(st[0], c.id).length; }).map(function (st) { return st[1].toLowerCase(); });
       if (miss.length) gaps.push((c.shortName || c.name) + ": " + miss.join(", "));
     });
     return gaps;
@@ -5209,7 +5224,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     RIDX = m; return m;
   }
   function checkOf(b) { return ridx()[b.id] || null; }
-  function awaitingCheck() { return billList().filter(function (b) { return b.status === "done" && b.vendorId && canStep("bcr", b.companyId) && acctOk(b) && (!checkOf(b) || (stageOf(checkOf(b).r) === "payment" && billRest(b) > 0.5)); }); }
+  function awaitingCheck() { return billList().filter(function (b) { return b.status === "done" && b.vendorId && canStep("bcr", b.companyId) && workMine(b) && acctOk(b) && (!checkOf(b) || (stageOf(checkOf(b).r) === "payment" && billRest(b) > 0.5)); }); }
   /* What part of a bill no Bill Checking Report has approved yet (after any payment, discount or advance). */
   function billRest(b) { var inf = billInfo(b), ap = billApproved(b); if (ap === Infinity) return 0; return round2(Math.max(0, inf.rem - Math.max(0, ap - inf.pay - inf.disc))); }
   /* The amount of a bill a Bill Checking Report asks to be paid: the whole bill, or only the rest still to approve after an earlier part approval. */
@@ -5281,7 +5296,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
     var q = $("ckQ").value.trim().toLowerCase();
     var reps = Object.keys(S.reports).map(function (k) { return S.reports[k]; }).filter(function (r) {
-      if (r.kind === "vcr" || r.kind === "inst" || !canStep("bcr", r.companyId) || (cid && r.companyId !== cid) || !listSees(r)) return false;
+      if (r.kind === "vcr" || r.kind === "inst" || !canStep("bcr", r.companyId) || !crMine(r) || (cid && r.companyId !== cid) || !listSees(r)) return false;
       if (q) { var v = S.vendors[r.vendorId]; if (((r.no || "") + " " + (v ? v.name : "") + " " + pnm(r.preparedBy) + " " + STAGE[stageOf(r)]).toLowerCase().indexOf(q) < 0) return false; }
       return true;
     });
@@ -8276,7 +8291,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ---- Cash Voucher tab ---- */
   var VH = { id: null, busy: false, limit: 100, D: null, tried: false };
-  function vchVisible(v) { return S.isAdmin || (hasRole("vouchers", v.companyId) && (prepOf(v) === meId() || v.madeBy === meId() || hasRole("vcr", v.companyId))) || prepOf(v) === meId(); }
+  function vchVisible(v) { return S.isAdmin || workMine(v); }
   function vchStatus(v) {
     if (v.sentBack) return { text: "Sent back: " + sendBackText(v.sentBack), cls: "s-tds", r: null, back: true };
     var r = vcrOf(v.id); if (!r) { if (!acctOk(v)) { var al = acctLabel(v); return { text: al[0], cls: al[1], r: null, back: false, acct: true }; } return { text: "Waiting for a report", cls: "s-draft", r: null }; }
@@ -8778,7 +8793,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ---- Voucher Checking Report tab ---- */
   var VC = { prep: "", appr: "", sel: {}, cos: {}, viewId: null, busy: false, sig: "" };
-  function vcrWaiting(cidFilter) { return vchList().filter(function (v) { return canSee(v.companyId) && hasRole("vcr", v.companyId) && !vcrOf(v.id) && !v.sentBack && acctOk(v) && (!cidFilter || v.companyId === cidFilter); }); }
+  function vcrWaiting(cidFilter) { return vchList().filter(function (v) { return canSee(v.companyId) && hasRole("vcr", v.companyId) && workMine(v) && !vcrOf(v.id) && !v.sentBack && acctOk(v) && (!cidFilter || v.companyId === cidFilter); }); }
   function vcrGroups(cidFilter) {
     var g = {};
     vcrWaiting(cidFilter).forEach(function (v) {
@@ -8818,7 +8833,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     ], groups, { sortIndex: 0, sortDir: 1 });
     var q = $("vcQ").value.trim().toLowerCase();
     var reps = vcrList().filter(function (r) {
-      if (!vcrTeamSees(r) || (S.isAdmin && STAGE_ORDER[stageOf(r)] < 2) || !(r.companyIds || []).some(function (c) { return canSee(c) && hasRole("vcr", c); })) return false;
+      if (!vcrTeamSees(r) || !crMine(r) || (S.isAdmin && STAGE_ORDER[stageOf(r)] < 2) || !(r.companyIds || []).some(function (c) { return canSee(c) && hasRole("vcr", c); })) return false;
       if (cid && (r.companyIds || []).indexOf(cid) < 0) return false;
       if (q && ((r.no || "") + " " + pnm(r.preparedBy) + " " + STAGE[stageOf(r)]).toLowerCase().indexOf(q) < 0) return false;
       return true;

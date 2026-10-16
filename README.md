@@ -24,7 +24,10 @@
 - **Workflow.** Every bill, voucher, proforma and import goes: data entry → accounting → approval → payment.
   Jobs: Purchaser (entry), Accountant (accounting), Approver (approval), Approval Recorder (records paper approvals),
   Voucher Maker (vouchers for other people), Financier (payment), Sales (energy billing); any mix may be held, except Approver with
-  Approval Recorder. On the bill form GST shows as GST (CGST + SGST) or GST (IGST), from the vendor's and company's states.
+  Approval Recorder. In Users each company has one tick per pair: **Bills & BCR**, **Vouchers & VCR**, **Proformas, Imports &
+  ACR** (steps `bills`+`bcr`, `vouchers`+`vcr`, saved together; either half on an older record gives both). Checking reports are
+  made only from the person's own bills and vouchers (and those of the profiles linked to their login, or vouchers they made as a
+  Voucher Maker), and they see only those reports and vouchers. On the bill form GST shows as GST (CGST + SGST) or GST (IGST), from the vendor's and company's states.
   A Purchaser who is also the Accountant for a company accounts a bill as they record it (ledgers and TDS on the bill form);
   it skips Accounting but still goes to approval. The accountant "accounts" entries; only the Approver step "approves".
 - **Approvals** happen only in the Approvals app, for admins and people with Approval. An Approver sees and approves only the

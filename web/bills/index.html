@@ -823,7 +823,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secList" hidden>
     <div class="head">
-      <div><h2>Companies</h2><p class="sub">One company list for the group: each app shows the companies its division uses, in its own order. Only admins, and people allowed to add companies, can add or change a company. Purchases point to a company by a permanent ID, so a change here shows on every old and new record. Drag a company by its handle, or use the arrows, to set the order every list in the app follows.</p></div>
+      <div><h2>Companies</h2><p class="sub">One company list for the group: each app shows the companies its division uses, in its own order. Admins, the Accounts team and people allowed to add companies can add or change a company; only admins deactivate one. Purchases point to a company by a permanent ID, so a change here shows on every old and new record. Drag a company by its handle, or use the arrows, to set the order every list in the app follows.</p></div>
       <span class="grow"></span>
       <label class="check"><input type="checkbox" id="showOff"> Show deactivated</label>
       <button class="btn primary" id="add">Add company</button>
@@ -2520,10 +2520,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     coLoc.close(); coLoc.fill(locIdOf(c));
     /* Which divisions use it: chosen in Accounts and Finance; a company added in a division app starts in that division. */
     var ua = c ? coApps(c) : DIV ? [DIV] : [], fa = $("fApps"); fa.textContent = "";
-    Object.keys(DIVS).forEach(function (k) { var lb = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: k }); cb.checked = ua.indexOf(k) >= 0; cb.disabled = (!!DIV && k === DIV) || !S.isAdmin; lb.appendChild(cb); lb.appendChild(el("span", null, DIVS[k].name)); fa.appendChild(lb); });
+    Object.keys(DIVS).forEach(function (k) { var lb = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: k }); cb.checked = ua.indexOf(k) >= 0; cb.disabled = (!!DIV && k === DIV) || !canCoEdit(); lb.appendChild(cb); lb.appendChild(el("span", null, DIVS[k].name)); fa.appendChild(lb); });
     $("fAppsH").textContent = DIV ? "It always stays in " + DIVS[DIV].name + " while you work here; tick another division to use it there too." : "The divisions whose apps list this company. Accounts and Finance always see every company.";
     S.coRe = APP === "re" ? reNorm(JSON.parse(JSON.stringify((c && c.re) || { kind: "solar", htscs: [], tpl: {} }))) : null; renderCoRe();
-    var tg = $("toggle"); tg.hidden = !c;
+    var tg = $("toggle"); tg.hidden = !c || !S.isAdmin;
     if (c) { var off = c.active === false; tg.textContent = off ? "Reactivate company" : "Deactivate company"; tg.className = "btn" + (off ? "" : " danger"); }
     setLogoPreview(); show("secEdit"); $("fName").focus();
   }
@@ -2592,7 +2592,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       .then(function () { S.busy = false; $("save").disabled = false; });
   }
   function toggleActive() {
-    var id = S.editing, c = S.companies[id]; if (!c || S.busy) return;
+    var id = S.editing, c = S.companies[id]; if (!c || S.busy || !S.isAdmin) return;
     var off = c.active === false;
     S.busy = true;
     retry(function () { return S.db.doc("companies/" + id).update({ active: off, updatedAt: Date.now(), updatedBy: (S.me && S.me.id) || "" }); })
@@ -8131,7 +8131,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* The financier's copy: A4, one short table per company (vendor and amount to pay), then a summary by company. Only vendors with an amount above zero are listed. */
   /* ================= Companies list (admin) ================= */
   /* Admins add and edit companies; in Renewable Energy, also anyone the admin has allowed to (Users › Can add and edit companies). */
-  function canCoEdit() { return S.isAdmin || (APP === "re" && !!(S.myUser && S.myUser.reCompanies)); }
+  /* Admins; the Accounts team (Accountant job) in any app; people given "add and edit companies" in Renewable Energy. Only admins deactivate. */
+  function canCoEdit() { return S.isAdmin || myJobs().indexOf("accountant") >= 0 || (APP === "re" && !!(S.myUser && S.myUser.reCompanies)); }
   function renderList() {
     var box = $("list");
     $("add").hidden = !canCoEdit();

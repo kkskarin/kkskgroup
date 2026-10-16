@@ -43,7 +43,7 @@
 - **Masters** (its own heading in every app with purchases or accounting, and Finance): Companies, Vendors, Ledgers; in
   Renewable Energy Companies, Consumers, PPA Rates, Vendors, Ledgers. One company list for the group (`companies/*`, logo required); each company lists the
   divisions that use it (`apps`) and keeps its own order per app (`orders`). A division app shows only its companies; Accounts and
-  Finance see them all. Only admins add or change companies. Vendors (`apps`) and ledgers (`apps`) are kept apart by division the
+  Finance see them all. Admins and the Accounts team (Accountant job, any app) add and edit companies; only admins deactivate one, and the database lets only admins delete a company (migration 20261016120000). Vendors (`apps`) and ledgers (`apps`) are kept apart by division the
   same way (none named means Maintenance & Civil); a vendor found by GSTIN from another division joins that division too.
 - **Admins** do the same work as the Super Admin and can view as a Purchaser, Accountant or Financier. The Super Admin alone adds
   admins and edits the app. Admins can delete a person for good (Settings › Users › Delete): their login goes, their entries stay.

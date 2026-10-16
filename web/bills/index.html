@@ -1089,7 +1089,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       <span class="grow"></span>
       <select class="field" id="mkCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
-    <div class="seg" role="tablist" aria-label="Payments for"><button type="button" role="tab" id="mkSideV" aria-selected="true">Bills <span id="mkNV"></span></button><button type="button" role="tab" id="mkSideC" aria-selected="false">Vouchers <span id="mkNC"></span></button><button type="button" role="tab" id="mkSideA" aria-selected="false">Advances <span id="mkNA"></span></button></div>
+    <div class="seg" role="tablist" aria-label="Payments for"><button type="button" role="tab" id="mkSideV" aria-selected="true">Bills <span id="mkNV"></span></button><button type="button" role="tab" id="mkSideC" aria-selected="false">Vouchers <span id="mkNC"></span></button><button type="button" role="tab" id="mkSideA" aria-selected="false" hidden>Advances <span id="mkNA"></span></button></div>
     <div class="stats" id="mkStats"></div>
     <div class="seg" role="tablist" aria-label="Show"><button type="button" role="tab" id="mkTabPay" aria-selected="true">To pay <span id="mkN"></span></button><button type="button" role="tab" id="mkTabDone" aria-selected="false">Paid, last 14 days <span id="mkDN"></span></button></div>
     <div id="mkPay"><div id="mkList"></div></div>
@@ -1176,11 +1176,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <h3>Waiting for approval <span id="caPendN"></span></h3>
     <div class="card list scroll" id="caPend"></div>
     <h3>Approved, to be paid by the financier <span id="caApprN"></span></h3>
-    <p class="sub" style="margin:-4px 0 10px">The financier pays these out in Payment Entry › Advances; each counts in the balance from then.</p>
+    <p class="sub" style="margin:-4px 0 10px">The financier pays these out from Payments › Advance Requests; each counts in the balance from then.</p>
     <div class="card list scroll" id="caAppr"></div>
     <h3>Cash balances</h3>
-    <p class="sub" style="margin:-4px 0 10px">Opening balance, plus advances received, less vouchers settled from the advance.</p>
+    <p class="sub" style="margin:-4px 0 10px">Opening balance, plus advances received, less vouchers settled from the advance and cash returned.</p>
     <div class="card list scroll" id="caBal"></div>
+    <h3>Cash Being Returned <span id="caRetN"></span></h3>
+    <p class="sub" style="margin:-4px 0 10px">Use Return Cash on a balance to give it back. Only the financier can mark it received; it comes off your balance then.</p>
+    <div class="card list scroll" id="caRet"></div>
     <h3>History</h3>
     <div class="card list scroll" id="caHist"></div>
   </section>
@@ -1275,6 +1278,21 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <h3>Unpaid bills <span id="pyBillsN"></span></h3>
     <div class="card list scroll" id="pyList"></div>
   </section>
+  <section id="secAdvReq" hidden>
+    <div class="head">
+      <div><h2>Advance Requests</h2><p class="sub">Cash advances the approver has passed, company by company: what to withdraw, then hand over to each person; or pay a person straight to their account. Also the cash people are returning.</p></div>
+      <span class="grow"></span>
+      <select class="field" id="arCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
+    </div>
+    <div class="stats" id="arStats"></div>
+    <div id="arList"></div>
+    <h3>Cash Being Returned <span id="arRetN"></span></h3>
+    <p class="sub" style="margin:-4px 0 10px">People giving back the cash they hold. Mark it received when you have it; it comes off their balance then.</p>
+    <div class="card list scroll" id="arRet"></div>
+    <h3>Done, Last 14 Days <span id="arDoneN"></span></h3>
+    <div class="card list scroll" id="arDone"></div>
+  </section>
+
   <section id="secAdvSum" hidden>
     <div class="head">
       <div class="grow"><h2>Advances</h2><p class="sub">Cash advances across the group: each person's opening balance, advances paid, vouchers settled and cash on hand, with the Advance Ageing (AS Ageing) of the cash not yet settled. Settled vouchers are taken against the oldest cash first.</p></div>
@@ -1398,7 +1416,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var S = { ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secApr", "secArch"];
+  var VIEWS = ["secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1539,7 +1557,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var SALES_TABS = { h: "Sales", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices"]] };
   var EXP_TABS = { h: "Expenses", tabs: [["Bills", "Enter Bills"], ["Checking Report", "Bill Checking"], ["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance Checking"], ["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Voucher Checking"], ["Cash Advance", "Cash Advance"]] };
   var ACC_TABS = { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Statements"]] };
-  var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Summary", "Advances"]] };
+  var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Requests", "Advance Requests"], ["Advance Summary", "Advances"]] };
   /* Masters: its own heading. Companies first, then (Renewable Energy) Consumers and PPA Rates, then Vendors and Ledgers. */
   var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], MASTERS[2]] : MASTERS };
   var SET_ALL = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] };
@@ -1553,12 +1571,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
   var LAST_M = "";
   var HOME_TAB = { acc: "Accounts", fin: "Payables", apr: "Approvals", }[APP] || "Transactions", LAST_IN = {};
-  var DATA_TABS = ["Cash Approvals", "Approvals", "Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
+  var DATA_TABS = ["Advance Requests", "Cash Approvals", "Approvals", "Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
   /* Admins oversee rather than enter: the entry screens (and the accountant's queue) are left out for them.
      Reports > Transactions shows every item, where it stands and who is responsible. "View as" still opens a person's screens. */
   var ADMIN_HIDE = { "Bills": 1, "Plan Advance": 1, "Imports": 1, "Cash Voucher": 1, "Accounts": 1, "Mark Transaction": 1 };
   /* A financier who only pays out sees Reports (Transactions, Payables) and Payments, nothing else. */
-  var FIN_TABS = { "Companies": 1, "Vendors": 1, "Ledgers": 1, "Cash Approvals": 1, "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1 };
+  var FIN_TABS = { "Companies": 1, "Vendors": 1, "Ledgers": 1, "Cash Approvals": 1, "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1, "Advance Requests": 1 };
   function finOnly() { return !S.isAdmin && canDo("txn") && STEPS.every(function (st) { return st[0] === "txn" || !canDo(st[0]); }); }
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {
@@ -1582,6 +1600,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (t === "Cash Advance" && dataReady()) return caBadge();
     if (t === "Voucher Checking Report" && dataReady()) return vcrBadge();
     if ((t === "Plan Advance" || t === "Imports") && dataReady()) { var na = advWarnCount(t === "Imports" ? "import" : "pi"); if (na) return { n: na, cls: "count", label: na + " need the dispatch date confirmed", warn: true }; }
+    if (t === "Advance Requests" && dataReady()) { var nar = arBadge(); if (nar) return { n: nar, cls: "count info", label: nar + " to pay or receive" }; }
     if (t === "Mark Transaction" && dataReady()) { var nm = markBadge(); if (nm) return { n: nm, cls: "count info", label: nm + " to pay" }; }
     if (t === "Advance Report" && dataReady()) { var na2 = dueInstalments("").length; if (na2) return { n: na2, cls: "count info", label: na2 + " instalments due" }; }
     if (t === "Checking Report" && S.bLoaded && S.rLoaded) { var nk = awaitingCheck().length + Object.keys(S.reports).filter(function (k) { var r = S.reports[k]; return r.kind !== "inst" && r.kind !== "vcr" && stageOf(r) === "draft" && canStep("bcr", r.companyId); }).length; if (nk) return { n: nk, cls: "count info", label: nk + " bills waiting for a check" }; }
@@ -1645,6 +1664,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (t === "Transactions") { renderTxn(); show("secTxn"); return; }
       if (t === "Payables") { renderPayables(); show("secPayables"); return; }
       if (t === "Advance Summary") { renderAdvSum(); show("secAdvSum"); return; }
+      if (t === "Advance Requests") { renderAdvReq(); show("secAdvReq"); return; }
       if (t === "Accounts") { AC.id = null; renderAcct(); show("secAcct"); return; }
       if (t === "Ledger Books") { renderBooks(); show("secBooks"); return; }
       if (t === "Notes") { renderNotes(); show("secNotes"); return; }
@@ -1814,7 +1834,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function stepsForJobs(js) { var m = {}; (js || []).forEach(function (k) { (JOB_STEPS[k] || []).forEach(function (st) { m[st] = 1; }); }); return STEPS.map(function (s) { return s[0]; }).filter(function (k) { return m[k]; }); }
   function myJobs() { var u = S.myUser; if (u && u.jobRoles && u.jobRoles.length) return u.jobRoles; return !S.actId && S.myReq && S.myReq.jobRoles ? S.myReq.jobRoles : []; }
   var STEPS = [["acct", "Accounts"], ["bills", "Bills"], ["bcr", "Bill Checking"], ["vouchers", "Cash Vouchers"], ["vcr", "Voucher Checking"], ["cash", "Cash Advance"], ["adv", "Proformas, Imports, Advance Checking"], ["appr", "Approval"], ["rec", "Approval Recorder"], ["txn", "Payment Entry"], ["solar", "Sales"]];
-  var TAB_STEP = { "Cash Approvals": "appr", "Solar Month": "solar", "Solar Invoices": "solar", "Solar Reports": "solar", "Approvals": "appr", "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn" };
+  var TAB_STEP = { "Cash Approvals": "appr", "Solar Month": "solar", "Solar Invoices": "solar", "Solar Reports": "solar", "Approvals": "appr", "Notes": "acct", "Accounts": "acct", "Ledger Books": "acct", "Ledgers": "acct", "Bills": "bills", "Checking Report": "bcr", "Plan Advance": "adv", "Imports": "adv", "Advance Report": "adv", "Mark Transaction": "txn", "Payment Ledger": "txn", "Cash Voucher": "vouchers", "Voucher Checking Report": "vcr", "Cash Advance": "cash", "Payables": "txn", "Advance Summary": "txn", "Advance Requests": "txn" };
   /* A user saved before responsibilities existed does every step for their companies until the admin sets them. */
   /* Someone allowed to add companies (not an admin) works in a company they added with the same steps they hold elsewhere,
      until an admin sets them for it in Users. */
@@ -6653,6 +6673,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function renderMark() {
     if (MK.busy) return;
+    if (MK.side === "advances") MK.side = "vendors"; /* advances are paid from Payments › Advance Requests */
     var sel = $("mkCo"), cur = sel.value, side = MK.side;
     fillSelect(sel, [["", "All your companies"]].concat(roleCos("txn").map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
     var na = mkAdvRows(sel.value, false).length; $("mkNA").textContent = na ? "(" + na + ")" : ""; $("mkSideA").setAttribute("aria-selected", side === "advances" ? "true" : "false");
@@ -6880,7 +6901,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         } }
     ], rows, { sortIndex: -1, limit: MK.doneLimit, more: function (m, n) { var mb = el("button", { class: "btn" }, "Show " + Math.min(100, n) + " more of " + n); mb.addEventListener("click", function () { MK.doneLimit += 100; renderDoneTx(); }); m.appendChild(mb); } });
   }
-  function markBadge() { return mkRows("").length + mkAdvRows("", false).length; }
+  function markBadge() { return mkRows("").length; }
 
   /* ================= Payment Ledger ================= */
   /* Every payment and discount, newest first. For vendors, each line shows what it settled: the opening balance (overdue part first),
@@ -7412,12 +7433,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* The balance as it stood at a moment: the opening (if entered by then) plus advances paid before it, less vouchers settled before it. */
   function cashBalanceAt(uid, cid, ms) {
     var b = S.balances[uid], op = openingOf(uid, cid), opAt = b ? b.enteredAt || b.updatedAt || 0 : 0, rec = 0, set = 0;
-    caList().forEach(function (a) { if (a.uid === uid && a.companyId === cid && a.status === "received" && (a.receivedAt || 0) < ms) rec += Number(a.approvedAmount) || 0; });
+    caList().forEach(function (a) { if (a.uid === uid && a.companyId === cid && a.status === "received" && (a.receivedAt || 0) < ms) rec += Number(a.approvedAmount) || 0; if (a.uid === uid && a.companyId === cid && a.status === "returned" && (a.returnedAt || 0) < ms) rec -= Number(a.returnedAmount) || 0; });
     vchList().forEach(function (v) { if (v.settle && prepOf(v) === uid && v.companyId === cid && v.approvedAt && !v.sentBack && v.approvedAt < ms) set += vPayable(v); });
     return round2((op != null && (!opAt || opAt <= ms) ? op : 0) + rec - set);
   }
   function asAgeing(uid, cid) {
-    var cb = cashBalance(uid, cid), b = S.balances[uid], t = todayYmd(), lots = [], left = cb.settled, out = { a15: 0, a30: 0, a60: 0, a60p: 0, oldest: -1 };
+    var cb = cashBalance(uid, cid), b = S.balances[uid], t = todayYmd(), lots = [], left = round2(cb.settled + cb.returned), out = { a15: 0, a30: 0, a60: 0, a60p: 0, oldest: -1 };
     if (cb.opening > 0) lots.push({ d: b && (b.enteredAt || b.updatedAt) ? ymdOfMs(b.enteredAt || b.updatedAt) : "", n: cb.opening });
     caList().filter(function (a) { return a.uid === uid && a.companyId === cid && a.status === "received"; }).sort(function (x, y) { return natCmp(x.receivedDate, y.receivedDate) || (x.receivedAt || 0) - (y.receivedAt || 0); })
       .forEach(function (a) { lots.push({ d: a.receivedDate || ymdOfMs(a.receivedAt || Date.now()), n: Number(a.approvedAmount) || 0 }); });
@@ -7480,7 +7501,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Person", kind: "co", sort: function (p) { return p.name; }, cell: function (p, td) { td.appendChild(el("b", null, p.name)); sub(td, coLabel(p.cid)); } },
       { label: "Opening", cls: "r num", sort: function (p) { return p.cb.opening; }, desc: true, cell: function (p, td) { var o = openingOf(p.uid, p.cid); if (o == null) { var n = el("span", { class: "needs" }); n.appendChild(warnIcon("Missing")); n.appendChild(document.createTextNode(" Not entered")); td.appendChild(n); } else txt(td, money(o)); } },
       { label: "Advances Paid", cls: "r num", sort: function (p) { return p.cb.received; }, desc: true, cell: function (p, td) { txt(td, money(p.cb.received)); } },
-      { label: "Settled", cls: "r num", sort: function (p) { return p.cb.settled; }, desc: true, cell: function (p, td) { txt(td, p.cb.settled ? "(" + money(p.cb.settled) + ")" : money(0)); if (p.cb.pending) sub(td, money(p.cb.pending) + " waiting"); } },
+      { label: "Settled", cls: "r num", sort: function (p) { return p.cb.settled; }, desc: true, cell: function (p, td) { txt(td, p.cb.settled ? "(" + money(p.cb.settled) + ")" : money(0)); if (p.cb.pending) sub(td, money(p.cb.pending) + " waiting"); if (p.cb.returned) sub(td, "Returned " + money(p.cb.returned)); } },
       { label: "Cash on Hand", cls: "r num", sort: function (p) { return p.cb.free; }, desc: true, cell: function (p, td) { td.appendChild(el("b", p.cb.balance < 0 ? { style: "color:var(--bad)" } : null, money(p.cb.free))); if (p.cb.pending) sub(td, "Balance " + money(p.cb.balance)); } }
     ];
     AS_AGE.forEach(function (a) { cols.push({ label: a[1], cls: "r num", sort: function (p) { return p.ag[a[0]]; }, desc: true, cell: function (p, td) { var n = p.ag[a[0]]; td.appendChild(el(n > 0.004 ? "b" : "span", n > 0.004 && a[0] === "a60p" ? { style: "color:var(--bad)" } : null, n > 0.004 ? money(n) : "-")); } }); });
@@ -8206,11 +8227,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* Settled vouchers come off a person's cash only once the admin approves them; until then they are pending,
      and new settled vouchers are checked against what is free after the pending ones. */
   function cashBalance(uid, cid, exceptVid) {
-    var op = openingOf(uid, cid) || 0, rec = 0, set = 0, pend = 0;
-    caList().forEach(function (a) { if (a.uid === uid && a.companyId === cid && a.status === "received") rec += Number(a.approvedAmount) || 0; });
+    var op = openingOf(uid, cid) || 0, rec = 0, set = 0, pend = 0, ret = 0, retP = 0;
+    caList().forEach(function (a) { if (a.uid !== uid || a.companyId !== cid) return; if (a.status === "received") rec += Number(a.approvedAmount) || 0; else if (a.status === "returned") ret += Number(a.returnedAmount) || 0; else if (a.status === "returning") retP += Number(a.amount) || 0; });
     vchList().forEach(function (v) { if (v.id === exceptVid || !v.settle || prepOf(v) !== uid || v.companyId !== cid) return; if (v.approvedAt && !v.sentBack) set += vPayable(v); else pend += vPayable(v); });
-    var bal = round2(op + rec - set);
-    return { opening: op, received: round2(rec), settled: round2(set), pending: round2(pend), balance: bal, free: round2(bal - pend) };
+    var bal = round2(op + rec - set - ret);
+    return { opening: op, received: round2(rec), settled: round2(set), returned: round2(ret), returning: round2(retP), pending: round2(pend), balance: bal, free: round2(bal - pend - retP) };
   }
   /* Companies a person must give an opening balance for: those where they handle vouchers or cash advances. */
   function cashCos(u) { return ((u && u.companyIds) || []).filter(function (cid) { var c = S.companies[cid]; return c && c.active !== false && (userHas(u, "vouchers", cid) || userHas(u, "cash", cid)); }).sort(coCmpId); }
@@ -8516,7 +8537,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var all = caList().filter(function (a) { return caVisible(a) && canSee(a.companyId); });
     var pend = all.filter(function (a) { return a.status === "pending"; }).sort(function (a, b) { return (a.requestedAt || 0) - (b.requestedAt || 0); });
     var appr = all.filter(function (a) { return a.status === "approved"; }).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); });
-    var hist = all.filter(function (a) { return a.status === "received" || a.status === "declined"; }).sort(function (a, b) { return (b.receivedAt || b.declinedAt || 0) - (a.receivedAt || a.declinedAt || 0); });
+    var hist = all.filter(function (a) { return a.status === "received" || a.status === "declined" || a.status === "returned"; }).sort(function (a, b) { return (b.receivedAt || b.returnedAt || b.declinedAt || 0) - (a.receivedAt || a.returnedAt || a.declinedAt || 0); });
     $("caPendN").textContent = pend.length ? "(" + pend.length + ")" : ""; $("caApprN").textContent = appr.length ? "(" + appr.length + ")" : "";
     var who = { label: "Person", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, "Asked " + stamp(a.requestedAt)); } };
     var coC = { label: "Company", cell: function (a, td) { td.appendChild(el("b", null, coLabel(a.companyId))); } };
@@ -8548,13 +8569,20 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Opening", cls: "r num", cell: function (p, td) { var o = openingOf(p.uid, p.cid); if (o == null) { var n = el("span", { class: "needs" }); n.appendChild(warnIcon("Missing")); n.appendChild(document.createTextNode(" Not entered")); td.appendChild(n); } else txt(td, money(o)); } },
       { label: "Advances received", cls: "r num", cell: function (p, td) { txt(td, money(cashBalance(p.uid, p.cid).received)); } },
       { label: "Vouchers settled", cls: "r num", cell: function (p, td) { var s = cashBalance(p.uid, p.cid).settled; txt(td, s ? "(" + money(s) + ")" : money(0)); } },
-      { label: "Balance", cls: "r num", cell: function (p, td) { var b = cashBalance(p.uid, p.cid).balance; td.appendChild(el("b", b < 0 ? { style: "color:var(--bad)" } : null, money(b))); } }
+      { label: "Returned", cls: "r num", cell: function (p, td) { var cb0 = cashBalance(p.uid, p.cid); txt(td, cb0.returned ? "(" + money(cb0.returned) + ")" : money(0)); if (cb0.returning) sub(td, money(cb0.returning) + " being returned"); } },
+      { label: "Balance", cls: "r num", cell: function (p, td) { var b = cashBalance(p.uid, p.cid).balance; td.appendChild(el("b", b < 0 ? { style: "color:var(--bad)" } : null, money(b))); } },
+      { label: "", kind: "act", cls: "r", cell: function (p, td) { if (p.uid !== meId() || S.isAdmin) return; var cb1 = cashBalance(p.uid, p.cid); if (cb1.free > 0.004 && !caRetOpen(p.uid, p.cid)) { var rb = el("button", { class: "btn sm" }, "Return Cash"); rb.addEventListener("click", function () { caReturnAsk(p.cid); }); td.appendChild(rb); } } }
     ], people, { sortIndex: -1 });
+    var rets = caList().filter(function (a) { return a.status === "returning" && caVisible(a) && canSee(a.companyId); }).sort(function (a, b) { return (a.requestedAt || 0) - (b.requestedAt || 0); });
+    $("caRetN").textContent = rets.length ? "(" + rets.length + ")" : ""; box = $("caRet");
+    if (!rets.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "No cash is being returned.")); }
+    else sortTable(box, "caRet", [who, coC, { label: "Returning", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.amount))); } }, { label: "Note", cls: "desc", cell: function (a, td) { txt(td, a.purpose || ""); } },
+      { label: "", kind: "act", cls: "r", cell: function (a, td) { txt(td, "Waiting for the financier"); if (a.uid === meId()) { var cx = el("button", { class: "btn sm" }, "Withdraw"); cx.addEventListener("click", function () { caDelete(a, cx); }); td.appendChild(cx); } } }], rets, { sortIndex: -1 });
     box = $("caHist");
     if (!hist.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "No advances paid or declined yet.")); }
     else sortTable(box, "caHist", [who, coC,
-      { label: "Amount", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.status === "received" ? a.approvedAmount : a.amount))); } },
-      { label: "Status", cell: function (a, td) { td.appendChild(el("span", { class: "tag stg " + (a.status === "received" ? "s-payment" : "s-draft") }, a.status === "received" ? "Paid" : "Declined")); sub(td, a.status === "received" ? fmtDate(a.receivedDate) : fmtDay(a.declinedAt)); } }, pur,
+      { label: "Amount", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, a.status === "returned" ? "(" + money(a.returnedAmount) + ")" : money(a.status === "received" ? a.approvedAmount : a.amount))); } },
+      { label: "Status", cell: function (a, td) { var rt = a.status === "returned"; td.appendChild(el("span", { class: "tag stg " + (a.status === "received" || rt ? "s-payment" : "s-draft") }, a.status === "received" ? "Paid" : rt ? "Returned" : "Declined")); sub(td, a.status === "received" ? fmtDate(a.receivedDate) : rt ? fmtDate(a.returnedDate) + (a.returnedByName ? " · to " + pnm(a.returnedByName) : "") : fmtDay(a.declinedAt)); } }, pur,
       { label: "", kind: "act", cls: "r", cell: function (a, td) {
           if (a.status === "received" && (S.isAdmin || (a.receivedBy === meId() && Date.now() - (a.receivedAt || 0) < TX_DAYS * 864e5))) { var u = el("button", { class: "btn sm" }, "Undo received"); u.addEventListener("click", function () { caUndo(a, u, "approved"); }); td.appendChild(u); }
           else if (a.status === "declined" && a.uid === meId()) { var d = el("button", { class: "btn sm" }, "Remove"); d.addEventListener("click", function () { caDelete(a, d); }); td.appendChild(d); }
@@ -8581,7 +8609,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (CA.busy) return Promise.resolve(false);
     CA.busy = true; patch.updatedAt = Date.now(); patch.updatedBy = meId();
     return retry(function () { return S.db.doc("cashadv/" + a.id).update(patch); }).then(function () {
-      S.cashadv[a.id] = Object.assign({}, a, patch); CA.busy = false; toast(msg); if (S.tab === "Cash Approvals") renderCashAppr(); else if (S.tab === "Mark Transaction") renderMark(); else if (S.tab === "Advance Summary") renderAdvSum(); else renderCash(); renderNav(); return true;
+      S.cashadv[a.id] = Object.assign({}, a, patch); CA.busy = false; toast(msg); if (S.tab === "Cash Approvals") renderCashAppr(); else if (S.tab === "Mark Transaction") renderMark(); else if (S.tab === "Advance Summary") renderAdvSum(); else if (S.tab === "Advance Requests") renderAdvReq(); else renderCash(); renderNav(); return true;
     }, function (e) { CA.busy = false; toast(explain(e)); return false; });
   }
   function caApprove(a) {
@@ -8610,12 +8638,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
   }
   /* The financier pays out an approved cash advance (Payment Entry › Advances). */
-  function caReceive(a) {
+  function caReceive(a, mode0) {
     var body = el("div", { class: "mform" });
-    body.appendChild(fld("Date paid", dateBox("caRcDate", todayYmd(), { min: ymdOfMs(a.approvedAt || Date.now()), max: todayYmd(), label: "Choose the date paid" }), "Up to today."));
-    var md = el("select", { class: "field", id: "caRcMode" }); fillSelect(md, [["cash", "Cash"], ["cheque", "Cheque"], ["neft", "NEFT / RTGS"], ["upi", "UPI"]], "cash"); body.appendChild(fld("Paid by", md));
+    body.appendChild(fld("Date paid", dateBox("caRcDate", todayYmd(), { min: a.wdDate || ymdOfMs(a.approvedAt || Date.now()), max: todayYmd(), label: "Choose the date paid" }), "Up to today."));
+    var md = el("select", { class: "field", id: "caRcMode" }); fillSelect(md, a.wdId ? [["cash", "Cash"]] : [["cash", "Cash"], ["cheque", "Cheque"], ["neft", "NEFT / RTGS"], ["upi", "UPI"]], a.wdId ? "cash" : mode0 || "cash"); body.appendChild(fld("Paid by", md, a.wdId ? "From the cash withdrawn on " + fmtDate(a.wdDate) + "." : ""));
     var rf = inp("caRcRef", "", { maxlength: "60", placeholder: "Not needed for cash" }); body.appendChild(fld("Reference", rf, "Cheque number, UTR or UPI reference."));
-    popForm("Mark paid", money(a.approvedAmount) + " to " + caName(a) + " for " + coLabel(a.companyId) + ". It is added to their cash balance.", body, "Mark paid", function () {
+    popForm(a.wdId ? "Hand over" : mode0 && mode0 !== "cash" ? "Pay directly" : "Mark paid", money(a.approvedAmount) + " to " + caName(a) + " for " + coLabel(a.companyId) + ". It is added to their cash balance.", body, a.wdId ? "Handed over" : "Mark paid", function () {
       errClear(body); var d = parseDate($("caRcDate").value), m = md.value, r = rf.value.trim();
       if (!d) { errOn("caRcDate", "Choose the date."); return false; }
       if (m !== "cash" && !r) { errOn("caRcRef", "Enter the " + (modeInfo(m) || [0, 0, "reference"])[2] + "."); return false; }
@@ -8628,6 +8656,123 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function caBadge() {
     return null; /* requests are approved in the Approvals app, which shows its own count */
+  }
+
+  /* ---- Returning cash: a person gives back what they hold; only the financier marks it received ---- */
+  function caRetOpen(uid, cid) { return caList().some(function (a) { return a.status === "returning" && a.uid === uid && a.companyId === cid; }); }
+  function caReturnAsk(cid) {
+    var cb = cashBalance(meId(), cid), body = el("div", { class: "mform" });
+    body.appendChild(fld("Amount to return (₹)", inp("caRtAmt", fmtInput(cb.free), { inputmode: "decimal", class: "field num" }), "You hold " + money(cb.free) + " for " + coLabel(cid) + ". Return all of it, or a part."));
+    body.appendChild(fld("Note (optional)", inp("caRtNote", "", { maxlength: "200" })));
+    popForm("Return cash", "The financier marks it received when they have it.", body, "Send", function () {
+      errClear(body); var n = num($("caRtAmt").value);
+      if (n == null || n <= 0) { errOn("caRtAmt", "Enter the amount to return."); return false; }
+      if (n > cashBalance(meId(), cid).free + 0.004) { errOn("caRtAmt", "That is more than the " + money(cashBalance(meId(), cid).free) + " you hold."); return false; }
+      var id = newId("ca"), now = Date.now(), doc = { kind: "return", uid: meId(), name: preparedByText(), companyId: cid, amount: round2(n), purpose: $("caRtNote").value.trim(), status: "returning", requestedAt: now, requestedBy: meId(), updatedAt: now };
+      return retry(function () { return S.db.doc("cashadv/" + id).set(doc); }).then(function () { S.cashadv[id] = Object.assign({ id: id }, doc); toast(money(doc.amount) + " to return. The financier marks it received."); renderCash(); renderNav(); return true; }, function (e) { toast(explain(e)); return false; });
+    });
+  }
+  /* The financier takes the returned cash. They may take less than asked; the rest stays with the person. */
+  function caTakeBack(a) {
+    var body = el("div", { class: "mform" }), most = round2(cashBalance(a.uid, a.companyId).free + (Number(a.amount) || 0));
+    body.appendChild(fld("Date received", dateBox("caTbDate", todayYmd(), { min: ymdOfMs(a.requestedAt || Date.now()), max: todayYmd(), label: "Choose the date received" }), "Up to today."));
+    body.appendChild(fld("Amount received (₹)", inp("caTbAmt", fmtInput(a.amount), { inputmode: "decimal", class: "field num" }), "They offered " + money(a.amount) + "."));
+    var md = el("select", { class: "field", id: "caTbMode" }); fillSelect(md, [["cash", "Cash"], ["neft", "NEFT / RTGS"], ["upi", "UPI"], ["cheque", "Cheque"]], "cash"); body.appendChild(fld("Received by", md));
+    var rf = inp("caTbRef", "", { maxlength: "60", placeholder: "Not needed for cash" }); body.appendChild(fld("Reference", rf, "Cheque number, UTR or UPI reference."));
+    popForm("Mark received", caName(a) + " is returning cash for " + coLabel(a.companyId) + ".", body, "Mark received", function () {
+      errClear(body); var d = parseDate($("caTbDate").value), n = num($("caTbAmt").value), m = md.value, r = rf.value.trim();
+      if (!d) { errOn("caTbDate", "Choose the date."); return false; }
+      if (n == null || n <= 0) { errOn("caTbAmt", "Enter the amount received."); return false; }
+      if (n > most + 0.004) { errOn("caTbAmt", "They hold only " + money(most) + "."); return false; }
+      if (m !== "cash" && !r) { errOn("caTbRef", "Enter the " + (modeInfo(m) || [0, 0, "reference"])[2] + "."); return false; }
+      return caUpdate(a, { status: "returned", returnedAmount: round2(n), returnedDate: d, returnedAt: Date.now(), returnedBy: meId(), returnedByName: S.isAdmin ? (S.me && S.me.name) || "Admin" : preparedByText(), payMode: m, payRef: m === "cash" ? "" : r }, money(round2(n)) + " received back from " + caName(a) + ".");
+    });
+  }
+
+  /* ================= Payments › Advance Requests (the financier) =================
+     Approved cash advances by company: what to withdraw for them, then each handed over from that cash; or paid
+     straight to the person's account. And the cash people are returning. */
+  var AQ = { sel: {}, busy: false };
+  function arCan(cid) { return canStep("txn", cid) && !S.isAdmin; }
+  function arSees(a) { return canSee(a.companyId) && (S.isAdmin || canStep("txn", a.companyId)) && payHere(a); }
+  function arRows(cid) { return caList().filter(function (a) { return a.status === "approved" && arSees(a) && (!cid || a.companyId === cid); }); }
+  function arRets(cid) { return caList().filter(function (a) { return a.status === "returning" && arSees(a) && (!cid || a.companyId === cid); }); }
+  function arBadge() { return arRows("").length + arRets("").length; }
+  function renderAdvReq() {
+    var sel = $("arCo"), cur = sel.value; fillSelect(sel, [["", "All your companies"]].concat(roleCos("txn").map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
+    var cid = sel.value, rows = arRows(cid), rets = arRets(cid), amt = function (a) { return Number(a.approvedAmount) || 0; };
+    var toWd = rows.filter(function (a) { return !a.wdId; }), held = rows.filter(function (a) { return a.wdId; });
+    var sum = function (xs, f) { return round2(xs.reduce(function (s0, a) { return s0 + f(a); }, 0)); };
+    statBoxes($("arStats"), [["To withdraw", money(sum(toWd, amt)), plural(toWd.length, "advance")], ["Withdrawn, to hand over", money(sum(held, amt)), plural(held.length, "advance")], ["Being returned", money(sum(rets, function (a) { return Number(a.amount) || 0; })), plural(rets.length, "person")]]);
+    var box = $("arList"); box.textContent = "";
+    if (!rows.length) box.appendChild(el("div", { class: "card empty" }, "No approved cash advances are waiting. An advance appears here once the approver passes it."));
+    sorted().forEach(function (c) {
+      var rs = rows.filter(function (a) { return a.companyId === c.id; }).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); }); if (!rs.length) return;
+      var wd = rs.filter(function (a) { return !a.wdId; }), sl = AQ.sel[c.id] || (AQ.sel[c.id] = {});
+      Object.keys(sl).forEach(function (k) { if (!wd.some(function (a) { return a.id === k; })) delete sl[k]; });
+      var card = el("div", { class: "card mkco" }), hd = el("div", { class: "cohead" });
+      hd.appendChild(el("b", null, c.name)); hd.appendChild(el("span", null, (wd.length ? "Withdraw " + money(sum(wd, amt)) + " for " + plural(wd.length, "advance") : "Nothing more to withdraw") + (rs.length > wd.length ? " · " + money(sum(rs.filter(function (a) { return a.wdId; }), amt)) + " withdrawn, to hand over" : ""))); card.appendChild(hd);
+      var tb = el("div", { class: "list scroll" }); card.appendChild(tb); box.appendChild(card);
+      sortTable(tb, "ar_" + c.id, [
+        { label: "", kind: "act", cell: function (a, td) { if (a.wdId || !arCan(a.companyId)) return; var cb = el("input", { type: "checkbox", "aria-label": "Withdraw for " + caName(a) }); cb.checked = !!sl[a.id]; cb.addEventListener("change", function () { if (cb.checked) sl[a.id] = 1; else delete sl[a.id]; renderAdvReq(); }); td.appendChild(cb); } },
+        { label: "Person", kind: "co", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, "Approved " + fmtDay(a.approvedAt) + (Number(a.approvedAmount) !== Number(a.amount) ? ", asked " + money(a.amount) : "")); } },
+        { label: "Purpose", cls: "desc", cell: function (a, td) { txt(td, a.purpose || ""); if (a.note) sub(td, "Approver: " + a.note); } },
+        { label: "Amount", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.approvedAmount))); } }].concat(caCashCols()).concat([
+        { label: "Status", cell: function (a, td) { td.appendChild(el("span", { class: "tag stg " + (a.wdId ? "s-printed" : "s-generated") }, a.wdId ? "Withdrawn" : "To withdraw")); if (a.wdId) sub(td, fmtDate(a.wdDate) + (a.wdRef ? " · " + a.wdRef : "")); } },
+        { label: "", kind: "act", cls: "r", cell: function (a, td) {
+            if (!arCan(a.companyId)) return; var w = el("div", { class: "acts" });
+            if (a.wdId) { var h = el("button", { class: "btn sm primary" }, "Hand Over"); h.addEventListener("click", function () { caReceive(a, "cash"); }); w.appendChild(h); var u = el("button", { class: "btn sm" }, "Undo Withdrawal"); u.addEventListener("click", function () { if (armed(u)) caUpdate(a, { wdId: null, wdDate: null, wdMode: null, wdRef: null, wdAt: null, wdBy: null }, "Withdrawal undone for " + caName(a) + "."); }); w.appendChild(u); }
+            else { var d = el("button", { class: "btn sm" }, "Pay Directly"); d.addEventListener("click", function () { caReceive(a, "neft"); }); w.appendChild(d); }
+            td.appendChild(w); } }]), rs, { sortIndex: -1 });
+      var ids = Object.keys(sl);
+      if (wd.length && arCan(c.id)) {
+        var ft = el("div", { class: "form-foot", style: "padding:10px 16px" }), all = el("button", { class: "link-btn", type: "button" }, ids.length === wd.length ? "Untick all" : "Tick all");
+        all.addEventListener("click", function () { if (ids.length === wd.length) AQ.sel[c.id] = {}; else wd.forEach(function (a) { sl[a.id] = 1; }); renderAdvReq(); });
+        var go = el("button", { class: "btn primary", type: "button" }, ids.length ? "Withdraw " + money(sum(wd.filter(function (a) { return sl[a.id]; }), amt)) : "Tick the advances to withdraw"); go.disabled = !ids.length;
+        go.addEventListener("click", function () { arWithdraw(c.id, wd.filter(function (a) { return sl[a.id]; })); });
+        ft.appendChild(go); ft.appendChild(all); card.appendChild(ft);
+      }
+    });
+    $("arRetN").textContent = rets.length ? "(" + rets.length + ")" : ""; box = $("arRet");
+    if (!rets.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nobody is returning cash.")); }
+    else sortTable(box, "arRet", [
+      { label: "Person", kind: "co", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, coLabel(a.companyId) + " · " + fmtDay(a.requestedAt)); } },
+      { label: "Returning", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.amount))); } },
+      { label: "Cash on Hand", cls: "r num", cell: function (a, td) { var cb = cashBalance(a.uid, a.companyId); txt(td, money(round2(cb.free + (Number(a.amount) || 0)))); sub(td, "Before this return"); } },
+      { label: "Note", cls: "desc", cell: function (a, td) { txt(td, a.purpose || ""); } },
+      { label: "", kind: "act", cls: "r", cell: function (a, td) { if (!arCan(a.companyId)) return; var y = el("button", { class: "btn sm primary" }, "Mark Received"); y.addEventListener("click", function () { caTakeBack(a); }); td.appendChild(y); } }
+    ], rets, { sortIndex: -1 });
+    var since = Date.now() - 14 * 864e5, done = caList().filter(function (a) { return arSees(a) && (!cid || a.companyId === cid) && ((a.status === "received" && (a.receivedAt || 0) >= since) || (a.status === "returned" && (a.returnedAt || 0) >= since)); })
+      .sort(function (a, b) { return (b.receivedAt || b.returnedAt || 0) - (a.receivedAt || a.returnedAt || 0); });
+    $("arDoneN").textContent = done.length ? "(" + done.length + ")" : ""; box = $("arDone");
+    if (!done.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nothing paid out or received back in the last 14 days.")); }
+    else sortTable(box, "arDone", [
+      { label: "Person", kind: "co", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, coLabel(a.companyId)); } },
+      { label: "What", cell: function (a, td) { var rt = a.status === "returned"; td.appendChild(el("span", { class: "tag stg s-payment" }, rt ? "Cash returned" : a.wdId ? "Handed over" : "Paid")); txt(td, ""); var m = modeInfo(a.payMode); sub(td, fmtDate(rt ? a.returnedDate : a.receivedDate) + (m ? " · " + m[1] : "") + (a.payRef ? " · " + a.payRef : "")); } },
+      { label: "Amount", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, a.status === "returned" ? "(" + money(a.returnedAmount) + ")" : money(a.approvedAmount))); } },
+      { label: "", kind: "act", cls: "r", cell: function (a, td) {
+          var rt = a.status === "returned", mine = (rt ? a.returnedBy : a.receivedBy) === meId() && Date.now() - ((rt ? a.returnedAt : a.receivedAt) || 0) < TX_DAYS * 864e5;
+          if (!(S.isAdmin || mine)) return; var u = el("button", { class: "btn sm" }, "Undo");
+          u.addEventListener("click", function () { if (rt) { if (armed(u)) caUpdate(a, { status: "returning", returnedAmount: null, returnedDate: null, returnedAt: null, returnedBy: null, returnedByName: null, payMode: null, payRef: null }, "Marked as not received yet."); } else caUndo(a, u, "approved"); });
+          td.appendChild(u); } }
+    ], done, { sortIndex: -1 });
+  }
+  /* One withdrawal from the bank for the ticked advances of a company; each is then handed over from that cash. */
+  function arWithdraw(cid, xs) {
+    if (!xs.length || AQ.busy) return;
+    var tot = round2(xs.reduce(function (s0, a) { return s0 + (Number(a.approvedAmount) || 0); }, 0)), body = el("div", { class: "mform" });
+    body.appendChild(fld("Date withdrawn", dateBox("arWdDate", todayYmd(), { max: todayYmd(), label: "Choose the date withdrawn" }), "Up to today."));
+    var md = el("select", { class: "field", id: "arWdMode" }); fillSelect(md, [["cheque", "Self cheque"], ["atm", "ATM / card"], ["counter", "At the bank counter"]], "cheque"); body.appendChild(fld("How", md));
+    body.appendChild(fld("Reference", inp("arWdRef", "", { maxlength: "60", placeholder: "Cheque number, if any" })));
+    popForm("Withdraw cash", money(tot) + " for " + coLabel(cid) + ": " + xs.map(function (a) { return caName(a) + " " + money(a.approvedAmount); }).join(", ") + ". Then hand each person their share.", body, "Withdrawn", function () {
+      errClear(body); var d = parseDate($("arWdDate").value), m = md.value, r = $("arWdRef").value.trim();
+      if (!d) { errOn("arWdDate", "Choose the date."); return false; }
+      if (m === "cheque" && !r) { errOn("arWdRef", "Enter the cheque number."); return false; }
+      var wid = newId("wd"), now = Date.now(), patch = { wdId: wid, wdDate: d, wdMode: m, wdRef: r, wdTotal: tot, wdAt: now, wdBy: meId(), updatedAt: now, updatedBy: meId() };
+      AQ.busy = true;
+      return Promise.all(xs.map(function (a) { return retry(function () { return S.db.doc("cashadv/" + a.id).update(patch); }).then(function () { S.cashadv[a.id] = Object.assign({}, a, patch); }); }))
+        .then(function () { AQ.busy = false; AQ.sel[cid] = {}; toast(money(tot) + " withdrawn for " + coLabel(cid) + ". Hand each person their share."); renderAdvReq(); renderNav(); return true; }, function (e) { AQ.busy = false; toast(explain(e)); renderAdvReq(); return false; });
+    });
   }
 
   /* ---- Voucher Checking Report tab ---- */
@@ -9202,6 +9347,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
     caList().forEach(function (a) {
       if (a.status === "received" && a.receivedDate && a.receivedDate <= R.to) { del.push("cashadv/" + a.id); count.cashadv++; addP(a.uid, a.companyId, Number(a.approvedAmount) || 0); }
+      else if (a.status === "returned" && a.returnedDate && a.returnedDate <= R.to) { del.push("cashadv/" + a.id); count.cashadv++; addP(a.uid, a.companyId, -(Number(a.returnedAmount) || 0)); }
       else if (a.status === "declined" && a.declinedAt && ymdOfMs(a.declinedAt) <= R.to) { del.push("cashadv/" + a.id); count.cashadv++; }
     });
     var pNew = {};
@@ -9438,6 +9584,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
     caList().forEach(function (a) {
       if (a.status === "received") { D("cashadv/" + a.id); count.cashadv++; addP(a.uid, a.companyId, Number(a.approvedAmount) || 0); }
+      else if (a.status === "returned") { D("cashadv/" + a.id); count.cashadv++; addP(a.uid, a.companyId, -(Number(a.returnedAmount) || 0)); }
       else if (a.status === "declined") { D("cashadv/" + a.id); count.cashadv++; }
     });
     var pOpen = {};
@@ -11474,6 +11621,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (document.querySelector(".ms-pop")) return; /* a filter list is open: redraw once it closes */
     if (t === "Payables" && !$("secPayables").hidden) { renderPayables(); return; }
     if (t === "Advance Summary" && !$("secAdvSum").hidden) { renderAdvSum(); return; }
+    if (t === "Advance Requests" && !$("secAdvReq").hidden) { renderAdvReq(); return; }
     if (t === "Transactions" && !$("secTxn").hidden) { var ta = document.activeElement; if (!(ta && $("secTxn").contains(ta) && ta.tagName === "INPUT")) renderTxn(); return; }
     if (t === "Cash Voucher") { if (!$("secVch").hidden) renderVch(); else if (!$("secVchForm").hidden && VH.id && !S.vouchers[VH.id]) backToVch(); return; }
     if (t === "Voucher Checking Report") {
@@ -11612,6 +11760,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("apDiv").addEventListener("change", function () { APV.div = this.value; renderApprovals(); });
     $("capDiv").addEventListener("change", function () { CAP.div = this.value; renderCashAppr(); });
     $("vaBack").addEventListener("click", function () { openVcr(VA.rid); }); $("vaCancel").addEventListener("click", function () { openVcr(VA.rid); }); $("vaGo").addEventListener("click", function () { goVcrApprove(this); });
+    $("arCo").addEventListener("change", renderAdvReq);
     $("mkSideV").addEventListener("click", function () { MK.side = "vendors"; renderMark(); }); $("mkSideC").addEventListener("click", function () { MK.side = "vouchers"; renderMark(); }); $("mkSideA").addEventListener("click", function () { MK.side = "advances"; renderMark(); });
     $("lgSideV").addEventListener("click", function () { LG.side = "vendors"; LG.limit = 100; renderLedger(); }); $("lgSideC").addEventListener("click", function () { LG.side = "vouchers"; LG.limit = 100; renderLedger(); });
     $("lgCo").addEventListener("change", renderLedger); $("lgQ").addEventListener("input", renderLedger);

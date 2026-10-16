@@ -139,7 +139,14 @@ provides the same calls, so the app code did not need rewriting:
   person with a login can set a new password (only the super admin can for admins).
 - **Purchasers** must have a default approver (Settings › Users); it is filled in on their new work and can be changed.
 - **Voucher numbers** are given automatically per company and financial year: `INTL-VOU001/10/26-27`.
-- **Cash advances** are paid out by the financier in Payment Entry › Advances (date, how paid, reference).
+- **Cash advances** approved go to the financier's **Payments › Advance Requests**, company by company, with what to
+  withdraw. The financier ticks advances and records one withdrawal for them (date, self cheque / ATM / counter, reference),
+  then **Hands Over** each person's share in cash; or **Pays Directly** to a person's account (NEFT, UPI, cheque) without a
+  withdrawal. Each counts in the person's balance once handed over or paid. Withdrawals can be undone before hand-over.
+- **Returning cash**: a person with cash on hand presses **Return Cash** (Expenses › Cash Advance) for all or part of it. The
+  amount is held back at once (it can't be settled by vouchers), and only the financier can mark it received (Advance
+  Requests › Cash Being Returned; they may take less). It then comes off the person's balance and their oldest cash first.
+  Stored in `cashadv/*` with `kind: "return"`, status `returning` → `returned`.
 - **Ledgers and vendors** can be uploaded from Excel (Download template / Upload Excel on their pages). Rows are
   checked, exact duplicates skipped, and every row's result is listed. Ledgers are chosen by hand on bills.
 - Every report has an **Excel** download, formatted in the KKSK colours.

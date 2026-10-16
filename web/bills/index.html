@@ -890,7 +890,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         <div class="f" id="uPinF" hidden><label for="uPin">Profile PIN</label><input class="field num" id="uPin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="4 digits"><span class="hint" id="uPinH"></span><button class="link-btn" id="uPinReset" type="button" hidden>Reset PIN</button><span class="err" id="uEPin" hidden></span></div>
         <div class="f wide" id="uLinkF" hidden><label for="uLink">Link to a Person Already Added</label><select class="field" id="uLink"></select><span class="hint">Pick the person you added without a login, if this request is theirs. Everything entered for them moves to this login.</span></div>
         <div class="f wide" id="uAppsF"><span class="lb">Apps</span>
-          <div class="uapps"><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label><label class="check"><input type="checkbox" id="uAppApr"> Approvals</label>
+          <div class="uapps"><label class="check"><input type="checkbox" id="uAppApr"> Approvals</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label>
             <div class="uapp-pp" hidden><span>Production Planning</span><select class="field" id="uPpRole" aria-label="Production Planning role"><option value="">No access</option><option value="approver">Approver</option><option value="planner">Planner</option><option value="floor">Floor Team</option></select>
               <select class="field" id="uPpRegion" aria-label="Production Planning region"><option value="">Erode and Ambur</option><option value="E">Erode</option><option value="A">Ambur</option></select></div></div>
           <span class="hint">They see only the apps given here; with one app they go straight into it. Admins get every app.</span><span class="err" id="uEApps" hidden>Give at least one app.</span></div>
@@ -1537,7 +1537,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var APP = window.BV_APP || "mnt";
   var DIVS = { mnt: { name: "Maintenance & Civil", payIn: "fin" }, re: { name: "Renewable Energy", payIn: "re" } };
   var APP_NAMES = { mnt: "Maintenance & Civil", re: "Renewable Energy", acc: "Accounts", fin: "Finance", apr: "Approvals" };
-  var APP_KEYS = ["mnt", "re", "acc", "fin", "apr"];
+  var APP_KEYS = ["apr", "acc", "fin", "re", "mnt"]; /* the order apps are listed in everywhere */
   function appName(k) { return APP_NAMES[k || APP] || ""; }
   /* The division this page works in, or null in Accounts and Finance (every division). */
   var DIV = DIVS[APP] ? APP : null;

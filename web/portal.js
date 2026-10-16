@@ -15,6 +15,8 @@
     { key: "pp", name: "Production Planning", path: "production/", desc: "Leather lots from issue to dispatch, stage updates, approvals and stock, for Erode and Ambur.",
       icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V9l6 4V9l6 4V5l6 4v12z"/><path d="M7 17h2M12 17h2M17 17h2"/></svg>' }
   ];
+  /* Apps taken off the home page for now; access already given is kept for when they come back. */
+  var HIDDEN = { pp: true };
   var ROLE_PP = { super_admin: "Super Admin", admin: "Admin", approver: "Approver", planner: "Planner", floor: "Floor Team" };
   var REGION = { E: "Erode", A: "Ambur" };
 
@@ -40,7 +42,7 @@
     /* Before the four-app split reached the database, apps.bv stood for all of them. */
     if (p.apps && p.apps.mnt === undefined && p.apps.bv) { p.apps.mnt = p.apps.acc = p.apps.fin = true; }
     if (p.apps && p.apps.apr === undefined && p.admin) p.apps.apr = true;
-    var mine = APPS.filter(function (a) { return p.apps && p.apps[a.key]; });
+    var mine = APPS.filter(function (a) { return p.apps && p.apps[a.key] && !HIDDEN[a.key]; });
     /* Not approved yet: the access request lives in Maintenance. One app: straight in. */
     if (!p.approved) { location.replace("maintenance/"); return; }
     if (mine.length === 1) { location.replace(landing(mine[0])); return; }

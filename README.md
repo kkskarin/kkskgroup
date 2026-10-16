@@ -10,7 +10,7 @@
 | `/accounts/` | Accounts: every division's accounting, ledgers, debit and credit notes, ledger books, companies | KKSK Group |
 | `/finance/` | Finance: Payment Entry and advances, payables | KKSK Group |
 | `/approvals/` | Approvals: checking reports (bill, advance and voucher checking reports) and cash advances from every division, approved by admins or recorded by the financier on their behalf | KKSK Group |
-| `/production/` (`web/production/index.html`) | Production Planning (Live on the KKSK-Production tables; Demo sample for admins) | KKSK-Production, through the hand-over |
+| `/production/` (`web/production/index.html`) | Production Planning — **hidden for now** (no tile; the address sends people home; access already given is kept) (Live on the KKSK-Production tables; Demo sample for admins) | KKSK-Production, through the hand-over |
 
 - **One page, five apps.** Maintenance, Renewable Energy, Accounts and Finance are all `web/bills/index.html`; `netlify.toml`
   serves it at each address and the address picks the app (`BV_APP`: mnt, re, acc, fin). `/bills/` (the old Bills & Vouchers)

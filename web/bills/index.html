@@ -600,7 +600,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15p
 @media (max-width:980px){.ao-split{grid-template-columns:1fr}.ao-doc{position:static;height:70vh}}
 .appsln{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:12.5px;font-weight:600;color:var(--brand-text);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:var(--surface)}
 .appsln:hover{border-color:var(--kk,#009256)}.appsln[hidden]{display:none}
-.uapps{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center}.uapp-pp{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.uapp-pp span{font-weight:600;font-size:13.5px}.uapp-pp .field{width:auto;min-width:160px}
+.uapps{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center}.uapp-pp[hidden]{display:none}.uapp-pp{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.uapp-pp span{font-weight:600;font-size:13.5px}.uapp-pp .field{width:auto;min-width:160px}
 .modesw{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--soft);flex:none}
 .modesw button{all:unset;cursor:pointer;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
 .modesw button[aria-pressed="true"]{background:var(--forest,#10281F);color:#fff}
@@ -891,7 +891,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         <div class="f wide" id="uLinkF" hidden><label for="uLink">Link to a Person Already Added</label><select class="field" id="uLink"></select><span class="hint">Pick the person you added without a login, if this request is theirs. Everything entered for them moves to this login.</span></div>
         <div class="f wide" id="uAppsF"><span class="lb">Apps</span>
           <div class="uapps"><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label><label class="check"><input type="checkbox" id="uAppApr"> Approvals</label>
-            <div class="uapp-pp"><span>Production Planning</span><select class="field" id="uPpRole" aria-label="Production Planning role"><option value="">No access</option><option value="approver">Approver</option><option value="planner">Planner</option><option value="floor">Floor Team</option></select>
+            <div class="uapp-pp" hidden><span>Production Planning</span><select class="field" id="uPpRole" aria-label="Production Planning role"><option value="">No access</option><option value="approver">Approver</option><option value="planner">Planner</option><option value="floor">Floor Team</option></select>
               <select class="field" id="uPpRegion" aria-label="Production Planning region"><option value="">Erode and Ambur</option><option value="E">Erode</option><option value="A">Ambur</option></select></div></div>
           <span class="hint">They see only the apps given here; with one app they go straight into it. Admins get every app.</span><span class="err" id="uEApps" hidden>Give at least one app.</span></div>
         <div class="f"><label for="uName">Name</label><input class="field" id="uName" data-fmt="name" maxlength="60" autocomplete="off"><span class="err" id="uEName" hidden>Enter the user's name.</span></div>
@@ -2411,7 +2411,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var a = S._adm; if (!a) return;
     if (S.tab === "Bills") { readCard(); doSave(); }
     S.isAdmin = a.a; S.isSuper = a.s; S.isAppAdmin = a.p; S._adm = null; S.actId = ""; S.myUser = null; S.myReq = null; vaStore("");
-    document.body.classList.toggle("is-admin", !!S.isAdmin); vaApps(); if (window.bvPortal) window.bvPortal().then(function (p) { var ap = p.apps || {}; $("appsLink").hidden = !(APP_KEYS.concat(["pp"]).filter(function (k) { return ap[k]; }).length > 1); }, function () {});
+    document.body.classList.toggle("is-admin", !!S.isAdmin); vaApps(); if (window.bvPortal) window.bvPortal().then(function (p) { var ap = p.apps || {}; $("appsLink").hidden = !(APP_KEYS.filter(function (k) { return ap[k]; }).length > 1); }, function () {});
     if (S.raw) applyScope(); invalidate(); renderAdminMe(); setTab(a.tab && a.tab !== "Accounts" ? a.tab : HOME_TAB);
   }
   function closeMeMenu() { var m = document.querySelector(".memenu"); if (m) m.remove(); var b = document.querySelector(".me .mebtn"); if (b) b.setAttribute("aria-expanded", "false"); document.removeEventListener("click", closeMeMenu); }
@@ -11813,7 +11813,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (window.bvSuperAdmins) window.bvSuperAdmins().then(function (l) { S.supers = l || []; }, function () { S.supers = []; });
       return S.user.me().then(function (me) {
         S.me = me || {}; startPrefs();
-        if (window.bvPortal) window.bvPortal().then(function (p) { var a = p.apps || {}; $("appsLink").hidden = !(APP_KEYS.concat(["pp"]).filter(function (k) { return a[k]; }).length > 1); }, function () {});
+        if (window.bvPortal) window.bvPortal().then(function (p) { var a = p.apps || {}; $("appsLink").hidden = !(APP_KEYS.filter(function (k) { return a[k]; }).length > 1); }, function () {});
         var box = $("me"); box.textContent = "";
         box.appendChild(el("div", { class: "nm" }, S.me.name || "Signed in")); box.appendChild(el("div", { class: "rl" }, S.me.canEdit ? "Super Admin" : "")); box.hidden = false; renderMeAvatar();
         if (!S.me.canEdit) {

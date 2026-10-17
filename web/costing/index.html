@@ -1117,7 +1117,7 @@ $("#loadChips").addEventListener("click",async e=>{const b=e.target.closest("[da
   draft.loads=draft.loads.filter(l=>l.id!==id);draft.rows=draft.rows.filter(r=>r.loadId!==id);
   saveDraft();renderStep1();renderEntry();scheduleReport();
 });
-function sortRows(){const lo=draft.loads.map(l=>l.id);draft.rows.sort((a,b)=>lo.indexOf(a.loadId)-lo.indexOf(b.loadId)||sizeList().indexOf(a.size)-sizeList().indexOf(b.size))}
+function sortRows(){const lo=draft.loads.map(l=>l.id),SZ=sizeList();draft.rows.sort((a,b)=>lo.indexOf(a.loadId)-lo.indexOf(b.loadId)||sizeRank(a.size,SZ)-sizeRank(b.size,SZ))}
 $("#sizePicks").addEventListener("change",e=>{
   const ld=e.target.dataset.ld,sz=e.target.dataset.sz; if(!ld)return;
   const key=ld+"|"+sz;
@@ -1784,17 +1784,26 @@ const DEFAULT_SIZES=["DH","XH","LH","H","SH","M","SM","BL","SL","BO","BC","MC","
 function lkOrder(map){return Object.keys(map).sort((a,b)=>((map[a].order==null?1e9:map[a].order)-(map[b].order==null?1e9:map[b].order))||String(map[a].code).localeCompare(String(map[b].code)))}
 function lookupList(map,def){const ids=lkOrder(map);return ids.length?ids.map(id=>String(map[id].code).toUpperCase()):(def||[]).slice()}
 function sizeList(){return lookupList(rhsizes,DEFAULT_SIZES)}
+function sizeRank(code,SZ){const i=(SZ||sizeList()).indexOf(String(code||"").toUpperCase());return i<0?1e9:i} /* unknown sizes sort last */
 function gradeList(){return lookupList(grades,[])}
 function lkMap(coll){return coll==="grades"?grades:rhsizes}
+const lkBusy={};
 async function addLookup(coll,code,quiet){
   code=String(code||"").trim().toUpperCase().replace(/\s+/g," ");
   if(!db){tell("Can't save here. Sign in to KKSK Group and reload.");return false}
   if(!code)return false;
+  if(!/^[A-Z0-9][A-Z0-9 .&\/+-]{0,23}$/.test(code)){tell("Use letters, numbers, spaces and . & / + - only, up to 24 characters.");return false}
+  if(lkBusy[coll])return false; /* a second Enter while the first write is on its way */
   const map=lkMap(coll);
   if(Object.keys(map).some(id=>String(map[id].code).toUpperCase()===code)){if(!quiet)tell(code+" is already in the list.");return true}
-  const order=Object.keys(map).reduce((m,id)=>Math.max(m,num(map[id].order)),0)+1;
-  try{await db.collection(coll).doc().set({code,order,updatedAt:new Date().toISOString(),by:curUser()});return true}
+  lkBusy[coll]=true;
+  try{
+    let order=Object.keys(map).reduce((m,id)=>Math.max(m,num(map[id].order)),0)+1;
+    /* the first size anyone writes seeds the standard set first, so the list never shrinks to that one code */
+    if(coll==="rhsizes"&&!Object.keys(map).length){await seedSizes();if(DEFAULT_SIZES.includes(code))return true;order=DEFAULT_SIZES.length+1}
+    await db.collection(coll).doc().set({code,order,updatedAt:new Date().toISOString(),by:curUser()});return true}
   catch(e){tell("Couldn't save. Check your permissions and connection.");return false}
+  finally{lkBusy[coll]=false}
 }
 function renderGradeOptions(){const d=$("#gradeOptions");if(d)d.innerHTML=gradeList().map(c=>'<option value="'+esc(c)+'"></option>').join("")}
 function renderLookup(coll,sel,state){
@@ -1845,20 +1854,25 @@ async function ensureGrades(codes){
   if(!db)return;const have=gradeList();
   for(const raw of codes||[]){const c=String(raw||"").trim().toUpperCase();if(!c||have.includes(c))continue;have.push(c);await addLookup("grades",c,true)}
 }
-let seedTried=false;
+let seedTried=false,metaReady=false;
+/* The standard sizes, written once; appmeta/sizes records that it was done, so a list emptied on purpose stays empty. */
+async function seedSizes(){
+  seedTried=true;const now=new Date().toISOString();
+  await db.doc("appmeta/sizes").set({seededAt:now,by:curUser()});
+  for(let i=0;i<DEFAULT_SIZES.length;i++)await db.collection("rhsizes").doc().set({code:DEFAULT_SIZES[i],order:i+1,updatedAt:now,by:curUser()});
+}
 async function maybeSeedSizes(force){
   if(seedTried||!db)return;
   if(force){try{const snap=await db.collection("rhsizes").limit(1).get();if(snap.docs.some(d=>d.exists))return}catch(_){return}} /* a restart asks the server, not the stale list */
-  else{if(rhState!=="ready"||Object.keys(rhsizes).length)return;let own=false;try{own=!!(viewer&&await viewer.isOwner())}catch(_){}if(!own)return}
-  seedTried=true;
-  try{for(let i=0;i<DEFAULT_SIZES.length;i++)await db.collection("rhsizes").doc().set({code:DEFAULT_SIZES[i],order:i+1,updatedAt:new Date().toISOString(),by:curUser()})}catch(_){seedTried=false}
+  else{if(rhState!=="ready"||!metaReady||Object.keys(rhsizes).length||appMeta.sizes)return;let own=false;try{own=!!(viewer&&await viewer.isOwner())}catch(_){}if(!own)return}
+  try{await seedSizes()}catch(_){seedTried=false}
 }
 const UKEY="rhc-unload-v1";
 let unloads={}, ulState="loading";
 const ulSubmitted=u=>u&&u.status!=="draft";
 /* A load holds only the sizes ticked for it (ul.sizes, in the lookup's order) and their pieces and weight (ul.rows). */
 function newUl(){return{id:null,status:null,loadNo:"",origin:"",date:"",sizes:[],rows:{},dirty:false}}
-function ulSortSizes(){const SZ=sizeList();ul.sizes.sort((a,b)=>{const i=SZ.indexOf(a),j=SZ.indexOf(b);return(i<0?1e9:i)-(j<0?1e9:j)||String(a).localeCompare(String(b))})}
+function ulSortSizes(){const SZ=sizeList();ul.sizes.sort((a,b)=>sizeRank(a,SZ)-sizeRank(b,SZ)||String(a).localeCompare(String(b)))}
 let ul=(()=>{try{const x=JSON.parse(localStorage.getItem(UKEY)||"null");if(x){const b=newUl();Object.assign(b,x);
   /* an older draft kept a row for every size: keep only the ones with something in them */
   b.sizes=Array.isArray(x.sizes)?x.sizes.slice():Object.keys(x.rows||{}).filter(z=>{const r=x.rows[z]||{};return r.pcs!==""&&r.pcs!=null||r.wt!==""&&r.wt!=null});
@@ -1871,26 +1885,27 @@ function renderUlForm(){
   renderUlSizePicks();
   if(!ul.sizes.length){$("#ulTbl").innerHTML='<tbody><tr><td class="muted" style="padding:10px 6px">Tick the hide sizes above to enter their pieces and weight.</td></tr></tbody>';renderUlState();return}
   let h='<thead><tr><th>Hide Size</th><th class="r">Pieces</th><th class="r">Weight (kg)</th></tr></thead><tbody>';
-  ul.sizes.forEach(z=>{const r=ul.rows[z]||{pcs:"",wt:""};h+='<tr><td class="sz">'+esc(z)+'</td><td><input type="number" min="0" step="1" inputmode="numeric" data-z="'+z+'" data-f="pcs" value="'+esc(r.pcs)+'"></td><td><input type="number" min="0" step="0.01" inputmode="decimal" data-z="'+z+'" data-f="wt" value="'+esc(r.wt)+'"></td></tr>'});
+  ul.sizes.forEach(z=>{const r=ul.rows[z]||{pcs:"",wt:""};h+='<tr><td class="sz">'+esc(z)+'</td><td><input type="number" min="0" step="1" inputmode="numeric" data-z="'+esc(z)+'" data-f="pcs" value="'+esc(r.pcs)+'"></td><td><input type="number" min="0" step="0.01" inputmode="decimal" data-z="'+esc(z)+'" data-f="wt" value="'+esc(r.wt)+'"></td></tr>'});
   h+='<tr class="tot"><td>Total</td><td id="ulTP"></td><td id="ulTW"></td></tr></tbody>';
   $("#ulTbl").innerHTML=h;updUlTotals();renderUlState();
 }
 function updUlTotals(){const t=ulTotals(),a=$("#ulTP"),b=$("#ulTW");if(a)a.textContent=t.p?ig(t.p):"";if(b)b.textContent=t.w?igkg(t.w):""}
 function renderUlSizePicks(){
   const box=$("#ulSizePicks");if(!box)return;
-  box.innerHTML=sizeList().map(z=>{const on=ul.sizes.includes(z);return'<label class="pick'+(on?" on":"")+'"><input type="checkbox" data-ulsz="'+esc(z)+'"'+(on?" checked":"")+"><b>"+esc(z)+"</b></label>"}).join("")||'<span class="muted">No RH sizes yet. Add one below, or under Data › RH Sizes.</span>';
+  const codes=sizeList();ul.sizes.forEach(z=>{if(!codes.includes(z))codes.push(z)}); /* a size this load holds that left the list can still be unticked */
+  box.innerHTML=codes.map(z=>{const on=ul.sizes.includes(z);return'<label class="pick'+(on?" on":"")+'"><input type="checkbox" data-ulsz="'+esc(z)+'"'+(on?" checked":"")+"><b>"+esc(z)+"</b></label>"}).join("")||'<span class="muted">No RH sizes yet. Add one below, or under Data › RH Sizes.</span>';
 }
 $("#ulSizePicks").addEventListener("change",e=>{
   const z=e.target.dataset.ulsz;if(!z)return;
   if(e.target.checked){if(!ul.sizes.includes(z)){ul.sizes.push(z);ulSortSizes()}if(!ul.rows[z])ul.rows[z]={pcs:"",wt:""}}
   else{const r=ul.rows[z]||{};if(String(r.pcs)!==""&&r.pcs!=null||String(r.wt)!==""&&r.wt!=null){tell("Pieces or weight are entered for "+z+". Clear them first.");e.target.checked=true;return}ul.sizes=ul.sizes.filter(x=>x!==z);delete ul.rows[z]}
-  markUl();renderUlForm();const f=document.querySelector('#ulTbl input[data-z="'+z+'"][data-f="pcs"]');if(e.target.checked&&f)f.focus();
+  markUl();renderUlForm();const f=document.querySelector('#ulTbl input[data-z="'+CSS.escape(z)+'"][data-f="pcs"]');if(e.target.checked&&f)f.focus();
 });
 async function ulAddNewSize(){
   const i=$("#ulNewSize"),code=(i.value||"").trim().toUpperCase().replace(/\s+/g," ");if(!code)return;
   if(!sizeList().includes(code)&&!await addLookup("rhsizes",code,true))return;
   if(!ul.sizes.includes(code)){ul.sizes.push(code);ulSortSizes();ul.rows[code]=ul.rows[code]||{pcs:"",wt:""};markUl()}
-  i.value="";renderUlForm();const f=document.querySelector('#ulTbl input[data-z="'+code+'"][data-f="pcs"]');if(f)f.focus();
+  i.value="";renderUlForm();const f=document.querySelector('#ulTbl input[data-z="'+CSS.escape(code)+'"][data-f="pcs"]');if(f)f.focus();
 }
 $("#ulNewSizeBtn").onclick=ulAddNewSize;
 $("#ulNewSize").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();ulAddNewSize()}});
@@ -1918,7 +1933,7 @@ $("#ulTbl").addEventListener("input",e=>{
 // Enter moves down the column for quick entry
 $("#ulTbl").addEventListener("keydown",e=>{
   if(e.key!=="Enter")return;const z=e.target.dataset.z,f=e.target.dataset.f;if(!z)return;e.preventDefault();
-  const SZ=ul.sizes,i=SZ.indexOf(z);const nx=i<SZ.length-1?document.querySelector('#ulTbl input[data-z="'+SZ[i+1]+'"][data-f="'+f+'"]'):(f==="pcs"&&SZ.length?document.querySelector('#ulTbl input[data-z="'+SZ[0]+'"][data-f="wt"]'):$("#ulSubmit"));
+  const SZ=ul.sizes,i=SZ.indexOf(z);const nx=i<SZ.length-1?document.querySelector('#ulTbl input[data-z="'+CSS.escape(SZ[i+1])+'"][data-f="'+f+'"]'):(f==="pcs"&&SZ.length?document.querySelector('#ulTbl input[data-z="'+CSS.escape(SZ[0])+'"][data-f="wt"]'):$("#ulSubmit"));
   nx&&nx.focus();nx&&nx.select&&nx.select();
 });
 function ulValidate(submit){
@@ -2109,7 +2124,7 @@ function renderReport(force){
       const g=agg[k];g.hides+=hides;g.tanned+=aCnt(a,row.key,t);if(P){g.raw+=hides*num(row.rawWt)/P;g.pelt+=hides*aPelt(a,row)/P}
     })});
   const sizeCount={};order.forEach(k=>sizeCount[agg[k].size]=(sizeCount[agg[k].size]||0)+1);
-  {const SZ=sizeList();order.sort((x,y)=>SZ.indexOf(agg[x].size)-SZ.indexOf(agg[y].size))}
+  {const SZ=sizeList();order.sort((x,y)=>sizeRank(agg[x].size,SZ)-sizeRank(agg[y].size,SZ))}
   const srows=order.map(k=>{const g=agg[k];return{label:g.size+(sizeCount[g.size]>1?" ("+g.loadNo+")":""),hides:g.hides,rawPc:g.hides?g.raw/g.hides:0,peltPc:g.hides?g.pelt/g.hides:0,tanned:g.tanned}}).filter(x=>x.hides||x.tanned);
   const H=srows.reduce((s,x)=>s+x.hides,0),RW=H?srows.reduce((s,x)=>s+x.hides*x.rawPc,0)/H:0,PW=H?srows.reduce((s,x)=>s+x.hides*x.peltPc,0)/H:0;
   const c=compute(pmap,sh);
@@ -2362,12 +2377,14 @@ async function destroyFlow(pw){
   if((await hashPw(again,DSALT))!==DP)return fail();
   $("#authBody").innerHTML='<h2 class="auth-title">Please wait…</h2><p class="auth-sub" id="wipeProg">Working</p>';$("#authBody").dataset.mode="wipe";
   try{
+    const at=new Date().toISOString();
+    await db.doc("appmeta/wipe").set({at,dormant:true,startedAt:at}); /* shut for everyone first, so nothing new is written while the sweep runs */
     await sweepWiped(()=>{$("#wipeProg").textContent="Working…"});
     await db.doc("appmeta/destroy").set({fails:[],locked:false,lockedAt:null,lastRun:new Date().toISOString()});
-    await db.doc("appmeta/wipe").set({at:new Date().toISOString(),dormant:true});
+    await db.doc("appmeta/wipe").set({at,dormant:true,startedAt:at,finishedAt:new Date().toISOString()});
     clearLocal();
     errorPage();
-  }catch(e){$("#authBody").innerHTML='<h2 class="auth-title">Couldn\'t finish</h2><p class="auth-sub">Some records may be left. Check your connection, then run it again.</p><button class="btn primary auth-btn" id="auDone" type="button">Back to Sign In</button>';$("#auDone").onclick=()=>{$("#authBody").dataset.mode="";renderAuth()}}
+  }catch(e){$("#authBody").innerHTML='<h2 class="auth-title">Couldn\'t finish</h2><p class="auth-sub">The app is shut. Whatever is left is cleared when an admin restarts it.</p><button class="btn primary auth-btn" id="auDone" type="button">Back to Sign In</button>';$("#auDone").onclick=()=>{$("#authBody").dataset.mode="";renderAuth()}}
 }
 // Every device clears its own unsent drafts once it sees a wipe.
 function clearLocal(){
@@ -2453,7 +2470,7 @@ function hideToast(){$("#toast").classList.remove("show")}
     db.collection("costsheets").onSnapshot(snap=>{
       sheets=docs(snap);dbState="ready";
       {const s0=csEd&&csEd.id&&sheets[csEd.id];if(s0&&sheetSubmitted(s0)&&!csEd.dirty&&!csEd.editSub){csEd=edFrom("sheet",null,null);if(ed&&ed.mode==="sheet")ed=csEd;keepCs();if(ed===csEd)fillEditor()}}
-      renderSheetSelect();renderPicks();renderEntry();renderCsList();renderCsState();renderOrigins();scheduleReport();
+      renderSheetSelect();renderPicks();renderEntry();renderCsList();renderCsState();renderOrigins();if(currentSub==="grades")renderGrades();scheduleReport();
     },()=>{dbState="error";renderSheetSelect();$("#csList").innerHTML='<p class="note err">Cost sheets stopped loading. Reload the page to try again.</p>'});
     db.collection("assortments").orderBy("updatedAt","desc").limit(1000).onSnapshot(snap=>{
       reports=docs(snap);repState="ready";
@@ -2463,12 +2480,15 @@ function hideToast(){$("#toast").classList.remove("show")}
     db.collection("unloadings").orderBy("updatedAt","desc").limit(1000).onSnapshot(snap=>{
       unloads=docs(snap);ulState="ready";
       {const r=ul.id&&unloads[ul.id];if(r&&ulSubmitted(r)&&!ul.dirty&&!ul.editSub){ul=newUl();keepUl();renderUlForm()}}
-      renderUlList();renderUlState();renderStep1();renderOrigins();scheduleReport();
+      renderUlList();renderUlState();renderStep1();renderOrigins();if(currentSub==="rhsizes")renderRhSizes();scheduleReport();
     },()=>{ulState="error";$("#ulList").innerHTML='<p class="note err">Saved lots stopped loading. Reload the page to try again.</p>'});
-    db.collection("appmeta").onSnapshot(snap=>{appMeta=docs(snap);onMeta()},()=>{});
+    db.collection("appmeta").onSnapshot(snap=>{appMeta=docs(snap);metaReady=true;onMeta();maybeSeedSizes()},()=>{});
     db.collection("appusers").onSnapshot(snap=>{appUsers=docs(snap);usersState="ready";onUsers()},()=>{usersState="error";renderAuth()});
     db.collection("grades").limit(1000).onSnapshot(snap=>{grades=docs(snap);grState="ready";renderGradeOptions();prefillGrades();if(currentSub==="grades")renderGrades()},()=>{grState="error";if(currentSub==="grades")renderGrades()});
-    db.collection("rhsizes").limit(1000).onSnapshot(snap=>{rhsizes=docs(snap);rhState="ready";maybeSeedSizes();ulSortSizes();if(currentTab==="unload")renderUlForm();if(currentSub==="rhsizes")renderRhSizes();renderStep1()},()=>{rhState="error";if(currentSub==="rhsizes")renderRhSizes()});
+    db.collection("rhsizes").limit(1000).onSnapshot(snap=>{rhsizes=docs(snap);rhState="ready";maybeSeedSizes();ulSortSizes();
+      const a=document.activeElement,inside=(sel)=>{const t=$(sel);return!!(a&&t&&t.contains(a))}; /* never pull the keyboard out from under someone typing */
+      if(currentTab==="unload"){if(inside("#ulTbl"))renderUlSizePicks();else renderUlForm()}
+      if(currentSub==="rhsizes")renderRhSizes();if(currentTab==="report"&&!inside("#rowTbl"))renderStep1()},()=>{rhState="error";if(currentSub==="rhsizes")renderRhSizes()});
     db.collection("origins").limit(1000).onSnapshot(snap=>{
       origins=docs(snap);origState="ready";renderOrigins();checkUlOrigin();if(ed===csEd)renderEdOrigins();
     },()=>{origState="error";$("#orgList").innerHTML='<p class="note err">Origins stopped loading. Reload the page to try again.</p>'});

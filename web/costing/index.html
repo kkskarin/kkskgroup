@@ -397,6 +397,7 @@ body.locked .topbar,body.locked main,body.locked #printSheet{display:none !impor
   .btn{min-height:44px}
   .btn.small{min-height:36px}
   .rf{grid-template-columns:1fr}
+  .row2{grid-template-columns:1fr} /* date boxes can't shrink side by side on a phone */
   .org-add{flex-wrap:wrap}.org-add input{flex:1 1 100% !important}
   .org-row{flex-wrap:wrap}.org-row b{min-width:0}
   .tally{grid-template-columns:1fr 1fr 1fr;gap:6px}
@@ -587,9 +588,9 @@ input:hover,select:hover{border-color:#a9bbc1}
   #printSheet img{display:block;width:auto;height:auto;max-width:100%;max-height:calc(100vw * 1.36);margin:0 auto}
   body>*:not(main){display:none !important}
   main{padding:0 !important;margin:0 !important;max-width:none !important}
-  main>section:not(#view-reports){display:none !important}
-  .no-print,.savebar,#view-reports .side{display:none !important}
-  #view-reports .split{display:block !important}
+  main>section:not(#view-costing){display:none !important}
+  .no-print,.savebar,#view-costing .side{display:none !important}
+  #view-costing .split{display:block !important}
   #report-step{border:0 !important;margin:0 !important;padding:0 !important;background:#fff !important;box-shadow:none !important}
   #report-step>header{display:none !important}
   #report-step>.body{padding:0 !important}
@@ -624,8 +625,9 @@ input:hover,select:hover{border-color:#a9bbc1}
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button role="tab" aria-selected="false" data-tab="unload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg><span class="tl">Unloading</span><span class="ts">Unloading</span></button>
     <button role="tab" aria-selected="true" data-tab="report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M14 17h6M17 14v6"/></svg><span class="tl">Assortment</span><span class="ts">Assortment</span></button>
+    <button role="tab" aria-selected="false" data-tab="costing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 17v-3M12 17v-6M15 17v-4"/></svg><span class="tl">Costing</span><span class="ts">Costing</span></button>
     <button role="tab" aria-selected="false" data-tab="sheet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M3.5 14h17M9.5 9v11"/></svg><span class="tl">Cost Sheet</span><span class="ts">Cost Sheet</span></button>
-    <button role="tab" aria-selected="false" data-tab="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 17v-3M12 17v-6M15 17v-4"/></svg><span class="tl">Reports</span><span class="ts">Reports</span></button>
+    <button role="tab" aria-selected="false" data-tab="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg><span class="tl">Reports</span><span class="ts">Reports</span></button>
   </nav>
   </div>
 </div>
@@ -732,50 +734,8 @@ input:hover,select:hover{border-color:#a9bbc1}
   </div>
 </section>
 
-<section id="view-reports" hidden>
-  <nav class="subtabs no-print" role="tablist" aria-label="Reports">
-    <button role="tab" data-sub="ulrep">Unloading Reports</button>
-    <button role="tab" data-sub="asrep">Assortment Reports</button>
-    <button role="tab" data-sub="costing" aria-selected="true">Costing Report</button>
-    <button role="tab" data-sub="csrep">Cost Sheets</button>
-    <button role="tab" data-sub="origins">Origins</button>
-    <button role="tab" data-sub="grades">Grades</button>
-    <button role="tab" data-sub="rhsizes">RH Sizes</button>
-    <button role="tab" data-sub="users" hidden>Users</button>
-  </nav>
-  <div class="pagehead"><h2>Reports</h2><p>Submitted loads, lots and cost sheets, and the costing report for printing.</p></div>
-
-  <div id="sub-ulrep" hidden>
-    <div class="step">
-      <header><h2>Unloading reports</h2><span class="aside" id="ulRepCount"></span></header>
-      <div class="body">
-        <div class="filters">
-          <label class="f">Search<input id="ulrQ" type="text" placeholder="Load no."></label>
-          <label class="f">Origin<select id="ulrOrigin"></select></label>
-          <label class="f">From<input id="ulrFrom" type="date"></label>
-          <label class="f">To<input id="ulrTo" type="date"></label>
-        </div>
-        <div id="ulRepList" class="rep-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="sub-asrep" hidden>
-    <div class="step">
-      <header><h2>Assortment reports</h2><span class="aside" id="asRepCount"></span></header>
-      <div class="body">
-        <div class="filters">
-          <label class="f">Search<input id="asrQ" type="text" placeholder="Lot or load no."></label>
-          <label class="f">Origin<select id="asrOrigin"></select></label>
-          <label class="f">From<input id="asrFrom" type="date"></label>
-          <label class="f">To<input id="asrTo" type="date"></label>
-        </div>
-        <div id="asRepList" class="rep-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="sub-costing">
+<section id="view-costing" hidden>
+  <div class="pagehead"><h2>Costing</h2><p>The costing report for an origin and period: pick the lots and loads, check it, then print or download it.</p></div>
   <div class="split">
     <aside class="step side no-print">
       <header><h2>Report filters</h2></header>
@@ -805,6 +765,48 @@ input:hover,select:hover{border-color:#a9bbc1}
       </div>
     </div>
   </div>
+</section>
+
+<section id="view-reports" hidden>
+  <nav class="subtabs no-print" role="tablist" aria-label="Reports">
+    <button role="tab" data-sub="origins" aria-selected="true">Origins</button>
+    <button role="tab" data-sub="rhsizes">RH Sizes</button>
+    <button role="tab" data-sub="grades">Grades</button>
+    <button role="tab" data-sub="csrep">Cost Sheets</button>
+    <button role="tab" data-sub="ulrep">Unloading Reports</button>
+    <button role="tab" data-sub="asrep">Assortment Reports</button>
+    <button role="tab" data-sub="users" hidden>Users</button>
+  </nav>
+  <div class="pagehead"><h2>Reports</h2><p>Origins, RH sizes and grades, and the submitted cost sheets, loads and assortments.</p></div>
+
+  <div id="sub-ulrep" hidden>
+    <div class="step">
+      <header><h2>Unloading reports</h2><span class="aside" id="ulRepCount"></span></header>
+      <div class="body">
+        <div class="filters">
+          <label class="f">Search<input id="ulrQ" type="text" placeholder="Load no."></label>
+          <label class="f">Origin<select id="ulrOrigin"></select></label>
+          <label class="f">From<input id="ulrFrom" type="date"></label>
+          <label class="f">To<input id="ulrTo" type="date"></label>
+        </div>
+        <div id="ulRepList" class="rep-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sub-asrep" hidden>
+    <div class="step">
+      <header><h2>Assortment reports</h2><span class="aside" id="asRepCount"></span></header>
+      <div class="body">
+        <div class="filters">
+          <label class="f">Search<input id="asrQ" type="text" placeholder="Lot or load no."></label>
+          <label class="f">Origin<select id="asrOrigin"></select></label>
+          <label class="f">From<input id="asrFrom" type="date"></label>
+          <label class="f">To<input id="asrTo" type="date"></label>
+        </div>
+        <div id="asRepList" class="rep-list"></div>
+      </div>
+    </div>
   </div>
 
   <div id="sub-csrep" hidden>
@@ -1018,6 +1020,7 @@ const TYPES={C:"Chrome",F:"Chrome Free",B:"Chrome & Chrome Free"};
 
 let db=null, dbState="loading", sheets={};
 let origins={}, origState="loading";
+let rhsizes={}, grades={}, rhState="loading", grState="loading"; /* the Grades and RH Sizes lookups (see below) */
 let draft=loadDraft()||newDraft();
 let undoStack=[];
 let lastAdded=null;
@@ -1401,10 +1404,18 @@ function renderEntry(){
 // One editor (#edCore) is moved between the Cost Sheet tab and the dialog, so both use the same table code.
 const CSKEY="rhc-cs-v1";
 let ed=null, csEd=null;
-function blankSheet(){return{name:"",bounds:[10,12,15,18,25,30,35],grades:[{code:"",rates:new Array(8).fill(null)}],tc:new Array(8).fill(null),ptc:new Array(8).fill(0),origins:[]}}
+/* A new sheet opens with every grade from the Grades list, in that order; a saved sheet's grades are shown in that order too. */
+function blankSheet(){const gl=gradeList();return{name:"",bounds:[10,12,15,18,25,30,35],grades:(gl.length?gl:[""]).map(c=>({code:c,rates:new Array(8).fill(null)})),tc:new Array(8).fill(null),ptc:new Array(8).fill(0),origins:[]}}
+function sortGradesByLookup(gs){const gl=gradeList();if(!gl.length)return gs;return gs.slice().sort((a,b)=>{const i=gl.indexOf(String(a.code||"").trim().toUpperCase()),j=gl.indexOf(String(b.code||"").trim().toUpperCase());return(i<0?1e9:i)-(j<0?1e9:j)})}
+/* Grade codes that appear more than once in a sheet. */
+function dupCodes(gs){const seen={},d=[];(gs||[]).forEach(g=>{const c=String(g.code||"").trim().toUpperCase();if(!c)return;if(seen[c]&&!d.includes(c))d.push(c);seen[c]=1});return d}
+function dupMsgs(gs){return dupCodes(gs).map(c=>"Grade "+c+" is already in this sheet. Each grade can appear only once.")}
+/* An untouched new sheet keeps mirroring the Grades list until something is typed into it. */
+function csPristine(){return!!(csEd&&csEd.mode==="sheet"&&!csEd.id&&!csEd.dirty&&!String(csEd.data.name||"").trim()&&csEd.data.grades.every(g=>(g.rates||[]).every(v=>v==null||v==="")))}
+function prefillGrades(){if(!csPristine())return;const gl=gradeList();if(!gl.length)return;const R0=csEd.data.bounds.length+1;csEd.data.grades=gl.map(c=>({code:c,rates:new Array(R0).fill(null)}));keepCs();if(ed===csEd)renderEdTable()}
 function sheetSubmitted(s){return s&&s.status!=="draft"}
 function edFrom(mode,id,src){const d=clone(src||blankSheet());return{mode,id:id||null,status:src&&src.status||null,dirty:false,updatedAt:d.updatedAt||"",
-  data:{name:d.name||"",bounds:d.bounds||[],grades:d.grades||[],tc:d.tc||[],ptc:d.ptc||[],origins:(d.origins||[]).map(x=>String(x).toUpperCase())}}}
+  data:{name:d.name||"",bounds:d.bounds||[],grades:sortGradesByLookup(d.grades||[]),tc:d.tc||[],ptc:d.ptc||[],origins:(d.origins||[]).map(x=>String(x).toUpperCase())}}}
 csEd=(()=>{try{const x=JSON.parse(localStorage.getItem(CSKEY)||"null");if(x&&x.data)return x}catch(e){}return edFrom("sheet",null,null)})();
 ed=csEd;
 let csT=null;function keepCs(){if(ed!==csEd)return;clearTimeout(csT);csT=setTimeout(()=>{try{localStorage.setItem(CSKEY,JSON.stringify(csEd))}catch(e){}},300)}
@@ -1447,10 +1458,13 @@ function renderEdTable(){
   h+='<tr><td><b>PTC</b></td>'+Array.from({length:R},(_,i)=>'<td><input type="number" step="0.01" min="0" inputmode="decimal" data-k="ptc:'+i+'" value="'+cell(d.ptc[i])+'"></td>').join("")+"<td></td></tr></tbody>";
   $("#edTbl").innerHTML=h;
 }
+function dupCheck(){const d=ed.data,dups=dupCodes(d.grades);
+  document.querySelectorAll("#edTbl input.code").forEach((inp,i)=>{const c=String(d.grades[i]&&d.grades[i].code||"").trim().toUpperCase();inp.classList.toggle("bad",!!c&&dups.includes(c))});
+  showEdErr(dupMsgs(d.grades));return dups.length}
 function pnum(v){if(v===""||v==null)return null;const n=parseFloat(v);return isFinite(n)?n:NaN}
 $("#edTbl").addEventListener("input",e=>{
   const k=e.target.dataset.k; if(!k||!ed)return; const p=k.split(":"), d=ed.data, v=e.target.value;
-  if(p[0]==="c"){const u=v.toUpperCase();if(u!==v){const q=e.target.selectionStart;e.target.value=u;try{e.target.setSelectionRange(q,q)}catch(_){}}d.grades[+p[1]].code=u.trim();markCs();return}
+  if(p[0]==="c"){const u=v.toUpperCase();if(u!==v){const q=e.target.selectionStart;e.target.value=u;try{e.target.setSelectionRange(q,q)}catch(_){}}d.grades[+p[1]].code=u.trim();markCs();dupCheck();return}
   const n=pnum(v); e.target.classList.toggle("bad",n!=null&&(isNaN(n)||n<0));
   if(p[0]==="b")d.bounds[+p[1]]=n; else if(p[0]==="r")d.grades[+p[1]].rates[+p[2]]=n; else if(p[0]==="tc")d.tc[+p[1]]=n; else if(p[0]==="ptc")d.ptc[+p[1]]=n;
   markCs();
@@ -1474,7 +1488,7 @@ function validate(d){
   if(!d.grades.length)e.push("Add at least one grade.");
   const seen={};
   d.grades.forEach((g,gi)=>{
-    const c=g.code.trim(); if(!c)e.push("Grade in row "+(gi+1)+" has no name.");else if(seen[c.toUpperCase()])e.push("Grade "+c+" appears twice.");seen[c.toUpperCase()]=1;
+    const c=g.code.trim(); if(!c)e.push("Grade in row "+(gi+1)+" has no name.");else if(seen[c.toUpperCase()])e.push("Grade "+c+" is already in this sheet. Each grade can appear only once.");seen[c.toUpperCase()]=1;
     for(let i=0;i<R;i++){const v=g.rates[i];if(v==null||isNaN(v))e.push("Rate for "+(c||"row "+(gi+1))+" in "+rangeLabel(d.bounds,i)+" is blank.");else if(v<0)e.push("Rate for "+c+" in "+rangeLabel(d.bounds,i)+" is negative.")}
   });
   for(let i=0;i<R;i++){const t=d.tc[i],p=d.ptc[i];
@@ -1521,7 +1535,7 @@ async function saveCs(submit){
   if(!db){tell("Cost sheets can't be saved here. Sign in to KKSK Group and reload.");return}
   if(ed!==csEd)return;
   const data=cleanSheet();
-  const errs=submit?validate(data):(data.name?[]:["Give the cost sheet a reference name."]);
+  const errs=submit?validate(data):(data.name?[]:["Give the cost sheet a reference name."]).concat(dupMsgs(data.grades));
   if(submit&&!data.origins.length)errs.push("Link at least one origin, so assortments of that origin pull this sheet.");
   if(errs.length){csNote("<b>"+(submit?"Can't submit yet:":"Can't save yet:")+"</b><br>"+errs.map(esc).join("<br>"),"err");$("#csMsg").scrollIntoView({block:"center",behavior:"smooth"});return}
   const dup=Object.keys(sheets).find(id=>id!==csEd.id&&String(sheets[id].name).trim().toUpperCase()===data.name.toUpperCase());
@@ -1576,10 +1590,11 @@ $("#csrQ").addEventListener("input",renderCsRep);
 $("#csRepList").addEventListener("click",e=>{const a=e.target.closest("[data-editcs]"),d=e.target.closest("[data-delcsr]");if(a){showTab("sheet");openCs(a.dataset.editcs)}if(d)deleteCs(d.dataset.delcsr)});
 
 /* ---------- tabs ---------- */
-var currentTab="report", currentSub="costing";
+var currentTab="report", currentSub="origins";
 function showTab(t){
   document.querySelectorAll("[data-tab]").forEach(x=>x.setAttribute("aria-selected",x.dataset.tab===t?"true":"false"));
-  currentTab=t;["unload","report","sheet","reports"].forEach(v=>$("#view-"+v).hidden=v!==t);
+  currentTab=t;["unload","report","costing","sheet","reports"].forEach(v=>$("#view-"+v).hidden=v!==t);
+  if(t==="costing")renderReport(true);
   if(t==="report"){renderSavedList();renderStep1();renderSheetSelect()}
   if(t==="unload")renderUl();
   if(t==="sheet")renderCs();
@@ -1588,9 +1603,9 @@ function showTab(t){
 }
 function showSub(s){
   currentSub=s;document.querySelectorAll("[data-sub]").forEach(x=>x.setAttribute("aria-selected",x.dataset.sub===s?"true":"false"));
-  if(s==="users"&&!isAdmin())s="costing";currentSub=s;document.querySelectorAll("[data-sub]").forEach(x=>x.setAttribute("aria-selected",x.dataset.sub===s?"true":"false"));
-  ["costing","ulrep","asrep","csrep","origins","grades","rhsizes","users"].forEach(v=>$("#sub-"+v).hidden=v!==s);if(s==="users")renderUsers();if(s==="grades")renderGrades();if(s==="rhsizes")renderRhSizes();
-  if(s==="costing")renderReport(true);if(s==="ulrep")renderUlRep();if(s==="asrep")renderAsRep();if(s==="csrep")renderCsRep();if(s==="origins")renderOrigins();
+  if(s==="users"&&!isAdmin())s="origins";currentSub=s;document.querySelectorAll("[data-sub]").forEach(x=>x.setAttribute("aria-selected",x.dataset.sub===s?"true":"false"));
+  ["ulrep","asrep","csrep","origins","grades","rhsizes","users"].forEach(v=>$("#sub-"+v).hidden=v!==s);if(s==="users")renderUsers();if(s==="grades")renderGrades();if(s==="rhsizes")renderRhSizes();
+  if(s==="ulrep")renderUlRep();if(s==="asrep")renderAsRep();if(s==="csrep")renderCsRep();if(s==="origins")renderOrigins();
 }
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 document.querySelectorAll("[data-sub]").forEach(b=>b.onclick=()=>showSub(b.dataset.sub));
@@ -1807,7 +1822,6 @@ $("#orgList").addEventListener("click",async e=>{
 /* Grades and RH sizes are lookups (wb_grades, wb_rhsizes): a code and its place in the order. RH sizes fall back to the
    standard set until the lookup is filled; the Super Admin's first visit seeds it with these in this order. */
 const DEFAULT_SIZES=["DH","XH","LH","H","SH","M","SM","BL","SL","BO","BC","MC","SC","KI","R"];
-let rhsizes={}, grades={}, rhState="loading", grState="loading";
 function lkOrder(map){return Object.keys(map).sort((a,b)=>((map[a].order==null?1e9:map[a].order)-(map[b].order==null?1e9:map[b].order))||String(map[a].code).localeCompare(String(map[b].code)))}
 function lookupList(map,def){const ids=lkOrder(map);return ids.length?ids.map(id=>String(map[id].code).toUpperCase()):(def||[]).slice()}
 function sizeList(){return lookupList(rhsizes,DEFAULT_SIZES)}
@@ -2068,7 +2082,7 @@ $("#asRepList").addEventListener("click",e=>{
   if(c){const r=reports[c.dataset.costr];if(!r)return;const lot=lotOf(r);
     rp.origin=String((r.origins||[])[0]||"").toUpperCase();rp.from="";rp.to="";rp.off=[];rp.subOnly=false;
     const ks=new Set();matchingAsr(true).forEach(({r:x})=>{if((x.data.rows||[]).some(y=>y.origin===rp.origin))ks.add(lotOf(x))});
-    rp.offLots=[...ks].filter(k=>k!==lot);keepRp();showSub("costing")}
+    rp.offLots=[...ks].filter(k=>k!==lot);keepRp();showTab("costing")}
 });
 
 /* ---------- origin reports (built from saved assortments) ---------- */
@@ -2148,9 +2162,9 @@ function measureBlock(html){
   const inner=h.firstChild,r={w:inner.scrollWidth,h:inner.scrollHeight};h.remove();return r;
 }
 let reportStale=true;
-function scheduleReport(){reportStale=true;if(!$("#view-reports").hidden&&!$("#sub-costing").hidden){cancelAnimationFrame(rT);rT=requestAnimationFrame(()=>renderReport())}}
+function scheduleReport(){reportStale=true;if(!$("#view-costing").hidden){cancelAnimationFrame(rT);rT=requestAnimationFrame(()=>renderReport())}}
 function renderReport(force){
-  if(!force&&($("#view-reports").hidden||$("#sub-costing").hidden)){reportStale=true;return}
+  if(!force&&$("#view-costing").hidden){reportStale=true;return}
   reportStale=false;
   renderReportFilters();
   const el=$("#report"),checks=[];
@@ -2324,7 +2338,7 @@ function unlockApp(){
   document.body.classList.remove("locked");$("#authBody").dataset.mode="";
   $("#whoName").textContent=curUser();$("#whoAv").textContent=curUser().slice(0,2);$("#whoRole").textContent=isAdmin()?"Admin":"User";$("#who").hidden=false;
   document.querySelector('[data-sub="users"]').hidden=!isAdmin();
-  if(!isAdmin()&&currentSub==="users")showSub("costing");
+  if(!isAdmin()&&currentSub==="users")showSub("origins");
 }
 function signOut(msg){
   session=null;try{sessionStorage.removeItem(SKEY)}catch(e){}
@@ -2528,7 +2542,7 @@ function hideToast(){$("#toast").classList.remove("show")}
     },()=>{ulState="error";$("#ulList").innerHTML='<p class="note err">Saved lots stopped loading. Reload the page to try again.</p>'});
     db.collection("appmeta").onSnapshot(snap=>{appMeta=docs(snap);onMeta()},()=>{});
     db.collection("appusers").onSnapshot(snap=>{appUsers=docs(snap);usersState="ready";onUsers()},()=>{usersState="error";renderAuth()});
-    db.collection("grades").limit(1000).onSnapshot(snap=>{grades=docs(snap);grState="ready";renderGradeOptions();if(currentSub==="grades")renderGrades()},()=>{grState="error";if(currentSub==="grades")renderGrades()});
+    db.collection("grades").limit(1000).onSnapshot(snap=>{grades=docs(snap);grState="ready";renderGradeOptions();prefillGrades();if(currentSub==="grades")renderGrades()},()=>{grState="error";if(currentSub==="grades")renderGrades()});
     db.collection("rhsizes").limit(1000).onSnapshot(snap=>{rhsizes=docs(snap);rhState="ready";maybeSeedSizes();ulSortSizes();if(currentTab==="unload")renderUlForm();if(currentSub==="rhsizes")renderRhSizes();renderStep1()},()=>{rhState="error";if(currentSub==="rhsizes")renderRhSizes()});
     db.collection("origins").limit(1000).onSnapshot(snap=>{
       origins=docs(snap);origState="ready";renderOrigins();checkUlOrigin();if(ed===csEd)renderEdOrigins();renderUlRep();renderAsRep();

@@ -752,8 +752,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         <div class="note" id="rqDeclined" hidden>Your last request was declined by the admin. You can send a new one.</div>
         <div class="f"><label for="rqName">Your name</label><input class="field" id="rqName" data-fmt="name" maxlength="60" autocomplete="name"><span class="err" id="rqEName" hidden>Type your name.</span></div>
         <div class="f"><label for="rqLoc">Location</label><select class="field" id="rqLoc"></select><span class="err" id="rqELoc" hidden>Choose your location.</span></div>
-        <div class="f wide"><span class="lb">Your role</span><div class="checks" id="rqJobs"></div><span class="hint">Tick every role that applies.</span><span class="err" id="rqJobsE" hidden>Tick at least one role.</span></div>
-        <div class="f"><span class="lb">Companies you need access to</span><div class="checks" id="rqCos"></div><span class="err" id="rqECos" hidden>Tick at least one company.</span></div>
+        <div class="f wide"><span class="lb">Your role</span><div class="checks" id="rqJobs"></div><span class="hint">Tick every role that applies, or Not Sure.</span><span class="err" id="rqJobsE" hidden>Tick at least one role, or Not Sure.</span></div>
+        <div class="f wide"><span class="lb">Companies you need access to</span><div class="checks" id="rqCos"></div><span class="err" id="rqECos" hidden>Tick at least one company, or Not Sure.</span></div>
         <div><button class="btn primary" id="rqSend">Send request</button></div>
       </div>
     </div>
@@ -2043,7 +2043,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var rq = $("reqList"), ul = $("userList"); rq.textContent = ""; ul.textContent = ""; renderAdmins(ps);
       if (!pend.length) rq.appendChild(el("div", { class: "empty" }, "No requests waiting."));
       pend.forEach(function (r) {
-        var rx = el("span", { class: "ln" }, "Requested " + stamp(r.at) + (r.accountedFor ? " by " + (pnm(r.requestedByName) || "the shared login") + " · new profile on " + (userLabel(r.accountedFor) || "a shared login") : ""));
+        var rx = el("span", { class: "ln" }, (r.jobsUnsure ? "Role: not sure, admin to decide · " : "") + (r.cosUnsure ? "Companies: not sure, admin to decide · " : "") + "Requested " + stamp(r.at) + (r.accountedFor ? " by " + (pnm(r.requestedByName) || "the shared login") + " · new profile on " + (userLabel(r.accountedFor) || "a shared login") : ""));
         var row = personRow(r, r.accountedFor ? null : ps[r.id], rx), acts = el("div", { class: "acts" });
         var yes = iconBtn("yes", "Approve request from " + (r.name || "this person")), no = iconBtn("no", "Decline request from " + (r.name || "this person"));
         yes.addEventListener("click", function () { openUserForm(r.id, "approve"); });
@@ -2277,26 +2277,39 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       $("rqDeclined").hidden = !(r && r.status === "declined");
       if (S.memberState !== "form") {                       // build once, so typing is never wiped by a live update
         $("rqName").value = (r && r.name) || (S.me && S.me.name) || "";
-        fillRequestLists((r && r.locationId) || "", (r && r.companyIds) || []); jobChecks($("rqJobs"), (r && r.jobRoles) || []);
-      } else fillRequestLists($("rqLoc").value, readChecks($("rqCos")));
+        fillRequestLists((r && r.locationId) || "", (r && r.companyIds) || [], !!(r && r.cosUnsure));
+        jobChecks($("rqJobs"), (r && r.jobRoles) || []); addUnsure($("rqJobs"), !!(r && r.jobsUnsure));
+      } else fillRequestLists($("rqLoc").value, readChecks($("rqCos")).filter(function (x) { return x !== "_unsure"; }), readChecks($("rqCos")).indexOf("_unsure") >= 0);
     }
     S.memberState = state; renderMe(); show("vRequest");
   }
-  function fillRequestLists(locValue, cos) {
+  function fillRequestLists(locValue, cos, unsure) {
     var sel = $("rqLoc"); sel.textContent = "";
     sel.appendChild(el("option", { value: "" }, "Choose a location"));
     locList().forEach(function (l) { sel.appendChild(el("option", { value: l.id }, l.name)); });
     sel.value = locValue && S.locations[locValue] ? locValue : "";
     buildChecks($("rqCos"), cos.filter(function (id) { return S.companies[id] && S.companies[id].active !== false; }), true);
+    addUnsure($("rqCos"), unsure);
   }
+  /* "Not Sure (Let Admin Decide)": the admin picks the roles or companies when approving. It can't be ticked together with another choice. */
+  function addUnsure(box, checked) {
+    var lab = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: "_unsure" }), tx = el("span");
+    cb.checked = !!checked; tx.appendChild(el("b", null, "Not Sure (Let Admin Decide)")); tx.appendChild(el("span", null, "The admin chooses for you when approving"));
+    lab.appendChild(cb); lab.appendChild(tx); box.appendChild(lab);
+    if (!box._unsureWired) { box._unsureWired = true; box.addEventListener("change", function (e) { var t = e.target; if (!t || !t.checked || t.tagName !== "INPUT") return;
+      Array.prototype.forEach.call(box.querySelectorAll("input"), function (i) { if (i !== t && (t.value === "_unsure" || i.value === "_unsure")) i.checked = false; }); }); }
+  }
+  function readSure(box) { var p = readChecks(box); return { list: p.filter(function (x) { return x !== "_unsure"; }), unsure: p.indexOf("_unsure") >= 0 }; }
   function sendRequest() {
     if (S.busy) return;
-    var name = $("rqName").value.trim(), loc = $("rqLoc").value, cos = readChecks($("rqCos")), jobs = readChecks($("rqJobs"));
-    $("rqEName").hidden = !!name; $("rqELoc").hidden = !!loc; $("rqECos").hidden = !!cos.length; $("rqJobsE").hidden = !!jobs.length;
-    if (!name || !loc || !cos.length || !jobs.length) return;
+    var name = $("rqName").value.trim(), loc = $("rqLoc").value, picked = readChecks($("rqCos")), unsure = picked.indexOf("_unsure") >= 0, cos = picked.filter(function (x) { return x !== "_unsure"; });
+    var jb = readSure($("rqJobs"));
+    $("rqEName").hidden = !!name; $("rqELoc").hidden = !!loc; $("rqECos").hidden = !!(cos.length || unsure); $("rqJobsE").hidden = !!(jb.list.length || jb.unsure);
+    if (!name || !loc || !(cos.length || unsure) || !(jb.list.length || jb.unsure)) return;
     S.busy = true; $("rqSend").disabled = true;
-    retry(function () { return S.db.doc("requests/" + S.me.id).set({ name: name, locationId: loc, companyIds: cos, jobRoles: jobs, at: Date.now(), status: "pending" }); })
-      .then(function () { S.myReq = { name: name, locationId: loc, companyIds: cos, jobRoles: jobs, status: "pending" }; memberRender(); }, function (e) {
+    var doc = { name: name, locationId: loc, companyIds: unsure ? [] : cos, cosUnsure: unsure, jobRoles: jb.unsure ? [] : jb.list, jobsUnsure: jb.unsure, at: Date.now(), status: "pending" };
+    retry(function () { return S.db.doc("requests/" + S.me.id).set(doc); })
+      .then(function () { S.myReq = Object.assign({}, doc); memberRender(); }, function (e) {
         if (e && e.code === "invalid_argument") { S.canWrite = false; memberRender(); } else toast(explain(e));
       }).then(function () { S.busy = false; $("rqSend").disabled = false; });
   }
@@ -2434,20 +2447,20 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     fD.appendChild(el("label", { for: "prDept" }, "Department")); fD.appendChild(sd); fD.appendChild(el("span", { class: "hint" }, deptList().length ? "If the department is not listed, choose the closest and tell the admin." : "No departments set up yet; the admin will choose one.")); fD.appendChild(el("span", { class: "err", id: "prDeptE", hidden: "" })); body.appendChild(fD);
     var fL = el("div", { class: "f" }), sl = el("select", { class: "field", id: "prLoc" }); fillSelect(sl, [["", "Choose a location"]].concat(locList().map(function (l) { return [l.id, l.name]; })), base.locationId && S.locations[base.locationId] ? base.locationId : "");
     fL.appendChild(el("label", { for: "prLoc" }, "Location")); fL.appendChild(sl); fL.appendChild(el("span", { class: "err", id: "prLocE", hidden: "" })); body.appendChild(fL);
-    var fJ = el("div", { class: "f wide" }), jb = el("div", { class: "checks", id: "prJobs" }); fJ.appendChild(el("span", { class: "lb" }, "Role")); fJ.appendChild(jb); fJ.appendChild(el("span", { class: "err", id: "prJobsE", hidden: "" })); body.appendChild(fJ); jobChecks(jb, []);
+    var fJ = el("div", { class: "f wide" }), jb = el("div", { class: "checks", id: "prJobs" }); fJ.appendChild(el("span", { class: "lb" }, "Role")); fJ.appendChild(jb); fJ.appendChild(el("span", { class: "err", id: "prJobsE", hidden: "" })); body.appendChild(fJ); jobChecks(jb, []); addUnsure(jb, false);
     var fC = el("div", { class: "f wide" }), ck = el("div", { class: "checks", id: "prCos" }); fC.appendChild(el("span", { class: "lb" }, "Companies")); fC.appendChild(ck); fC.appendChild(el("span", { class: "err", id: "prCosE", hidden: "" })); body.appendChild(fC);
-    buildChecks(ck, (base.companyIds || []).filter(function (id) { return S.companies[id]; }), true);
+    buildChecks(ck, (base.companyIds || []).filter(function (id) { return S.companies[id]; }), true); addUnsure(ck, false);
     popForm("Request a New Person", "The admin approves it, sets what they do, and adds them to this shared login. They then choose their name here, set their PIN and enter their opening cash.", body, "Send request", function () {
       errClear(body);
-      var nm = $("prName").value.trim().replace(/\s+/g, " "), dp = $("prDept").value, lc = $("prLoc").value, cos = readChecks(ck), ok = true;
+      var nm = $("prName").value.trim().replace(/\s+/g, " "), dp = $("prDept").value, lc = $("prLoc").value, cs = readSure(ck), cos = cs.list, ok = true;
       if (!nm) { errOn("prName", "Type the person's name."); ok = false; }
       else if (profileList().concat(S.loginUser ? [S.loginUser] : []).some(function (u) { return String(u.name || "").toLowerCase() === nm.toLowerCase(); })) { errOn("prName", nm + " is already on this login."); ok = false; }
       if (deptList().length && !dp) { errOn("prDept", "Choose the department."); ok = false; }
       if (!lc) { errOn("prLoc", "Choose the location."); ok = false; }
-      if (!cos.length) { errOn("prCos", "Tick at least one company."); ok = false; }
-      var jobs = readChecks(jb); if (!jobs.length) { errOn("prJobs", "Tick at least one role."); ok = false; }
+      if (!cos.length && !cs.unsure) { errOn("prCos", "Tick at least one company, or Not Sure."); ok = false; }
+      var js = readSure(jb), jobs = js.list; if (!jobs.length && !js.unsure) { errOn("prJobs", "Tick at least one role, or Not Sure."); ok = false; }
       if (!ok) return false;
-      var id = newId("p"), doc = { kind: "profile", name: nm, jobRoles: jobs, deptId: dp, locationId: lc, companyIds: cos, accountedFor: S.me.id, requestedBy: meId(), requestedByName: (S.myUser && S.myUser.name) || (S.me && S.me.name) || "", at: Date.now(), status: "pending" };
+      var id = newId("p"), doc = { kind: "profile", name: nm, jobRoles: js.unsure ? [] : jobs, jobsUnsure: js.unsure, deptId: dp, locationId: lc, companyIds: cs.unsure ? [] : cos, cosUnsure: cs.unsure, accountedFor: S.me.id, requestedBy: meId(), requestedByName: (S.myUser && S.myUser.name) || (S.me && S.me.name) || "", at: Date.now(), status: "pending" };
       return retry(function () { return S.db.doc("requests/" + id).set(doc); }).then(function () { (S.profReqs = S.profReqs || {})[id] = Object.assign({ id: id }, doc); toast("Request for " + nm + " sent to the admin."); renderMe(); return true; }, function (e) { toast(explain(e)); return false; });
     });
   }
@@ -11690,12 +11703,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("fName").addEventListener("input", function () { $("eName").hidden = true; this.classList.remove("bad"); });
     $("fShort").addEventListener("input", function () { $("eShort").hidden = true; this.classList.remove("bad"); });
     coLoc = makeLocPicker("co"); usLoc = makeLocPicker("us"); usDept = makeLocPicker("us", "Dept");
-    $("backUser").addEventListener("click", backToUsers); $("userCancel").addEventListener("click", backToUsers); $("userSave").addEventListener("click", saveUser); $("uAcc").addEventListener("change", onAccChange); $("rqJobSave").addEventListener("click", saveMyJobs); $("rqJobs").addEventListener("change", function () { $("rqJobsE").hidden = true; }); $("uPinReset").addEventListener("click", function () { if (S.userEditing) { S.userEditing.resetPin = true; $("uPin").value = ""; onAccChange(); } }); $("uAddLogin").addEventListener("click", function () { openUserForm(null, "login"); }); $("uAddOff").addEventListener("click", function () { openUserForm(null, "new"); }); ["input", "change"].forEach(function (ev) { document.addEventListener(ev, function (e) { if (e.target && e.target.closest && e.target.closest("#secAdv") && ADV.aiSpecs) setTimeout(function () { paintAiFlags(ADV.aiSpecs); }, 0); }, true); }); $("uLink").addEventListener("change", onUserLink);
+    $("backUser").addEventListener("click", backToUsers); $("userCancel").addEventListener("click", backToUsers); $("userSave").addEventListener("click", saveUser); $("uAcc").addEventListener("change", onAccChange); $("rqJobSave").addEventListener("click", saveMyJobs); $("uPinReset").addEventListener("click", function () { if (S.userEditing) { S.userEditing.resetPin = true; $("uPin").value = ""; onAccChange(); } }); $("uAddLogin").addEventListener("click", function () { openUserForm(null, "login"); }); $("uAddOff").addEventListener("click", function () { openUserForm(null, "new"); }); ["input", "change"].forEach(function (ev) { document.addEventListener(ev, function (e) { if (e.target && e.target.closest && e.target.closest("#secAdv") && ADV.aiSpecs) setTimeout(function () { paintAiFlags(ADV.aiSpecs); }, 0); }, true); }); $("uLink").addEventListener("change", onUserLink);
     $("uName").addEventListener("input", function () { $("uEName").hidden = true; this.classList.remove("bad"); });
     $("rqSend").addEventListener("click", sendRequest);
     $("rqName").addEventListener("input", function () { $("rqEName").hidden = true; });
     $("rqLoc").addEventListener("change", function () { $("rqELoc").hidden = true; });
     $("rqCos").addEventListener("change", function () { $("rqECos").hidden = true; });
+    $("rqJobs").addEventListener("change", function () { $("rqJobsE").hidden = true; });
     $("usLoc").addEventListener("change", function () { $("uELoc").hidden = true; });
     $("uCos").addEventListener("change", function () { $("uECos").hidden = true; });
     $("save").addEventListener("click", save); $("toggle").addEventListener("click", toggleActive);

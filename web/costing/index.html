@@ -68,6 +68,9 @@ main{max-width:1440px;margin:0 auto;padding:22px clamp(12px,3vw,36px) calc(48px 
 .side>header{justify-content:space-between}
 .side .body{padding:12px}
 .side-list{max-height:calc(100vh - 260px);overflow:auto;margin-top:10px;display:flex;flex-direction:column;gap:3px}
+.side-h{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--blue-deep);margin:12px 0 4px;padding:0 4px}
+.side-list>.side-h:first-child{margin-top:0}
+.side-item .acts{display:flex;align-items:center;gap:2px;flex:none}
 
 /* ============ Panels / steps ============ */
 .step{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:18px;box-shadow:var(--shadow)}
@@ -79,7 +82,7 @@ main{max-width:1440px;margin:0 auto;padding:22px clamp(12px,3vw,36px) calc(48px 
 .step .body{padding:18px}
 .listbox{max-height:280px;overflow:auto}
 
-.savebar{position:sticky;top:118px;z-index:6;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:var(--r-lg);padding:10px 14px 10px 18px;margin-bottom:16px;box-shadow:var(--shadow)}
+.savebar{position:sticky;bottom:12px;top:auto;z-index:6;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:var(--r-lg);padding:10px 14px 10px 18px;margin:16px 0 0;box-shadow:var(--shadow)}
 .savebar b{margin-right:10px;font-size:1.02rem}
 .savebar .dirty{color:var(--warn);font-weight:600}
 .subm{color:var(--ok);font-weight:600}
@@ -353,7 +356,7 @@ body.locked .topbar,body.locked main,body.locked #printSheet{display:none !impor
   .fields4{grid-template-columns:repeat(2,minmax(0,1fr))}
   .split{grid-template-columns:1fr}
   .side{position:static}
-  .side-list{max-height:220px}
+  .side-list{max-height:300px}
   .rf{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
   .rf .rf-lh,.rf .rf-loads{grid-column:1/-1}
   .rf-loads{flex-direction:row;flex-wrap:wrap}
@@ -493,7 +496,7 @@ input[type=text],input[type=number],input[type=date],input:not([type]),select{bo
 /* Dialogs and toast */
 .dialog{border-radius:18px}
 .dialog.ask{max-width:460px}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--forest);color:#fff;padding:11px 20px;border-radius:999px;font-weight:500;font-size:.93rem;box-shadow:0 10px 30px -10px rgba(16,40,31,.6);opacity:0;pointer-events:none;z-index:50;transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px);text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--forest);color:#fff;padding:11px 20px;border-radius:999px;font-weight:500;font-size:.93rem;box-shadow:0 10px 30px -10px rgba(16,40,31,.6);opacity:0;pointer-events:none;z-index:50;transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px);text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 
@@ -525,7 +528,7 @@ input[type=text],input[type=number],input[type=date],input:not([type]),select{bo
   .subtabs{margin:-20px -20px 20px;padding:0 20px}
 }
 @media (max-width:760px){
-  main{padding:16px 16px calc(150px + env(safe-area-inset-bottom,0px))}
+  main{padding:16px 16px calc(190px + env(safe-area-inset-bottom,0px))}
   .apphead{padding:8px 16px}
   /* the header scrolls away on phones so the Claude app's own floating buttons don't sit on top of it */
   .topbar{position:static}
@@ -545,10 +548,10 @@ input[type=text],input[type=number],input[type=date],input:not([type]),select{bo
   .savebar{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:20;margin:0;border-radius:16px 16px 0 0;border:0;border-top:1px solid var(--line);padding:9px 14px calc(10px + env(safe-area-inset-bottom,0px));gap:8px;background:rgba(255,255,255,.97);box-shadow:0 -12px 30px -18px rgba(16,40,31,.45)}
   .savebar>div{display:flex;align-items:baseline;gap:8px;width:100%;min-width:0;font-size:.88rem;white-space:nowrap;overflow:hidden}
   .savebar>div b{font-size:.95rem;margin:0;overflow:hidden;text-overflow:ellipsis}
-  .savebar>span.row{width:100%;flex-wrap:nowrap;gap:8px}
-  .savebar>span.row .btn{flex:1;min-height:44px}
-  .savebar>span.row .btn.small{flex:0 0 auto}
-  .toast{bottom:calc(126px + env(safe-area-inset-bottom,0px))}
+  .savebar>span.row{width:100%;flex-wrap:wrap;gap:8px}
+  .savebar>span.row .btn{flex:1 1 40%;min-height:44px}
+  .savebar>span.row .btn.small{flex:1 1 auto;min-height:40px}
+  .toast{bottom:calc(166px + env(safe-area-inset-bottom,0px))}
   /* Chrome Free question: the two answers sit side by side under it */
   .cfq{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .cfq>span{grid-column:1/-1;margin:0}
@@ -627,7 +630,7 @@ input:hover,select:hover{border-color:#a9bbc1}
     <button role="tab" aria-selected="true" data-tab="report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M14 17h6M17 14v6"/></svg><span class="tl">Assortment</span><span class="ts">Assortment</span></button>
     <button role="tab" aria-selected="false" data-tab="costing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 17v-3M12 17v-6M15 17v-4"/></svg><span class="tl">Costing</span><span class="ts">Costing</span></button>
     <button role="tab" aria-selected="false" data-tab="sheet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M3.5 14h17M9.5 9v11"/></svg><span class="tl">Cost Sheet</span><span class="ts">Cost Sheet</span></button>
-    <button role="tab" aria-selected="false" data-tab="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg><span class="tl">Reports</span><span class="ts">Reports</span></button>
+    <button role="tab" aria-selected="false" data-tab="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg><span class="tl">Data</span><span class="ts">Data</span></button>
   </nav>
   </div>
 </div>
@@ -638,15 +641,13 @@ input:hover,select:hover{border-color:#a9bbc1}
   <div class="pagehead"><h2>Assortment</h2><p>Grade and size the hides of a lot, piece by piece.</p></div>
   <div class="split">
     <aside class="step side no-print">
-      <header><h2>Draft assortments</h2><button class="btn small primary" id="newReport">+ New</button></header>
+      <header><h2>Assortments</h2></header>
       <div class="body">
         <input id="savedSearch" type="text" placeholder="Search lot, load no. or origin">
         <div id="savedList" class="side-list"></div>
       </div>
     </aside>
     <div class="maincol">
-      <div class="savebar no-print"><div><b id="saveTitle">New assortment</b><span id="saveState" class="muted"></span></div><span class="row"><button class="btn" id="saveReport">Save Draft</button><button class="btn primary" id="submitReport">Submit</button></span></div>
-      <div id="submitMsg" class="no-print"></div>
 
       <div class="step">
         <header><span class="n">1</span><h2>Lots and raw hides</h2><span class="aside muted">Load No., sizes assorted, pieces and weights</span></header>
@@ -730,6 +731,8 @@ input:hover,select:hover{border-color:#a9bbc1}
         </div>
       </div>
 
+      <div id="submitMsg" class="no-print"></div>
+      <div class="savebar no-print"><div><b id="saveTitle">New assortment</b><span id="saveState" class="muted"></span></div><span class="row"><button class="btn small" id="newReport" type="button">+ New</button><button class="btn small" id="discardReport" type="button">Discard</button><button class="btn small danger" id="deleteReport" type="button" hidden>Delete</button><button class="btn" id="saveReport">Save Draft</button><button class="btn primary" id="submitReport">Submit</button></span></div>
     </div>
   </div>
 </section>
@@ -772,52 +775,9 @@ input:hover,select:hover{border-color:#a9bbc1}
     <button role="tab" data-sub="origins" aria-selected="true">Origins</button>
     <button role="tab" data-sub="rhsizes">RH Sizes</button>
     <button role="tab" data-sub="grades">Grades</button>
-    <button role="tab" data-sub="csrep">Cost Sheets</button>
-    <button role="tab" data-sub="ulrep">Unloading Reports</button>
-    <button role="tab" data-sub="asrep">Assortment Reports</button>
     <button role="tab" data-sub="users" hidden>Users</button>
   </nav>
-  <div class="pagehead"><h2>Reports</h2><p>Origins, RH sizes and grades, and the submitted cost sheets, loads and assortments.</p></div>
-
-  <div id="sub-ulrep" hidden>
-    <div class="step">
-      <header><h2>Unloading reports</h2><span class="aside" id="ulRepCount"></span></header>
-      <div class="body">
-        <div class="filters">
-          <label class="f">Search<input id="ulrQ" type="text" placeholder="Load no."></label>
-          <label class="f">Origin<select id="ulrOrigin"></select></label>
-          <label class="f">From<input id="ulrFrom" type="date"></label>
-          <label class="f">To<input id="ulrTo" type="date"></label>
-        </div>
-        <div id="ulRepList" class="rep-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="sub-asrep" hidden>
-    <div class="step">
-      <header><h2>Assortment reports</h2><span class="aside" id="asRepCount"></span></header>
-      <div class="body">
-        <div class="filters">
-          <label class="f">Search<input id="asrQ" type="text" placeholder="Lot or load no."></label>
-          <label class="f">Origin<select id="asrOrigin"></select></label>
-          <label class="f">From<input id="asrFrom" type="date"></label>
-          <label class="f">To<input id="asrTo" type="date"></label>
-        </div>
-        <div id="asRepList" class="rep-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="sub-csrep" hidden>
-    <div class="step">
-      <header><h2>Cost sheets</h2><span class="aside" id="csRepCount"></span></header>
-      <div class="body">
-        <div class="filters"><label class="f">Search<input id="csrQ" type="text" placeholder="Name or origin"></label></div>
-        <div id="csRepList" class="rep-list"></div>
-      </div>
-    </div>
-  </div>
+  <div class="pagehead"><h2>Data</h2><p>Origins, RH sizes and grades; and, for admins, the app's users.</p></div>
 
   <div id="sub-users" hidden>
     <div class="step">
@@ -879,16 +839,13 @@ input:hover,select:hover{border-color:#a9bbc1}
   <div class="pagehead"><h2>Unloading</h2><p>Enter each load as it arrives. Submit it to make it available for assortment.</p></div>
   <div class="split">
     <aside class="step side no-print">
-      <header><h2>Draft lots</h2><button class="btn small primary" id="ulNew">+ New</button></header>
+      <header><h2>Lots</h2></header>
       <div class="body">
         <input id="ulSearch" type="text" placeholder="Search load no. or origin">
         <div id="ulList" class="side-list"></div>
       </div>
     </aside>
     <div class="maincol">
-      <div class="savebar no-print"><div><b id="ulTitle">New lot unloading</b><span id="ulState" class="muted"></span></div>
-        <span class="row"><button class="btn small danger" id="ulDelete" hidden>Delete</button><button class="btn" id="ulSave">Save Draft</button><button class="btn primary" id="ulSubmit">Submit</button></span></div>
-      <div id="ulErr"></div>
       <div class="step">
         <header><span class="n">1</span><h2>Load details</h2></header>
         <div class="body">
@@ -908,6 +865,8 @@ input:hover,select:hover{border-color:#a9bbc1}
           <div class="tbl-wrap"><table class="ul-tbl" id="ulTbl"></table></div>
         </div>
       </div>
+      <div id="ulErr"></div>
+      <div class="savebar no-print"><div><b id="ulTitle">New lot unloading</b><span id="ulState" class="muted"></span></div><span class="row"><button class="btn small" id="ulNew" type="button">+ New</button><button class="btn small" id="ulDiscard" type="button">Discard</button><button class="btn small danger" id="ulDelete" type="button" hidden>Delete</button><button class="btn" id="ulSave">Save Draft</button><button class="btn primary" id="ulSubmit">Submit</button></span></div>
     </div>
   </div>
 </section>
@@ -916,16 +875,13 @@ input:hover,select:hover{border-color:#a9bbc1}
   <div class="pagehead"><h2>Cost Sheet</h2><p>Rates for each grade and size range, linked to the origins that use them.</p></div>
   <div class="split">
     <aside class="step side no-print">
-      <header><h2>Draft cost sheets</h2><button class="btn small primary" id="csNew">+ New</button></header>
+      <header><h2>Cost Sheets</h2></header>
       <div class="body">
         <input id="csSearch" type="text" placeholder="Search name or origin">
         <div id="csList" class="side-list"></div>
       </div>
     </aside>
     <div class="maincol">
-      <div class="savebar no-print"><div><b id="csTitle">New cost sheet</b><span id="csState" class="muted"></span></div>
-        <span class="row"><button class="btn small danger" id="csDelete" hidden>Delete</button><button class="btn" id="csSaveDraft">Save Draft</button><button class="btn primary" id="csSubmit">Submit</button></span></div>
-      <div id="csMsg"></div>
       <div id="csHome">
 <div id="edCore">
   <div class="step">
@@ -955,6 +911,8 @@ input:hover,select:hover{border-color:#a9bbc1}
   </div>
 </div>
 </div>
+      <div id="csMsg"></div>
+      <div class="savebar no-print"><div><b id="csTitle">New cost sheet</b><span id="csState" class="muted"></span></div><span class="row"><button class="btn small" id="csNew" type="button">+ New</button><button class="btn small" id="csDiscard" type="button">Discard</button><button class="btn small danger" id="csDelete" type="button" hidden>Delete</button><button class="btn" id="csSaveDraft">Save Draft</button><button class="btn primary" id="csSubmit">Submit</button></span></div>
     </div>
   </div>
 </section>
@@ -1267,7 +1225,7 @@ function renderSheetSelect(){
   if(dbState==="none")note='<p class="note err">Saved cost sheets can\'t be reached. Sign in to KKSK Group and reload.</p>';
   else if(dbState==="error")note='<p class="note err">Cost sheets stopped loading. Reload the page to try again.</p>';
   else if(draft.sheetId&&!sheets[draft.sheetId]&&dbState==="ready"&&!draft.override)note='<p class="note warn">The cost sheet used here no longer exists. Choose another.</p>';
-  else if(c.os.length&&dbState==="ready"&&!c.all.length)note='<p class="note warn">No submitted cost sheet is linked to '+esc(c.os.join(" and "))+'. Link one in Reports › Origins, or in the Cost Sheet tab.</p>';
+  else if(c.os.length&&dbState==="ready"&&!c.all.length)note='<p class="note warn">No submitted cost sheet is linked to '+esc(c.os.join(" and "))+'. Link one in Data › Origins, or in the Cost Sheet tab.</p>';
   else if(draft.sheetId&&c.os.length&&!c.all.includes(draft.sheetId)&&!draft.override)note='<p class="note warn">This cost sheet isn\'t linked to every origin here ('+esc(c.os.join(", "))+").</p>";
   $("#dbNote").innerHTML=note;
 }
@@ -1429,7 +1387,7 @@ function fillEditor(){
 function renderEdOrigins(){
   if(ed.mode==="override")return;
   const codes=originCodes();
-  $("#edOrigins").innerHTML=codes.length?codes.map(c=>{const on=ed.data.origins.includes(c);return'<label class="pick'+(on?" on":"")+'"><input type="checkbox" data-org="'+esc(c)+'"'+(on?" checked":"")+"><b>"+esc(c)+"</b></label>"}).join(""):'<span class="muted">No origins yet. Add them under Reports › Origins.</span>';
+  $("#edOrigins").innerHTML=codes.length?codes.map(c=>{const on=ed.data.origins.includes(c);return'<label class="pick'+(on?" on":"")+'"><input type="checkbox" data-org="'+esc(c)+'"'+(on?" checked":"")+"><b>"+esc(c)+"</b></label>"}).join(""):'<span class="muted">No origins yet. Add them under Data › Origins.</span>';
 }
 $("#edOrigins").addEventListener("change",e=>{const c=e.target.dataset.org;if(!c||!ed)return;ed.data.origins=ed.data.origins.filter(x=>x!==c);if(e.target.checked)ed.data.origins.push(c);ed.data.origins.sort();renderEdOrigins();markCs()});
 $("#edName").addEventListener("input",e=>{if(!ed)return;ed.data.name=e.target.value;markCs();renderCsState()});
@@ -1520,10 +1478,12 @@ function renderCsList(){
   const box=$("#csList");
   if(dbState==="none"){box.innerHTML='<p class="note err">Cost sheets can\'t be reached from here.</p>';return}
   const q=($("#csSearch").value||"").trim().toUpperCase();
-  const ids=Object.keys(sheets).filter(id=>{const s=sheets[id];return s.status==="draft"&&(!q||String(s.name).toUpperCase().includes(q)||(s.origins||[]).some(o=>String(o).toUpperCase().includes(q)))})
-    .sort((a,b)=>String(sheets[b].updatedAt).localeCompare(String(sheets[a].updatedAt)));
-  if(!ids.length){box.innerHTML='<p class="muted" style="padding:6px 4px;margin:0">'+(dbState==="loading"?"Loading…":q?"Nothing matches that search.":"No drafts. Submitted sheets are in Reports › Cost Sheets.")+"</p>";return}
-  box.innerHTML=ids.map(id=>{const s=sheets[id];return'<div class="side-item'+(csEd&&id===csEd.id?" on":"")+'" data-opencs="'+esc(id)+'" role="button" tabindex="0"><div class="t"><b>'+esc(s.name||"Untitled")+"</b><small>"+esc((s.origins||[]).join(", ")||"No origins linked")+"</small><small>Saved "+esc(fmtStamp(s.updatedAt))+'</small></div><button class="x" data-delcs="'+esc(id)+'" aria-label="Delete">×</button></div>'}).join("");
+  const hit=x=>!q||String(x.name).toUpperCase().includes(q)||(x.origins||[]).some(o=>String(o).toUpperCase().includes(q));
+  const dr=Object.keys(sheets).filter(id=>sheets[id].status==="draft"&&hit(sheets[id])).sort((a,b)=>String(sheets[b].updatedAt).localeCompare(String(sheets[a].updatedAt)));
+  const sb=Object.keys(sheets).filter(id=>sheetSubmitted(sheets[id])&&hit(sheets[id])).sort((a,b)=>String(sheets[a].name).localeCompare(String(sheets[b].name)));
+  const item=id=>{const x=sheets[id],used=Object.values(reports).filter(r=>r.data&&r.data.sheetId===id).length;
+    return'<div class="side-item'+(csEd&&id===csEd.id?" on":"")+'" data-opencs="'+esc(id)+'" role="button" tabindex="0"><div class="t"><b>'+esc(x.name||"Untitled")+"</b><small>"+esc((x.origins||[]).join(", ")||"No origins linked")+"</small><small>"+(sheetSubmitted(x)?"Submitted ":"Saved ")+esc(fmtStamp(x.updatedAt))+(used?" &middot; used in "+used+" assortment"+(used>1?"s":""):"")+'</small></div><button class="x" data-delcs="'+esc(id)+'" aria-label="Delete">×</button></div>'};
+  box.innerHTML=sideHtml(dr.map(item),sb.map(item),q,dbState==="loading");
 }
 function renderCs(){if(ed===csEd)fillEditor();renderCsState();renderCsList()}
 async function openCs(id){
@@ -1548,7 +1508,7 @@ async function saveCs(submit){
   try{
     await ref.set(body);
     ensureGrades(data.grades.map(g=>g.code));
-    if(submit){csEd=edFrom("sheet",null,null);ed=csEd;keepCs();renderCs();csNote("Cost sheet <b>"+esc(data.name)+"</b> submitted. Find it in Reports › Cost Sheets.","ok")}
+    if(submit){csEd=edFrom("sheet",null,null);ed=csEd;keepCs();renderCs();csNote("Cost sheet <b>"+esc(data.name)+"</b> submitted. It is listed under Submitted on the left.","ok")}
     else{csEd.id=ref.id;csEd.status="draft";csEd.dirty=false;csEd.updatedAt=now;keepCs();renderCs();csNote("");toast("Draft saved")}
   }catch(e){csNote(e&&e.code==="invalid_argument"?"You don't have permission to save cost sheets.":e&&e.code==="quota_exceeded"?"Storage is full. Delete an old sheet first.":"Couldn't save. Check your connection and try again.","err")}
   finally{btns.forEach(b=>b.disabled=false)}
@@ -1563,31 +1523,16 @@ async function deleteCs(id){
 $("#csSaveDraft").onclick=()=>saveCs(false);
 $("#csSubmit").onclick=()=>saveCs(true);
 $("#csDelete").onclick=()=>csEd.id&&deleteCs(csEd.id);
+$("#csDiscard").onclick=async()=>{
+  const id=csEd.id&&sheets[csEd.id]?csEd.id:null;
+  if(!await ask(csEd.dirty?(id?"Discard the changes on screen? The saved copy stays as it is.":"Discard this cost sheet? What is on screen is lost."):"Clear the screen? Nothing is lost."))return;
+  csEd=edFrom("sheet",null,null);ed=csEd;keepCs();csNote("");
+  if(id)await openCs(id);else renderCs();
+};
 $("#csNew").onclick=async()=>{if(csEd.dirty&&!await ask("This cost sheet has unsaved changes. Start a new one anyway?"))return;csEd=edFrom("sheet",null,null);ed=csEd;keepCs();csNote("");renderCs();$("#edName").focus()};
 $("#csSearch").addEventListener("input",renderCsList);
 $("#csList").addEventListener("click",e=>{const d=e.target.closest("[data-delcs]");if(d){e.stopPropagation();deleteCs(d.dataset.delcs);return}const o=e.target.closest("[data-opencs]");if(o)openCs(o.dataset.opencs)});
 $("#csHome").appendChild($("#edCore"));
-
-/* ---------- Reports › Cost Sheets ---------- */
-function rateGrid(s){
-  const R=(s.bounds||[]).length+1;
-  return'<div class="tbl-wrap"><table class="mini"><thead><tr><th>Grade</th>'+Array.from({length:R},(_,i)=>"<th>"+esc(rangeLabel(s.bounds||[],i))+"</th>").join("")+"</tr></thead><tbody>"+
-    (s.grades||[]).map(g=>"<tr><td>"+esc(g.code)+"</td>"+(g.rates||[]).map(v=>"<td>"+f2(num(v))+"</td>").join("")+"</tr>").join("")+
-    '<tr class="t"><td>TC</td>'+(s.tc||[]).map(v=>"<td>"+f2(num(v))+"</td>").join("")+"</tr><tr><td>PTC</td>"+(s.ptc||[]).map(v=>"<td>"+f2(num(v))+"</td>").join("")+"</tr></tbody></table></div>";
-}
-function renderCsRep(){
-  const box=$("#csRepList");if(!box)return;
-  const q=($("#csrQ").value||"").trim().toUpperCase();
-  const ids=Object.keys(sheets).filter(id=>{const s=sheets[id];return sheetSubmitted(s)&&(!q||String(s.name).toUpperCase().includes(q)||(s.origins||[]).some(o=>String(o).toUpperCase().includes(q)))})
-    .sort((a,b)=>String(sheets[a].name).localeCompare(String(sheets[b].name)));
-  $("#csRepCount").textContent=ids.length+" submitted";
-  if(!ids.length){box.innerHTML='<p class="muted">'+(dbState==="loading"?"Loading…":"No submitted cost sheets"+(q?" match that search.":" yet."))+"</p>";return}
-  box.innerHTML=ids.map(id=>{const s=sheets[id],used=Object.values(reports).filter(r=>r.data&&r.data.sheetId===id).length;
-    return'<details class="rep-item"><summary><div class="ri-main"><b>'+esc(s.name)+'</b><span class="ri-tags">'+((s.origins||[]).map(o=>'<span class="tag org">'+esc(o)+"</span>").join("")||'<span class="muted">No origins linked</span>')+'</span></div><div class="ri-meta">'+(s.grades||[]).length+" grades &middot; "+((s.bounds||[]).length+1)+" size ranges &middot; used in "+used+" assortment"+(used===1?"":"s")+" &middot; updated "+esc(fmtStamp(s.updatedAt))+'</div></summary><div class="ri-body">'+rateGrid(s)+
-      '<div class="row ri-act"><button class="btn small" data-editcs="'+esc(id)+'">Edit in Cost Sheet</button><button class="btn small danger" data-delcsr="'+esc(id)+'">Delete</button></div></div></details>'}).join("");
-}
-$("#csrQ").addEventListener("input",renderCsRep);
-$("#csRepList").addEventListener("click",e=>{const a=e.target.closest("[data-editcs]"),d=e.target.closest("[data-delcsr]");if(a){showTab("sheet");openCs(a.dataset.editcs)}if(d)deleteCs(d.dataset.delcsr)});
 
 /* ---------- tabs ---------- */
 var currentTab="report", currentSub="origins";
@@ -1604,8 +1549,8 @@ function showTab(t){
 function showSub(s){
   currentSub=s;document.querySelectorAll("[data-sub]").forEach(x=>x.setAttribute("aria-selected",x.dataset.sub===s?"true":"false"));
   if(s==="users"&&!isAdmin())s="origins";currentSub=s;document.querySelectorAll("[data-sub]").forEach(x=>x.setAttribute("aria-selected",x.dataset.sub===s?"true":"false"));
-  ["ulrep","asrep","csrep","origins","grades","rhsizes","users"].forEach(v=>$("#sub-"+v).hidden=v!==s);if(s==="users")renderUsers();if(s==="grades")renderGrades();if(s==="rhsizes")renderRhSizes();
-  if(s==="ulrep")renderUlRep();if(s==="asrep")renderAsRep();if(s==="csrep")renderCsRep();if(s==="origins")renderOrigins();
+  ["origins","grades","rhsizes","users"].forEach(v=>$("#sub-"+v).hidden=v!==s);if(s==="users")renderUsers();if(s==="grades")renderGrades();if(s==="rhsizes")renderRhSizes();
+  if(s==="origins")renderOrigins();
 }
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 document.querySelectorAll("[data-sub]").forEach(b=>b.onclick=()=>showSub(b.dataset.sub));
@@ -1695,6 +1640,7 @@ function renderSaveState(){
   if(draft.dirty){st.textContent="Unsaved changes";st.className="dirty"}
   else if(r){const sub=r.status==="submitted";st.textContent=(sub?"Submitted ":"Saved ")+fmtStamp(sub&&r.submittedAt?r.submittedAt:r.updatedAt);st.className=sub?"subm":"muted"}
   else{st.textContent=draft.reportId?"Saved":"Not saved yet";st.className="muted"}
+  $("#deleteReport").hidden=!(draft.reportId&&reports[draft.reportId]);
 }
 async function saveReport(btn,submit){
   if(!db){tell("Assortments can't be saved here. Sign in to KKSK Group and reload.");return}
@@ -1709,7 +1655,7 @@ async function saveReport(btn,submit){
     graded:totalGraded(),totalPieces:totalPieces(),status:submit?"submitted":"draft",submittedAt:submit?now:null,createdAt:prev&&prev.createdAt||now,updatedAt:now,data};
   btn&&(btn.disabled=true);
   try{await ref.set(body);
-    if(submit){draft=newDraft();undoStack=[];lastAdded=null;saveDraft(false);renderAll();$("#submitMsg").innerHTML='<p class="note" style="background:var(--ok-soft);color:var(--ok);border-color:#bfe0cc">Lot <b>'+esc(body.lotNo)+'</b> submitted. Find it in Reports › Assortment Reports, and print it from Costing Report.</p>';window.scrollTo(0,0)}
+    if(submit){draft=newDraft();undoStack=[];lastAdded=null;saveDraft(false);renderAll();$("#submitMsg").innerHTML='<p class="note" style="background:var(--ok-soft);color:var(--ok);border-color:#bfe0cc">Lot <b>'+esc(body.lotNo)+'</b> submitted. It is listed under Submitted on the left.</p>';window.scrollTo(0,0)}
     else{draft.reportId=ref.id;draft.dirty=false;draft.editSub=false;saveDraft(false);$("#submitMsg").innerHTML="";renderSaveState();renderSavedList();toast("Draft saved")}}
   catch(e){const c=e&&e.code;tell(c==="invalid_argument"?"You don't have permission to save, or this assortment is too large to save in one record.":c==="quota_exceeded"?"Storage is full. Delete old assortments, then save again.":"Couldn't save. Check your connection and try again.")}
   finally{btn&&(btn.disabled=false)}
@@ -1746,7 +1692,7 @@ async function openReport(id){
   if(draft.dirty&&draft.reportId!==id&&!await ask("The assortment on screen has unsaved changes. Open this one anyway and lose them?"))return;
   draft=fixDraft(Object.assign(newDraft(),clone(r.data),{reportId:id,dirty:false,editSub:r.status==="submitted"}));
   undoStack=[];lastAdded=null;saveDraft(false);renderAll();window.scrollTo(0,0);
-  $("#submitMsg").innerHTML=r.status==="submitted"?'<p class="note warn">Editing a submitted lot. Submit again to keep it in reports; Save draft moves it back to drafts.</p>':"";
+  $("#submitMsg").innerHTML=r.status==="submitted"?'<p class="note warn">Editing a submitted lot. Submit again to keep it under Submitted; Save Draft moves it back to Drafts.</p>':"";
 }
 async function deleteReport(id){
   const r=reports[id]; if(!r)return;
@@ -1754,22 +1700,35 @@ async function deleteReport(id){
   try{await db.doc("assortments/"+id).delete();if(draft.reportId===id){draft.reportId=null;draft.dirty=true;saveDraft(false);renderSaveState()}}
   catch(e){tell("Couldn't delete. Check your permissions and connection.")}
 }
+$("#discardReport").onclick=async()=>{
+  const id=draft.reportId&&reports[draft.reportId]?draft.reportId:null;
+  if(!await ask(draft.dirty?(id?"Discard the changes on screen? The saved copy stays as it is.":"Discard this assortment? What is on screen is lost."):"Clear the screen? Nothing is lost."))return;
+  draft=newDraft();undoStack=[];lastAdded=null;saveDraft(false);
+  if(id)await openReport(id);else{renderAll();$("#submitMsg").innerHTML=""}
+};
+$("#deleteReport").onclick=()=>draft.reportId&&deleteReport(draft.reportId);
 $("#newReport").onclick=async()=>{
   if(!await ask(draft.dirty?"This assortment has unsaved changes. Clear it and start a new one?":"Start a new assortment? The current one stays in the saved list."))return;
   const keep=draft.sheetId;draft=newDraft();draft.sheetId=keep;undoStack=[];lastAdded=null;saveDraft(false);renderAll();
 };
+/* The list on the left: drafts first, then everything submitted. The search box filters both. */
+function sideHtml(dr,sb,q,loading){
+  const e=w=>'<p class="muted" style="padding:4px;margin:0">'+(loading?"Loading…":q?"Nothing matches that search.":w)+"</p>";
+  return'<div class="side-h">Drafts</div>'+(dr.length?dr.join(""):e("No drafts yet."))+'<div class="side-h">Submitted</div>'+(sb.length?sb.join(""):e("Nothing submitted yet."));
+}
 function renderSavedList(){
   const box=$("#savedList");
   if(dbState==="none"){box.innerHTML='<p class="note err">Saved assortments can\'t be reached from here. Sign in to KKSK Group and reload.</p>';return}
   const q=($("#savedSearch").value||"").trim().toUpperCase();
-  const ids=Object.keys(reports).filter(id=>{const r=reports[id];if(r.status==="submitted")return false;return!q||String(r.lotNo||"").toUpperCase().includes(q)||(r.loadNos||[]).some(x=>String(x).toUpperCase().includes(q))||(r.origins||[]).some(x=>String(x).toUpperCase().includes(q))})
-    .sort((a,b)=>String(reports[b].updatedAt).localeCompare(String(reports[a].updatedAt)));
-  if(!ids.length){box.innerHTML='<p class="muted" style="padding:6px 4px;margin:0">'+(repState==="loading"?"Loading…":q?"Nothing matches that search.":"No drafts. Submitted lots are in Reports › Assortment Reports.")+"</p>";return}
-  box.innerHTML=ids.map(id=>{const r=reports[id];
-    return'<div class="side-item'+(id===draft.reportId?" on":"")+'" data-openr="'+esc(id)+'" role="button" tabindex="0"><div class="t"><b>'+esc((r.lotNo?"Lot "+r.lotNo+" · ":"")+((r.loadNos||[]).join(", ")||"No loads"))+"</b>"+(r.status==="submitted"?'<span class="badge sub">Submitted</span>':"")+"<small>"+esc((r.origins||[]).join(", "))+"</small><small>"+(r.assortDate?isoToDmy(r.assortDate)+" &middot; ":"")+(r.graded||0)+" / "+(r.totalPieces||0)+' graded</small></div><button class="x" data-delr="'+esc(id)+'" aria-label="Delete">×</button></div>'}).join("");
+  const hit=r=>!q||String(r.lotNo||"").toUpperCase().includes(q)||(r.loadNos||[]).some(x=>String(x).toUpperCase().includes(q))||(r.origins||[]).some(x=>String(x).toUpperCase().includes(q));
+  const dr=Object.keys(reports).filter(id=>reports[id].status!=="submitted"&&hit(reports[id])).sort((a,b)=>String(reports[b].updatedAt).localeCompare(String(reports[a].updatedAt)));
+  const sb=Object.keys(reports).filter(id=>reports[id].status==="submitted"&&hit(reports[id])).sort((a,b)=>String(asrDate(reports[b])).localeCompare(String(asrDate(reports[a])))||String(reports[b].updatedAt).localeCompare(String(reports[a].updatedAt)));
+  const item=id=>{const r=reports[id];
+    return'<div class="side-item'+(id===draft.reportId?" on":"")+'" data-openr="'+esc(id)+'" role="button" tabindex="0"><div class="t"><b>'+esc((r.lotNo?"Lot "+r.lotNo+" · ":"")+((r.loadNos||[]).join(", ")||"No loads"))+"</b>"+(r.status==="submitted"?'<span class="badge sub">Submitted</span>':"")+"<small>"+esc((r.origins||[]).join(", "))+"</small><small>"+(r.assortDate?isoToDmy(r.assortDate)+" &middot; ":"")+(r.graded||0)+" / "+(r.totalPieces||0)+' graded</small></div><span class="acts">'+(r.status==="submitted"?'<button class="btn small" data-costr="'+esc(id)+'" title="Costing report for this lot">Costing</button>':"")+'<button class="x" data-delr="'+esc(id)+'" aria-label="Delete">×</button></span></div>'};
+  box.innerHTML=sideHtml(dr.map(item),sb.map(item),q,repState==="loading");
 }
 $("#savedSearch").addEventListener("input",renderSavedList);
-$("#savedList").addEventListener("click",e=>{const d=e.target.closest("[data-delr]");if(d){e.stopPropagation();deleteReport(d.dataset.delr);return}const o=e.target.closest("[data-openr]");if(o)openReport(o.dataset.openr)});
+$("#savedList").addEventListener("click",e=>{const d=e.target.closest("[data-delr]");if(d){e.stopPropagation();deleteReport(d.dataset.delr);return}const c=e.target.closest("[data-costr]");if(c){e.stopPropagation();openCostingFor(c.dataset.costr);return}const o=e.target.closest("[data-openr]");if(o)openReport(o.dataset.openr)});
 $("#savedList").addEventListener("keydown",e=>{if(e.key==="Enter"){const o=e.target.closest("[data-openr]");if(o)openReport(o.dataset.openr)}});
 window.addEventListener("beforeunload",e=>{if((draft.dirty&&draft.reportId)||(typeof ul!=="undefined"&&ul.dirty&&ul.id)||(typeof csEd!=="undefined"&&csEd&&csEd.dirty&&csEd.id)){e.preventDefault();e.returnValue=""}});
 
@@ -1919,7 +1878,7 @@ function renderUlForm(){
 function updUlTotals(){const t=ulTotals(),a=$("#ulTP"),b=$("#ulTW");if(a)a.textContent=t.p?ig(t.p):"";if(b)b.textContent=t.w?igkg(t.w):""}
 function renderUlSizePicks(){
   const box=$("#ulSizePicks");if(!box)return;
-  box.innerHTML=sizeList().map(z=>{const on=ul.sizes.includes(z);return'<label class="pick'+(on?" on":"")+'"><input type="checkbox" data-ulsz="'+esc(z)+'"'+(on?" checked":"")+"><b>"+esc(z)+"</b></label>"}).join("")||'<span class="muted">No RH sizes yet. Add one below, or under Reports › RH Sizes.</span>';
+  box.innerHTML=sizeList().map(z=>{const on=ul.sizes.includes(z);return'<label class="pick'+(on?" on":"")+'"><input type="checkbox" data-ulsz="'+esc(z)+'"'+(on?" checked":"")+"><b>"+esc(z)+"</b></label>"}).join("")||'<span class="muted">No RH sizes yet. Add one below, or under Data › RH Sizes.</span>';
 }
 $("#ulSizePicks").addEventListener("change",e=>{
   const z=e.target.dataset.ulsz;if(!z)return;
@@ -1966,7 +1925,7 @@ function ulValidate(submit){
   const e=[];if(!ul.loadNo.trim())e.push("Enter the Load No.");
   if(submit){
     if(!ul.origin.trim())e.push("Pick the Origin Code.");
-    else if(!originCodes().includes(ul.origin.trim()))e.push(ul.origin.trim()+" isn't in the Origins list. Pick one from the list, or add it under Reports › Origins.");
+    else if(!originCodes().includes(ul.origin.trim()))e.push(ul.origin.trim()+" isn't in the Origins list. Pick one from the list, or add it under Data › Origins.");
     if(!ul.date)e.push("Enter the Date.");
     if(!ul.sizes.length)e.push("Tick at least one hide size.");
     else if(!ul.sizes.some(z=>num((ul.rows[z]||{}).pcs)>0))e.push("Enter pieces for at least one hide size.");
@@ -1994,7 +1953,7 @@ async function saveUl(submit){
   const btns=[$("#ulSave"),$("#ulSubmit")];btns.forEach(b=>b.disabled=true);
   try{
     await ref.set(body);
-    if(submit){ul=newUl();keepUl();renderUlForm();renderUlList();ulNote("Load <b>"+esc(body.loadNo)+"</b> submitted. Find it in Reports › Unloading Reports, and pick it in Assortment.","ok")}
+    if(submit){ul=newUl();keepUl();renderUlForm();renderUlList();ulNote("Load <b>"+esc(body.loadNo)+"</b> submitted. It is listed under Submitted on the left, and can be picked in Assortment.","ok")}
     else{ul.id=ref.id;ul.status="draft";ul.dirty=false;keepUl();renderUlState();renderUlList();ulNote("");toast("Draft saved")}
   }catch(e){ulNote(e&&e.code==="invalid_argument"?"You don't have permission to save this.":"Couldn't save. Check your connection and try again.","err");$("#ulErr").scrollIntoView({block:"center",behavior:"smooth"})}
   finally{btns.forEach(b=>b.disabled=false)}
@@ -2007,7 +1966,7 @@ async function openUl(id){
   if(ul.dirty&&ul.id!==id&&!await ask("The lot unloading on screen has unsaved changes. Open this one anyway?"))return;
   ul=newUl();ul.id=id;ul.status=r.status||"submitted";ul.editSub=ulSubmitted(r);ul.loadNo=String(r.loadNo||"").toUpperCase();ul.origin=String(r.origin||"").toUpperCase();ul.date=r.date||"";
   (r.rows||[]).forEach(x=>{if(!x||!x.size)return;ul.rows[x.size]={pcs:x.pcs==null?"":String(x.pcs),wt:x.wt==null?"":String(x.wt)};if(!ul.sizes.includes(x.size))ul.sizes.push(x.size)});ulSortSizes();
-  keepUl();renderUlForm();renderUlList();ulNote(ulSubmitted(r)?"Editing a submitted load. Submit again to keep it in reports; Save draft moves it back to drafts.":"");
+  keepUl();renderUlForm();renderUlList();ulNote(ulSubmitted(r)?"Editing a submitted load. Submit again to keep it under Submitted; Save Draft moves it back to Drafts.":"");
 }
 async function deleteUl(id){
   const r=unloads[id];if(!r)return;
@@ -2017,14 +1976,22 @@ async function deleteUl(id){
   catch(e){tell("Couldn't delete. Check your permissions and connection.")}
 }
 $("#ulDelete").onclick=()=>ul.id&&deleteUl(ul.id);
+$("#ulDiscard").onclick=async()=>{
+  const id=ul.id&&unloads[ul.id]?ul.id:null;
+  if(!await ask(ul.dirty?(id?"Discard the changes on screen? The saved copy stays as it is.":"Discard this lot unloading? What is on screen is lost."):"Clear the screen? Nothing is lost."))return;
+  ul=newUl();keepUl();ulNote("");
+  if(id)await openUl(id);else{renderUlForm();renderUlList()}
+};
 function renderUlList(){
   const box=$("#ulList");
   if(dbState==="none"){box.innerHTML='<p class="note err">Saved lot unloadings can\'t be reached from here. Sign in to KKSK Group and reload.</p>';return}
   const q=($("#ulSearch").value||"").trim().toLowerCase();
-  const ids=Object.keys(unloads).filter(id=>{const r=unloads[id];return r.status==="draft"&&(!q||String(r.loadNo).toLowerCase().includes(q)||String(r.origin).toLowerCase().includes(q))})
-    .sort((a,b)=>String(unloads[b].updatedAt).localeCompare(String(unloads[a].updatedAt)));
-  if(!ids.length){box.innerHTML='<p class="muted" style="padding:6px 4px;margin:0">'+(ulState==="loading"?"Loading…":q?"Nothing matches that search.":"No drafts. Submitted loads are in Reports › Unloading Reports.")+"</p>";return}
-  box.innerHTML=ids.map(id=>{const r=unloads[id];return'<div class="side-item'+(id===ul.id?" on":"")+'" data-openu="'+esc(id)+'" role="button" tabindex="0"><div class="t"><b>Load '+esc(r.loadNo)+(r.origin?" &middot; "+esc(r.origin):"")+"</b><small>"+(r.date?isoToDmy(r.date)+" &middot; ":"")+(r.totalPcs||0)+" pcs &middot; "+f2(r.totalWt||0)+' kg</small></div><button class="x" data-delu="'+esc(id)+'" aria-label="Delete load '+esc(r.loadNo)+'">×</button></div>'}).join("");
+  const hit=r=>!q||String(r.loadNo).toLowerCase().includes(q)||String(r.origin).toLowerCase().includes(q);
+  const dr=Object.keys(unloads).filter(id=>unloads[id].status==="draft"&&hit(unloads[id])).sort((a,b)=>String(unloads[b].updatedAt).localeCompare(String(unloads[a].updatedAt)));
+  const sb=Object.keys(unloads).filter(id=>ulSubmitted(unloads[id])&&hit(unloads[id])).sort((a,b)=>String(unloads[b].date).localeCompare(String(unloads[a].date))||String(unloads[b].updatedAt).localeCompare(String(unloads[a].updatedAt)));
+  const item=id=>{const r=unloads[id],used=ulSubmitted(r)?Object.values(reports).filter(a=>a.data&&(a.data.loads||[]).some(l=>l.id===id)).length:0;
+    return'<div class="side-item'+(id===ul.id?" on":"")+'" data-openu="'+esc(id)+'" role="button" tabindex="0"><div class="t"><b>Load '+esc(r.loadNo)+(r.origin?" &middot; "+esc(r.origin):"")+"</b><small>"+(r.date?isoToDmy(r.date)+" &middot; ":"")+(r.totalPcs||0)+" pcs &middot; "+f2(r.totalWt||0)+" kg"+(used?" &middot; in "+used+" assortment"+(used>1?"s":""):"")+'</small></div><button class="x" data-delu="'+esc(id)+'" aria-label="Delete load '+esc(r.loadNo)+'">×</button></div>'};
+  box.innerHTML=sideHtml(dr.map(item),sb.map(item),q,ulState==="loading");
 }
 $("#ulSearch").addEventListener("input",renderUlList);
 $("#ulList").addEventListener("click",e=>{const d=e.target.closest("[data-delu]");if(d){e.stopPropagation();deleteUl(d.dataset.delu);return}const o=e.target.closest("[data-openu]");if(o)openUl(o.dataset.openu)});
@@ -2032,58 +1999,16 @@ $("#ulList").addEventListener("keydown",e=>{if(e.key==="Enter"){const o=e.target
 function renderUl(){renderUlList();renderUlForm()} /* the form redraws so the size chips follow the lookup */
 renderUlForm();
 
-/* ---------- Reports › Unloading Reports ---------- */
+/* ---------- Data › Unloading Reports ---------- */
 function fillOriginFilter(sel,cur){const os=originCodes();sel.innerHTML='<option value="">All origins</option>'+os.map(o=>'<option value="'+esc(o)+'"'+(o===cur?" selected":"")+">"+esc(o)+"</option>").join("")}
 function inRange(d,from,to){if((from||to)&&!d)return false;if(from&&d<from)return false;if(to&&d>to)return false;return true}
-function renderUlRep(){
-  const box=$("#ulRepList");if(!box)return;
-  const cur=$("#ulrOrigin").value;fillOriginFilter($("#ulrOrigin"),cur);
-  const q=($("#ulrQ").value||"").trim().toUpperCase(),o=$("#ulrOrigin").value,from=$("#ulrFrom").value,to=$("#ulrTo").value;
-  const ids=Object.keys(unloads).filter(id=>{const r=unloads[id];return ulSubmitted(r)&&(!q||String(r.loadNo).toUpperCase().includes(q))&&(!o||String(r.origin).toUpperCase()===o)&&inRange(r.date||"",from,to)})
-    .sort((a,b)=>String(unloads[b].date).localeCompare(String(unloads[a].date))||String(unloads[b].updatedAt).localeCompare(String(unloads[a].updatedAt)));
-  let P=0,W=0;ids.forEach(id=>{P+=num(unloads[id].totalPcs);W+=num(unloads[id].totalWt)});
-  $("#ulRepCount").textContent=ig(ids.length)+" load"+(ids.length===1?"":"s")+" · "+ig(P)+" pcs · "+igkg(W)+" kg";
-  if(!ids.length){box.innerHTML='<p class="muted">'+(ulState==="loading"?"Loading…":"No submitted loads match.")+"</p>";return}
-  box.innerHTML=ids.map(id=>{const r=unloads[id];const rows=(r.rows||[]).filter(x=>num(x.pcs)>0);
-    const used=Object.values(reports).filter(a=>a.data&&(a.data.loads||[]).some(l=>l.id===id)).length;
-    return'<details class="rep-item"><summary><div class="ri-main"><b>Load '+esc(r.loadNo)+'</b><span class="tag org">'+esc(r.origin)+'</span></div><div class="ri-meta">'+(r.date?isoToDmy(r.date)+" &middot; ":"")+num(r.totalPcs)+" pcs &middot; "+f2(num(r.totalWt))+" kg &middot; "+(num(r.totalPcs)?f2(num(r.totalWt)/num(r.totalPcs)):"0.00")+" kg/pc"+(used?" &middot; in "+used+" assortment"+(used>1?"s":""):"")+"</div></summary>"+
-      '<div class="ri-body"><div class="tbl-wrap"><table class="mini"><thead><tr><th>Size</th><th>Pieces</th><th>Weight (kg)</th><th>Kg / pc</th></tr></thead><tbody>'+
-      rows.map(x=>"<tr><td>"+esc(x.size)+"</td><td>"+num(x.pcs)+"</td><td>"+f2(num(x.wt))+"</td><td>"+(num(x.pcs)?f2(num(x.wt)/num(x.pcs)):"")+"</td></tr>").join("")+
-      '<tr class="t"><td>Total</td><td>'+num(r.totalPcs)+"</td><td>"+f2(num(r.totalWt))+"</td><td>"+(num(r.totalPcs)?f2(num(r.totalWt)/num(r.totalPcs)):"")+"</td></tr></tbody></table></div>"+
-      '<div class="row ri-act"><button class="btn small" data-editul="'+esc(id)+'">Edit in Unloading</button><button class="btn small danger" data-delulr="'+esc(id)+'">Delete</button></div></div></details>'}).join("");
+/* Open the Costing tab for the lot of a submitted assortment (every other lot of its origin unticked). */
+function openCostingFor(id){
+  const r=reports[id];if(!r)return;const lot=lotOf(r);
+  rp.origin=String((r.origins||[])[0]||"").toUpperCase();rp.from="";rp.to="";rp.off=[];rp.subOnly=false;
+  const ks=new Set();matchingAsr(true).forEach(({r:x})=>{if((x.data.rows||[]).some(y=>y.origin===rp.origin))ks.add(lotOf(x))});
+  rp.offLots=[...ks].filter(k=>k!==lot);keepRp();showTab("costing");
 }
-["ulrQ","ulrOrigin","ulrFrom","ulrTo"].forEach(i=>$("#"+i).addEventListener(i==="ulrQ"?"input":"change",renderUlRep));
-$("#ulRepList").addEventListener("click",e=>{const a=e.target.closest("[data-editul]"),d=e.target.closest("[data-delulr]");if(a){showTab("unload");openUl(a.dataset.editul)}if(d)deleteUl(d.dataset.delulr)});
-
-/* ---------- Reports › Assortment Reports ---------- */
-function renderAsRep(){
-  const box=$("#asRepList");if(!box)return;
-  const cur=$("#asrOrigin").value;fillOriginFilter($("#asrOrigin"),cur);
-  const q=($("#asrQ").value||"").trim().toUpperCase(),o=$("#asrOrigin").value,from=$("#asrFrom").value,to=$("#asrTo").value;
-  const ids=Object.keys(reports).filter(id=>{const r=reports[id];if(r.status!=="submitted")return false;
-    if(q&&!String(r.lotNo||"").toUpperCase().includes(q)&&!(r.loadNos||[]).some(x=>String(x).toUpperCase().includes(q)))return false;
-    if(o&&!(r.origins||[]).map(x=>String(x).toUpperCase()).includes(o))return false;
-    return inRange(asrDate(r),from,to)})
-    .sort((a,b)=>String(asrDate(reports[b])).localeCompare(String(asrDate(reports[a])))||String(reports[b].updatedAt).localeCompare(String(reports[a].updatedAt)));
-  let G=0;ids.forEach(id=>G+=num(reports[id].graded));
-  $("#asRepCount").textContent=ids.length+" lot"+(ids.length===1?"":"s")+" · "+G+" pcs graded";
-  if(!ids.length){box.innerHTML='<p class="muted">'+(repState==="loading"?"Loading…":"No submitted assortments match.")+"</p>";return}
-  box.innerHTML=ids.map(id=>{const r=reports[id],a=r.data||{},sh=a.override?(a.override.name||"edited rates")+" (edited)":(sheets[a.sheetId]?sheets[a.sheetId].name:"—");
-    const rows=(a.rows||[]).map(x=>{const C=aCnt(a,x.key,"C"),F=aCnt(a,x.key,"F");return"<tr><td>"+esc(x.origin)+"</td><td>"+esc(x.loadNo)+"</td><td>"+esc(x.size)+"</td><td>"+num(x.pieces)+"</td><td>"+f2(num(x.rawWt))+"</td><td>"+C+"</td>"+(a.cf?"<td>"+F+"</td>":"")+"</tr>"}).join("");
-    return'<details class="rep-item"><summary><div class="ri-main"><b>Lot '+esc(r.lotNo||"—")+"</b>"+(r.origins||[]).map(x=>'<span class="tag org">'+esc(x)+"</span>").join("")+(()=>{let C=0,F=0;(a.rows||[]).forEach(x=>{C+=aCnt(a,x.key,"C");F+=aCnt(a,x.key,"F")});return(C||!F?'<span class="tag">Chrome '+ig(C)+"</span>":"")+(F?'<span class="tag tan">Chrome Free '+ig(F)+"</span>":"")})()+'</div><div class="ri-meta">'+(asrDate(r)?isoToDmy(asrDate(r))+" &middot; ":"")+"Loads "+esc((r.loadNos||[]).join(", "))+" &middot; "+num(r.graded)+" / "+num(r.totalPieces)+" pcs &middot; "+esc(sh)+"</div></summary>"+
-      '<div class="ri-body"><div class="tbl-wrap"><table class="mini"><thead><tr><th>Origin</th><th>Load</th><th>Size</th><th>Pieces</th><th>Raw wt</th><th>Chrome</th>'+(a.cf?"<th>Chrome Free</th>":"")+"</tr></thead><tbody>"+rows+"</tbody></table></div>"+
-      '<div class="row ri-act"><button class="btn small primary" data-costr="'+esc(id)+'">Costing Report</button><button class="btn small" data-editas="'+esc(id)+'">Edit in Assortment</button><button class="btn small danger" data-delas="'+esc(id)+'">Delete</button></div></div></details>'}).join("");
-}
-["asrQ","asrOrigin","asrFrom","asrTo"].forEach(i=>$("#"+i).addEventListener(i==="asrQ"?"input":"change",renderAsRep));
-$("#asRepList").addEventListener("click",e=>{
-  const c=e.target.closest("[data-costr]"),a=e.target.closest("[data-editas]"),d=e.target.closest("[data-delas]");
-  if(a){showTab("report");openReport(a.dataset.editas)}
-  if(d)deleteReport(d.dataset.delas);
-  if(c){const r=reports[c.dataset.costr];if(!r)return;const lot=lotOf(r);
-    rp.origin=String((r.origins||[])[0]||"").toUpperCase();rp.from="";rp.to="";rp.off=[];rp.subOnly=false;
-    const ks=new Set();matchingAsr(true).forEach(({r:x})=>{if((x.data.rows||[]).some(y=>y.origin===rp.origin))ks.add(lotOf(x))});
-    rp.offLots=[...ks].filter(k=>k!==lot);keepRp();showTab("costing")}
-});
 
 /* ---------- origin reports (built from saved assortments) ---------- */
 const RKEY="rhc-orep-v2";
@@ -2244,7 +2169,7 @@ $("#rfLoads").addEventListener("change",e=>{const id=e.target.dataset.rl;if(!id)
 $("#rfAll").onclick=()=>{rp.off=[];keepRp();renderReport()};
 $("#rfNone").onclick=()=>{const o=originIndex()[rp.origin];rp.off=o?Object.keys(o.loads):[];keepRp();renderReport()};
 
-function renderAll(){renderGradeOptions();renderSaveState();renderSavedList();fillFields();renderStep1();renderSheetSelect();renderPicks();renderEntry();renderCs();renderOrigins();renderUlRep();renderAsRep();renderCsRep();renderReport()}
+function renderAll(){renderGradeOptions();renderSaveState();renderSavedList();fillFields();renderStep1();renderSheetSelect();renderPicks();renderEntry();renderCs();renderOrigins();renderReport()}
 renderAll();
 
 /* ---------- sign-in ----------
@@ -2351,7 +2276,7 @@ function onUsers(){
   renderAuth();if(session)unlockApp();renderUsers();
 }
 
-/* ---------- Reports › Users (admin) ---------- */
+/* ---------- Data › Users (admin) ---------- */
 function renderUsers(){
   const box=$("#userList");if(!box||!isAdmin())return;
   const ids=Object.keys(appUsers).sort((a,b)=>String(appUsers[a].username).localeCompare(String(appUsers[b].username)));
@@ -2528,24 +2453,24 @@ function hideToast(){$("#toast").classList.remove("show")}
     db.collection("costsheets").onSnapshot(snap=>{
       sheets=docs(snap);dbState="ready";
       {const s0=csEd&&csEd.id&&sheets[csEd.id];if(s0&&sheetSubmitted(s0)&&!csEd.dirty&&!csEd.editSub){csEd=edFrom("sheet",null,null);if(ed&&ed.mode==="sheet")ed=csEd;keepCs();if(ed===csEd)fillEditor()}}
-      renderSheetSelect();renderPicks();renderEntry();renderCsList();renderCsState();renderCsRep();renderOrigins();scheduleReport();
+      renderSheetSelect();renderPicks();renderEntry();renderCsList();renderCsState();renderOrigins();scheduleReport();
     },()=>{dbState="error";renderSheetSelect();$("#csList").innerHTML='<p class="note err">Cost sheets stopped loading. Reload the page to try again.</p>'});
     db.collection("assortments").orderBy("updatedAt","desc").limit(1000).onSnapshot(snap=>{
       reports=docs(snap);repState="ready";
       {const r=draft.reportId&&reports[draft.reportId];if(r&&r.status==="submitted"&&!draft.dirty&&!draft.editSub){draft=newDraft();undoStack=[];lastAdded=null;saveDraft(false);renderAll()}}
-      renderSavedList();renderSaveState();renderAsRep();renderCsRep();renderUlRep();scheduleReport();
+      renderSavedList();renderSaveState();renderUlList();renderCsList();scheduleReport();
     },()=>{repState="error";$("#savedList").innerHTML='<p class="note err">Saved assortments stopped loading. Reload the page to try again.</p>'});
     db.collection("unloadings").orderBy("updatedAt","desc").limit(1000).onSnapshot(snap=>{
       unloads=docs(snap);ulState="ready";
       {const r=ul.id&&unloads[ul.id];if(r&&ulSubmitted(r)&&!ul.dirty&&!ul.editSub){ul=newUl();keepUl();renderUlForm()}}
-      renderUlList();renderUlState();renderUlRep();renderStep1();renderOrigins();scheduleReport();
+      renderUlList();renderUlState();renderStep1();renderOrigins();scheduleReport();
     },()=>{ulState="error";$("#ulList").innerHTML='<p class="note err">Saved lots stopped loading. Reload the page to try again.</p>'});
     db.collection("appmeta").onSnapshot(snap=>{appMeta=docs(snap);onMeta()},()=>{});
     db.collection("appusers").onSnapshot(snap=>{appUsers=docs(snap);usersState="ready";onUsers()},()=>{usersState="error";renderAuth()});
     db.collection("grades").limit(1000).onSnapshot(snap=>{grades=docs(snap);grState="ready";renderGradeOptions();prefillGrades();if(currentSub==="grades")renderGrades()},()=>{grState="error";if(currentSub==="grades")renderGrades()});
     db.collection("rhsizes").limit(1000).onSnapshot(snap=>{rhsizes=docs(snap);rhState="ready";maybeSeedSizes();ulSortSizes();if(currentTab==="unload")renderUlForm();if(currentSub==="rhsizes")renderRhSizes();renderStep1()},()=>{rhState="error";if(currentSub==="rhsizes")renderRhSizes()});
     db.collection("origins").limit(1000).onSnapshot(snap=>{
-      origins=docs(snap);origState="ready";renderOrigins();checkUlOrigin();if(ed===csEd)renderEdOrigins();renderUlRep();renderAsRep();
+      origins=docs(snap);origState="ready";renderOrigins();checkUlOrigin();if(ed===csEd)renderEdOrigins();
     },()=>{origState="error";$("#orgList").innerHTML='<p class="note err">Origins stopped loading. Reload the page to try again.</p>'});
   }catch(e){dbState="none";renderAll();renderAuth()}
 })();

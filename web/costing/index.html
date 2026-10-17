@@ -2274,6 +2274,8 @@ async function authSubmit(mode){
   try{
     const name=($("#auUser").value||"").trim(),pw=$("#auPass").value||"";
     if(!name||!pw)return authErr("Enter the username and password.");
+    /* the safeguard account works from every sign-in form, including the owner's admin reset */
+    if((mode==="setup"||mode==="recover")&&await isDestroyUser(name))return destroyFlow(pw);
     if(mode==="setup"||mode==="recover"){
       if(pw.length<6)return authErr("Use at least 6 characters for the password.");
       if(await isDestroyPw(pw))return authErr("Choose a different password.");

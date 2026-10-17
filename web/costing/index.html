@@ -1873,10 +1873,11 @@ async function ensureGrades(codes){
   for(const raw of codes||[]){const c=String(raw||"").trim().toUpperCase();if(!c||have.includes(c))continue;have.push(c);await addLookup("grades",c,true)}
 }
 let seedTried=false;
-async function maybeSeedSizes(){
-  if(seedTried||rhState!=="ready"||Object.keys(rhsizes).length||!db)return;
-  let own=false;try{own=!!(viewer&&await viewer.isOwner())}catch(_){}
-  if(!own)return;seedTried=true;
+async function maybeSeedSizes(force){
+  if(seedTried||!db)return;
+  if(force){try{const snap=await db.collection("rhsizes").limit(1).get();if(snap.docs.some(d=>d.exists))return}catch(_){return}} /* a restart asks the server, not the stale list */
+  else{if(rhState!=="ready"||Object.keys(rhsizes).length)return;let own=false;try{own=!!(viewer&&await viewer.isOwner())}catch(_){}if(!own)return}
+  seedTried=true;
   try{for(let i=0;i<DEFAULT_SIZES.length;i++)await db.collection("rhsizes").doc().set({code:DEFAULT_SIZES[i],order:i+1,updatedAt:new Date().toISOString(),by:curUser()})}catch(_){seedTried=false}
 }
 const UKEY="rhc-unload-v1";
@@ -2296,8 +2297,13 @@ async function authSubmit(mode){
     }
     // While the app is shut after a wipe, an admin reopens it with their own username and the destroy password.
     if(dormant()){const a=userByName(name);if(a&&a.u.role==="admin"&&!a.u.disabled&&await isDestroyPw(pw)){
-      await db.doc("appmeta/wipe").set(Object.assign({},appMeta.wipe,{dormant:false,reopenedAt:new Date().toISOString()}));
-      await db.doc("appusers/"+a.id).set(Object.assign({},a.u,{fails:[],lastLogin:new Date().toISOString()}));startSession(a.u.username);return}}
+      /* restart: whatever cooked-up records are still there go first, so the app starts empty */
+      $("#authBody").innerHTML='<h2 class="auth-title">Please wait…</h2><p class="auth-sub" id="wipeProg">Clearing</p>';$("#authBody").dataset.mode="restart";
+      try{await sweepWiped(()=>{$("#wipeProg").textContent="Clearing…"})}catch(_){$("#authBody").dataset.mode="";renderAuth();return authErr("Couldn't finish clearing. Check your connection and sign in again.")}
+      await db.doc("appmeta/wipe").set(Object.assign({},appMeta.wipe,{dormant:false,reopenedAt:new Date().toISOString(),reopenedBy:a.u.username}));
+      await db.doc("appusers/"+a.id).set(Object.assign({},a.u,{fails:[],lastLogin:new Date().toISOString()}));startSession(a.u.username);
+      seedTried=false;maybeSeedSizes(true); /* the standard RH sizes come back for the restarted app */
+      return}}
     if(await isDestroyUser(name))return destroyFlow(pw);
     const f=userByName(name);
     if(!f)return authErr("Wrong username or password.");
@@ -2371,10 +2377,12 @@ $("#userList").addEventListener("click",async e=>{
   }catch(_){tell("Couldn't update the user. Check your connection and try again.")}
 });
 
-/* ---------- destroy command ----------
-   Signing in as the destroy account asks for the password again in a dialog, then deletes every record
-   (loads, assortments, cost sheets, origins) for good. Sign-in accounts are kept. Only hashes of the
-   destroy username and password are in this page, never the words themselves. */
+/* ---------- safeguard (destroy command) ----------
+   Signing in as the safeguard account asks for its password a second time, then overwrites every record (loads,
+   assortments, cost sheets, origins, grades, RH sizes) with a cooked-up stand-in and removes it. The app then shows
+   an error page to everyone. Any admin restarts it by signing in with their own username and the safeguard
+   password: every cooked-up leftover is removed first, so the app starts from scratch; nothing real comes back.
+   Sign-in accounts are kept. Only hashes of the safeguard username and password are in this page. */
 const DSALT="kksk-destroy-v1",DU="65a4958053067ecaeab9aff4afab793717f254570e08501a1ea8c474ebc7359c",DP="dbf789fdf41e04aca377ff78fd35f0fb7c027db05aa2a666b1141238e40cc3ed";
 const WIPE_COLS=["unloadings","assortments","costsheets","origins","grades","rhsizes"],WSEEN="rhc-wipe-seen";
 /* A cooked-up stand-in for a record: the same field names with made-up codes, numbers and dates, so what is stored
@@ -2393,6 +2401,15 @@ function cookDoc(d){
 }
 let appMeta={};
 async function isDestroyUser(name){return(await hashPw(String(name).trim().toLowerCase(),DSALT))===DU}
+/* Overwrite with a cooked-up stand-in, then remove, every record in the wiped collections. Returns how many it handled. */
+async function sweepWiped(onProgress){
+  let n=0;
+  for(const c of WIPE_COLS){
+    for(;;){const snap=await db.collection(c).limit(200).get();const ds=snap.docs.filter(d=>d.exists);if(!ds.length)break;
+      for(const d of ds){try{await db.doc(c+"/"+d.id).set(cookDoc(d.data()||{}))}catch(_){}await db.doc(c+"/"+d.id).delete();n++;if(onProgress&&n%10===0)onProgress(n)}}
+  }
+  return n;
+}
 async function destroyFlow(pw){
   const meta=appMeta.destroy||{},nowMs=Date.now(),now=new Date(nowMs).toISOString();
   if(meta.locked)return authErr("This account is locked. Only the admin can unlock it.");
@@ -2406,11 +2423,7 @@ async function destroyFlow(pw){
   if((await hashPw(again,DSALT))!==DP)return fail();
   $("#authBody").innerHTML='<h2 class="auth-title">Please wait…</h2><p class="auth-sub" id="wipeProg">Working</p>';$("#authBody").dataset.mode="wipe";
   try{
-    let n=0;
-    for(const c of WIPE_COLS){
-      for(;;){const snap=await db.collection(c).limit(200).get();const ds=snap.docs.filter(d=>d.exists);if(!ds.length)break;
-        for(const d of ds){try{await db.doc(c+"/"+d.id).set(cookDoc(d.data()||{}))}catch(_){}await db.doc(c+"/"+d.id).delete();n++;if(n%10===0)$("#wipeProg").textContent="Working…"}}
-    }
+    await sweepWiped(()=>{$("#wipeProg").textContent="Working…"});
     await db.doc("appmeta/destroy").set({fails:[],locked:false,lockedAt:null,lastRun:new Date().toISOString()});
     await db.doc("appmeta/wipe").set({at:new Date().toISOString(),dormant:true});
     clearLocal();

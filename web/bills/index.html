@@ -890,7 +890,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         <div class="f" id="uPinF" hidden><label for="uPin">Profile PIN</label><input class="field num" id="uPin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="4 digits"><span class="hint" id="uPinH"></span><button class="link-btn" id="uPinReset" type="button" hidden>Reset PIN</button><span class="err" id="uEPin" hidden></span></div>
         <div class="f wide" id="uLinkF" hidden><label for="uLink">Link to a Person Already Added</label><select class="field" id="uLink"></select><span class="hint">Pick the person you added without a login, if this request is theirs. Everything entered for them moves to this login.</span></div>
         <div class="f wide" id="uAppsF"><span class="lb">Apps</span>
-          <div class="uapps"><label class="check"><input type="checkbox" id="uAppApr"> Approvals</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label>
+          <div class="uapps"><label class="check"><input type="checkbox" id="uAppApr"> Approvals</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check"><input type="checkbox" id="uAppWb"> W/B Costing</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label>
             <div class="uapp-pp" hidden><span>Production Planning</span><select class="field" id="uPpRole" aria-label="Production Planning role"><option value="">No access</option><option value="approver">Approver</option><option value="planner">Planner</option><option value="floor">Floor Team</option></select>
               <select class="field" id="uPpRegion" aria-label="Production Planning region"><option value="">Erode and Ambur</option><option value="E">Erode</option><option value="A">Ambur</option></select></div></div>
           <span class="hint">They see only the apps given here; with one app they go straight into it. Admins get every app.</span><span class="err" id="uEApps" hidden>Give at least one app.</span></div>
@@ -2105,7 +2105,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function fillUserForm(src, roles, balUid) {
     var js = jobsOf(src); jobChecks($("uJobs"), js); $("uJobsE").hidden = true;
-    var ap = appsWith(src); $("uAppMnt").checked = ap.mnt; $("uAppRe").checked = ap.re; $("uReCo").checked = !!(src && src.reCompanies); $("uAppAcc").checked = ap.acc; $("uAppFin").checked = ap.fin; $("uAppApr").checked = ap.apr; $("uPpRole").value = (ap.pp && ap.pp.role) || ""; $("uPpRegion").value = (ap.pp && ap.pp.region) || ""; $("uEApps").hidden = true; syncAppsF();
+    var ap = appsWith(src); $("uAppMnt").checked = ap.mnt; $("uAppRe").checked = ap.re; $("uReCo").checked = !!(src && src.reCompanies); $("uAppAcc").checked = ap.acc; $("uAppFin").checked = ap.fin; $("uAppApr").checked = ap.apr; $("uAppWb").checked = !!(src && src.apps && src.apps.wb); $("uPpRole").value = (ap.pp && ap.pp.role) || ""; $("uPpRegion").value = (ap.pp && ap.pp.region) || ""; $("uEApps").hidden = true; syncAppsF();
     var ua = $("uAppr"); ua.parentNode.replaceChild(approverSelect("uAppr", src.defaultApproverId || ""), ua); $("uAppr").options[0].textContent = "Choose the default approver"; syncApprF();
     if (!roles && js.length) { roles = {}; (src.companyIds || []).forEach(function (cid) { roles[cid] = stepsForJobs(js); }); }
     $("uName").value = src.name || ""; usLoc.close(); usLoc.fill(src.locationId || ""); usDept.close(); usDept.fill(src.deptId || ""); buildChecks($("uCos"), src.companyIds || [], true);
@@ -2137,7 +2137,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var rs = document.querySelector("#secUser .uresp"); if (rs) rs.hidden = !bv;
     if (!bv) $("uApprF").hidden = true; else syncApprF();
   }
-  function appsOf(u) { var a = (u && u.apps) || {}, w = appsWith(u), out = APP_KEYS.filter(function (k) { return w[k]; }).map(function (k) { return APP_NAMES[k]; }); if (a.pp && a.pp.role) out.push("Production Planning (" + ({ approver: "Approver", planner: "Planner", floor: "Floor Team" }[a.pp.role] || a.pp.role) + (a.pp.region ? ", " + ({ E: "Erode", A: "Ambur" }[a.pp.region]) : "") + ")"); return out.join(", "); }
+  function appsOf(u) { var a = (u && u.apps) || {}, w = appsWith(u), out = APP_KEYS.filter(function (k) { return w[k]; }).map(function (k) { return APP_NAMES[k]; }); if (a.wb) out.push("W/B Costing"); if (a.pp && a.pp.role) out.push("Production Planning (" + ({ approver: "Approver", planner: "Planner", floor: "Floor Team" }[a.pp.role] || a.pp.role) + (a.pp.region ? ", " + ({ E: "Erode", A: "Ambur" }[a.pp.region]) : "") + ")"); return out.join(", "); }
   function syncApprF() { var on = readChecks($("uJobs")).indexOf("purchaser") >= 0; $("uApprF").hidden = !on; if (!on) $("uEAppr").hidden = true; }
   function backToUsers() { S.userEditing = null; renderUsers(); renderNav(); show("secUsers"); }
   function saveUser() {
@@ -2149,8 +2149,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var obs = null; if (S.balances[balUid] || noLogin || link) { obs = Object.assign({}, (S.balances[balUid] || {}).openings || {}); Array.prototype.forEach.call(document.querySelectorAll("#uOb tr[data-co]"), function (tr) { var cid = tr.getAttribute("data-co"), v = $("uob_" + cid).value.trim(); if (v === "") delete obs[cid]; else if (num(v) != null) obs[cid] = round2(num(v)); }); }
     if (!name) { $("uEName").hidden = false; $("uName").classList.add("bad"); ok = false; }
     if (!loc) { $("uELoc").hidden = false; ok = false; }
-    var ma = readApps(), appBv = anyMoneyApp(ma), ppRole = $("uPpRole").value, apps = { bv: appBv, mnt: ma.mnt, re: ma.re, acc: ma.acc, fin: ma.fin, apr: ma.apr, pp: ppRole ? { role: ppRole, region: $("uPpRegion").value || null } : null };
-    $("uEApps").hidden = true; $("uEApps").textContent = "Give at least one app."; if (!appBv && !ppRole) { $("uEApps").hidden = false; ok = false; }
+    var ma = readApps(), appBv = anyMoneyApp(ma), ppRole = $("uPpRole").value, apps = { bv: appBv, mnt: ma.mnt, re: ma.re, acc: ma.acc, fin: ma.fin, apr: ma.apr, wb: $("uAppWb").checked, pp: ppRole ? { role: ppRole, region: $("uPpRegion").value || null } : null };
+    $("uEApps").hidden = true; $("uEApps").textContent = "Give at least one app."; if (!appBv && !ppRole && !apps.wb) { $("uEApps").hidden = false; ok = false; }
     if (appBv && !cos.length) { $("uECos").hidden = false; ok = false; }
     /* Each app only for the responsibilities that belong in it. */
     var misfit = APP_KEYS.filter(function (k) { return ma[k] && !rolesFit(roles, k); });
@@ -2411,7 +2411,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var a = S._adm; if (!a) return;
     if (S.tab === "Bills") { readCard(); doSave(); }
     S.isAdmin = a.a; S.isSuper = a.s; S.isAppAdmin = a.p; S._adm = null; S.actId = ""; S.myUser = null; S.myReq = null; vaStore("");
-    document.body.classList.toggle("is-admin", !!S.isAdmin); vaApps(); if (window.bvPortal) window.bvPortal().then(function (p) { var ap = p.apps || {}; $("appsLink").hidden = !(APP_KEYS.filter(function (k) { return ap[k]; }).length > 1); }, function () {});
+    document.body.classList.toggle("is-admin", !!S.isAdmin); vaApps(); if (window.bvPortal) window.bvPortal().then(function (p) { var ap = p.apps || {}; $("appsLink").hidden = !(APP_KEYS.concat(["wb"]).filter(function (k) { return ap[k]; }).length > 1); }, function () {});
     if (S.raw) applyScope(); invalidate(); renderAdminMe(); setTab(a.tab && a.tab !== "Accounts" ? a.tab : HOME_TAB);
   }
   function closeMeMenu() { var m = document.querySelector(".memenu"); if (m) m.remove(); var b = document.querySelector(".me .mebtn"); if (b) b.setAttribute("aria-expanded", "false"); document.removeEventListener("click", closeMeMenu); }
@@ -11813,7 +11813,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (window.bvSuperAdmins) window.bvSuperAdmins().then(function (l) { S.supers = l || []; }, function () { S.supers = []; });
       return S.user.me().then(function (me) {
         S.me = me || {}; startPrefs();
-        if (window.bvPortal) window.bvPortal().then(function (p) { var a = p.apps || {}; $("appsLink").hidden = !(APP_KEYS.filter(function (k) { return a[k]; }).length > 1); }, function () {});
+        if (window.bvPortal) window.bvPortal().then(function (p) { var a = p.apps || {}; $("appsLink").hidden = !(APP_KEYS.concat(["wb"]).filter(function (k) { return a[k]; }).length > 1); }, function () {});
         var box = $("me"); box.textContent = "";
         box.appendChild(el("div", { class: "nm" }, S.me.name || "Signed in")); box.appendChild(el("div", { class: "rl" }, S.me.canEdit ? "Super Admin" : "")); box.hidden = false; renderMeAvatar();
         if (!S.me.canEdit) {

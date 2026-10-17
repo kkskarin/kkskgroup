@@ -626,9 +626,9 @@ input:hover,select:hover{border-color:#a9bbc1}
   </div>
   <div class="navband">
   <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" aria-selected="true" data-tab="costing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 17v-3M12 17v-6M15 17v-4"/></svg><span class="tl">Costing</span><span class="ts">Costing</span></button>
     <button role="tab" aria-selected="false" data-tab="unload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg><span class="tl">Unloading</span><span class="ts">Unloading</span></button>
-    <button role="tab" aria-selected="true" data-tab="report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M14 17h6M17 14v6"/></svg><span class="tl">Assortment</span><span class="ts">Assortment</span></button>
-    <button role="tab" aria-selected="false" data-tab="costing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 17v-3M12 17v-6M15 17v-4"/></svg><span class="tl">Costing</span><span class="ts">Costing</span></button>
+    <button role="tab" aria-selected="false" data-tab="report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M14 17h6M17 14v6"/></svg><span class="tl">Assortment</span><span class="ts">Assortment</span></button>
     <button role="tab" aria-selected="false" data-tab="sheet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M3.5 14h17M9.5 9v11"/></svg><span class="tl">Cost Sheet</span><span class="ts">Cost Sheet</span></button>
     <button role="tab" aria-selected="false" data-tab="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg><span class="tl">Data</span><span class="ts">Data</span></button>
   </nav>
@@ -637,7 +637,7 @@ input:hover,select:hover{border-color:#a9bbc1}
 </div>
 
 <main>
-<section id="view-report">
+<section id="view-report" hidden>
   <div class="pagehead"><h2>Assortment</h2><p>Grade and size the hides of a lot, piece by piece.</p></div>
   <div class="split">
     <aside class="step side no-print">
@@ -737,7 +737,7 @@ input:hover,select:hover{border-color:#a9bbc1}
   </div>
 </section>
 
-<section id="view-costing" hidden>
+<section id="view-costing">
   <div class="pagehead"><h2>Costing</h2><p>The costing report for an origin and period: pick the lots and loads, check it, then print or download it.</p></div>
   <div class="split">
     <aside class="step side no-print">
@@ -1535,7 +1535,7 @@ $("#csList").addEventListener("click",e=>{const d=e.target.closest("[data-delcs]
 $("#csHome").appendChild($("#edCore"));
 
 /* ---------- tabs ---------- */
-var currentTab="report", currentSub="origins";
+var currentTab="costing", currentSub="origins";
 function showTab(t){
   document.querySelectorAll("[data-tab]").forEach(x=>x.setAttribute("aria-selected",x.dataset.tab===t?"true":"false"));
   currentTab=t;["unload","report","costing","sheet","reports"].forEach(v=>$("#view-"+v).hidden=v!==t);

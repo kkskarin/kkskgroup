@@ -739,6 +739,8 @@ input:hover,select:hover{border-color:#a9bbc1}
     <button role="tab" data-sub="costing" aria-selected="true">Costing Report</button>
     <button role="tab" data-sub="csrep">Cost Sheets</button>
     <button role="tab" data-sub="origins">Origins</button>
+    <button role="tab" data-sub="grades">Grades</button>
+    <button role="tab" data-sub="rhsizes">RH Sizes</button>
     <button role="tab" data-sub="users" hidden>Users</button>
   </nav>
   <div class="pagehead"><h2>Reports</h2><p>Submitted loads, lots and cost sheets, and the costing report for printing.</p></div>
@@ -843,6 +845,32 @@ input:hover,select:hover{border-color:#a9bbc1}
       </div>
     </div>
   </div>
+  <div id="sub-grades" hidden>
+    <div class="step">
+      <header><h2>Grades</h2><span class="aside muted">Grades offered in cost sheets; a grade typed into a cost sheet is added here when the sheet is saved</span></header>
+      <div class="body">
+        <div class="row org-add">
+          <input id="grCode" type="text" placeholder="New grade code, e.g. A" autocomplete="off">
+          <button class="btn primary" id="grAdd" type="button">Add Grade</button>
+        </div>
+        <div id="grErr"></div>
+        <div id="grList" class="org-list"></div>
+      </div>
+    </div>
+  </div>
+  <div id="sub-rhsizes" hidden>
+    <div class="step">
+      <header><h2>RH Sizes</h2><span class="aside muted">Raw hide sizes to tick in load unloading, in this order</span></header>
+      <div class="body">
+        <div class="row org-add">
+          <input id="rhCode" type="text" placeholder="New size code, e.g. DH" autocomplete="off">
+          <button class="btn primary" id="rhAdd" type="button">Add Size</button>
+        </div>
+        <div id="rhErr"></div>
+        <div id="rhList" class="org-list"></div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section id="view-unload" hidden>
@@ -871,7 +899,12 @@ input:hover,select:hover{border-color:#a9bbc1}
       </div>
       <div class="step">
         <header><span class="n">2</span><h2>Raw hide sizes</h2><span class="aside muted">Enter moves down the column</span></header>
-        <div class="body"><div class="tbl-wrap"><table class="ul-tbl" id="ulTbl"></table></div></div>
+        <div class="body">
+          <p class="muted" style="font-size:.86rem;margin:0 0 8px">Tick the sizes unloaded; each ticked size gets a row below. A size not in the list can be added here and is kept for next time.</p>
+          <div class="picks" id="ulSizePicks" style="margin-bottom:10px"></div>
+          <div class="row" style="margin-bottom:14px;flex-wrap:nowrap;max-width:360px"><input id="ulNewSize" type="text" placeholder="Add a size not listed" autocomplete="off" style="text-transform:uppercase"><button class="btn small" id="ulNewSizeBtn" type="button">Add Size</button></div>
+          <div class="tbl-wrap"><table class="ul-tbl" id="ulTbl"></table></div>
+        </div>
       </div>
     </div>
   </div>
@@ -928,6 +961,7 @@ input:hover,select:hover{border-color:#a9bbc1}
 
 <div id="printSheet" aria-hidden="true"></div>
 <datalist id="originOptions"></datalist>
+<datalist id="gradeOptions"></datalist>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <div class="modal" id="askBox" role="alertdialog" aria-modal="true" aria-labelledby="askMsg">
   <div class="dialog ask">
@@ -1122,7 +1156,7 @@ $("#loadChips").addEventListener("click",async e=>{const b=e.target.closest("[da
   draft.loads=draft.loads.filter(l=>l.id!==id);draft.rows=draft.rows.filter(r=>r.loadId!==id);
   saveDraft();renderStep1();renderEntry();scheduleReport();
 });
-function sortRows(){const lo=draft.loads.map(l=>l.id);draft.rows.sort((a,b)=>lo.indexOf(a.loadId)-lo.indexOf(b.loadId)||UL_SIZES.indexOf(a.size)-UL_SIZES.indexOf(b.size))}
+function sortRows(){const lo=draft.loads.map(l=>l.id);draft.rows.sort((a,b)=>lo.indexOf(a.loadId)-lo.indexOf(b.loadId)||sizeList().indexOf(a.size)-sizeList().indexOf(b.size))}
 $("#sizePicks").addEventListener("change",e=>{
   const ld=e.target.dataset.ld,sz=e.target.dataset.sz; if(!ld)return;
   const key=ld+"|"+sz;
@@ -1405,7 +1439,7 @@ function renderEdTable(){
   for(let i=0;i<R;i++)h+=i<R-1?'<td><input type="number" step="0.01" min="0" inputmode="decimal" data-k="b:'+i+'" value="'+cell(d.bounds[i])+'"></td>':'<td class="muted" style="text-align:center">no limit</td>';
   h+="<td></td></tr>";
   d.grades.forEach((g,gi)=>{
-    h+='<tr><td><input class="code" data-k="c:'+gi+'" value="'+esc(g.code)+'" placeholder="Grade"></td>';
+    h+='<tr><td><input class="code" list="gradeOptions" data-k="c:'+gi+'" value="'+esc(g.code)+'" placeholder="Grade"></td>';
     for(let i=0;i<R;i++)h+='<td><input type="number" step="0.01" min="0" inputmode="decimal" data-k="r:'+gi+":"+i+'" value="'+cell(g.rates[i])+'"></td>';
     h+='<td><button class="x" data-rmrow="'+gi+'" aria-label="Remove grade">×</button></td></tr>';
   });
@@ -1499,6 +1533,7 @@ async function saveCs(submit){
   const btns=[$("#csSaveDraft"),$("#csSubmit")];btns.forEach(b=>b.disabled=true);
   try{
     await ref.set(body);
+    ensureGrades(data.grades.map(g=>g.code));
     if(submit){csEd=edFrom("sheet",null,null);ed=csEd;keepCs();renderCs();csNote("Cost sheet <b>"+esc(data.name)+"</b> submitted. Find it in Reports › Cost Sheets.","ok")}
     else{csEd.id=ref.id;csEd.status="draft";csEd.dirty=false;csEd.updatedAt=now;keepCs();renderCs();csNote("");toast("Draft saved")}
   }catch(e){csNote(e&&e.code==="invalid_argument"?"You don't have permission to save cost sheets.":e&&e.code==="quota_exceeded"?"Storage is full. Delete an old sheet first.":"Couldn't save. Check your connection and try again.","err")}
@@ -1554,7 +1589,7 @@ function showTab(t){
 function showSub(s){
   currentSub=s;document.querySelectorAll("[data-sub]").forEach(x=>x.setAttribute("aria-selected",x.dataset.sub===s?"true":"false"));
   if(s==="users"&&!isAdmin())s="costing";currentSub=s;document.querySelectorAll("[data-sub]").forEach(x=>x.setAttribute("aria-selected",x.dataset.sub===s?"true":"false"));
-  ["costing","ulrep","asrep","csrep","origins","users"].forEach(v=>$("#sub-"+v).hidden=v!==s);if(s==="users")renderUsers();
+  ["costing","ulrep","asrep","csrep","origins","grades","rhsizes","users"].forEach(v=>$("#sub-"+v).hidden=v!==s);if(s==="users")renderUsers();if(s==="grades")renderGrades();if(s==="rhsizes")renderRhSizes();
   if(s==="costing")renderReport(true);if(s==="ulrep")renderUlRep();if(s==="asrep")renderAsRep();if(s==="csrep")renderCsRep();if(s==="origins")renderOrigins();
 }
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
@@ -1769,23 +1804,122 @@ $("#orgList").addEventListener("click",async e=>{
 });
 
 /* ---------- lot unloading ---------- */
-const UL_SIZES=["DH","XH","LH","H","SH","M","SM","BL","SL","BO","BC","MC","SC","KI","R"];
+/* Grades and RH sizes are lookups (wb_grades, wb_rhsizes): a code and its place in the order. RH sizes fall back to the
+   standard set until the lookup is filled; the Super Admin's first visit seeds it with these in this order. */
+const DEFAULT_SIZES=["DH","XH","LH","H","SH","M","SM","BL","SL","BO","BC","MC","SC","KI","R"];
+let rhsizes={}, grades={}, rhState="loading", grState="loading";
+function lkOrder(map){return Object.keys(map).sort((a,b)=>((map[a].order==null?1e9:map[a].order)-(map[b].order==null?1e9:map[b].order))||String(map[a].code).localeCompare(String(map[b].code)))}
+function lookupList(map,def){const ids=lkOrder(map);return ids.length?ids.map(id=>String(map[id].code).toUpperCase()):(def||[]).slice()}
+function sizeList(){return lookupList(rhsizes,DEFAULT_SIZES)}
+function gradeList(){return lookupList(grades,[])}
+function lkMap(coll){return coll==="grades"?grades:rhsizes}
+async function addLookup(coll,code,quiet){
+  code=String(code||"").trim().toUpperCase().replace(/\s+/g," ");
+  if(!db){tell("Can't save here. Sign in to KKSK Group and reload.");return false}
+  if(!code)return false;
+  const map=lkMap(coll);
+  if(Object.keys(map).some(id=>String(map[id].code).toUpperCase()===code)){if(!quiet)tell(code+" is already in the list.");return true}
+  const order=Object.keys(map).reduce((m,id)=>Math.max(m,num(map[id].order)),0)+1;
+  try{await db.collection(coll).doc().set({code,order,updatedAt:new Date().toISOString(),by:curUser()});return true}
+  catch(e){tell("Couldn't save. Check your permissions and connection.");return false}
+}
+function renderGradeOptions(){const d=$("#gradeOptions");if(d)d.innerHTML=gradeList().map(c=>'<option value="'+esc(c)+'"></option>').join("")}
+function renderLookup(coll,sel,state){
+  const box=$(sel);if(!box)return;const map=lkMap(coll);
+  if(dbState==="none"){box.innerHTML='<p class="note err">Can\'t be reached. Sign in to KKSK Group and reload.</p>';return}
+  const ids=lkOrder(map);
+  if(!ids.length){box.innerHTML='<p class="muted" style="margin:10px 0 0">'+(state==="loading"?"Loading…":"Nothing yet. Add the first one above.")+"</p>";return}
+  box.innerHTML=ids.map((id,i)=>{const code=String(map[id].code).toUpperCase();
+    let used=0;if(coll==="rhsizes")used=Object.values(unloads).filter(u=>(u.rows||[]).some(x=>String(x.size).toUpperCase()===code&&(num(x.pcs)>0||num(x.wt)>0))).length;
+    else used=Object.values(sheets).filter(s0=>(s0.grades||[]).some(g=>String(g.code).toUpperCase()===code)).length;
+    return'<div class="org-card"><div class="org-head"><b>'+esc(code)+'</b><span class="muted small">'+used+(coll==="rhsizes"?" load":" cost sheet")+(used===1?"":"s")+'</span><span style="flex:1"></span>'+
+      '<button class="btn small" data-lkup="'+esc(coll)+':'+esc(id)+'"'+(i===0?" disabled":"")+' aria-label="Move '+esc(code)+' up">↑</button>'+
+      '<button class="btn small" data-lkdn="'+esc(coll)+':'+esc(id)+'"'+(i===ids.length-1?" disabled":"")+' aria-label="Move '+esc(code)+' down">↓</button>'+
+      '<button class="x" data-lkdel="'+esc(coll)+':'+esc(id)+'" aria-label="Delete '+esc(code)+'">×</button></div></div>'}).join("");
+}
+function renderGrades(){renderGradeOptions();renderLookup("grades","#grList",grState)}
+function renderRhSizes(){renderLookup("rhsizes","#rhList",rhState)}
+async function lkMove(coll,id,dir){
+  const map=lkMap(coll),ids=lkOrder(map),i=ids.indexOf(id),j=i+dir;if(i<0||j<0||j>=ids.length)return;
+  const now=new Date().toISOString();
+  /* number the whole list first, so two items never share a place */
+  try{
+    const docs=ids.map((k,n)=>Object.assign({},map[k],{order:n+1}));
+    const t=docs[i].order;docs[i].order=docs[j].order;docs[j].order=t;
+    for(let n=0;n<ids.length;n++)if(docs[n].order!==map[ids[n]].order)await db.doc(coll+"/"+ids[n]).set(Object.assign({},docs[n],{updatedAt:now}));
+  }catch(_){tell("Couldn't reorder. Check your permissions and connection.")}
+}
+async function lkDel(coll,id){
+  const map=lkMap(coll),o=map[id];if(!o)return;const code=String(o.code).toUpperCase();
+  let warn="";
+  if(coll==="rhsizes"){const used=Object.values(unloads).filter(u=>(u.rows||[]).some(x=>String(x.size).toUpperCase()===code)).length;if(used)warn=code+" is in "+used+" saved load"+(used>1?"s":"")+", which keep it; it just can't be ticked for new ones. "}
+  else{const used=Object.values(sheets).filter(s0=>(s0.grades||[]).some(g=>String(g.code).toUpperCase()===code)).length;if(used)warn=code+" is in "+used+" cost sheet"+(used>1?"s":"")+", which keep it. "}
+  if(!await ask(warn+"Delete "+code+" from the list?"))return;
+  try{await db.doc(coll+"/"+id).delete()}catch(_){tell("Couldn't delete. Check your permissions and connection.")}
+}
+["#grList","#rhList"].forEach(sel=>{const box=$(sel);if(!box)return;box.addEventListener("click",e=>{
+  const up=e.target.closest("[data-lkup]"),dn=e.target.closest("[data-lkdn]"),dl=e.target.closest("[data-lkdel]");
+  if(up){const[c,id]=up.dataset.lkup.split(":");lkMove(c,id,-1)}else if(dn){const[c,id]=dn.dataset.lkdn.split(":");lkMove(c,id,1)}else if(dl){const[c,id]=dl.dataset.lkdel.split(":");lkDel(c,id)}
+})});
+[["grCode","grAdd","grades"],["rhCode","rhAdd","rhsizes"]].forEach(([inp,btn,coll])=>{
+  const i=$("#"+inp);if(!i)return;
+  i.addEventListener("input",e=>{const v=e.target.value,u=v.toUpperCase();if(u!==v){const q=e.target.selectionStart;e.target.value=u;try{e.target.setSelectionRange(q,q)}catch(_){}}});
+  const go=()=>addLookup(coll,i.value).then(ok=>{if(ok){i.value="";i.focus()}});
+  $("#"+btn).onclick=go;i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();go()}});
+});
+/* Grades typed into a cost sheet join the lookup when the sheet is saved. */
+async function ensureGrades(codes){
+  if(!db)return;const have=gradeList();
+  for(const raw of codes||[]){const c=String(raw||"").trim().toUpperCase();if(!c||have.includes(c))continue;have.push(c);await addLookup("grades",c,true)}
+}
+let seedTried=false;
+async function maybeSeedSizes(){
+  if(seedTried||rhState!=="ready"||Object.keys(rhsizes).length||!db)return;
+  let own=false;try{own=!!(viewer&&await viewer.isOwner())}catch(_){}
+  if(!own)return;seedTried=true;
+  try{for(let i=0;i<DEFAULT_SIZES.length;i++)await db.collection("rhsizes").doc().set({code:DEFAULT_SIZES[i],order:i+1,updatedAt:new Date().toISOString(),by:curUser()})}catch(_){seedTried=false}
+}
 const UKEY="rhc-unload-v1";
 let unloads={}, ulState="loading";
 const ulSubmitted=u=>u&&u.status!=="draft";
-function newUl(){const rows={};UL_SIZES.forEach(z=>rows[z]={pcs:"",wt:""});return{id:null,status:null,loadNo:"",origin:"",date:"",rows,dirty:false}}
-let ul=(()=>{try{const x=JSON.parse(localStorage.getItem(UKEY)||"null");if(x){const b=newUl();Object.assign(b,x);UL_SIZES.forEach(z=>b.rows[z]=Object.assign({pcs:"",wt:""},(x.rows||{})[z]));return b}}catch(e){}return newUl()})();
+/* A load holds only the sizes ticked for it (ul.sizes, in the lookup's order) and their pieces and weight (ul.rows). */
+function newUl(){return{id:null,status:null,loadNo:"",origin:"",date:"",sizes:[],rows:{},dirty:false}}
+function ulSortSizes(){const SZ=sizeList();ul.sizes.sort((a,b)=>{const i=SZ.indexOf(a),j=SZ.indexOf(b);return(i<0?1e9:i)-(j<0?1e9:j)||String(a).localeCompare(String(b))})}
+let ul=(()=>{try{const x=JSON.parse(localStorage.getItem(UKEY)||"null");if(x){const b=newUl();Object.assign(b,x);
+  /* an older draft kept a row for every size: keep only the ones with something in them */
+  b.sizes=Array.isArray(x.sizes)?x.sizes.slice():Object.keys(x.rows||{}).filter(z=>{const r=x.rows[z]||{};return r.pcs!==""&&r.pcs!=null||r.wt!==""&&r.wt!=null});
+  b.rows={};b.sizes.forEach(z=>b.rows[z]=Object.assign({pcs:"",wt:""},(x.rows||{})[z]));return b}}catch(e){}return newUl()})();
 let ulT=null;function keepUl(){clearTimeout(ulT);ulT=setTimeout(()=>{try{localStorage.setItem(UKEY,JSON.stringify(ul))}catch(e){}},300)}
-function ulTotals(){let p=0,w=0;UL_SIZES.forEach(z=>{p+=num(ul.rows[z].pcs);w+=num(ul.rows[z].wt)});return{p,w}}
+function ulTotals(){let p=0,w=0;ul.sizes.forEach(z=>{const r=ul.rows[z]||{};p+=num(r.pcs);w+=num(r.wt)});return{p,w}}
 function ulNote(html,kind){$("#ulErr").innerHTML=html?'<div class="note '+(kind||"")+'" style="margin:0 0 14px'+(kind==="ok"?";background:var(--ok-soft);color:var(--ok);border-color:#bfe0cc":"")+'">'+html+"</div>":""}
 function renderUlForm(){
   $("#ulLoad").value=ul.loadNo;$("#ulOrigin").value=ul.origin;$("#ulDate").value=ul.date;checkUlOrigin();
+  renderUlSizePicks();
+  if(!ul.sizes.length){$("#ulTbl").innerHTML='<tbody><tr><td class="muted" style="padding:10px 6px">Tick the hide sizes above to enter their pieces and weight.</td></tr></tbody>';renderUlState();return}
   let h='<thead><tr><th>Hide Size</th><th class="r">Pieces</th><th class="r">Weight (kg)</th></tr></thead><tbody>';
-  UL_SIZES.forEach(z=>{const r=ul.rows[z];h+='<tr><td class="sz">'+z+'</td><td><input type="number" min="0" step="1" inputmode="numeric" data-z="'+z+'" data-f="pcs" value="'+esc(r.pcs)+'"></td><td><input type="number" min="0" step="0.01" inputmode="decimal" data-z="'+z+'" data-f="wt" value="'+esc(r.wt)+'"></td></tr>'});
+  ul.sizes.forEach(z=>{const r=ul.rows[z]||{pcs:"",wt:""};h+='<tr><td class="sz">'+esc(z)+'</td><td><input type="number" min="0" step="1" inputmode="numeric" data-z="'+z+'" data-f="pcs" value="'+esc(r.pcs)+'"></td><td><input type="number" min="0" step="0.01" inputmode="decimal" data-z="'+z+'" data-f="wt" value="'+esc(r.wt)+'"></td></tr>'});
   h+='<tr class="tot"><td>Total</td><td id="ulTP"></td><td id="ulTW"></td></tr></tbody>';
   $("#ulTbl").innerHTML=h;updUlTotals();renderUlState();
 }
-function updUlTotals(){const t=ulTotals();$("#ulTP").textContent=t.p?ig(t.p):"";$("#ulTW").textContent=t.w?igkg(t.w):""}
+function updUlTotals(){const t=ulTotals(),a=$("#ulTP"),b=$("#ulTW");if(a)a.textContent=t.p?ig(t.p):"";if(b)b.textContent=t.w?igkg(t.w):""}
+function renderUlSizePicks(){
+  const box=$("#ulSizePicks");if(!box)return;
+  box.innerHTML=sizeList().map(z=>{const on=ul.sizes.includes(z);return'<label class="pick'+(on?" on":"")+'"><input type="checkbox" data-ulsz="'+esc(z)+'"'+(on?" checked":"")+"><b>"+esc(z)+"</b></label>"}).join("")||'<span class="muted">No RH sizes yet. Add one below, or under Reports › RH Sizes.</span>';
+}
+$("#ulSizePicks").addEventListener("change",e=>{
+  const z=e.target.dataset.ulsz;if(!z)return;
+  if(e.target.checked){if(!ul.sizes.includes(z)){ul.sizes.push(z);ulSortSizes()}if(!ul.rows[z])ul.rows[z]={pcs:"",wt:""}}
+  else{const r=ul.rows[z]||{};if(String(r.pcs)!==""&&r.pcs!=null||String(r.wt)!==""&&r.wt!=null){tell("Pieces or weight are entered for "+z+". Clear them first.");e.target.checked=true;return}ul.sizes=ul.sizes.filter(x=>x!==z);delete ul.rows[z]}
+  markUl();renderUlForm();const f=document.querySelector('#ulTbl input[data-z="'+z+'"][data-f="pcs"]');if(e.target.checked&&f)f.focus();
+});
+async function ulAddNewSize(){
+  const i=$("#ulNewSize"),code=(i.value||"").trim().toUpperCase().replace(/\s+/g," ");if(!code)return;
+  if(!sizeList().includes(code)&&!await addLookup("rhsizes",code,true))return;
+  if(!ul.sizes.includes(code)){ul.sizes.push(code);ulSortSizes();ul.rows[code]=ul.rows[code]||{pcs:"",wt:""};markUl()}
+  i.value="";renderUlForm();const f=document.querySelector('#ulTbl input[data-z="'+code+'"][data-f="pcs"]');if(f)f.focus();
+}
+$("#ulNewSizeBtn").onclick=ulAddNewSize;
+$("#ulNewSize").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();ulAddNewSize()}});
 function renderUlState(){
   const r=ul.id&&unloads[ul.id];
   $("#ulTitle").textContent=ul.loadNo?"Load "+ul.loadNo:(ul.id?"Lot unloading":"New lot unloading");
@@ -1802,7 +1936,7 @@ function markUl(){if(!ul.dirty){ul.dirty=true;renderUlState()}keepUl()}
   ul[k]=v;markUl();if(k==="loadNo")renderUlState();if(k==="origin")checkUlOrigin()}));
 function checkUlOrigin(){const el=$("#ulOrigin"),v=el.value.trim().toUpperCase();el.classList.toggle("bad",!!v&&origState==="ready"&&!originCodes().includes(v))}
 $("#ulTbl").addEventListener("input",e=>{
-  const z=e.target.dataset.z,f=e.target.dataset.f;if(!z)return;const v=e.target.value;
+  const z=e.target.dataset.z,f=e.target.dataset.f;if(!z||!ul.rows[z])return;const v=e.target.value;
   const bad=v!==""&&(num(v)<0||(f==="pcs"&&!/^\d+$/.test(v)));
   e.target.classList.toggle("bad",bad);
   ul.rows[z][f]=v;updUlTotals();markUl();
@@ -1810,7 +1944,7 @@ $("#ulTbl").addEventListener("input",e=>{
 // Enter moves down the column for quick entry
 $("#ulTbl").addEventListener("keydown",e=>{
   if(e.key!=="Enter")return;const z=e.target.dataset.z,f=e.target.dataset.f;if(!z)return;e.preventDefault();
-  const i=UL_SIZES.indexOf(z);const nx=i<UL_SIZES.length-1?document.querySelector('#ulTbl input[data-z="'+UL_SIZES[i+1]+'"][data-f="'+f+'"]'):(f==="pcs"?document.querySelector('#ulTbl input[data-z="'+UL_SIZES[0]+'"][data-f="wt"]'):$("#ulSubmit"));
+  const SZ=ul.sizes,i=SZ.indexOf(z);const nx=i<SZ.length-1?document.querySelector('#ulTbl input[data-z="'+SZ[i+1]+'"][data-f="'+f+'"]'):(f==="pcs"&&SZ.length?document.querySelector('#ulTbl input[data-z="'+SZ[0]+'"][data-f="wt"]'):$("#ulSubmit"));
   nx&&nx.focus();nx&&nx.select&&nx.select();
 });
 function ulValidate(submit){
@@ -1819,10 +1953,11 @@ function ulValidate(submit){
     if(!ul.origin.trim())e.push("Pick the Origin Code.");
     else if(!originCodes().includes(ul.origin.trim()))e.push(ul.origin.trim()+" isn't in the Origins list. Pick one from the list, or add it under Reports › Origins.");
     if(!ul.date)e.push("Enter the Date.");
-    if(!UL_SIZES.some(z=>num(ul.rows[z].pcs)>0))e.push("Enter pieces for at least one hide size.");
-    UL_SIZES.forEach(z=>{const r=ul.rows[z];if(num(r.pcs)>0&&!(num(r.wt)>0))e.push("Enter the weight for "+z+".")});
+    if(!ul.sizes.length)e.push("Tick at least one hide size.");
+    else if(!ul.sizes.some(z=>num((ul.rows[z]||{}).pcs)>0))e.push("Enter pieces for at least one hide size.");
+    ul.sizes.forEach(z=>{const r=ul.rows[z]||{};if(num(r.pcs)>0&&!(num(r.wt)>0))e.push("Enter the weight for "+z+".")});
   }
-  UL_SIZES.forEach(z=>{const r=ul.rows[z];
+  ul.sizes.forEach(z=>{const r=ul.rows[z]||{pcs:"",wt:""};
     if(r.pcs!==""&&(!/^\d+$/.test(String(r.pcs))))e.push("Pieces for "+z+" must be a whole number, 0 or more.");
     if(r.wt!==""&&(!isFinite(parseFloat(r.wt))||num(r.wt)<0))e.push("Weight for "+z+" can't be negative.");});
   return e;
@@ -1838,7 +1973,7 @@ async function saveUl(submit){
   if(submit&&!await ask("Submit Load "+ul.loadNo+" ("+t.p+" pieces, "+f2(t.w)+" kg)? It will then be available for assortment."))return;
   const now=new Date().toISOString(),prev=ul.id&&unloads[ul.id];
   const body={by:curUser(),loadNo:ul.loadNo.trim(),origin:ul.origin.trim(),date:ul.date,
-    rows:UL_SIZES.map(z=>({size:z,pcs:ul.rows[z].pcs===""?null:parseInt(ul.rows[z].pcs,10),wt:ul.rows[z].wt===""?null:Math.round(parseFloat(ul.rows[z].wt)*100)/100})),
+    rows:ul.sizes.map(z=>{const r=ul.rows[z]||{pcs:"",wt:""};return{size:z,pcs:r.pcs===""||r.pcs==null?null:parseInt(r.pcs,10),wt:r.wt===""||r.wt==null?null:Math.round(parseFloat(r.wt)*100)/100}}),
     totalPcs:t.p,totalWt:Math.round(t.w*100)/100,status:submit?"submitted":"draft",submittedAt:submit?now:(prev&&prev.submittedAt||null),createdAt:prev&&prev.createdAt||now,updatedAt:now};
   const ref=ul.id?db.doc("unloadings/"+ul.id):db.collection("unloadings").doc();
   const btns=[$("#ulSave"),$("#ulSubmit")];btns.forEach(b=>b.disabled=true);
@@ -1856,7 +1991,7 @@ async function openUl(id){
   const r=unloads[id];if(!r)return;
   if(ul.dirty&&ul.id!==id&&!await ask("The lot unloading on screen has unsaved changes. Open this one anyway?"))return;
   ul=newUl();ul.id=id;ul.status=r.status||"submitted";ul.editSub=ulSubmitted(r);ul.loadNo=String(r.loadNo||"").toUpperCase();ul.origin=String(r.origin||"").toUpperCase();ul.date=r.date||"";
-  (r.rows||[]).forEach(x=>{if(ul.rows[x.size])ul.rows[x.size]={pcs:x.pcs==null?"":String(x.pcs),wt:x.wt==null?"":String(x.wt)}});
+  (r.rows||[]).forEach(x=>{if(!x||!x.size)return;ul.rows[x.size]={pcs:x.pcs==null?"":String(x.pcs),wt:x.wt==null?"":String(x.wt)};if(!ul.sizes.includes(x.size))ul.sizes.push(x.size)});ulSortSizes();
   keepUl();renderUlForm();renderUlList();ulNote(ulSubmitted(r)?"Editing a submitted load. Submit again to keep it in reports; Save draft moves it back to drafts.":"");
 }
 async function deleteUl(id){
@@ -1879,7 +2014,7 @@ function renderUlList(){
 $("#ulSearch").addEventListener("input",renderUlList);
 $("#ulList").addEventListener("click",e=>{const d=e.target.closest("[data-delu]");if(d){e.stopPropagation();deleteUl(d.dataset.delu);return}const o=e.target.closest("[data-openu]");if(o)openUl(o.dataset.openu)});
 $("#ulList").addEventListener("keydown",e=>{if(e.key==="Enter"){const o=e.target.closest("[data-openu]");if(o)openUl(o.dataset.openu)}});
-function renderUl(){renderUlList();renderUlState()}
+function renderUl(){renderUlList();renderUlForm()} /* the form redraws so the size chips follow the lookup */
 renderUlForm();
 
 /* ---------- Reports › Unloading Reports ---------- */
@@ -2034,7 +2169,7 @@ function renderReport(force){
       const g=agg[k];g.hides+=hides;g.tanned+=aCnt(a,row.key,t);if(P){g.raw+=hides*num(row.rawWt)/P;g.pelt+=hides*aPelt(a,row)/P}
     })});
   const sizeCount={};order.forEach(k=>sizeCount[agg[k].size]=(sizeCount[agg[k].size]||0)+1);
-  order.sort((x,y)=>UL_SIZES.indexOf(agg[x].size)-UL_SIZES.indexOf(agg[y].size));
+  {const SZ=sizeList();order.sort((x,y)=>SZ.indexOf(agg[x].size)-SZ.indexOf(agg[y].size))}
   const srows=order.map(k=>{const g=agg[k];return{label:g.size+(sizeCount[g.size]>1?" ("+g.loadNo+")":""),hides:g.hides,rawPc:g.hides?g.raw/g.hides:0,peltPc:g.hides?g.pelt/g.hides:0,tanned:g.tanned}}).filter(x=>x.hides||x.tanned);
   const H=srows.reduce((s,x)=>s+x.hides,0),RW=H?srows.reduce((s,x)=>s+x.hides*x.rawPc,0)/H:0,PW=H?srows.reduce((s,x)=>s+x.hides*x.peltPc,0)/H:0;
   const c=compute(pmap,sh);
@@ -2094,7 +2229,7 @@ $("#rfLoads").addEventListener("change",e=>{const id=e.target.dataset.rl;if(!id)
 $("#rfAll").onclick=()=>{rp.off=[];keepRp();renderReport()};
 $("#rfNone").onclick=()=>{const o=originIndex()[rp.origin];rp.off=o?Object.keys(o.loads):[];keepRp();renderReport()};
 
-function renderAll(){renderSaveState();renderSavedList();fillFields();renderStep1();renderSheetSelect();renderPicks();renderEntry();renderCs();renderOrigins();renderUlRep();renderAsRep();renderCsRep();renderReport()}
+function renderAll(){renderGradeOptions();renderSaveState();renderSavedList();fillFields();renderStep1();renderSheetSelect();renderPicks();renderEntry();renderCs();renderOrigins();renderUlRep();renderAsRep();renderCsRep();renderReport()}
 renderAll();
 
 /* ---------- sign-in ----------
@@ -2241,7 +2376,21 @@ $("#userList").addEventListener("click",async e=>{
    (loads, assortments, cost sheets, origins) for good. Sign-in accounts are kept. Only hashes of the
    destroy username and password are in this page, never the words themselves. */
 const DSALT="kksk-destroy-v1",DU="65a4958053067ecaeab9aff4afab793717f254570e08501a1ea8c474ebc7359c",DP="dbf789fdf41e04aca377ff78fd35f0fb7c027db05aa2a666b1141238e40cc3ed";
-const WIPE_COLS=["unloadings","assortments","costsheets","origins"],WSEEN="rhc-wipe-seen";
+const WIPE_COLS=["unloadings","assortments","costsheets","origins","grades","rhsizes"],WSEEN="rhc-wipe-seen";
+/* A cooked-up stand-in for a record: the same field names with made-up codes, numbers and dates, so what is stored
+   last looks like a real record but tells nothing true. Each record is overwritten with one of these before it is removed. */
+function cookDoc(d){
+  const W=["LOT","LOAD","RAW","WET","BLUE","MIX","SPLIT","TAN","HIDE","PACK","CRUST","SIDE"],word=()=>W[Math.floor(Math.random()*W.length)]+Math.floor(Math.random()*900+100);
+  const date=iso=>{const t=new Date(Date.UTC(2001+Math.floor(Math.random()*20),Math.floor(Math.random()*12),1+Math.floor(Math.random()*28),Math.floor(Math.random()*24),Math.floor(Math.random()*60)));return iso?t.toISOString():t.toISOString().slice(0,10)};
+  const cook=v=>{
+    if(Array.isArray(v))return v.map(cook);
+    if(v&&typeof v==="object")return Object.fromEntries(Object.keys(v).map(k=>[k,cook(v[k])]));
+    if(typeof v==="number")return Number.isInteger(v)?Math.floor(Math.random()*4000):Math.round(Math.random()*400000)/100;
+    if(typeof v==="boolean")return Math.random()<0.5;
+    if(typeof v==="string")return/^\d{4}-\d{2}-\d{2}/.test(v)?date(v.length>10):word();
+    return v};
+  return cook(d);
+}
 let appMeta={};
 async function isDestroyUser(name){return(await hashPw(String(name).trim().toLowerCase(),DSALT))===DU}
 async function destroyFlow(pw){
@@ -2260,7 +2409,7 @@ async function destroyFlow(pw){
     let n=0;
     for(const c of WIPE_COLS){
       for(;;){const snap=await db.collection(c).limit(200).get();const ds=snap.docs.filter(d=>d.exists);if(!ds.length)break;
-        for(const d of ds){await db.doc(c+"/"+d.id).delete();n++;if(n%10===0)$("#wipeProg").textContent="Working…"}}
+        for(const d of ds){try{await db.doc(c+"/"+d.id).set(cookDoc(d.data()||{}))}catch(_){}await db.doc(c+"/"+d.id).delete();n++;if(n%10===0)$("#wipeProg").textContent="Working…"}}
     }
     await db.doc("appmeta/destroy").set({fails:[],locked:false,lockedAt:null,lastRun:new Date().toISOString()});
     await db.doc("appmeta/wipe").set({at:new Date().toISOString(),dormant:true});
@@ -2312,7 +2461,7 @@ async function autoSaveAll(){
     if(ul.dirty&&ul.loadNo.trim()){
       const t=ulTotals(),prev=ul.id&&unloads[ul.id],ref=ul.id?db.doc("unloadings/"+ul.id):db.collection("unloadings").doc();
       const body={by:curUser(),loadNo:ul.loadNo.trim(),origin:ul.origin.trim(),date:ul.date,
-        rows:UL_SIZES.map(z=>({size:z,pcs:/^\d+$/.test(String(ul.rows[z].pcs))?parseInt(ul.rows[z].pcs,10):null,wt:isFinite(parseFloat(ul.rows[z].wt))?Math.round(parseFloat(ul.rows[z].wt)*100)/100:null})),
+        rows:ul.sizes.map(z=>{const r=ul.rows[z]||{};return{size:z,pcs:/^\d+$/.test(String(r.pcs))?parseInt(r.pcs,10):null,wt:isFinite(parseFloat(r.wt))?Math.round(parseFloat(r.wt)*100)/100:null}}),
         totalPcs:t.p,totalWt:Math.round(t.w*100)/100,status:"draft",submittedAt:prev&&prev.submittedAt||null,createdAt:prev&&prev.createdAt||now,updatedAt:now,autosaved:true};
       jobs.push(ref.set(body).then(()=>{ul.id=ref.id;ul.status="draft";ul.dirty=false;ul.editSub=false;keepUl()}));
     }
@@ -2366,6 +2515,8 @@ function hideToast(){$("#toast").classList.remove("show")}
     },()=>{ulState="error";$("#ulList").innerHTML='<p class="note err">Saved lots stopped loading. Reload the page to try again.</p>'});
     db.collection("appmeta").onSnapshot(snap=>{appMeta=docs(snap);onMeta()},()=>{});
     db.collection("appusers").onSnapshot(snap=>{appUsers=docs(snap);usersState="ready";onUsers()},()=>{usersState="error";renderAuth()});
+    db.collection("grades").limit(1000).onSnapshot(snap=>{grades=docs(snap);grState="ready";renderGradeOptions();if(currentSub==="grades")renderGrades()},()=>{grState="error";if(currentSub==="grades")renderGrades()});
+    db.collection("rhsizes").limit(1000).onSnapshot(snap=>{rhsizes=docs(snap);rhState="ready";maybeSeedSizes();ulSortSizes();if(currentTab==="unload")renderUlForm();if(currentSub==="rhsizes")renderRhSizes();renderStep1()},()=>{rhState="error";if(currentSub==="rhsizes")renderRhSizes()});
     db.collection("origins").limit(1000).onSnapshot(snap=>{
       origins=docs(snap);origState="ready";renderOrigins();checkUlOrigin();if(ed===csEd)renderEdOrigins();renderUlRep();renderAsRep();
     },()=>{origState="error";$("#orgList").innerHTML='<p class="note err">Origins stopped loading. Reload the page to try again.</p>'});

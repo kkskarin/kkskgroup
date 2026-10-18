@@ -1899,13 +1899,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var b = isAnyAdmin(uid) ? null : S.balances[uid] || (noLogin ? { openings: {} } : null), t = $("uOb"); t.textContent = ""; $("uObWrap").hidden = !b;
     $("uObSub").textContent = noLogin ? "The cash this person holds for each company today, for cash advances and vouchers. Leave a company blank if they hold none." : "The cash this person held for each company when they started. They entered it themselves; only you can change it.";
     if (!b) return;
-    var th = el("thead"), hr = el("tr"); ["Company", "Opening balance", "Advances received", "Vouchers settled", "Balance now"].forEach(function (h, i) { hr.appendChild(el("th", i ? { class: "r" } : null, h)); }); th.appendChild(hr); t.appendChild(th);
+    var th = el("thead"), hr = el("tr"); ["Company", "Opening balance", "Advances received", "Settled (vouchers, bills)", "Balance now"].forEach(function (h, i) { hr.appendChild(el("th", i ? { class: "r" } : null, h)); }); th.appendChild(hr); t.appendChild(th);
     var tb = el("tbody");
     cos.forEach(function (cid) {
       var c = S.companies[cid]; if (!c) return; var bal = cashBalance(uid, cid), op = b.openings && b.openings[cid];
       var tr = el("tr", { "data-co": cid }); tr.appendChild(el("td", { class: "c-co" }, c.shortName || c.name));
       var td = el("td", { class: "r", "data-label": "Opening balance" }), i = inp("uob_" + cid, op == null ? "" : fmtInput(op), { class: "field num", inputmode: "decimal", "aria-label": "Opening balance for " + c.name }); td.appendChild(i); tr.appendChild(td);
-      tr.appendChild(el("td", { class: "r num", "data-label": "Advances received" }, money(bal.received))); tr.appendChild(el("td", { class: "r num", "data-label": "Vouchers settled" }, money(bal.settled))); tr.appendChild(el("td", { class: "r num", "data-label": "Balance now" }, money(bal.balance)));
+      tr.appendChild(el("td", { class: "r num", "data-label": "Advances received" }, money(bal.received))); tr.appendChild(el("td", { class: "r num", "data-label": "Settled (vouchers, bills)" }, money(bal.settled))); tr.appendChild(el("td", { class: "r num", "data-label": "Balance now" }, money(bal.balance)));
       tb.appendChild(tr);
     });
     t.appendChild(tb);
@@ -2857,6 +2857,23 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function emptyLedger(cid, vid) { return { cid: cid, vid: vid, cur: "INR", opening: null, bills: [], billTotal: 0, outstanding: 0, overdue: 0, notDue: 0, b30: 0, b60: 0, b90: 0, b90p: 0, openOd: 0, opRem: 0, opOdRem: 0, tds: 0, paid: 0, disc: 0, advance: 0, credit: 0, txs: [], advs: [], notes: [], dn: 0, cn: 0, cnRem: 0 }; }
   function txList() { return Object.keys(S.txns || {}).map(function (k) { return S.txns[k]; }); }
+  /* A bill the purchaser paid from their cash advance is paid, by them, for the amount approved, as soon as its Bill Checking Report
+     is approved: one payment per approval (a part approval pays that part). Nothing is stored; undoing the approval undoes it. */
+  function advBillPays() {
+    var out = [];
+    Object.keys(S.reports || {}).forEach(function (k) {
+      var r = S.reports[k]; if (r.kind === "inst" || r.kind === "vcr" || (STAGE_ORDER[stageOf(r)] || 0) < STAGE_ORDER.payment) return;
+      (r.billIds || []).forEach(function (id) {
+        var b = S.bills[id]; if (!b || !b.settle || b.status !== "done" || !b.companyId || !b.vendorId) return;
+        var amt = r.appr && r.appr[id] != null ? Number(r.appr[id]) || 0 : round2((Number(b.total) || 0) - (Number(b.tds) || 0)); if (amt <= 0.004) return;
+        var who = prepOf(b), nm = pnm(b.preparedByName) || userLabel(who) || "the purchaser";
+        out.push({ id: "advpay:" + r.id + ":" + id, kind: "payment", virtual: true, viaAdvance: true, advUid: who, companyId: b.companyId, vendorId: b.vendorId, currency: b.currency || "INR",
+          amount: round2(amt), billId: id, reportId: r.id, date: ymdOfMs(r.approvedAt || r.updatedAt || Date.now()), createdAt: r.approvedAt || 0, mode: "advance", ref: "paid by " + nm });
+      });
+    });
+    return out;
+  }
+  function advPaidFor(b) { return round2(advBillPays().filter(function (t) { return t.billId === b.id; }).reduce(function (s0, t) { return s0 + t.amount; }, 0)); }
   function noteList() { return Object.keys(S.notes || {}).map(function (k) { return S.notes[k]; }); }
   /* Every amount stays in its own currency: a vendor's bills, payments and advances are all in that vendor's currency. */
   function txInr(t) { return Number(t.amount) || 0; }
@@ -2899,7 +2916,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
     /* Debit notes take off what is owed, like a discount; credit notes add to it. */
     noteList().forEach(function (n) { if (!n.companyId || !n.vendorId) return; var r = slot(n.companyId, n.vendorId); r.notes.push(n); if (n.kind === "credit") r.cn += Number(n.amount) || 0; else r.dn += Number(n.amount) || 0; });
-    txList().forEach(function (tx) { if (tx.advanceId || !tx.companyId || !tx.vendorId) return; var r = slot(tx.companyId, tx.vendorId); r.txs.push(tx); if (tx.kind === "discount") r.disc += txInr(tx); else r.paid += txInr(tx); });
+    txList().concat(advBillPays()).forEach(function (tx) { if (tx.advanceId || !tx.companyId || !tx.vendorId) return; var r = slot(tx.companyId, tx.vendorId); r.txs.push(tx); if (tx.kind === "discount") r.disc += txInr(tx); else r.paid += txInr(tx); });
     Object.keys(m).forEach(function (k) {
       var r = m[k], pool = 0;
       r.bills.sort(function (a, b) { return natCmp(a.billDate, b.billDate) || natCmp(a.billNo, b.billNo); });
@@ -3801,7 +3818,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt),
       tds: b.entryTds || "", tdsSec: b.entryTdsSection || "",
       termDays: b.termDays == null ? "" : String(b.termDays), termChoice: b.termChoice || "", updateVendorTerm: !!b.updateVendorTerm, narration: b.narration || "", advPick: b.advPick || "", advWhy: b.advWhy || "",
-      ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId)
+      ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), settle: b.settle ? "yes" : "no"
     };
   }
   function draftFromBill(b) { var D = draftFrom(b); if (!D.ledgers.length && num(D.taxable) != null && num(D.taxable) > 0) D.ledgers.push({ id: "", amt: D.taxable }); return D; }
@@ -3878,9 +3895,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       vendorNew: { name: D.vNew.name.trim(), gstin: normId(D.vNew.gstin), pan: panOfNew(D), type: D.vNew.type || "", termDays: intOrNull(D.vNew.termDays), address: String(D.vNew.addr || "").trim() },
       billNo: D.billNo.trim(), billDate: parseDate(D.billDate),
       termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: D.narration.trim(), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
-      ledgers: ledLinesOut(D.ledgers), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || ""
+      ledgers: ledLinesOut(D.ledgers), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || "",
+      settle: D.settle === "yes" && billAdvOk(D)
     }, amountsOf(D), prepFields(D.prepBy), approverFields(D.approverId));
   }
+  /* Whose cash a bill would come out of, and whether paying it from that cash advance is offered (rupee bills only). */
+  function billWho(D) { return S.isAdmin ? D.prepBy : meId(); }
+  function billAdvOk(D) { return (D.currency || "INR") === "INR" && advRel(billWho(D), D.companyId); }
+  function billAdvAmt(D) { var a = amountsOf(D); return round2((a && a.total != null ? Number(a.total) || 0 : (num(D.taxable) || 0) + (num(D.gstAmt) || 0)) - (num(D.tds) || 0)); }
   /* PAN is never typed: it is characters 3 to 12 of the GSTIN. */
   function panOfNew(D) { var g = normId(D.vNew.gstin); return g && gstinCheck(g) !== "format" ? panFromGstin(g) : ""; }
   /* Which payment terms apply, and whether the bill disagrees with the vendor's saved terms. */
@@ -3916,6 +3938,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     else if (!billCanCo(b, D.companyId)) E("bcCo", "You don't have access to this company.");
     if (S.isAdmin && D.companyId) { if (!D.prepBy) E("bcPrep", "Choose who prepared this bill."); else if (!userHas(S.users[D.prepBy], billStep(b), D.companyId)) E("bcPrep", "That person doesn't hold Bills for this company any more. Choose again."); }
     if (!D.approverId) E("bcAppr", "Choose who approves this bill.");
+    if (D.settle === "yes" && billAdvOk(D)) { var cb0 = cashBalance(billWho(D), D.companyId, b.id), need0 = billAdvAmt(D);
+      if (need0 > cb0.free + 0.004) E("bcSettle", "The bill comes to " + money(need0) + ", more than the " + money(cb0.free) + " cash on hand. Choose No, or ask for a cash advance first."); }
     if (!D.vendorChoice) E("bcVen", "Choose the vendor, or choose New vendor.");
     else if (D.vendorChoice === "new") {
       var n = D.vNew, g = normId(n.gstin), gp = g ? gstinCheck(g) : "missing"; vt = n.type;
@@ -4080,6 +4104,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     f.appendChild(fld("Company", co, b.ex && b.ex.companyName ? "On the bill: " + b.ex.companyName : ""));
     if (S.isAdmin) f.appendChild(fld("Prepared by", prepSelect("bcPrep", billStep(b), D.companyId, D.prepBy), "Whose bill this is. Only people given Bills for this company are listed."));
     f.appendChild(fld("Approver", approverSelect("bcAppr", D.approverId), APPR_HINT));
+    var stl = el("select", { class: "field", id: "bcSettle" }); fillSelect(stl, [["no", "No, the financier pays the vendor"], ["yes", "Yes, I paid it from my cash advance"]], D.settle === "yes" ? "yes" : "no");
+    var stf = fld("Paid from cash advance?", stl, " "); stf.id = "bcSetF"; stf.hidden = true; f.appendChild(stf);
     var ven = el("select", { class: "field", id: "bcVen" }); fillSelect(ven, vendorOpts(D), D.vendorChoice);
     var vh = b.ex && (b.ex.vendorName || b.ex.vendorGstin) ? "On the bill: " + [b.ex.vendorName, b.ex.vendorGstin].filter(Boolean).join(", GSTIN ") : "";
     f.appendChild(fld("Vendor", ven, vh));
@@ -4145,7 +4171,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     D.vNew.name = $("bcVName").value; D.vNew.type = $("bcVType").value; D.vNew.gstin = $("bcVGstin").value; D.vNew.termDays = $("bcVTerm").value; D.vNew.addr = $("bcVAddr").value;
     D.billNo = $("bcNo").value; D.billDate = $("bcDate").value; D.currency = $("bcCur").value || "INR"; D.rate = $("bcRate").value;
     D.taxable = $("bcTax").value; D.gstAmt = $("bcGst").value;
-    D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value; if ($("bcAppr")) D.approverId = $("bcAppr").value;
+    D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value; if ($("bcAppr")) D.approverId = $("bcAppr").value; if ($("bcSettle")) D.settle = $("bcSettle").value;
     if ($("bcTerm")) D.termDays = $("bcTerm").value;
     if ($("bcTds")) { D.tds = $("bcTds").value; D.tdsSec = $("bcTdsSec").value; }
     var r = document.querySelector('input[name="bcTermPick"]:checked'); if (r) D.termChoice = r.value;
@@ -4300,6 +4326,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function gstSplitText(k, g, cur) { if (g == null || !k) return ""; var f = function (n) { return cur && cur !== "INR" ? fcAmt(cur, n) : money(n); }; return k === "cgst" ? "CGST " + f(round2(g / 2)) + " + SGST " + f(round2(g - round2(g / 2))) : "IGST " + f(g); }
   function updateDynamic() {
     var D = B.D, b = S.bills[B.cardId]; if (!D || !b || !$("bcDue")) return;
+    if ($("bcSetF")) { var rel = billAdvOk(D); $("bcSetF").hidden = !rel; if (!rel && D.settle === "yes") { D.settle = "no"; $("bcSettle").value = "no"; }
+      if (rel) { var cbx = cashBalance(billWho(D), D.companyId, b.id); $("bcSettleH").textContent = "Cash on hand for " + coLabel(D.companyId) + ": " + money(cbx.free) + ". Yes: once approved it is settled from this cash, and the financier doesn't pay the vendor."; } }
     setTimeout(function () { paintAiFlags(billAiSpecs()); }, 0);
     lockCurrency();
     var r = checkBill(D, b), days = r.ti.days;
@@ -5739,7 +5767,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var max = crAmt(r, b), tr = el("tr"), ck = el("input", { type: "checkbox", "aria-label": "Approve bill " + b.billNo }); ck.checked = true;
       var amt = el("input", { class: "field num", inputmode: "decimal", autocomplete: "off", style: "max-width:140px", "aria-label": "Amount to approve for bill " + b.billNo }); amt.value = fmtInput(String(max));
       var c0 = el("td"); c0.appendChild(ck); tr.appendChild(c0);
-      var c1 = el("td"); c1.appendChild(el("b", { class: "mono" }, b.billNo || "")); sub(c1, fmtDate(b.billDate)); tr.appendChild(c1);
+      var c1 = el("td"); c1.appendChild(el("b", { class: "mono" }, b.billNo || "")); sub(c1, fmtDate(b.billDate) + (b.settle ? " · paid from " + (pnm(b.preparedByName) || "the purchaser") + "'s cash advance" : "")); tr.appendChild(c1);
       tr.appendChild(el("td", { class: "num" }, fmtDate(b.dueDate)));
       tr.appendChild(el("td", { class: "r num" }, bm(b, max)));
       var c4 = el("td", { class: "r" }); c4.appendChild(amt); tr.appendChild(c4); tbd.appendChild(tr);
@@ -6600,7 +6628,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
      Every payment needs its mode and reference; cash is only for vouchers, and under ₹10,000 to one person in a day. */
   var MK = { amts: {}, dates: {}, refs: {}, modes: {}, view: "pay", side: "vendors", busy: false, stale: false, doneLimit: 100 };
   var TX_DAYS = 3, CASH_LIMIT = 10000;
-  var PAYMODES = [["neft", "NEFT / RTGS", "UTR number"], ["cheque", "Cheque", "Cheque number"], ["upi", "UPI", "UPI reference"], ["swift", "SWIFT / wire", "SWIFT reference"], ["cash", "Cash", ""]];
+  var PAYMODES = [["advance", "From cash advance", ""], ["neft", "NEFT / RTGS", "UTR number"], ["cheque", "Cheque", "Cheque number"], ["upi", "UPI", "UPI reference"], ["swift", "SWIFT / wire", "SWIFT reference"], ["cash", "Cash", ""]];
   function modeInfo(m) { for (var i = 0; i < PAYMODES.length; i++) if (PAYMODES[i][0] === m) return PAYMODES[i]; return null; }
   function modesFor(x) { if (x.type === "vcr" || x.type === "vch") return ["cash", "cheque"]; return x.cur && x.cur !== "INR" ? ["swift"] : ["neft", "cheque", "upi"]; }
   function modeText(t) { var m = modeInfo(t.mode); return (m ? m[1] : "") + (t.ref ? (m ? " · " : "") + t.ref : ""); }
@@ -7463,6 +7491,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var b = S.balances[uid], op = openingOf(uid, cid), opAt = b ? b.enteredAt || b.updatedAt || 0 : 0, rec = 0, set = 0;
     caList().forEach(function (a) { if (a.uid === uid && a.companyId === cid && a.status === "received" && (a.receivedAt || 0) < ms) rec += Number(a.approvedAmount) || 0; if (a.uid === uid && a.companyId === cid && a.status === "returned" && (a.returnedAt || 0) < ms) rec -= Number(a.returnedAmount) || 0; });
     vchList().forEach(function (v) { if (v.settle && prepOf(v) === uid && v.companyId === cid && v.approvedAt && !v.sentBack && v.approvedAt < ms) set += vPayable(v); });
+    advBillPays().forEach(function (t) { if (t.advUid === uid && t.companyId === cid && (t.createdAt || 0) < ms) set += t.amount; });
     return round2((op != null && (!opAt || opAt <= ms) ? op : 0) + rec - set);
   }
   function asAgeing(uid, cid) {
@@ -7483,6 +7512,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     Object.keys(S.users || {}).forEach(function (uid) { var u = S.users[uid]; if (u.active === false) return; cashCos(u).forEach(function (cid) { add(uid, cid, u.name); }); });
     caList().forEach(function (a) { add(a.uid, a.companyId, a.name); });
     vchList().forEach(function (v) { if (v.settle) add(prepOf(v), v.companyId, v.preparedByName); });
+    billList().forEach(function (b) { if (b.settle && b.status === "done") add(prepOf(b), b.companyId, b.preparedByName); });
     Object.keys(S.balances || {}).forEach(function (uid) { var b = S.balances[uid]; Object.keys((b && b.openings) || {}).forEach(function (cid) { add(uid, cid, b.name); }); });
     return Object.keys(m).map(function (k) { var p = m[k], cb = cashBalance(p.uid, p.cid); return Object.assign(p, { cb: cb, ag: asAgeing(p.uid, p.cid), ven: "", prep: p.uid, prepName: p.name, appr: "", date: "" }); })
       .sort(function (a, b) { return natCmp(a.name, b.name) || coCmpId(a.cid, b.cid); });
@@ -8247,6 +8277,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ================= cash: opening balances, advances, vouchers ================= */
   function vchList() { return Object.keys(S.vouchers || {}).map(function (k) { return S.vouchers[k]; }); }
+  /* "Paid from my cash advance" is offered only to someone who handles cash advances for the company, or still holds cash for it. */
+  function advRel(uid, cid) {
+    if (!uid || !cid) return false;
+    var u = (S.users || {})[uid] || (uid === meId() ? S.myUser : null) || (S.profiles || {})[uid];
+    return (!!u && userHas(u, "cash", cid)) || Math.abs(cashBalance(uid, cid).balance) > 0.004;
+  }
   function caList() { return Object.keys(S.cashadv || {}).map(function (k) { return S.cashadv[k]; }); }
   function vcrList() { return Object.keys(S.reports).map(function (k) { return S.reports[k]; }).filter(function (r) { return r.kind === "vcr"; }); }
   /* Which voucher checking report a voucher is in. */
@@ -8259,6 +8295,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var op = openingOf(uid, cid) || 0, rec = 0, set = 0, pend = 0, ret = 0, retP = 0;
     caList().forEach(function (a) { if (a.uid !== uid || a.companyId !== cid) return; if (a.status === "received") rec += Number(a.approvedAmount) || 0; else if (a.status === "returned") ret += Number(a.returnedAmount) || 0; else if (a.status === "returning") retP += Number(a.amount) || 0; });
     vchList().forEach(function (v) { if (v.id === exceptVid || !v.settle || prepOf(v) !== uid || v.companyId !== cid) return; if (v.approvedAt && !v.sentBack) set += vPayable(v); else pend += vPayable(v); });
+    /* bills paid from the advance: what is approved is settled; the rest of a submitted bill is held back until it is approved */
+    var abp = advBillPays();
+    billList().forEach(function (b) { if (b.id === exceptVid || !b.settle || b.status !== "done" || prepOf(b) !== uid || b.companyId !== cid) return;
+      var done = round2(abp.filter(function (t) { return t.billId === b.id; }).reduce(function (s0, t) { return s0 + t.amount; }, 0)); set += done;
+      pend += Math.max(0, round2((Number(b.total) || 0) - (Number(b.tds) || 0) - done)); });
     var bal = round2(op + rec - set - ret);
     return { opening: op, received: round2(rec), settled: round2(set), returned: round2(ret), returning: round2(retP), pending: round2(pend), balance: bal, free: round2(bal - pend - retP) };
   }
@@ -8392,7 +8433,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var lw = el("div", { class: "f wide" }); lw.appendChild(el("span", { class: "lb" }, "Details and ledger (up to 2 lines)")); var lb = el("div", { id: "vfLines" }); lw.appendChild(lb); lw.appendChild(el("span", { class: "err", id: "vfLinesE", hidden: "" })); f.appendChild(lw);
     drawVchLines();
     var tt = el("div", { class: "f" }); tt.appendChild(el("span", { class: "lb" }, "Total amount")); tt.appendChild(el("div", { class: "field ro num", id: "vfTotV" })); tt.appendChild(el("span", { class: "hint" }, "The lines added up. Paid in full.")); f.appendChild(tt);
-    var sf = el("div", { class: "f wide" }); sf.appendChild(el("span", { class: "lb", id: "vfSetL" }, "Is this an advance settlement?"));
+    var sf = el("div", { class: "f wide", id: "vfSetF" }); sf.appendChild(el("span", { class: "lb", id: "vfSetL" }, "Is this an advance settlement?"));
     var rg = el("div", { class: "radios", role: "radiogroup", "aria-labelledby": "vfSetL", id: "vfSet" });
     [["yes", "Yes, paid from my cash advance"], ["no", "No, the financier pays it (cash or cheque)"]].forEach(function (o) {
       var l = el("label", { class: "check" }), r = el("input", { type: "radio", name: "vfSettle", value: o[0] }); r.checked = D.settle === o[0]; l.appendChild(r); l.appendChild(document.createTextNode(" " + o[1])); rg.appendChild(l);
@@ -8482,6 +8523,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var t = vchTotal(D); $("vfTotV").textContent = t == null ? "" : money(t);
     if ($("vfLg0") && ($("vfLg0").getAttribute("data-co") || "") !== (D.companyId || "")) { drawVchLines(); }
     if (D.companyId) D.lines.forEach(function (x, i) { if (x.touched || !$("vfLg" + i)) return; var sg = suggestVch(D.companyId, D.payee, x.d + " " + D.supplyOf); if (sg && sg !== x.lg) { x.lg = sg; $("vfLg" + i).value = sg; } });
+    /* the question only for someone who handles cash advances for the company or holds cash for it; otherwise the financier pays */
+    var relV = advRel(vchPrep(D), D.companyId); $("vfSetF").hidden = !relV;
+    if (!relV) { if (D.settle !== "no") { D.settle = "no"; D.settleForced = true; } }
+    else if (D.settleForced) { D.settle = ""; D.settleForced = false; }
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="vfSettle"]'), function (r) { r.checked = r.value === D.settle; });
     var bx = $("vfBal"), who = vchPrep(D);
     bx.hidden = D.settle !== "yes"; bx.textContent = "";
     if (D.settle === "yes") {
@@ -9345,12 +9391,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
      the new opening is old opening + those bills (after TDS) - payments and discounts dated in or before the year, which is exactly what was owed at the year end.
      Cash side: voucher checking reports fully paid back, with all their vouchers in the year; received cash advances in the year. Each person's opening moves by the same amounts. */
   function archivePlan(fy) {
-    var R = fyRange(fy), del = [], vOpen = {}, pOpen = {}, count = { bills: 0, transactions: 0, reports: 0, vouchers: 0, cashadv: 0 }, skipped = 0;
+    var R = fyRange(fy), del = [], vOpen = {}, pOpen = {}, count = { bills: 0, transactions: 0, reports: 0, vouchers: 0, cashadv: 0 }, skipped = 0, advFold = [];
     var finalBills = {}; Object.keys(S.advances).forEach(function (k) { var a = S.advances[k]; if (a.taxBillId) finalBills[a.taxBillId] = 1; });
     var gone = {};
     ledgersFor(function (r) { return S.vendors[r.vid]; }).forEach(function (r) {
       var old = r.bills.filter(function (b) { return ymdOk(b.billDate) && b.billDate <= R.to; }); if (!old.length) return;
       if (r.opRem > 0.5 || old.some(function (b) { return billInfo(b).rem > 0.5 || finalBills[b.id] || billInfo(b).adv > 0; })) { skipped++; return; }
+      /* a bill settled from a cash advance after the year end stays until that year closes */
+      if (r.txs.some(function (t) { return t.virtual && !(ymdOk(t.date) && t.date <= R.to) && old.some(function (b) { return b.id === t.billId; }); })) { skipped++; return; }
       var txs = r.txs.filter(function (t) { return ymdOk(t.date) && t.date <= R.to; });
       var op = opening(S.vendors[r.vid], r.cid), opBal = op ? Number(op.balance) || 0 : 0;
       var net = old.reduce(function (s0, b) { return s0 + billInfo(b).net; }, 0), paid = txs.reduce(function (s0, t) { return s0 + txInr(t); }, 0);
@@ -9358,13 +9406,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       nb = Math.max(0, nb);
       (vOpen[r.vid] || (vOpen[r.vid] = {}))[r.cid] = { balance: nb, overdue: nb, setAt: Date.now(), setBy: meId(), carriedFrom: fy };
       old.forEach(function (b) { del.push("bills/" + b.id); gone[b.id] = 1; count.bills++; });
-      txs.forEach(function (t) { del.push("transactions/" + t.id); count.transactions++; });
+      txs.forEach(function (t) { if (t.virtual) { advFold.push(t); return; } del.push("transactions/" + t.id); count.transactions++; });
     });
     Object.keys(S.reports).forEach(function (k) {
       var r = S.reports[k]; if (r.kind === "inst" || r.kind === "vcr") return;
       var ids = r.billIds || []; if (ids.length && ids.every(function (id) { return gone[id]; })) { del.push("reports/" + r.id); count.reports++; }
     });
     function addP(uid, cid, n) { var m = pOpen[uid] || (pOpen[uid] = {}); m[cid] = round2((m[cid] || 0) + n); }
+    advFold.forEach(function (t) { addP(t.advUid, t.companyId, -t.amount); }); /* bills paid from a cash advance leave the person's opening cash lower */
     vcrList().forEach(function (rp) {
       if (stageOf(rp) !== "payment") return;
       var vs = vcrVouchers(rp); if (!vs.length || vs.length !== (rp.voucherIds || []).length) return;
@@ -9587,7 +9636,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var m = vOpen[r.vid] || (vOpen[r.vid] = JSON.parse(JSON.stringify(S.vendors[r.vid].openings || {})));
       m[r.cid] = { balance: bal, overdue: od, setAt: now, setBy: meId(), carriedFrom: "reset " + fmtDate(t) };
       fold.forEach(function (b) { D("bills/" + b.id); gone[b.id] = 1; count.bills++; });
-      r.txs.forEach(function (x) { D("transactions/" + x.id); count.transactions++; });
+      r.txs.forEach(function (x) { if (x.virtual) { if (gone[x.billId]) addP(x.advUid, x.companyId, -x.amount); return; } D("transactions/" + x.id); count.transactions++; });
     });
     Object.keys(S.advances).forEach(function (k) {
       var a = S.advances[k]; if (a.status !== "closed" || (a.taxBillId && S.bills[a.taxBillId] && !gone[a.taxBillId])) return;

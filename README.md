@@ -151,6 +151,11 @@ provides the same calls, so the app code did not need rewriting:
   amount is held back at once (it can't be settled by vouchers), and only the financier can mark it received (Advance
   Requests › Cash Being Returned; they may take less). It then comes off the person's balance and their oldest cash first.
   Stored in `cashadv/*` with `kind: "return"`, status `returning` → `returned`.
+- **Bills paid from a cash advance**: like vouchers, a tax bill (INR only) can say "Yes, I paid it from my cash advance"
+  (`bills.settle`). The question shows on bills and vouchers only when the preparer holds the cash step for that company or
+  has cash on hand; it can't exceed the cash on hand. Once its checking report is approved, the approved amount counts as
+  a payment to the vendor (mode "From cash advance", derived, not stored) and comes off the preparer's cash; it is never
+  listed in Payment Entry or Payables. Undoing the approval undoes both.
 - **Ledgers and vendors** can be uploaded from Excel (Download template / Upload Excel on their pages). Rows are
   checked, exact duplicates skipped, and every row's result is listed. Ledgers are chosen by hand on bills.
 - Every report has an **Excel** download, formatted in the KKSK colours.

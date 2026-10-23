@@ -166,6 +166,9 @@ provides the same calls, so the app code did not need rewriting:
   person opens their detail: totals, average, fastest and slowest time per kind, every pending item with its age, and
   every item done with the time it took. Period: today, 7/30/90 days, 12 months, all time, or chosen dates. People with
   nothing done and nothing pending are left out.
+- **Accounting needs a complete vendor**: a bill is accounted (by the accountant, or in one go by someone who enters and
+  accounts) only once its vendor has a type, payment terms, address, a valid GSTIN when registered, and the opening
+  balance for the bill's company.
 - **Company order**: only the super admin can reorder companies (Masters › Companies).
 - **Slack approvals**: when a live checking report starts waiting or a cash advance is requested, the
   `approval-alert` Edge Function sends the named approver a Slack DM (found by their login email) with **Approve** and

@@ -3955,7 +3955,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function oneStopAny() { return canDo("acct") && canDo("bills"); }
   function oneStopAcct(D, vid) {
     if (!oneStop(D.companyId) || !$("bcTds")) return {};
-    var v = S.vendors[vid]; if (!v || vendorNeeds(v).list.some(function (x) { return x.indexOf("opening balance") !== 0; })) return {};
+    var v = S.vendors[vid]; if (!v || vendorNeeds(v).list.some(function (x) { return x.indexOf("opening balance") !== 0; }) || !opening(v, D.companyId)) return {};
     var t = round2(num(D.tds) || 0); B.oneStopDone = true;
     return Object.assign({ acct: "approved", acctNote: "", tds: t, tdsSection: t > 0 ? D.tdsSec || "" : "" }, acctWho());
   }
@@ -10553,10 +10553,16 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function acctWho() { return { acctAt: Date.now(), acctBy: meId(), acctByName: S.isAdmin ? (S.me && S.me.name) || "Admin" : pnm(preparedByText()) }; }
   /* What the bill's vendor still needs before the bill can be accounted, or null when it is complete. */
   /* Accounting needs the vendor's details; its opening balance (the accountant's approval of the vendor) is needed only for a checking report. */
-  function acctVendorNeeds(b) { var v = b && S.vendors[b.vendorId]; if (!v) return ["to be saved as a vendor"]; var n = vendorNeeds(v).list.filter(function (x) { return x.indexOf("opening balance") !== 0; }); return n.length ? n : null; }
+  /* A bill is accounted only once its vendor is complete, including the opening balance for the bill's company. */
+  function acctVendorNeeds(b) {
+    var v = b && S.vendors[b.vendorId]; if (!v) return ["to be saved as a vendor"];
+    var n = vendorNeeds(v).list.filter(function (x) { return x.indexOf("opening balance") !== 0; });
+    if (b.companyId && !opening(v, b.companyId)) n.push("opening balance for " + coLabel(b.companyId));
+    return n.length ? n : null;
+  }
   function acctApprove(btn) {
     if (AC.busy) return;
-    if (AC.kind === "bill" && acctVendorNeeds(S.bills[AC.id])) { toast("Fill in the vendor's details first."); return; }
+    if (AC.kind === "bill" && acctVendorNeeds(S.bills[AC.id])) { toast("Fill in the vendor's details and opening balance first."); return; }
     errClear($("aoBody")); var errs = acctCheck();
     if (errs.length) { errs.forEach(function (e) { errOn(e[0], e[1]); }); var f0 = $(errs[0][0]); if (f0 && f0.scrollIntoView) f0.scrollIntoView({ block: "center" }); return; }
     var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, tds = round2(num(D.tds) || 0), up = Object.assign({ acct: "approved", acctNote: "", ledgers: ledLinesOut(D.lines), tds: tds, tdsSection: tds > 0 ? D.sec : "" }, acctWho());

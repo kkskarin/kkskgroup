@@ -1272,8 +1272,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       <select class="field" id="actPer" aria-label="Period"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option><option value="0">All time</option></select>
     </div>
     <div class="card list scroll" id="actList"></div>
-    <p class="sub" style="margin-top:10px">Entries: bills submitted, vouchers, checking reports, proformas and imports, cash advance requests, notes and payments the person made in the period. Edits: every change they saved (from the Change Log).
-      Response times are averages over the period: Accounting is bill submitted → accounted; Approving is report sent → approved (and cash advance asked → approved); Paying is approval → payment recorded or cash handed over.
+    <p class="sub" style="margin-top:10px">Entries are each job's own work in the period: purchasers' bills, vouchers, proformas and imports; accountants' bills and vouchers accounted and vendors added or completed; financiers' payments and cash handed over; approvers' approvals. People with no entries and nothing waiting are left out. Edits: every change they saved (from the Change Log).
+      Response times are averages over the period: Accounting is bill or voucher submitted → accounted; Approving is report sent → approved (and cash advance asked → approved); Paying is approval → payment recorded or cash handed over.
       Waiting now counts what sits with them today: reports and cash advances naming them as approver, and (accountants) bills still to be accounted in their companies. Sign-in, last active and edits cover logins only; people on a shared login show under that login.</p>
   </section>
   <section id="secPayables" hidden>
@@ -9426,23 +9426,30 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     function rt(uid, kind, from, to) { var p = P[uid]; if (!p || !from || !to || to < since || to < from) return; p.rt[kind].push(to - from); }
     function wait(uid, from) { var p = P[uid]; if (!p || !from) return; p.wait++; if (!p.oldest || from < p.oldest) p.oldest = from; }
     var bills = vals(R.bills || S.bills), reports = R.reports || S.reports || {}, vouchers = vals(R.vouchers || S.vouchers), advs = vals(R.advances || S.advances);
+    /* Entries are each job's own work: purchasers' bills, vouchers, proformas and imports; accountants' bills and vouchers
+       accounted and vendor details added; financiers' payments and cash handed over; approvers' approvals. */
     bills.forEach(function (b) {
       if (b.submittedAt) ent(b.submittedBy || b.ownerId || b.uploadedBy, b.submittedAt, "bills");
-      if (b.acctBy && b.acctAt) rt(b.acctBy, "acct", b.submittedAt, b.acctAt);
+      if (b.acctBy && b.acctAt && b.acct === "approved") { ent(b.acctBy, b.acctAt, "accounted"); rt(b.acctBy, "acct", b.submittedAt, b.acctAt); }
     });
-    vouchers.forEach(function (v) { ent(v.createdBy || v.preparedBy, v.createdAt, "vouchers"); });
+    vouchers.forEach(function (v) {
+      ent(v.createdBy || v.preparedBy, v.createdAt, "vouchers");
+      if (v.acctBy && v.acctAt && v.acct === "approved") { ent(v.acctBy, v.acctAt, "accounted"); rt(v.acctBy, "acct", v.createdAt, v.acctAt); }
+    });
     advs.forEach(function (a) { ent(a.createdBy, a.createdAt, a.kind === "import" ? "imports" : "proformas"); });
-    vals(S.notes).forEach(function (n) { ent(n.createdBy, n.createdAt, "notes"); });
+    vals(S.vendors).forEach(function (v) {
+      var who = {}; if (v.createdBy && v.createdAt >= since) who[v.createdBy] = 1; if (v.updatedBy && v.updatedAt >= since) who[v.updatedBy] = 1;
+      Object.keys(v.openings || {}).forEach(function (c) { var o = v.openings[c] || {}; if (o.setBy && o.setAt >= since) who[o.setBy] = 1; });
+      Object.keys(who).forEach(function (u) { ent(u, Date.now(), "vendors"); });
+    });
     vals(reports).forEach(function (r) {
-      ent(r.createdBy, r.createdAt, "reports");
-      if (r.approvedBy && r.approvedAt && !r.onBehalf) rt(r.approvedBy, "appr", r.generatedAt, r.approvedAt);
+      if (r.approvedBy && r.approvedAt && !r.onBehalf) { ent(r.approvedBy, r.approvedAt, "approvals"); rt(r.approvedBy, "appr", r.generatedAt, r.approvedAt); }
       var st = stageOf(r); if ((st === "generated" || st === "printed") && r.approverId) wait(r.approverId, r.generatedAt || r.createdAt);
     });
     vals(S.cashadv).forEach(function (a) {
       if (a.kind === "return") return;
-      ent(a.requestedBy, a.requestedAt, "cash requests");
-      if (a.approvedBy && a.approvedAt && a.note !== "Requested by the admin" && !a.onBehalf) rt(a.approvedBy, "appr", a.requestedAt, a.approvedAt);
-      if (a.receivedBy && a.receivedAt) rt(a.receivedBy, "pay", a.approvedAt, a.receivedAt);
+      if (a.approvedBy && a.approvedAt && a.note !== "Requested by the admin" && !a.onBehalf) { ent(a.approvedBy, a.approvedAt, "approvals"); rt(a.approvedBy, "appr", a.requestedAt, a.approvedAt); }
+      if (a.receivedBy && a.receivedAt) { ent(a.receivedBy, a.receivedAt, "payments"); rt(a.receivedBy, "pay", a.approvedAt, a.receivedAt); }
       if (a.status === "pending") wait(caApproverId(a), a.requestedAt);
     });
     function apprAt(t) {
@@ -9451,7 +9458,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       ids.forEach(function (id) { vals(reports).forEach(function (r) { if (r.approvedAt && (r.billIds || []).indexOf(id) >= 0 && (!best || r.approvedAt < best)) best = r.approvedAt; }); });
       return best;
     }
-    vals(S.txns).forEach(function (t) { if (t.virtual || !t.createdBy) return; ent(t.createdBy, t.createdAt, "payments"); if (t.kind === "payment") rt(t.createdBy, "pay", apprAt(t), t.createdAt); });
+    vals(S.txns).forEach(function (t) { if (t.virtual || !t.createdBy || t.kind !== "payment") return; ent(t.createdBy, t.createdAt, "payments"); rt(t.createdBy, "pay", apprAt(t), t.createdAt); });
     /* Accountants: bills submitted and still to be accounted in the companies where they account. */
     bills.forEach(function (b) {
       if (b.status !== "done" || b.acct !== "pending" || !b.submittedAt) return;
@@ -9469,15 +9476,15 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function renderActivity() {
     var q = $("actQ").value.trim().toLowerCase(), box = $("actList");
     if (!$("actPer")._w) { $("actPer")._w = 1; $("actPer").addEventListener("change", function () { acLoad(true); renderActivity(); }); $("actQ").addEventListener("input", renderActivity); }
-    var rows = activityRows().filter(function (r) { return !q || (r.name + " " + r.jobs.join(" ")).toLowerCase().indexOf(q) >= 0; });
-    if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "No one matches.")); return; }
+    var rows = activityRows().filter(function (r) { return (r.n || r.wait) && (!q || (r.name + " " + r.jobs.join(" ")).toLowerCase().indexOf(q) >= 0); });
+    if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, q ? "No one matches." : "No one entered anything in this period, and nothing is waiting.")); return; }
     var none = AC.err ? "Couldn't load (" + AC.err + ")" : AC.srv ? "N/A" : "Loading…";
     function rtLine(td, label, a) { if (a) sub(td, label + ": " + acDur(a.ms) + " (" + a.n + ")"); }
     sortTable(box, "actList", [
       { label: "Person", kind: "co", sort: function (r) { return r.name.toLowerCase(); }, cell: function (r, td) { td.appendChild(el("b", null, r.name || "(no name)")); if (r.jobs.length) sub(td, r.jobs.join(", ")); } },
       { label: "Last Sign-in", sort: function (r) { return r.signIn || null; }, desc: true, cell: function (r, td) { txt(td, r.signIn ? stamp(r.signIn) : r.login || AC.srv ? "N/A" : none); if (r.active && r.active > r.signIn + 6e4) sub(td, "Last active " + stamp(r.active)); } },
       { label: "Last Edit", sort: function (r) { return r.edit || null; }, desc: true, cell: function (r, td) { txt(td, r.edit ? stamp(r.edit) : AC.srv || AC.err ? "N/A" : none); if (r.edits) sub(td, plural(r.edits, "change") + " in the period"); } },
-      { label: "Entries", cls: "r num", sort: function (r) { return r.n; }, desc: true, cell: function (r, td) { td.appendChild(el("b", null, String(r.n))); var b = Object.keys(r.ent).sort().map(function (k) { var w = { bills: "bill", vouchers: "voucher", reports: "checking report", proformas: "proforma", imports: "import", notes: "note", payments: "payment", "cash requests": "cash request" }[k] || k; return plural(r.ent[k], w); }); if (b.length) sub(td, b.join(" · ")); } },
+      { label: "Entries", cls: "r num", sort: function (r) { return r.n; }, desc: true, cell: function (r, td) { td.appendChild(el("b", null, String(r.n))); var b = Object.keys(r.ent).sort().map(function (k) { var w = { bills: "bill", vouchers: "voucher", proformas: "proforma", imports: "import", payments: "payment", accounted: "accounted", vendors: "vendor", approvals: "approval" }[k] || k; return k === "accounted" ? r.ent[k] + " accounted" : plural(r.ent[k], w); }); if (b.length) sub(td, b.join(" · ")); } },
       { label: "Response Time", sort: function (r) { var v = [r.avg.acct, r.avg.appr, r.avg.pay].filter(Boolean); return v.length ? v.reduce(function (s0, a) { return s0 + a.ms; }, 0) / v.length : null; }, cell: function (r, td) {
           if (!r.avg.acct && !r.avg.appr && !r.avg.pay) { txt(td, "N/A"); return; }
           rtLine(td, "Accounting", r.avg.acct); rtLine(td, "Approving", r.avg.appr); rtLine(td, "Paying", r.avg.pay); } },

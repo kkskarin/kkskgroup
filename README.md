@@ -153,10 +153,10 @@ provides the same calls, so the app code did not need rewriting:
   Stored in `cashadv/*` with `kind: "return"`, status `returning` → `returned`.
 - **Show Activity** (Settings, admins only): one row per person with last sign-in (date and time, "N/A" if never) and
   last active, last edit and number of changes in the period (from the Change Log and record writers, via the admin-only
-  `app_activity` database function), entries made (bills submitted, vouchers, checking reports, proformas and imports,
-  cash requests, notes, payments), average response times (Accounting: submitted → accounted; Approving: report sent →
+  `app_activity` database function), entries made by job (purchasers: bills, vouchers, proformas, imports; accountants: bills and
+  vouchers accounted, vendors added or completed; financiers: payments and cash handed over; approvers: approvals), average response times (Accounting: submitted → accounted; Approving: report sent →
   approved, cash advance asked → approved; Paying: approval → payment or cash handed over) and what is waiting on them
-  now with its oldest age. Period: 7 days to all time.
+  now with its oldest age. People with no entries and nothing waiting are left out. Period: 7 days to all time.
 - **Slack approvals**: when a live checking report starts waiting or a cash advance is requested, the
   `approval-alert` Edge Function sends the named approver a Slack DM (found by their login email) with **Approve** and
   **Review in app** buttons. Approve (with a confirm step) goes to the `slack-approve` Edge Function, which checks

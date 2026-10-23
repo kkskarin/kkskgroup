@@ -823,7 +823,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secList" hidden>
     <div class="head">
-      <div><h2>Companies</h2><p class="sub">One company list for the group: each app shows the companies its division uses, in its own order. Admins, the Accounts team and people allowed to add companies can add or change a company; only admins deactivate one. Purchases point to a company by a permanent ID, so a change here shows on every old and new record. Drag a company by its handle, or use the arrows, to set the order every list in the app follows.</p></div>
+      <div><h2>Companies</h2><p class="sub">One company list for the group: each app shows the companies its division uses, in its own order. Admins, the Accounts team and people allowed to add companies can add or change a company; only admins deactivate one. Purchases point to a company by a permanent ID, so a change here shows on every old and new record. The super admin sets the order every list in the app follows.</p></div>
       <span class="grow"></span>
       <label class="check"><input type="checkbox" id="showOff"> Show deactivated</label>
       <button class="btn primary" id="add">Add company</button>
@@ -1266,15 +1266,15 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <div class="card list scroll" id="auList"></div>
   </section>
   <section id="secActivity" hidden>
-    <div class="head"><div><h2>Show Activity</h2><p class="sub">Who is using the app, how much each person enters, and how quickly they act on what waits for them. Only admins can see this.</p></div></div>
+    <div class="head"><div><h2>Show Activity</h2><p class="sub">Each person's own work: what they did, how long it took, and what is still waiting on them. Tap a person for the full detail. Only admins can see this.</p></div></div>
     <div class="filters">
       <input class="field" id="actQ" type="search" placeholder="Search name or job" aria-label="Search people" autocomplete="off">
-      <select class="field" id="actPer" aria-label="Period"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option><option value="0">All time</option></select>
+      <select class="field" id="actPer" aria-label="Period"><option value="1">Today</option><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option><option value="0">All time</option><option value="custom">Choose dates…</option></select>
+      <div class="perjump" id="actFromBox" hidden></div><div class="perjump" id="actToBox" hidden></div>
     </div>
     <div class="card list scroll" id="actList"></div>
-    <p class="sub" style="margin-top:10px">Entries are each job's own work in the period: purchasers' bills, vouchers, proformas and imports; accountants' bills and vouchers accounted and vendors added or completed; financiers' payments and cash handed over; approvers' approvals. People with no entries and nothing waiting are left out. Edits: every change they saved (from the Change Log).
-      Response times are averages over the period: Accounting is bill or voucher submitted → accounted; Approving is report sent → approved (and cash advance asked → approved); Paying is approval → payment recorded or cash handed over.
-      Waiting now counts what sits with them today: reports and cash advances naming them as approver, and (accountants) bills still to be accounted in their companies. Sign-in, last active and edits cover logins only; people on a shared login show under that login.</p>
+    <p class="sub" style="margin-top:10px">Only the work each job does is counted. Purchasers: bills, vouchers, proformas and imports entered. Voucher Makers: vouchers. Accountants and Chief Accountants: bills and vouchers accounted, vendors added or completed. Financiers: payments recorded and cash advances handed over. Approvers and admins: checking reports and cash advances approved.
+      Time taken is from when the work reached them (bill submitted, report sent, approval given…) to when they finished it. Pending is what waits on them now, with how long.</p>
   </section>
   <section id="secPayables" hidden>
     <div class="head">
@@ -8271,7 +8271,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     rows.forEach(function (c) { c._tot = totals(c.id); });
     var GRIP = '<svg width="14" height="18" viewBox="0 0 14 18" aria-hidden="true"><g fill="currentColor"><circle cx="4" cy="4" r="1.6"/><circle cx="10" cy="4" r="1.6"/><circle cx="4" cy="9" r="1.6"/><circle cx="10" cy="9" r="1.6"/><circle cx="4" cy="14" r="1.6"/><circle cx="10" cy="14" r="1.6"/></g></svg>';
     sortTable(box, "coList", [
-      { label: "Order", cls: "ordcol", dl: "Order", cell: function (c, td, ri) {
+      /* Only the super admin sets the company order. */
+      !S.isSuper ? null : { label: "Order", cls: "ordcol", dl: "Order", cell: function (c, td, ri) {
           var w = el("div", { class: "ord" }), g = el("span", { class: "grip", title: "Drag to move" }); g.innerHTML = GRIP;
           var up = el("button", { class: "obtn", type: "button", "aria-label": "Move " + c.name + " up", title: "Move up" }, "\u25B2");
           var dn = el("button", { class: "obtn", type: "button", "aria-label": "Move " + c.name + " down", title: "Move down" }, "\u25BC");
@@ -8296,7 +8297,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     ], rows, { sortIndex: -1, rowClass: function (c) { return c.active === false ? "off" : ""; } });
     /* Drag a row by its handle to move it; the new order is saved for everyone. */
     var trs = box.querySelectorAll("tbody tr"), dragId = null;
-    Array.prototype.forEach.call(trs, function (tr, i) {
+    if (S.isSuper) Array.prototype.forEach.call(trs, function (tr, i) {
       var c = rows[i]; tr.setAttribute("data-id", c.id);
       var grip = tr.querySelector(".grip");
       grip.addEventListener("pointerdown", function () { tr.draggable = true; });
@@ -8327,7 +8328,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
   }
   function moveCompany(id, targetId, where) {
-    if (!canCoEdit() || id === targetId) return;
+    if (!S.isSuper || id === targetId) return;
     var list = sorted().map(function (c) { return c.id; }).filter(function (x) { return x !== id; });
     var at = list.indexOf(targetId); if (at < 0) return;
     list.splice(where === "after" ? at + 1 : at, 0, id);
@@ -9415,57 +9416,82 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       S.audit = m; AU.loaded = true; if (S.tab === "Change Log" && !$("secAudit").hidden) { var ae = document.activeElement; if (!(ae && ae.id === "auQ")) renderAudit(); }
     }, function () { AU.loaded = true; });
   }
-  /* ================= Settings › Show Activity (admins): use, output and response times per person ================= */
-  var AC = { srv: null, since: -1, busy: false, err: "" };
-  function acSince() { var d = Number($("actPer").value || 30); return d ? Date.now() - d * 864e5 : 0; }
+  /* ================= Settings › Show Activity (admins): each person's own work, time taken, and what waits on them ================= */
+  var AC = { srv: null, since: -1, busy: false, err: "", from: "", to: "" };
+  /* The kinds of work, the jobs that do them, and their words. */
+  var ACT_KINDS = [
+    ["bill", "Bills entered", "bill", ["purchaser"]], ["voucher", "Vouchers entered", "voucher", ["purchaser", "vmaker"]], ["proforma", "Proformas entered", "proforma", ["purchaser"]], ["import", "Imports entered", "import", ["purchaser"]],
+    ["billAcct", "Bills accounted", "bill accounted", ["accountant", "chiefacct"]], ["vchAcct", "Vouchers accounted", "voucher accounted", ["accountant", "chiefacct"]], ["vendor", "Vendors added or completed", "vendor", ["accountant", "chiefacct"]],
+    ["payment", "Payments recorded", "payment", ["financier"]], ["cashGiven", "Cash advances handed over", "cash advance handed over", ["financier"]],
+    ["approval", "Checking reports approved", "report approved", ["approver", "admin"]], ["cashAppr", "Cash advances approved", "cash advance approved", ["approver", "admin"]]
+  ];
+  var ACT_PEND = { billAcct: "Bills to account", vchAcct: "Vouchers to account", payment: "Bills to pay", cashGiven: "Cash to hand over", approval: "Reports to approve", cashAppr: "Cash advances to approve", bill: "Bills sent back to fix" };
+  function acRange() {
+    var v = $("actPer").value, now = Date.now();
+    if (v === "custom") { var f = AC.from || addDays(todayYmd(), -30), t = AC.to || todayYmd(); return { since: Date.parse(f + "T00:00:00"), until: Date.parse(t + "T23:59:59") }; }
+    var d = Number(v); return { since: d === 1 ? Date.parse(todayYmd() + "T00:00:00") : d ? now - d * 864e5 : 0, until: Infinity };
+  }
   function acLoad(force) {
-    var since = acSince(); if (!window.bvActivity || AC.busy || (!force && AC.srv && Math.abs(AC.since - since) < 6e4)) return;
+    var since = acRange().since; if (!window.bvActivity || AC.busy || (!force && AC.srv && Math.abs(AC.since - since) < 6e4)) return;
     AC.busy = true; AC.since = since;
     window.bvActivity(since).then(function (rows) { var m = {}; (rows || []).forEach(function (r) { m[r.uid] = r; }); AC.srv = m; AC.err = ""; }, function (e) { AC.err = explain(e); })
       .then(function () { AC.busy = false; if (S.tab === "Activity" && !$("secActivity").hidden) renderActivity(); });
   }
   function acDur(ms) { if (ms == null) return ""; var m = Math.max(1, Math.round(ms / 6e4)); if (m < 60) return m + " min"; var h = Math.floor(m / 60); if (h < 24) return h + "h" + (m % 60 ? " " + (m % 60) + "m" : ""); var d = Math.floor(h / 24); return d + "d" + (h % 24 ? " " + (h % 24) + "h" : ""); }
-  function acStamp(t) { var ms = typeof t === "string" ? Date.parse(t) : t; return ms > 0 ? stamp(ms) : "N/A"; }
   function acPeople() {
     var m = {};
     Object.keys(S.users || {}).forEach(function (k) { m[k] = { id: k, name: S.users[k].name || "", u: S.users[k] }; });
-    Object.keys(S.admins || {}).forEach(function (k) { if (!m[k]) m[k] = { id: k, name: (S.admins[k] && S.admins[k].name) || userLabel(k) || "Admin", u: null }; });
     Object.keys(S.profiles || {}).forEach(function (k) { if (!m[k]) m[k] = { id: k, name: S.profiles[k].name || "", u: S.profiles[k] }; });
+    Object.keys(S.admins || {}).forEach(function (k) { if (!m[k]) m[k] = { id: k, name: (S.admins[k] && S.admins[k].name) || userLabel(k) || "Admin", u: null }; });
+    Object.keys(m).forEach(function (k) {
+      var js = ((m[k].u && m[k].u.jobRoles) || []).slice(); if ((S.admins || {})[k]) js.push("admin");
+      m[k].jobs = js; m[k].kinds = {}; ACT_KINDS.forEach(function (x) { if (!js.length || x[3].some(function (j) { return js.indexOf(j) >= 0; })) m[k].kinds[x[0]] = 1; });
+      m[k].done = []; m[k].pend = [];
+    });
     return m;
   }
   function activityRows() {
-    var since = acSince(), R = S.raw || {}, P = acPeople(), now = Date.now();
-    Object.keys(P).forEach(function (k) { P[k].ent = {}; P[k].n = 0; P[k].rt = { acct: [], appr: [], pay: [] }; P[k].wait = 0; P[k].oldest = 0; });
+    var rg = acRange(), since = rg.since, until = rg.until, R = S.raw || {}, P = acPeople(), now = Date.now();
     function vals(o) { return Object.keys(o || {}).map(function (k) { return o[k]; }); }
-    function ent(uid, at, what) { var p = P[uid]; if (!p || !at || at < since) return; p.ent[what] = (p.ent[what] || 0) + 1; p.n++; }
-    function rt(uid, kind, from, to) { var p = P[uid]; if (!p || !from || !to || to < since || to < from) return; p.rt[kind].push(to - from); }
-    function wait(uid, from) { var p = P[uid]; if (!p || !from) return; p.wait++; if (!p.oldest || from < p.oldest) p.oldest = from; }
-    var bills = vals(R.bills || S.bills), reports = R.reports || S.reports || {}, vouchers = vals(R.vouchers || S.vouchers), advs = vals(R.advances || S.advances);
-    /* Entries are each job's own work: purchasers' bills, vouchers, proformas and imports; accountants' bills and vouchers
-       accounted and vendor details added; financiers' payments and cash handed over; approvers' approvals. */
+    function coN(cid) { var c = S.companies[cid]; return c ? c.shortName || c.name : ""; }
+    /* Work done: counted only for people whose job does that kind of work. */
+    function done(uid, kind, label, cid, from, to) { var p = P[uid]; if (!p || !p.kinds[kind] || !to || to < since || to > until) return; p.done.push({ kind: kind, label: label, co: coN(cid), from: from || 0, to: to, ms: from && to >= from ? to - from : null }); }
+    function pend(uid, kind, label, cid, from) { var p = P[uid]; if (!p || !p.kinds[kind]) return; p.pend.push({ kind: kind, label: label, co: coN(cid), from: from || 0, age: from ? now - from : null }); }
+    var bills = vals(R.bills || S.bills), reports = R.reports || S.reports || {}, vouchers = vals(R.vouchers || S.vouchers), advs = vals(R.advances || S.advances), people = Object.keys(P);
+    function vName(id) { var v = S.vendors[id]; return v ? v.name : ""; }
+    function bLabel(b) { return "Bill " + (b.billNo || "") + (vName(b.vendorId) ? " · " + vName(b.vendorId) : ""); }
+    function vLabel(v) { return "Voucher " + (v.voucherNo || "") + (v.payee ? " · " + v.payee : ""); }
+    function doers(step, cid, job) { return people.filter(function (k) { var u = P[k].u; return u && u.active !== false && P[k].jobs.indexOf(job) >= 0 && (job === "accountant" && isChief(u) ? true : userHas(Object.assign({ id: k }, u), step, cid)); }); }
     bills.forEach(function (b) {
-      if (b.submittedAt) ent(b.submittedBy || b.ownerId || b.uploadedBy, b.submittedAt, "bills");
-      if (b.acctBy && b.acctAt && b.acct === "approved") { ent(b.acctBy, b.acctAt, "accounted"); rt(b.acctBy, "acct", b.submittedAt, b.acctAt); }
+      var who = b.submittedBy || b.ownerId || b.uploadedBy;
+      if (b.submittedAt) done(who, "bill", bLabel(b), b.companyId, b.uploadedAt && b.uploadedAt < b.submittedAt ? b.uploadedAt : 0, b.submittedAt);
+      if (b.acctBy && b.acctAt && b.acct === "approved") done(b.acctBy, "billAcct", bLabel(b), b.companyId, b.submittedAt, b.acctAt);
+      if (b.status === "done" && b.acct === "pending" && b.companyId) doers("acct", b.companyId, "accountant").concat(people.filter(function (k) { return isChief(P[k].u) && P[k].jobs.indexOf("accountant") < 0; })).forEach(function (k) { pend(k, "billAcct", bLabel(b), b.companyId, b.submittedAt); });
+      if (b.acct === "back" && who) pend(who, "bill", bLabel(b) + (b.acctNote ? " — " + b.acctNote : ""), b.companyId, b.acctAt);
     });
     vouchers.forEach(function (v) {
-      ent(v.createdBy || v.preparedBy, v.createdAt, "vouchers");
-      if (v.acctBy && v.acctAt && v.acct === "approved") { ent(v.acctBy, v.acctAt, "accounted"); rt(v.acctBy, "acct", v.createdAt, v.acctAt); }
+      done(v.createdBy || v.preparedBy, "voucher", vLabel(v), v.companyId, 0, v.createdAt);
+      if (v.acctBy && v.acctAt && v.acct === "approved") done(v.acctBy, "vchAcct", vLabel(v), v.companyId, v.createdAt, v.acctAt);
+      if (v.acct === "pending" && v.companyId) doers("acct", v.companyId, "accountant").concat(people.filter(function (k) { return isChief(P[k].u) && P[k].jobs.indexOf("accountant") < 0; })).forEach(function (k) { pend(k, "vchAcct", vLabel(v), v.companyId, v.createdAt); });
     });
-    advs.forEach(function (a) { ent(a.createdBy, a.createdAt, a.kind === "import" ? "imports" : "proformas"); });
+    advs.forEach(function (a) { done(a.createdBy, a.kind === "import" ? "import" : "proforma", (a.kind === "import" ? "Import " : "Proforma ") + (a.piNo || "") + (vName(a.vendorId) ? " · " + vName(a.vendorId) : ""), a.companyId, 0, a.createdAt); });
     vals(S.vendors).forEach(function (v) {
-      var who = {}; if (v.createdBy && v.createdAt >= since) who[v.createdBy] = 1; if (v.updatedBy && v.updatedAt >= since) who[v.updatedBy] = 1;
-      Object.keys(v.openings || {}).forEach(function (c) { var o = v.openings[c] || {}; if (o.setBy && o.setAt >= since) who[o.setBy] = 1; });
-      Object.keys(who).forEach(function (u) { ent(u, Date.now(), "vendors"); });
+      var who = {}; if (v.createdBy && v.createdAt) who[v.createdBy] = v.createdAt; if (v.updatedBy && v.updatedAt) who[v.updatedBy] = Math.max(who[v.updatedBy] || 0, v.updatedAt);
+      Object.keys(v.openings || {}).forEach(function (c) { var o = v.openings[c] || {}; if (o.setBy && o.setAt) who[o.setBy] = Math.max(who[o.setBy] || 0, o.setAt); });
+      Object.keys(who).forEach(function (u) { done(u, "vendor", "Vendor " + (v.name || ""), "", 0, who[u]); });
     });
     vals(reports).forEach(function (r) {
-      if (r.approvedBy && r.approvedAt && !r.onBehalf) { ent(r.approvedBy, r.approvedAt, "approvals"); rt(r.approvedBy, "appr", r.generatedAt, r.approvedAt); }
-      var st = stageOf(r); if ((st === "generated" || st === "printed") && r.approverId) wait(r.approverId, r.generatedAt || r.createdAt);
+      var lab = "Report " + (r.no || ""), cid = r.companyId || (r.companyIds || [])[0];
+      if (r.approvedBy && r.approvedAt && !r.onBehalf) done(r.approvedBy, "approval", lab, cid, r.generatedAt, r.approvedAt);
+      var st = stageOf(r); if ((st === "generated" || st === "printed") && r.approverId) pend(r.approverId, "approval", lab, cid, r.generatedAt || r.createdAt);
     });
     vals(S.cashadv).forEach(function (a) {
       if (a.kind === "return") return;
-      if (a.approvedBy && a.approvedAt && a.note !== "Requested by the admin" && !a.onBehalf) { ent(a.approvedBy, a.approvedAt, "approvals"); rt(a.approvedBy, "appr", a.requestedAt, a.approvedAt); }
-      if (a.receivedBy && a.receivedAt) { ent(a.receivedBy, a.receivedAt, "payments"); rt(a.receivedBy, "pay", a.approvedAt, a.receivedAt); }
-      if (a.status === "pending") wait(caApproverId(a), a.requestedAt);
+      var lab = "Cash advance · " + (a.name || userLabel(a.uid)) + " · " + money(a.approvedAmount || a.amount);
+      if (a.approvedBy && a.approvedAt && a.note !== "Requested by the admin" && !a.onBehalf) done(a.approvedBy, "cashAppr", lab, a.companyId, a.requestedAt, a.approvedAt);
+      if (a.receivedBy && a.receivedAt) done(a.receivedBy, "cashGiven", lab, a.companyId, a.approvedAt, a.receivedAt);
+      if (a.status === "pending") pend(caApproverId(a), "cashAppr", lab, a.companyId, a.requestedAt);
+      if (a.status === "approved") doers("txn", a.companyId, "financier").forEach(function (k) { pend(k, "cashGiven", lab, a.companyId, a.approvedAt); });
     });
     function apprAt(t) {
       if (t.reportId && reports[t.reportId]) return reports[t.reportId].approvedAt || 0;
@@ -9473,38 +9499,104 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       ids.forEach(function (id) { vals(reports).forEach(function (r) { if (r.approvedAt && (r.billIds || []).indexOf(id) >= 0 && (!best || r.approvedAt < best)) best = r.approvedAt; }); });
       return best;
     }
-    vals(S.txns).forEach(function (t) { if (t.virtual || !t.createdBy || t.kind !== "payment") return; ent(t.createdBy, t.createdAt, "payments"); rt(t.createdBy, "pay", apprAt(t), t.createdAt); });
-    /* Accountants: bills submitted and still to be accounted in the companies where they account. */
-    bills.forEach(function (b) {
-      if (b.status !== "done" || b.acct !== "pending" || !b.submittedAt) return;
-      Object.keys(P).forEach(function (k) { var u = P[k].u; if (u && u.active !== false && (u.jobRoles || []).indexOf("accountant") >= 0 && userHas(Object.assign({ id: k }, u), "acct", b.companyId)) wait(k, b.submittedAt); });
+    vals(S.txns).forEach(function (t) {
+      if (t.virtual || !t.createdBy || t.kind !== "payment") return;
+      var v = S.vendors[t.vendorId], lab = "Payment " + money(t.amount) + " · " + (v ? v.name : t.payee || "");
+      done(t.createdBy, "payment", lab, t.companyId, apprAt(t), t.createdAt);
     });
-    return Object.keys(P).map(function (k) {
-      var p = P[k], sv = (AC.srv || {})[k] || null, avg = {};
-      Object.keys(p.rt).forEach(function (x) { var a = p.rt[x]; avg[x] = a.length ? { ms: a.reduce(function (s0, v) { return s0 + v; }, 0) / a.length, n: a.length } : null; });
-      var edit = sv && sv.last_edit ? Date.parse(sv.last_edit) : 0, act = sv && sv.last_active ? Math.max(Date.parse(sv.last_active), edit) : 0;
-      return { id: k, name: p.name, jobs: ((p.u && p.u.jobRoles) || []).map(function (j) { return (JOBS.filter(function (x) { return x[0] === j; })[0] || [j, j])[1]; }).concat((S.admins || {})[k] ? ["Admin"] : []),
-        signIn: sv && sv.last_sign_in ? Date.parse(sv.last_sign_in) : 0, active: act, edit: edit, edits: sv ? Number(sv.edits) || 0 : null, login: !!sv,
-        n: p.n, ent: p.ent, avg: avg, wait: p.wait, oldest: p.oldest ? now - p.oldest : 0 };
+    /* Financiers: approved bills still to pay in the companies they pay for. */
+    bills.forEach(function (b) {
+      if (b.status !== "done" || !b.companyId || b.settle) return; var due = 0; try { due = billPayNow(b); } catch (e) { due = 0; } if (due <= 0.004) return;
+      var at = 0; vals(reports).forEach(function (r) { if (r.approvedAt && stageOf(r) === "payment" && (r.billIds || []).indexOf(b.id) >= 0 && (!at || r.approvedAt < at)) at = r.approvedAt; });
+      doers("txn", b.companyId, "financier").forEach(function (k) { pend(k, "payment", bLabel(b) + " · " + money(due), b.companyId, at); });
+    });
+    return people.map(function (k) {
+      var p = P[k], sv = (AC.srv || {})[k] || null, by = {};
+      p.done.forEach(function (d) { var x = by[d.kind] || (by[d.kind] = { n: 0, t: [], pend: 0, oldest: 0 }); x.n++; if (d.ms != null) x.t.push(d.ms); });
+      p.pend.forEach(function (d) { var x = by[d.kind] || (by[d.kind] = { n: 0, t: [], pend: 0, oldest: 0 }); x.pend++; if (d.age != null && d.age > x.oldest) x.oldest = d.age; });
+      Object.keys(by).forEach(function (kk) { var t = by[kk].t; by[kk].avg = t.length ? t.reduce(function (s0, v) { return s0 + v; }, 0) / t.length : null; });
+      var edit = sv && sv.last_edit ? Date.parse(sv.last_edit) : 0, act = Math.max(sv && sv.last_active ? Date.parse(sv.last_active) : 0, sv && sv.last_sign_in ? Date.parse(sv.last_sign_in) : 0, edit);
+      var times = p.done.filter(function (d) { return d.ms != null; }).map(function (d) { return d.ms; });
+      return { id: k, name: p.name, jobs: p.jobs.map(function (j) { return j === "admin" ? "Admin" : (JOBS.filter(function (x) { return x[0] === j; })[0] || [j, j])[1]; }), active: act, edit: edit, login: !!sv,
+        n: p.done.length, pendN: p.pend.length, oldest: p.pend.reduce(function (m0, d) { return Math.max(m0, d.age || 0); }, 0), by: by, avg: times.length ? times.reduce(function (s0, v) { return s0 + v; }, 0) / times.length : null, done: p.done, pend: p.pend };
     });
   }
+  function acKind(k) { return ACT_KINDS.filter(function (x) { return x[0] === k; })[0] || [k, k, k]; }
   function renderActivity() {
     var q = $("actQ").value.trim().toLowerCase(), box = $("actList");
-    if (!$("actPer")._w) { $("actPer")._w = 1; $("actPer").addEventListener("change", function () { acLoad(true); renderActivity(); }); $("actQ").addEventListener("input", renderActivity); }
-    var rows = activityRows().filter(function (r) { return (r.n || r.wait) && (!q || (r.name + " " + r.jobs.join(" ")).toLowerCase().indexOf(q) >= 0); });
-    if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, q ? "No one matches." : "No one entered anything in this period, and nothing is waiting.")); return; }
-    var none = AC.err ? "Couldn't load (" + AC.err + ")" : AC.srv ? "N/A" : "Loading…";
-    function rtLine(td, label, a) { if (a) sub(td, label + ": " + acDur(a.ms) + " (" + a.n + ")"); }
+    if (!$("actPer")._w) {
+      $("actPer")._w = 1;
+      $("actPer").addEventListener("change", function () {
+        var c = this.value === "custom"; $("actFromBox").hidden = !c; $("actToBox").hidden = !c;
+        if (c && !$("actFromBox").firstChild) {
+          AC.from = AC.from || addDays(todayYmd(), -30); AC.to = AC.to || todayYmd();
+          $("actFromBox").appendChild(dateBox("actFrom", AC.from, { max: todayYmd(), label: "From" })); $("actToBox").appendChild(dateBox("actTo", AC.to, { max: todayYmd(), label: "To" }));
+          $("actFrom").addEventListener("change", function () { var d = parseDate(this.value); if (d) { AC.from = d; acLoad(true); renderActivity(); } });
+          $("actTo").addEventListener("change", function () { var d = parseDate(this.value); if (d) { AC.to = d; renderActivity(); } });
+        }
+        acLoad(true); renderActivity();
+      });
+      $("actQ").addEventListener("input", renderActivity);
+    }
+    var all = activityRows(), rows = all.filter(function (r) { return (r.n || r.pendN) && (!q || (r.name + " " + r.jobs.join(" ")).toLowerCase().indexOf(q) >= 0); });
+    AC.rows = all;
+    if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, q ? "No one matches." : "No work done in this period, and nothing is waiting.")); return; }
+    var none = AC.err ? "Couldn't load" : AC.srv ? "N/A" : "Loading…";
     sortTable(box, "actList", [
-      { label: "Person", kind: "co", sort: function (r) { return r.name.toLowerCase(); }, cell: function (r, td) { td.appendChild(el("b", null, r.name || "(no name)")); if (r.jobs.length) sub(td, r.jobs.join(", ")); } },
-      { label: "Last Sign-in", sort: function (r) { return r.signIn || null; }, desc: true, cell: function (r, td) { txt(td, r.signIn ? stamp(r.signIn) : r.login || AC.srv ? "N/A" : none); if (r.active && r.active > r.signIn + 6e4) sub(td, "Last active " + stamp(r.active)); } },
-      { label: "Last Edit", sort: function (r) { return r.edit || null; }, desc: true, cell: function (r, td) { txt(td, r.edit ? stamp(r.edit) : AC.srv || AC.err ? "N/A" : none); if (r.edits) sub(td, plural(r.edits, "change") + " in the period"); } },
-      { label: "Entries", cls: "r num", sort: function (r) { return r.n; }, desc: true, cell: function (r, td) { td.appendChild(el("b", null, String(r.n))); var b = Object.keys(r.ent).sort().map(function (k) { var w = { bills: "bill", vouchers: "voucher", proformas: "proforma", imports: "import", payments: "payment", accounted: "accounted", vendors: "vendor", approvals: "approval" }[k] || k; return k === "accounted" ? r.ent[k] + " accounted" : plural(r.ent[k], w); }); if (b.length) sub(td, b.join(" · ")); } },
-      { label: "Response Time", sort: function (r) { var v = [r.avg.acct, r.avg.appr, r.avg.pay].filter(Boolean); return v.length ? v.reduce(function (s0, a) { return s0 + a.ms; }, 0) / v.length : null; }, cell: function (r, td) {
-          if (!r.avg.acct && !r.avg.appr && !r.avg.pay) { txt(td, "N/A"); return; }
-          rtLine(td, "Accounting", r.avg.acct); rtLine(td, "Approving", r.avg.appr); rtLine(td, "Paying", r.avg.pay); } },
-      { label: "Waiting Now", cls: "r num", sort: function (r) { return r.wait; }, desc: true, cell: function (r, td) { td.appendChild(el("b", r.wait ? { style: "color:var(--warn)" } : null, String(r.wait))); if (r.wait) sub(td, "oldest " + acDur(r.oldest)); } }
+      { label: "Person", kind: "co", sort: function (r) { return r.name.toLowerCase(); }, cell: function (r, td) { var b = el("button", { class: "link-btn", type: "button" }, r.name || "(no name)"); b.style.fontWeight = "700"; b.addEventListener("click", function () { acDetail(r.id); }); td.appendChild(b); if (r.jobs.length) sub(td, r.jobs.join(", ")); } },
+      { label: "Last Active", sort: function (r) { return r.active || null; }, desc: true, cell: function (r, td) { txt(td, r.active ? stamp(r.active) : r.login || AC.srv ? "N/A" : none); } },
+      { label: "Last Edit", sort: function (r) { return r.edit || null; }, desc: true, cell: function (r, td) { txt(td, r.edit ? stamp(r.edit) : AC.srv || AC.err ? "N/A" : none); } },
+      { label: "Work Done", sort: function (r) { return r.n; }, desc: true, cell: function (r, td) {
+          td.appendChild(el("b", null, String(r.n)));
+          ACT_KINDS.forEach(function (x) { var b = r.by[x[0]]; if (b && b.n) sub(td, plural(b.n, x[2]) + (b.avg != null ? " · avg " + acDur(b.avg) : "")); }); } },
+      { label: "Pending", sort: function (r) { return r.pendN; }, desc: true, cell: function (r, td) {
+          td.appendChild(el("b", r.pendN ? { style: "color:var(--warn)" } : null, String(r.pendN)));
+          ACT_KINDS.forEach(function (x) { var b = r.by[x[0]]; if (b && b.pend) sub(td, (ACT_PEND[x[0]] || x[1]) + ": " + b.pend + " · oldest " + acDur(b.oldest)); }); } }
     ], rows, { sortIndex: 3, sortDir: -1 });
+  }
+  /* One person's full detail: totals and times per kind of work, every item done with its time taken, and what is pending. */
+  function acDetail(uid) {
+    var r = (AC.rows || []).filter(function (x) { return x.id === uid; })[0]; if (!r) return;
+    var bg = el("div", { class: "modal-bg" }), m = el("div", { class: "modal wide", role: "dialog", "aria-modal": "true", "aria-label": r.name + " activity", style: "max-width:980px" });
+    m.appendChild(el("h3", null, r.name)); m.appendChild(el("p", { class: "sub" }, [r.jobs.join(", "), "Last active " + (r.active ? stamp(r.active) : "N/A"), "Last edit " + (r.edit ? stamp(r.edit) : "N/A")].filter(Boolean).join(" · ")));
+    var stats = el("div", { class: "stats" }); m.appendChild(stats);
+    statBoxes(stats, [["Work done", String(r.n), r.avg != null ? "avg " + acDur(r.avg) + " each" : ""], ["Pending now", String(r.pendN), r.oldest ? "oldest " + acDur(r.oldest) : "", r.pendN ? "warn" : ""]]);
+    /* per kind */
+    var kinds = ACT_KINDS.filter(function (x) { var b = r.by[x[0]]; return b && (b.n || b.pend); });
+    if (kinds.length) {
+      var kw = el("div", { class: "list scroll", style: "margin-top:12px" }); m.appendChild(el("h3", { style: "margin-top:14px" }, "By kind of work")); m.appendChild(kw);
+      sortTable(kw, "actKinds", [
+        { label: "Work", kind: "co", cell: function (x, td) { td.appendChild(el("b", null, x[1])); } },
+        { label: "Done", cls: "r num", cell: function (x, td) { txt(td, String(r.by[x[0]].n)); } },
+        { label: "Average Time", cls: "r num", cell: function (x, td) { txt(td, r.by[x[0]].avg != null ? acDur(r.by[x[0]].avg) : "—"); } },
+        { label: "Fastest", cls: "r num", cell: function (x, td) { var t = r.by[x[0]].t; txt(td, t.length ? acDur(Math.min.apply(null, t)) : "—"); } },
+        { label: "Slowest", cls: "r num", cell: function (x, td) { var t = r.by[x[0]].t; txt(td, t.length ? acDur(Math.max.apply(null, t)) : "—"); } },
+        { label: "Pending", cls: "r num", cell: function (x, td) { var b = r.by[x[0]]; txt(td, String(b.pend)); if (b.pend) sub(td, "oldest " + acDur(b.oldest)); } }
+      ], kinds, {});
+    }
+    if (r.pend.length) {
+      var pw = el("div", { class: "list scroll", style: "margin-top:12px;max-height:320px" }); m.appendChild(el("h3", { style: "margin-top:14px" }, "Pending now (" + r.pend.length + ")")); m.appendChild(pw);
+      sortTable(pw, "actPend", [
+        { label: "Waiting", sort: function (d) { return d.age || 0; }, desc: true, cell: function (d, td) { td.appendChild(el("b", { style: "color:var(--warn)" }, d.age != null ? acDur(d.age) : "—")); if (d.from) sub(td, "since " + stamp(d.from)); } },
+        { label: "Work", cell: function (d, td) { txt(td, ACT_PEND[d.kind] || acKind(d.kind)[1]); } },
+        { label: "Item", cls: "desc", cell: function (d, td) { txt(td, d.label); if (d.co) sub(td, d.co); } }
+      ], r.pend, { sortIndex: 0, sortDir: -1 });
+    }
+    if (r.done.length) {
+      var dw = el("div", { class: "list scroll", style: "margin-top:12px;max-height:420px" }); m.appendChild(el("h3", { style: "margin-top:14px" }, "Work done (" + r.done.length + ")")); m.appendChild(dw);
+      sortTable(dw, "actDone", [
+        { label: "Done", sort: function (d) { return d.to; }, desc: true, cell: function (d, td) { txt(td, stamp(d.to)); } },
+        { label: "Work", sort: function (d) { return acKind(d.kind)[1]; }, cell: function (d, td) { txt(td, acKind(d.kind)[1]); } },
+        { label: "Item", cls: "desc", cell: function (d, td) { txt(td, d.label); if (d.co) sub(td, d.co); } },
+        { label: "Time Taken", cls: "r num", sort: function (d) { return d.ms; }, cell: function (d, td) { txt(td, d.ms != null ? acDur(d.ms) : "—"); if (d.from) sub(td, "from " + stamp(d.from)); } }
+      ], r.done, { sortIndex: 0, sortDir: -1 });
+    }
+    if (!r.done.length && !r.pend.length) m.appendChild(el("p", { class: "sub" }, "No work in this period."));
+    var foot = el("div", { class: "form-foot" }), cl = el("button", { class: "btn", type: "button" }, "Close"); foot.appendChild(cl); m.appendChild(foot);
+    bg.appendChild(m); document.body.appendChild(bg);
+    function close() { bg.remove(); document.removeEventListener("keydown", onKey, true); }
+    function onKey(e) { if (e.key === "Escape") { e.preventDefault(); close(); } }
+    cl.addEventListener("click", close); bg.addEventListener("click", function (e) { if (e.target === bg) close(); }); document.addEventListener("keydown", onKey, true); cl.focus();
   }
   function renderAudit() {
     var q = $("auQ").value.trim().toLowerCase(), who = $("auWho").value, col = $("auCol").value;

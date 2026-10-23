@@ -156,12 +156,17 @@ provides the same calls, so the app code did not need rewriting:
   and see the finance reports (Transactions, Payables, Advances) for all companies, but don't record payments (no
   Payment Entry or Advance Requests). The sign-in check (`app_portal`, migration 20261023180000) gives them the Accounts
   and Finance apps.
-- **Show Activity** (Settings, admins only): one row per person with last sign-in (date and time, "N/A" if never) and
-  last active, last edit and number of changes in the period (from the Change Log and record writers, via the admin-only
-  `app_activity` database function), entries made by job (purchasers: bills, vouchers, proformas, imports; accountants: bills and
-  vouchers accounted, vendors added or completed; financiers: payments and cash handed over; approvers: approvals), average response times (Accounting: submitted → accounted; Approving: report sent →
-  approved, cash advance asked → approved; Paying: approval → payment or cash handed over) and what is waiting on them
-  now with its oldest age. People with no entries and nothing waiting are left out. Period: 7 days to all time.
+- **Show Activity** (Settings, admins only): one row per person with last active and last edit (date and time, "N/A"
+  if none; from the admin-only `app_activity` database function), the work done in the period broken down by kind with
+  its average time, and what is pending on them now with the oldest age. Only each job's own work counts: purchasers'
+  bills, vouchers, proformas and imports entered; Voucher Makers' vouchers; accountants' and Chief Accountants' bills
+  and vouchers accounted and vendors added or completed; financiers' payments and cash advances handed over; approvers'
+  and admins' reports and cash advances approved. Pending: bills/vouchers to account (in their companies), approved
+  bills to pay and cash to hand over, reports and cash advances to approve, bills sent back to the purchaser. Tapping a
+  person opens their detail: totals, average, fastest and slowest time per kind, every pending item with its age, and
+  every item done with the time it took. Period: today, 7/30/90 days, 12 months, all time, or chosen dates. People with
+  nothing done and nothing pending are left out.
+- **Company order**: only the super admin can reorder companies (Masters › Companies).
 - **Slack approvals**: when a live checking report starts waiting or a cash advance is requested, the
   `approval-alert` Edge Function sends the named approver a Slack DM (found by their login email) with **Approve** and
   **Review in app** buttons. Approve (with a confirm step) goes to the `slack-approve` Edge Function, which checks

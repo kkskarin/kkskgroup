@@ -547,6 +547,8 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   .t.roles label input{flex:none}
   .t.ob td.c-co{font-weight:700}
   .uresp{padding:0 16px 18px!important}
+/* Show Activity on phones: the work and pending breakdowns use the card's full width. */
+@media (max-width:760px){#actList td.actwide{grid-column:1/-1}#actList td.actwide .tsub{display:block}#actList td.actnone{display:none}}
   .t.roles .mob-lb{display:inline}
   .list .t.ob .field{width:100%}
   .toast{left:12px;right:12px;transform:none;max-width:none}
@@ -1266,7 +1268,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <div class="card list scroll" id="auList"></div>
   </section>
   <section id="secActivity" hidden>
-    <div class="head"><div><h2>Show Activity</h2><p class="sub">Each person's own work: what they did, how long it took, and what is still waiting on them. Tap a person for the full detail. Only admins can see this.</p></div></div>
+    <div class="head"><div><h2>Show Activity</h2><p class="sub">Each person's own work: what they did, how long it took, and what is still waiting on them. Tap a person for the full detail. Only admins and Chief Accountants can see this.</p></div></div>
     <div class="filters">
       <input class="field" id="actQ" type="search" placeholder="Search name or job" aria-label="Search people" autocomplete="off">
       <select class="field" id="actPer" aria-label="Period"><option value="1">Today</option><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option><option value="0">All time</option><option value="custom">Choose dates…</option></select>
@@ -1274,7 +1276,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     </div>
     <div class="card list scroll" id="actList"></div>
     <p class="sub" style="margin-top:10px">Only the work each job does is counted. Purchasers: bills, vouchers, proformas and imports entered (time on a bill, including a proforma's final bill, is from the bill date to when it was uploaded or entered). Voucher Makers: vouchers. Accountants and Chief Accountants: bills and vouchers accounted, vendors added or completed. Financiers: payments recorded and cash advances handed over. Approvers and admins: checking reports and cash advances approved.
-      Time taken is from when the work reached them (bill submitted, report sent, approval given…) to when they finished it. Pending is what waits on them now, with how long.</p>
+      Time taken is from when the work reached them (bill submitted, report sent, approval given…) to when they finished it. Pending is what waits on them now, with how long: bills and vouchers to account and vendors to complete (accountants), approved bills to pay and cash to hand over (financiers), reports and cash advances to approve (approvers). Purchasers have no pending column.</p>
   </section>
   <section id="secPayables" hidden>
     <div class="head">
@@ -9427,7 +9429,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     ["payment", "Payments recorded", "payment", ["financier"]], ["cashGiven", "Cash advances handed over", "cash advance handed over", ["financier"]],
     ["approval", "Checking reports approved", "report approved", ["approver", "admin"]], ["cashAppr", "Cash advances approved", "cash advance approved", ["approver", "admin"]]
   ];
-  var ACT_PEND = { billAcct: "Bills to account", vchAcct: "Vouchers to account", payment: "Bills to pay", cashGiven: "Cash to hand over", approval: "Reports to approve", cashAppr: "Cash advances to approve", bill: "Bills sent back to fix" };
+  var ACT_PEND = { billAcct: "Bills to account", vchAcct: "Vouchers to account", payment: "Bills to pay", cashGiven: "Cash to hand over", approval: "Reports to approve", cashAppr: "Cash advances to approve", vendor: "Vendors to complete" };
   function acRange() {
     var v = $("actPer").value, now = Date.now();
     if (v === "custom") { var f = AC.from || addDays(todayYmd(), -30), t = AC.to || todayYmd(); return { since: Date.parse(f + "T00:00:00"), until: Date.parse(t + "T23:59:59") }; }
@@ -9473,7 +9475,6 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (b.submittedAt) done(who, "bill", (b.advanceId ? "Final bill " : "") + bLabel(b), b.companyId, bd && bd <= up ? bd : 0, b.submittedAt, up, true);
       if (b.acctBy && b.acctAt && b.acct === "approved") done(b.acctBy, "billAcct", bLabel(b), b.companyId, b.submittedAt, b.acctAt);
       if (b.status === "done" && b.acct === "pending" && b.companyId) doers("acct", b.companyId, "accountant").concat(people.filter(function (k) { return isChief(P[k].u) && P[k].jobs.indexOf("accountant") < 0; })).forEach(function (k) { pend(k, "billAcct", bLabel(b), b.companyId, b.submittedAt); });
-      if (b.acct === "back" && who) pend(who, "bill", bLabel(b) + (b.acctNote ? " — " + b.acctNote : ""), b.companyId, b.acctAt);
     });
     vouchers.forEach(function (v) {
       done(v.createdBy || v.preparedBy, "voucher", vLabel(v), v.companyId, 0, v.createdAt);
@@ -9486,6 +9487,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       Object.keys(v.openings || {}).forEach(function (c) { var o = v.openings[c] || {}; if (o.setBy && o.setAt) who[o.setBy] = Math.max(who[o.setBy] || 0, o.setAt); });
       Object.keys(who).forEach(function (u) { done(u, "vendor", "Vendor " + (v.name || ""), "", 0, who[u]); });
     });
+    /* Vendors still missing details (the same check as the Masters badge) wait on the accountants of their companies. */
+    try { visibleVendors().forEach(function (v) {
+      if (v.active === false) return; var nd = vendorNeeds(v); if (!nd.list.length) return;
+      var cos = vendorBillCompanies(v.id), acc = {};
+      (cos.length ? cos : Object.keys(S.companies)).forEach(function (cid) { doers("acct", cid, "accountant").forEach(function (k) { acc[k] = 1; }); });
+      people.forEach(function (k) { if (isChief(P[k].u)) acc[k] = 1; });
+      Object.keys(acc).forEach(function (k) { pend(k, "vendor", "Vendor " + (v.name || "") + " — needs " + nd.list.join(", "), cos[0] || "", nd.since); });
+    }); } catch (e) {}
     vals(reports).forEach(function (r) {
       var lab = "Report " + (r.no || ""), cid = r.companyId || (r.companyIds || [])[0];
       if (r.approvedBy && r.approvedAt && !r.onBehalf) done(r.approvedBy, "approval", lab, cid, r.generatedAt, r.approvedAt);
@@ -9524,6 +9533,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var edit = sv && sv.last_edit ? Date.parse(sv.last_edit) : 0, act = Math.max(sv && sv.last_active ? Date.parse(sv.last_active) : 0, sv && sv.last_sign_in ? Date.parse(sv.last_sign_in) : 0, edit);
       var times = p.done.filter(function (d) { return d.ms != null; }).map(function (d) { return d.ms; });
       return { id: k, name: p.name, jobs: p.jobs.map(function (j) { return j === "admin" ? "Admin" : (JOBS.filter(function (x) { return x[0] === j; })[0] || [j, j])[1]; }), active: act, edit: edit, login: !!sv,
+        canPend: ["billAcct", "vchAcct", "vendor", "payment", "cashGiven", "approval", "cashAppr"].some(function (kk) { return p.kinds[kk]; }),
         n: p.done.length, pendN: p.pend.length, oldest: p.pend.reduce(function (m0, d) { return Math.max(m0, d.age || 0); }, 0), by: by, avg: times.length ? times.reduce(function (s0, v) { return s0 + v; }, 0) / times.length : null, done: p.done, pend: p.pend };
     });
   }
@@ -9552,10 +9562,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Person", kind: "co", sort: function (r) { return r.name.toLowerCase(); }, cell: function (r, td) { var b = el("button", { class: "link-btn", type: "button" }, r.name || "(no name)"); b.style.fontWeight = "700"; b.addEventListener("click", function () { acDetail(r.id); }); td.appendChild(b); if (r.jobs.length) sub(td, r.jobs.join(", ")); } },
       { label: "Last Active", sort: function (r) { return r.active || null; }, desc: true, cell: function (r, td) { txt(td, r.active ? stamp(r.active) : r.login || AC.srv ? "N/A" : none); } },
       { label: "Last Edit", sort: function (r) { return r.edit || null; }, desc: true, cell: function (r, td) { txt(td, r.edit ? stamp(r.edit) : AC.srv || AC.err ? "N/A" : none); } },
-      { label: "Work Done", sort: function (r) { return r.n; }, desc: true, cell: function (r, td) {
+      { label: "Work Done", cls: "actwide", sort: function (r) { return r.n; }, desc: true, cell: function (r, td) {
           td.appendChild(el("b", null, String(r.n)));
-          ACT_KINDS.forEach(function (x) { var b = r.by[x[0]]; if (b && b.n) sub(td, plural(b.n, x[2]) + (b.avg != null ? " · avg " + acDur(b.avg) : "")); }); } },
-      { label: "Pending", sort: function (r) { return r.pendN; }, desc: true, cell: function (r, td) {
+          ACT_KINDS.forEach(function (x) { var b = r.by[x[0]]; if (b && b.n) sub(td, x[1] + ": " + b.n + (b.avg != null ? " · avg " + acDur(b.avg) : "")); }); } },
+      { label: "Pending", cls: "actwide", sort: function (r) { return r.canPend ? r.pendN : null; }, desc: true, cell: function (r, td) {
+          if (!r.canPend) { td.classList.add("actnone"); txt(td, "—"); return; }
           td.appendChild(el("b", r.pendN ? { style: "color:var(--warn)" } : null, String(r.pendN)));
           ACT_KINDS.forEach(function (x) { var b = r.by[x[0]]; if (b && b.pend) sub(td, (ACT_PEND[x[0]] || x[1]) + ": " + b.pend + " · oldest " + acDur(b.oldest)); }); } }
     ], rows, { sortIndex: 3, sortDir: -1 });
@@ -9566,7 +9577,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var bg = el("div", { class: "modal-bg" }), m = el("div", { class: "modal wide", role: "dialog", "aria-modal": "true", "aria-label": r.name + " activity", style: "max-width:980px" });
     m.appendChild(el("h3", null, r.name)); m.appendChild(el("p", { class: "sub" }, [r.jobs.join(", "), "Last active " + (r.active ? stamp(r.active) : "N/A"), "Last edit " + (r.edit ? stamp(r.edit) : "N/A")].filter(Boolean).join(" · ")));
     var stats = el("div", { class: "stats" }); m.appendChild(stats);
-    statBoxes(stats, [["Work done", String(r.n), r.avg != null ? "avg " + acDur(r.avg) + " each" : ""], ["Pending now", String(r.pendN), r.oldest ? "oldest " + acDur(r.oldest) : "", r.pendN ? "warn" : ""]]);
+    statBoxes(stats, [["Work done", String(r.n), r.avg != null ? "avg " + acDur(r.avg) + " each" : ""], r.canPend ? ["Pending now", String(r.pendN), r.oldest ? "oldest " + acDur(r.oldest) : "", r.pendN ? "warn" : ""] : null]);
     /* per kind */
     var kinds = ACT_KINDS.filter(function (x) { var b = r.by[x[0]]; return b && (b.n || b.pend); });
     if (kinds.length) {
@@ -9577,7 +9588,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         { label: "Average Time", cls: "r num", cell: function (x, td) { txt(td, r.by[x[0]].avg != null ? acDur(r.by[x[0]].avg) : "—"); } },
         { label: "Fastest", cls: "r num", cell: function (x, td) { var t = r.by[x[0]].t; txt(td, t.length ? acDur(Math.min.apply(null, t)) : "—"); } },
         { label: "Slowest", cls: "r num", cell: function (x, td) { var t = r.by[x[0]].t; txt(td, t.length ? acDur(Math.max.apply(null, t)) : "—"); } },
-        { label: "Pending", cls: "r num", cell: function (x, td) { var b = r.by[x[0]]; txt(td, String(b.pend)); if (b.pend) sub(td, "oldest " + acDur(b.oldest)); } }
+        r.canPend ? { label: "Pending", cls: "r num", cell: function (x, td) { var b = r.by[x[0]]; if (!ACT_PEND[x[0]]) { txt(td, "—"); return; } txt(td, String(b.pend)); if (b.pend) sub(td, "oldest " + acDur(b.oldest)); } } : null
       ], kinds, {});
     }
     if (r.pend.length) {

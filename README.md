@@ -151,6 +151,13 @@ provides the same calls, so the app code did not need rewriting:
   amount is held back at once (it can't be settled by vouchers), and only the financier can mark it received (Advance
   Requests › Cash Being Returned; they may take less). It then comes off the person's balance and their oldest cash first.
   Stored in `cashadv/*` with `kind: "return"`, status `returning` → `returned`.
+- **WhatsApp approval alerts** (through Sent): admins and approvers enter their WhatsApp number in Settings › Personalise
+  (kept in their own `prefs/<uid>`, readable only by them and the server). When a live checking report starts waiting
+  (stage `generated`) or a cash advance is requested, a database trigger calls the `approval-alert` Edge Function with
+  the record's path; it reads the record itself and sends the Sent template `approval_request` (variables `name`,
+  `item`, `details`) to the named approver, or to every active admin when none is named. Each wait is sent once
+  (`app_alerts_sent`); Demo records never alert. Needs the Edge Function secret `SENT_API_KEY`; optional
+  `SENT_TEMPLATE`, `SENT_CHANNEL` (default `whatsapp`).
 - **Bills paid from a cash advance**: like vouchers, a tax bill (INR only) can say "Yes, I paid it from my cash advance"
   (`bills.settle`). The question shows on bills and vouchers only when the preparer holds the cash step for that company or
   has cash on hand; it can't exceed the cash on hand. Once its checking report is approved, the approved amount counts as

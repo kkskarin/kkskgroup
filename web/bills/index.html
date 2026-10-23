@@ -1493,6 +1493,21 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var ab = el("div", { class: "acts", style: "margin-top:8px" }); ab.appendChild(up); ab.appendChild(fi);
     if (p.avatar) { var rm = el("button", { type: "button", class: "btn sm" }, "Remove"); rm.addEventListener("click", function () { pickPref({ avatar: "" }); }); ab.appendChild(rm); }
     who.appendChild(ab); pr.appendChild(who); c1.appendChild(pr); box.appendChild(c1);
+    /* WhatsApp: admins and approvers get a message when something waits for their approval (sent by the approval-alert function). */
+    if (S.isAdmin || ((S.myUser && S.myUser.jobRoles) || []).indexOf("approver") >= 0) {
+      var cw = el("div", { class: "card pcard" }); cw.appendChild(el("h3", null, "WhatsApp Alerts"));
+      var wf = el("div", { class: "form", style: "padding:0" }), wn = inp("prefWa", p.whatsapp || "", { type: "tel", inputmode: "tel", autocomplete: "tel", maxlength: "20", placeholder: "98765 43210" });
+      wf.appendChild(fld("WhatsApp Number", wn, "A message comes here when a checking report or cash advance waits for your approval. Indian numbers can be typed without +91."));
+      var wo = el("label", { class: "check", style: "margin-top:8px" }), wc = el("input", { type: "checkbox", id: "prefWaOn" }); wc.checked = p.waAlerts !== false; wo.appendChild(wc); wo.appendChild(document.createTextNode(" Send me approval alerts"));
+      wf.appendChild(wo); cw.appendChild(wf);
+      var wb = el("button", { type: "button", class: "btn primary", id: "prefWaSave" }, "Save WhatsApp");
+      wb.addEventListener("click", function () {
+        var raw = String(wn.value || "").replace(/[\s()-]/g, ""), num = "";
+        if (raw) { num = /^\+/.test(raw) ? raw : /^0?\d{10}$/.test(raw) ? "+91" + raw.replace(/^0/, "") : /^91\d{10}$/.test(raw) ? "+" + raw : raw; if (!/^\+[1-9]\d{7,14}$/.test(num)) { toast("Enter a valid WhatsApp number, e.g. 98765 43210 or +971 50 123 4567."); return; } }
+        savePrefs({ whatsapp: num, waAlerts: wc.checked }, num ? (wc.checked ? "Saved. Approval alerts will come to " + num + " on WhatsApp." : "Saved. WhatsApp alerts are off.") : "WhatsApp number removed.");
+      });
+      var wa = el("div", { class: "acts", style: "margin-top:12px" }); wa.appendChild(wb); cw.appendChild(wa); box.appendChild(cw);
+    }
     /* appearance */
     var c2 = el("div", { class: "card pcard" }); c2.appendChild(el("h3", null, "Appearance"));
     c2.appendChild(prefRow("Mode", "Light, dark, or follow this device.", prefSeg(THEMES, p.theme, function (v) { pickPref({ theme: v }); }, "Mode")));

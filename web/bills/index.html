@@ -1275,7 +1275,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       <div class="perjump" id="actFromBox" hidden></div><div class="perjump" id="actToBox" hidden></div>
     </div>
     <div class="card list scroll" id="actList"></div>
-    <p class="sub" style="margin-top:10px">Only the work each job does is counted. Purchasers: bills, vouchers, proformas and imports entered (time on a bill, including a proforma's final bill, is from the bill date to when it was uploaded or entered). Voucher Makers: vouchers. Accountants and Chief Accountants: bills and vouchers accounted, vendors added or completed. Financiers: payments recorded and cash advances handed over. Approvers and admins: checking reports and cash advances approved.
+    <p class="sub" style="margin-top:10px">Only the work each job does is counted. Purchasers: bills, vouchers, proformas and imports entered (time on a bill, including a proforma's final bill, is from the bill date to when it was uploaded or entered). Voucher Makers: vouchers. Accountants and Chief Accountants: bills and vouchers accounted, vendors added or completed, and bills and vouchers sent back to the purchaser. Anything sent back (by the accountant, or left out by the approver) is also shown against the purchaser who entered it. Financiers: payments recorded and cash advances handed over. Approvers and admins: checking reports and cash advances approved.
       Time taken is from when the work reached them (bill submitted, report sent, approval given…) to when they finished it. Pending is what waits on them now, with how long: bills and vouchers to account and vendors to complete (accountants), approved bills to pay and cash to hand over (financiers), reports and cash advances to approve (approvers). Purchasers have no pending column.</p>
   </section>
   <section id="secPayables" hidden>
@@ -9425,7 +9425,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* The kinds of work, the jobs that do them, and their words. */
   var ACT_KINDS = [
     ["bill", "Bills entered", "bill", ["purchaser"]], ["voucher", "Vouchers entered", "voucher", ["purchaser", "vmaker"]], ["proforma", "Proformas entered", "proforma", ["purchaser"]], ["import", "Imports entered", "import", ["purchaser"]],
-    ["billAcct", "Bills accounted", "bill accounted", ["accountant", "chiefacct"]], ["vchAcct", "Vouchers accounted", "voucher accounted", ["accountant", "chiefacct"]], ["vendor", "Vendors added or completed", "vendor", ["accountant", "chiefacct"]],
+    ["billAcct", "Bills accounted", "bill accounted", ["accountant", "chiefacct"]], ["vchAcct", "Vouchers accounted", "voucher accounted", ["accountant", "chiefacct"]], ["vendor", "Vendors added or completed", "vendor", ["accountant", "chiefacct"]], ["acctBack", "Sent back to the purchaser", "sent back", ["accountant", "chiefacct"]],
     ["payment", "Payments recorded", "payment", ["financier"]], ["cashGiven", "Cash advances handed over", "cash advance handed over", ["financier"]],
     ["approval", "Checking reports approved", "report approved", ["approver", "admin"]], ["cashAppr", "Cash advances approved", "cash advance approved", ["approver", "admin"]]
   ];
@@ -9451,7 +9451,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     Object.keys(m).forEach(function (k) {
       var js = ((m[k].u && m[k].u.jobRoles) || []).slice(); if ((S.admins || {})[k]) js.push("admin");
       m[k].jobs = js; m[k].kinds = {}; ACT_KINDS.forEach(function (x) { if (!js.length || x[3].some(function (j) { return js.indexOf(j) >= 0; })) m[k].kinds[x[0]] = 1; });
-      m[k].done = []; m[k].pend = [];
+      m[k].done = []; m[k].pend = []; m[k].back = [];
     });
     return m;
   }
@@ -9462,6 +9462,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     /* Work done: counted only for people whose job does that kind of work. */
     /* end: when the clock stops, if not when it was done (a bill's upload); day: the start is a date, not a time. */
     function done(uid, kind, label, cid, from, to, end, day) { var p = P[uid], e = end || to; if (!p || !p.kinds[kind] || !to || to < since || to > until) return; p.done.push({ kind: kind, label: label, co: coN(cid), from: from || 0, to: to, day: !!day, ms: from && e >= from ? e - from : null }); }
+    /* Sent back to a purchaser for correction (by the accountant, or left out by the approver): a mark against their entry. */
+    function back(uid, label, cid, at, byName, note) { var p = P[uid]; if (!p || !(p.kinds.bill || p.kinds.voucher) || !at || at < since || at > until) return; p.back.push({ label: label, co: coN(cid), at: at, by: byName || "", note: note || "" }); }
     function pend(uid, kind, label, cid, from) { var p = P[uid]; if (!p || !p.kinds[kind]) return; p.pend.push({ kind: kind, label: label, co: coN(cid), from: from || 0, age: from ? now - from : null }); }
     var bills = vals(R.bills || S.bills), reports = R.reports || S.reports || {}, vouchers = vals(R.vouchers || S.vouchers), advs = vals(R.advances || S.advances), people = Object.keys(P);
     function vName(id) { var v = S.vendors[id]; return v ? v.name : ""; }
@@ -9474,11 +9476,15 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var up = b.uploadedAt || b.submittedAt, bd = ymdOk(b.billDate) ? Date.parse(b.billDate + "T00:00:00") : 0;
       if (b.submittedAt) done(who, "bill", (b.advanceId ? "Final bill " : "") + bLabel(b), b.companyId, bd && bd <= up ? bd : 0, b.submittedAt, up, true);
       if (b.acctBy && b.acctAt && b.acct === "approved") done(b.acctBy, "billAcct", bLabel(b), b.companyId, b.submittedAt, b.acctAt);
+      (b.acctLog || []).forEach(function (e) { done(e.by, "acctBack", bLabel(b) + (e.note ? " — " + e.note : ""), b.companyId, 0, e.at); back(who, bLabel(b), b.companyId, e.at, "Accountant " + pnm(e.byName || userLabel(e.by)), e.note); });
       if (b.status === "done" && b.acct === "pending" && b.companyId) doers("acct", b.companyId, "accountant").concat(people.filter(function (k) { return isChief(P[k].u) && P[k].jobs.indexOf("accountant") < 0; })).forEach(function (k) { pend(k, "billAcct", bLabel(b), b.companyId, b.submittedAt); });
     });
     vouchers.forEach(function (v) {
       done(v.createdBy || v.preparedBy, "voucher", vLabel(v), v.companyId, 0, v.createdAt);
       if (v.acctBy && v.acctAt && v.acct === "approved") done(v.acctBy, "vchAcct", vLabel(v), v.companyId, v.createdAt, v.acctAt);
+      var vw = v.createdBy || v.preparedBy;
+      (v.acctLog || []).forEach(function (e) { done(e.by, "acctBack", vLabel(v) + (e.note ? " — " + e.note : ""), v.companyId, 0, e.at); back(vw, vLabel(v), v.companyId, e.at, "Accountant " + pnm(e.byName || userLabel(e.by)), e.note); });
+      if (v.sentBack && v.sentBack.at) back(vw, vLabel(v), v.companyId, v.sentBack.at, "Approver " + pnm(v.sentBack.byName || userLabel(v.sentBack.by)), [v.sentBack.reason, v.sentBack.note].filter(Boolean).join(": "));
       if (v.acct === "pending" && v.companyId) doers("acct", v.companyId, "accountant").concat(people.filter(function (k) { return isChief(P[k].u) && P[k].jobs.indexOf("accountant") < 0; })).forEach(function (k) { pend(k, "vchAcct", vLabel(v), v.companyId, v.createdAt); });
     });
     advs.forEach(function (a) { done(a.createdBy, a.kind === "import" ? "import" : "proforma", (a.kind === "import" ? "Import " : "Proforma ") + (a.piNo || "") + (vName(a.vendorId) ? " · " + vName(a.vendorId) : ""), a.companyId, 0, a.createdAt); });
@@ -9498,6 +9504,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     vals(reports).forEach(function (r) {
       var lab = "Report " + (r.no || ""), cid = r.companyId || (r.companyIds || [])[0];
       if (r.approvedBy && r.approvedAt && !r.onBehalf) done(r.approvedBy, "approval", lab, cid, r.generatedAt, r.approvedAt);
+      if (r.approvedAt && r.kind !== "vcr") (r.lastBack || []).forEach(function (id) { var b = (R.bills || S.bills || {})[id]; if (b) back(b.submittedBy || b.ownerId || b.uploadedBy, bLabel(b), b.companyId, r.approvedAt, "Approver " + pnm(userLabel(r.approvedBy) || ""), r.backNote); });
       var st = stageOf(r); if ((st === "generated" || st === "printed") && r.approverId) pend(r.approverId, "approval", lab, cid, r.generatedAt || r.createdAt);
     });
     vals(S.cashadv).forEach(function (a) {
@@ -9533,6 +9540,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var edit = sv && sv.last_edit ? Date.parse(sv.last_edit) : 0, act = Math.max(sv && sv.last_active ? Date.parse(sv.last_active) : 0, sv && sv.last_sign_in ? Date.parse(sv.last_sign_in) : 0, edit);
       var times = p.done.filter(function (d) { return d.ms != null; }).map(function (d) { return d.ms; });
       return { id: k, name: p.name, jobs: p.jobs.map(function (j) { return j === "admin" ? "Admin" : (JOBS.filter(function (x) { return x[0] === j; })[0] || [j, j])[1]; }), active: act, edit: edit, login: !!sv,
+        back: p.back,
         canPend: ["billAcct", "vchAcct", "vendor", "payment", "cashGiven", "approval", "cashAppr"].some(function (kk) { return p.kinds[kk]; }),
         n: p.done.length, pendN: p.pend.length, oldest: p.pend.reduce(function (m0, d) { return Math.max(m0, d.age || 0); }, 0), by: by, avg: times.length ? times.reduce(function (s0, v) { return s0 + v; }, 0) / times.length : null, done: p.done, pend: p.pend };
     });
@@ -9554,7 +9562,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       });
       $("actQ").addEventListener("input", renderActivity);
     }
-    var all = activityRows(), rows = all.filter(function (r) { return (r.n || r.pendN) && (!q || (r.name + " " + r.jobs.join(" ")).toLowerCase().indexOf(q) >= 0); });
+    var all = activityRows(), rows = all.filter(function (r) { return (r.n || r.pendN || r.back.length) && (!q || (r.name + " " + r.jobs.join(" ")).toLowerCase().indexOf(q) >= 0); });
     AC.rows = all;
     if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, q ? "No one matches." : "No work done in this period, and nothing is waiting.")); return; }
     var none = AC.err ? "Couldn't load" : AC.srv ? "N/A" : "Loading…";
@@ -9564,7 +9572,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Last Edit", sort: function (r) { return r.edit || null; }, desc: true, cell: function (r, td) { txt(td, r.edit ? stamp(r.edit) : AC.srv || AC.err ? "N/A" : none); } },
       { label: "Work Done", cls: "actwide", sort: function (r) { return r.n; }, desc: true, cell: function (r, td) {
           td.appendChild(el("b", null, String(r.n)));
-          ACT_KINDS.forEach(function (x) { var b = r.by[x[0]]; if (b && b.n) sub(td, x[1] + ": " + b.n + (b.avg != null ? " · avg " + acDur(b.avg) : "")); }); } },
+          ACT_KINDS.forEach(function (x) { var b = r.by[x[0]]; if (b && b.n) sub(td, x[1] + ": " + b.n + (b.avg != null ? " · avg " + acDur(b.avg) : "")); });
+          if (r.back.length) sub(td, "Sent back to them for correction: " + r.back.length, "color:var(--warn);font-weight:600"); } },
       { label: "Pending", cls: "actwide", sort: function (r) { return r.canPend ? r.pendN : null; }, desc: true, cell: function (r, td) {
           if (!r.canPend) { td.classList.add("actnone"); txt(td, "—"); return; }
           td.appendChild(el("b", r.pendN ? { style: "color:var(--warn)" } : null, String(r.pendN)));
@@ -9577,7 +9586,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var bg = el("div", { class: "modal-bg" }), m = el("div", { class: "modal wide", role: "dialog", "aria-modal": "true", "aria-label": r.name + " activity", style: "max-width:980px" });
     m.appendChild(el("h3", null, r.name)); m.appendChild(el("p", { class: "sub" }, [r.jobs.join(", "), "Last active " + (r.active ? stamp(r.active) : "N/A"), "Last edit " + (r.edit ? stamp(r.edit) : "N/A")].filter(Boolean).join(" · ")));
     var stats = el("div", { class: "stats" }); m.appendChild(stats);
-    statBoxes(stats, [["Work done", String(r.n), r.avg != null ? "avg " + acDur(r.avg) + " each" : ""], r.canPend ? ["Pending now", String(r.pendN), r.oldest ? "oldest " + acDur(r.oldest) : "", r.pendN ? "warn" : ""] : null]);
+    statBoxes(stats, [["Work done", String(r.n), r.avg != null ? "avg " + acDur(r.avg) + " each" : ""], r.back.length ? ["Sent back to them", String(r.back.length), "for correction", "warn"] : null, r.canPend ? ["Pending now", String(r.pendN), r.oldest ? "oldest " + acDur(r.oldest) : "", r.pendN ? "warn" : ""] : null]);
     /* per kind */
     var kinds = ACT_KINDS.filter(function (x) { var b = r.by[x[0]]; return b && (b.n || b.pend); });
     if (kinds.length) {
@@ -9590,6 +9599,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         { label: "Slowest", cls: "r num", cell: function (x, td) { var t = r.by[x[0]].t; txt(td, t.length ? acDur(Math.max.apply(null, t)) : "—"); } },
         r.canPend ? { label: "Pending", cls: "r num", cell: function (x, td) { var b = r.by[x[0]]; if (!ACT_PEND[x[0]]) { txt(td, "—"); return; } txt(td, String(b.pend)); if (b.pend) sub(td, "oldest " + acDur(b.oldest)); } } : null
       ], kinds, {});
+    }
+    if (r.back.length) {
+      var bw = el("div", { class: "list scroll", style: "margin-top:12px;max-height:320px" }); m.appendChild(el("h3", { style: "margin-top:14px" }, "Sent back to them for correction (" + r.back.length + ")")); m.appendChild(bw);
+      sortTable(bw, "actBack", [
+        { label: "When", sort: function (d) { return d.at; }, desc: true, cell: function (d, td) { txt(td, stamp(d.at)); sub(td, d.by); } },
+        { label: "Item", cell: function (d, td) { txt(td, d.label); if (d.co) sub(td, d.co); } },
+        { label: "Why", cls: "desc", cell: function (d, td) { txt(td, d.note || "—"); } }
+      ], r.back, { sortIndex: 0, sortDir: -1 });
     }
     if (r.pend.length) {
       var pw = el("div", { class: "list scroll", style: "margin-top:12px;max-height:320px" }); m.appendChild(el("h3", { style: "margin-top:14px" }, "Pending now (" + r.pend.length + ")")); m.appendChild(pw);

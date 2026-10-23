@@ -160,7 +160,9 @@ provides the same calls, so the app code did not need rewriting:
   if none; from the admin-only `app_activity` database function), the work done in the period broken down by kind with
   its average time, and what is pending on them now with the oldest age. Only each job's own work counts: purchasers'
   bills, vouchers, proformas and imports entered (a bill's time, a proforma's final bill too, is bill date → uploaded); Voucher Makers' vouchers; accountants' and Chief Accountants' bills
-  and vouchers accounted and vendors added or completed; financiers' payments and cash advances handed over; approvers'
+  and vouchers accounted, vendors added or completed and items sent back to the purchaser (from each bill's and voucher's
+  `acctLog`); anything sent back (by the accountant, or left out by the approver) also shows against the purchaser as
+  "Sent back to them for correction" with who sent it and why; financiers' payments and cash advances handed over; approvers'
   and admins' reports and cash advances approved. Pending (not for purchasers): bills/vouchers to account and vendors
   still missing details (in their companies), approved bills to pay and cash to hand over, reports and cash advances to approve. Tapping a
   person opens their detail: totals, average, fastest and slowest time per kind, every pending item with its age, and

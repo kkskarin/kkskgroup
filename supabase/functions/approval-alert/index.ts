@@ -41,17 +41,14 @@ Deno.serve(async (req) => {
     item = "Cash advance request";
     details = [await co(d.companyId), d.name, inr(d.amount), d.purpose].filter(Boolean).join(" · ");
   }
+  if (!d.approverId) return reply(200, { sent: 0, reason: "no approver" });
   const apiKey = Deno.env.get("SENT_API_KEY");
   if (!apiKey) return reply(200, { sent: 0, reason: "not set up" });
   const ins = await db.from("app_alerts_sent").insert({ key });
   if (ins.error) return reply(200, { sent: 0, reason: ins.error.code === "23505" ? "already sent" : ins.error.message });
 
-  // Who: the named approver, or every active admin when none is named.
-  let uids: string[] = d.approverId ? [String(d.approverId)] : [];
-  if (!uids.length) {
-    const a = await db.from("app_docs").select("path, data").like("path", "admins/%");
-    uids = (a.data ?? []).filter((r) => r.data?.active !== false).map((r) => r.path.slice(7));
-  }
+  // Who: the approver named on the record (nothing is submitted without one).
+  const uids = [String(d.approverId)];
   const template = Deno.env.get("SENT_TEMPLATE") || "approval_request";
   const channel = (Deno.env.get("SENT_CHANNEL") || "whatsapp").split(",").map((s) => s.trim()).filter(Boolean);
 

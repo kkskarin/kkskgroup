@@ -155,7 +155,7 @@ provides the same calls, so the app code did not need rewriting:
   (kept in their own `prefs/<uid>`, readable only by them and the server). When a live checking report starts waiting
   (stage `generated`) or a cash advance is requested, a database trigger calls the `approval-alert` Edge Function with
   the record's path; it reads the record itself and sends the Sent template `approval_request` (variables `name`,
-  `item`, `details`) to the named approver, or to every active admin when none is named. Each wait is sent once
+  `item`, `details`) to the approver named on it (nothing is submitted without one). Each wait is sent once
   (`app_alerts_sent`); Demo records never alert. Needs the Edge Function secret `SENT_API_KEY`; optional
   `SENT_TEMPLATE`, `SENT_CHANNEL` (default `whatsapp`).
 - **Bills paid from a cash advance**: like vouchers, a tax bill (INR only) can say "Yes, I paid it from my cash advance"

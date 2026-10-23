@@ -2410,6 +2410,30 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function viewAppsOf(u) { var a = appsWith(u); return APP_KEYS.filter(function (k) { return a[k]; }); }
   function vaStore(uid) { try { if (uid) sessionStorage.setItem("bvViewAs", uid); else sessionStorage.removeItem("bvViewAs"); } catch (e) {} }
   function vaResume() { if (S._adm || !S.isAdmin || S.vaTried || !vaStored() || !S.loaded || !Object.keys(S.users || {}).length) return false; S.vaTried = true; if (S.users[vaStored()]) { viewAs(vaStored(), true); return true; } vaStore(""); return false; }
+  /* WhatsApp "Approve" button: /approvals/?go=r:<report id> or ?go=c:<cash advance id> opens that request's approval form
+     once signed in and the data is in (kept for this tab across the sign-in). */
+  var GO = (function () { var g = ""; try { g = new URLSearchParams(location.search).get("go") || ""; if (g) { sessionStorage.setItem("bvGo", g); var q = new URLSearchParams(location.search); q.delete("go"); history.replaceState(null, "", location.pathname + (String(q) ? "?" + q : "") + location.hash); } else g = sessionStorage.getItem("bvGo") || ""; } catch (e) {} return /^[rc]:[A-Za-z0-9_-]{1,80}$/.test(g) ? g : ""; })();
+  function goDone(msg) { GO = ""; try { sessionStorage.removeItem("bvGo"); } catch (e) {} if (msg) toast(msg); }
+  function goResume() {
+    if (!GO || !S.me || $("navbar").hidden || !dataReady()) return false;
+    if (S._adm) { goDone("Go back to your own view to approve."); return true; }
+    var id = GO.slice(2);
+    if (GO.charAt(0) === "r") {
+      var r = S.reports[id]; if (!r) return false;
+      var st = stageOf(r);
+      if (st === "payment") { goDone("Report " + r.no + " is already approved."); return true; }
+      if (st !== "generated" && st !== "printed") { goDone("Report " + r.no + " isn't waiting for approval any more."); return true; }
+      if (!apprMine(r)) { goDone("Report " + r.no + " waits for another approver."); return true; }
+      goDone(); setTab("Approvals"); openReport(id);
+      if (r.kind === "vcr") openVcrApprove(r); else if (r.kind === "inst") instApproveForm(r); else crApproveForm(r);
+      return true;
+    }
+    var a = S.cashadv[id]; if (!a) return false;
+    if (a.status !== "pending") { goDone("This cash advance request is already " + (a.status === "approved" || a.status === "received" ? "approved" : a.status) + "."); return true; }
+    if (!S.isAdmin && caApproverId(a) !== meId()) { goDone("This cash advance request waits for another approver."); return true; }
+    goDone(); setTab("Cash Approvals"); caApprove(a); return true;
+  }
+  if (GO) (function () { var n = 0, t = setInterval(function () { var done = false; try { done = goResume(); } catch (e) { done = true; } if (done || !GO) { clearInterval(t); return; } if (S.me && dataReady() && ++n > 20) { clearInterval(t); goDone("That request couldn't be found. If you're in Demo, switch to Live."); } }, 500); })();
   function vaStored() { try { return sessionStorage.getItem("bvViewAs") || ""; } catch (e) { return ""; } }
   function viewAs(uid, quiet) {
     var u = S.users[uid]; if (!u) return;

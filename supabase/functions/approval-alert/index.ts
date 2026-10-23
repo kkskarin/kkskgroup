@@ -49,6 +49,8 @@ Deno.serve(async (req) => {
 
   // Who: the approver named on the record (nothing is submitted without one).
   const uids = [String(d.approverId)];
+  // The "Approve" button opens https://kkskgroup.netlify.app/approvals/?go={{go}} at this request's approval form.
+  const go = (path.startsWith("reports/") ? "r:" : "c:") + path.split("/")[1];
   const template = Deno.env.get("SENT_TEMPLATE") || "approval_request";
   const channel = (Deno.env.get("SENT_CHANNEL") || "whatsapp").split(",").map((s) => s.trim()).filter(Boolean);
 
@@ -62,7 +64,7 @@ Deno.serve(async (req) => {
     const r = await fetch("https://api.sent.dm/v3/messages", {
       method: "POST",
       headers: { "x-api-key": apiKey, "Content-Type": "application/json", "Idempotency-Key": ("apr-" + key + "-" + uid).replace(/[^A-Za-z0-9:_-]/g, "_").slice(0, 200) },
-      body: JSON.stringify({ to: [to], channel, template: { name: template, parameters: { name, item, details } } }),
+      body: JSON.stringify({ to: [to], channel, template: { name: template, parameters: { name, item, details, go } } }),
     });
     out.push({ uid, status: r.status, body: (await r.text()).slice(0, 300) });
   }

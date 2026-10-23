@@ -1602,12 +1602,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
      Reports > Transactions shows every item, where it stands and who is responsible. "View as" still opens a person's screens. */
   var ADMIN_HIDE = { "Bills": 1, "Plan Advance": 1, "Imports": 1, "Cash Voucher": 1, "Accounts": 1, "Mark Transaction": 1 };
   /* A financier who only pays out sees Reports (Transactions, Payables) and Payments, nothing else. */
+  var CHIEF_TABS = { "Transactions": 1, "Payables": 1, "Advance Summary": 1, "Accounts": 1, "Notes": 1, "Ledger Books": 1, "Companies": 1, "Vendors": 1, "Ledgers": 1 };
   var FIN_TABS = { "Companies": 1, "Vendors": 1, "Ledgers": 1, "Cash Approvals": 1, "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1, "Advance Requests": 1 };
   function finOnly() { return !S.isAdmin && canDo("txn") && STEPS.every(function (st) { return st[0] === "txn" || !canDo(st[0]); }); }
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {
       var fo = finOnly();
-      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && st[0] !== "rec" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (TAB_STEP[t[0]] === "appr" && canDo("rec")) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
+      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (meChief() && CHIEF_TABS[t[0]]) return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && st[0] !== "rec" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (TAB_STEP[t[0]] === "appr" && canDo("rec")) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
         /* The financier's Reports: Payables first, then Payments (Transactions showing payments only). */
         .map(function (t) { return fo && t[0] === "Transactions" ? [t[0], "Payments"] : t; }).sort(function (x, y) { return fo ? (x[0] === "Payables" ? -1 : y[0] === "Payables" ? 1 : 0) : 0; }) };
     }).filter(function (g) { return g.tabs.length; });
@@ -1850,7 +1851,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ================= responsibilities: who does which step for which company ================= */
   /* Job roles every user must have. Each suggests the steps it usually does; the admin can still change the ticks. */
-  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["approver", "Approver", "Approves checking reports and cash advances that name them, in the Approvals app"], ["recorder", "Approval Recorder", "Records approvals already signed on paper by an admin or approver, in their name; is never named as approver"], ["vmaker", "Voucher Maker", "Makes cash vouchers for other people, chosen from a saved list of names, and their Voucher Checking Reports"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Sales", "Renewable Energy: reads the TNPDCL statements for solar plants and windmills, issues the bills of supply to consumers and records their receipts"]];
+  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["chiefacct", "Chief Accountant", "Every company, no need to choose: does the accounting, keeps vendors and ledgers, and sees payments, payables and advances (doesn't record payments)"], ["approver", "Approver", "Approves checking reports and cash advances that name them, in the Approvals app"], ["recorder", "Approval Recorder", "Records approvals already signed on paper by an admin or approver, in their name; is never named as approver"], ["vmaker", "Voucher Maker", "Makes cash vouchers for other people, chosen from a saved list of names, and their Voucher Checking Reports"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Sales", "Renewable Energy: reads the TNPDCL statements for solar plants and windmills, issues the bills of supply to consumers and records their receipts"]];
+  /* A Chief Accountant covers every company without choosing: the accounting step everywhere, and a view of the finance reports. */
+  function isChief(u) { return !!u && u.active !== false && (u.jobRoles || []).indexOf("chiefacct") >= 0; }
+  function meChief() { return !S.isAdmin && isChief(S.myUser); }
+  /* Seeing payment work (Transactions, Payables, Advances): the financier, or a Chief Accountant (who doesn't record payments). */
+  function canViewPay(cid) { return canStep("txn", cid) || (meChief() && canSee(cid)); }
+  function canViewPayAny() { return canDo("txn") || meChief(); }
   var JOB_STEPS = { purchaser: ["bills", "bcr", "adv", "vouchers", "vcr", "cash"], accountant: ["acct"], approver: ["appr"], recorder: ["rec"], vmaker: ["vouchers", "vcr"], financier: ["txn"], solar: ["solar"] };
   function jobChecks(box, sel) {
     sel = sel || []; box.textContent = "";
@@ -1868,6 +1875,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function ownCo(u, cid) { var c = S.companies && S.companies[cid], id = u && (u.id || (u === S.myUser ? S.actId || meId() : "")); return !!(id && c && c.createdBy && c.createdBy === id && !(S.admins || {})[id]); }
   function userHas(u, step, cid) {
     if (!u || u.active === false) return false;
+    if (step === "acct" && isChief(u) && S.companies && S.companies[cid]) return true;
     var own = ownCo(u, cid) && (u.companyIds || []).indexOf(cid) < 0;
     if (!own && (u.companyIds || []).indexOf(cid) < 0) return false;
     if (!u.roles) return step !== "appr" && step !== "rec"; /* approving is only ever given on purpose */
@@ -2153,7 +2161,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var APP_STEPS = { mnt: ["bills", "bcr", "adv", "vouchers", "vcr", "cash", "acct", "txn"], re: ["bills", "bcr", "adv", "vouchers", "vcr", "cash", "acct", "txn", "solar"], acc: ["acct"], fin: ["txn"], apr: ["appr", "rec"] };
   function rolesFit(roles, k) { if (!roles) return k !== "apr"; return Object.keys(roles).some(function (c) { return (roles[c] || []).some(function (st) { return APP_STEPS[k].indexOf(st) >= 0; }); }); }
   function appsWith(u) {
-    var a = (u && u.apps) || {}, bv = a.bv !== false, r = u && u.roles, on = function (k, def) { return bv && (a[k] != null ? !!a[k] : def) && rolesFit(r, k); };
+    var a = (u && u.apps) || {}, bv = a.bv !== false, r = u && u.roles, on = function (k, def) { return bv && (a[k] != null ? !!a[k] : def) && (rolesFit(r, k) || (isChief(u) && (k === "acc" || k === "fin"))); };
     return { mnt: on("mnt", true), re: on("re", false), acc: on("acc", true), fin: on("fin", true), apr: on("apr", true) };
   }
   function readApps() { return { mnt: $("uAppMnt").checked, re: $("uAppRe").checked, acc: $("uAppAcc").checked, fin: $("uAppFin").checked, apr: $("uAppApr").checked }; }
@@ -2165,7 +2173,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!bv) $("uApprF").hidden = true; else syncApprF();
   }
   function appsOf(u) { var a = (u && u.apps) || {}, w = appsWith(u), out = APP_KEYS.filter(function (k) { return w[k]; }).map(function (k) { return APP_NAMES[k]; }); if (a.wb) out.push("W/B Costing"); if (a.pp && a.pp.role) out.push("Production Planning (" + ({ approver: "Approver", planner: "Planner", floor: "Floor Team" }[a.pp.role] || a.pp.role) + (a.pp.region ? ", " + ({ E: "Erode", A: "Ambur" }[a.pp.region]) : "") + ")"); return out.join(", "); }
-  function syncApprF() { var on = readChecks($("uJobs")).indexOf("purchaser") >= 0; $("uApprF").hidden = !on; if (!on) $("uEAppr").hidden = true; }
+  function syncApprF() {
+    var js = readChecks($("uJobs")), on = js.indexOf("purchaser") >= 0; $("uApprF").hidden = !on; if (!on) $("uEAppr").hidden = true;
+    /* A Chief Accountant alone covers every company: no companies or steps to choose. */
+    var only = js.length === 1 && js[0] === "chiefacct", cf = $("uCos").closest(".f"), rs = document.querySelector("#secUser .uresp");
+    if (cf && !cf.hidden) { Array.prototype.forEach.call(cf.children, function (c) { if (c.id !== "uChiefNote") c.style.display = only ? "none" : ""; }); var n = $("uChiefNote"); if (!n) { n = el("p", { class: "sub", id: "uChiefNote", style: "margin:0" }); cf.appendChild(n); } n.textContent = "Chief Accountant: every company, now and later. No need to choose."; n.hidden = !only; }
+    if (rs && only) rs.hidden = true; else if (rs && !$("uJobs").closest(".f").hidden) rs.hidden = false;
+  }
   function backToUsers() { S.userEditing = null; renderUsers(); renderNav(); show("secUsers"); }
   function saveUser() {
     if (S.busy || !S.userEditing) return;
@@ -2178,9 +2192,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!loc) { $("uELoc").hidden = false; ok = false; }
     var ma = readApps(), appBv = anyMoneyApp(ma), ppRole = $("uPpRole").value, apps = { bv: appBv, mnt: ma.mnt, re: ma.re, acc: ma.acc, fin: ma.fin, apr: ma.apr, wb: $("uAppWb").checked, pp: ppRole ? { role: ppRole, region: $("uPpRegion").value || null } : null };
     $("uEApps").hidden = true; $("uEApps").textContent = "Give at least one app."; if (!appBv && !ppRole && !apps.wb) { $("uEApps").hidden = false; ok = false; }
-    if (appBv && !cos.length) { $("uECos").hidden = false; ok = false; }
-    /* Each app only for the responsibilities that belong in it. */
-    var misfit = APP_KEYS.filter(function (k) { return ma[k] && !rolesFit(roles, k); });
+    var jobs0 = readChecks($("uJobs")), chief = jobs0.indexOf("chiefacct") >= 0, chiefOnly = chief && jobs0.length === 1;
+    if (appBv && !cos.length && !chiefOnly) { $("uECos").hidden = false; ok = false; }
+    /* Each app only for the responsibilities that belong in it (a Chief Accountant fits Accounts and Finance everywhere). */
+    var misfit = APP_KEYS.filter(function (k) { return ma[k] && !rolesFit(roles, k) && !(chief && (k === "acc" || k === "fin")); });
     if (misfit.length) { $("uEApps").textContent = misfit.map(function (k) { return APP_NAMES[k]; }).join(", ") + (misfit.length > 1 ? " don't" : " doesn't") + " match their responsibilities below. " + ({ mnt: "Maintenance & Civil is for people who enter, account or pay its work.", re: "Renewable Energy is for people who enter, account or pay its work, or do its energy billing.", acc: "Accounts is for accountants (every division).", fin: "Finance is for financiers (every division).", apr: "Approvals is for approvers and approval recorders." })[misfit[0]] + " Untick it, or give the matching responsibility."; $("uEApps").hidden = false; ok = false; }
     var dept = usDept.value(); if (!dept) { $("uEDept").hidden = false; ok = false; }
     var jobs = readChecks($("uJobs")); $("uJobsE").textContent = "Choose at least one job."; if (appBv && !jobs.length) { $("uJobsE").hidden = false; ok = false; }
@@ -2857,7 +2872,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ================= companies the viewer may work with ================= */
   function myCompanyIds() {
-    if (S.isAdmin) return Object.keys(S.companies).filter(function (id) { return coInApp(S.companies[id]); });
+    if (S.isAdmin || meChief()) return Object.keys(S.companies).filter(function (id) { return coInApp(S.companies[id]); });
     var ids = ((S.myUser && S.myUser.companyIds) || []).slice(); Object.keys(S.companies).forEach(function (id) { if (ids.indexOf(id) < 0 && S.myUser && ownCo(Object.assign({ id: S.actId || meId() }, S.myUser), id)) ids.push(id); });
     return ids.filter(function (id) { return S.companies[id] && coInApp(S.companies[id]); });
   }
@@ -7164,9 +7179,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* A non-admin's own payments: entered by them, or paying their own bills, vouchers or proformas. */
   /* The financier pays for whole companies, so sees all of their work there; others see their own. */
-  function payWork(x) { return ownWork(x) || canStep("txn", x.companyId); }
+  function payWork(x) { return ownWork(x) || canViewPay(x.companyId); }
   function txPayMine(t) {
-    if (S.isAdmin || canStep("txn", t.companyId)) return true;
+    if (S.isAdmin || canViewPay(t.companyId)) return true;
     var m = myPeople(); if (m[t.by] || m[t.createdBy]) return true;
     var a = t.advanceId && S.advances[t.advanceId], vv = t.voucherId && S.vouchers[t.voucherId];
     if (a) return ownWork(a); if (vv) return ownWork(vv);
@@ -7178,7 +7193,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (side === "advances") return Object.keys(S.advances || {}).map(function (k) { return S.advances[k]; }).filter(function (a) { return canSee(a.companyId) && payWork(a); }).map(txAdvRow);
     if (side === "vouchers") return vchList().filter(function (v) { return canSee(v.companyId) && payWork(v); }).map(txVchRow);
     return txList().filter(function (t) { return canSee(t.companyId) && txPayMine(t); }).map(txPayRow)
-      .concat(caList().filter(function (a) { return a.status === "received" && canSee(a.companyId) && (S.isAdmin || canStep("txn", a.companyId) || myPeople()[a.uid]); }).map(txCashRow));
+      .concat(caList().filter(function (a) { return a.status === "received" && canSee(a.companyId) && (S.isAdmin || canViewPay(a.companyId) || myPeople()[a.uid]); }).map(txCashRow));
   }
   function txFiltered() {
     var side = TX.side, q = $("txQ").value.trim().toLowerCase();
@@ -7209,7 +7224,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var pfs = $("txPaySeg"); pfs.hidden = false; pfs.textContent = ""; pfs.setAttribute("aria-label", pay ? "Paid for" : "Expenses");
     TX_PAYFOR.forEach(function (o) { var cur = pay ? TX.payFor : TX.expFor, b = el("button", { type: "button", role: "tab", "aria-selected": cur === o[0] ? "true" : "false" }, o[1]); b.addEventListener("click", function () { if (pay) TX.payFor = o[0]; else TX.expFor = o[0]; TX.limit = 200; renderTxn(); }); pfs.appendChild(b); });
     var rb = $("txRep"); rb.hidden = !anyDate || side === "advances"; rb.textContent = "Download " + (TX.per === "month" ? "Monthly" : TX.per === "week" ? "Weekly" : "Period") + " Report";
-    $("txSub").textContent = (S.isAdmin ? (approverScoped() ? "The bills, proformas, imports and vouchers you approve" : "Every bill, proforma, import and voucher") : canDo("txn") ? "Every bill, proforma, import and voucher of the companies you pay for, and your own" : "Your bills, proformas, imports and vouchers (and those of profiles on your login)") + ", where each one stands and who has it now. Payments lists every payment and discount recorded.";
+    $("txSub").textContent = (S.isAdmin ? (approverScoped() ? "The bills, proformas, imports and vouchers you approve" : "Every bill, proforma, import and voucher") : canViewPayAny() ? "Every bill, proforma, import and voucher of the companies you pay for, and your own" : "Your bills, proformas, imports and vouchers (and those of profiles on your login)") + ", where each one stands and who has it now. Payments lists every payment and discount recorded.";
     if (pay) $("txSub").textContent = "Every payment, discount and cash advance paid out" + (S.isAdmin ? "" : " for the companies you pay for, and your own") + ", by what it paid for. Pick Weekly or Monthly to see one period at a time and download its report.";
     else $("txSub").textContent += " Pick Weekly or Monthly to see one period at a time and download its report.";
     var seg = $("txSeg"); seg.textContent = ""; seg.hidden = fo;
@@ -7417,7 +7432,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         total: Number(b.total) || 0, tds: inf.tds || 0, paid: round2(inf.paid + (inf.adv || 0)), rem: inf.rem, late: late, age: ageKey(late), sent: billSent(b), step: tr.step, cls: tr.cls, ref: tr.ref,
         prep: prepOf(b), prepName: prepName(b) || userLabel(prepOf(b)), appr: b.approverId || "", apprName: approverName(b) });
     });
-    if (S.isAdmin || canDo("txn")) ledgersFor(function (r) { return r.opRem > 0.004 && canSee(r.cid); }).forEach(function (r) {
+    if (S.isAdmin || canViewPayAny()) ledgersFor(function (r) { return r.opRem > 0.004 && canSee(r.cid); }).forEach(function (r) {
       var v = S.vendors[r.vid];
       out.push({ kind: "opening", x: null, cid: r.cid, ven: v ? v.name : "", vid: r.vid, no: "Opening balance", date: "", due: "", cur: r.cur || "INR", total: r.opRem, tds: 0, paid: 0, rem: r.opRem,
         late: r.opOdRem > 0.004 ? 1 : 0, odPart: r.opOdRem, age: "", sent: true, step: r.opOdRem > 0.004 ? "Opening balance, " + curMoney(r.cur, r.opOdRem) + " overdue" : "Opening balance", cls: "s-tds", ref: "", prep: "", prepName: "", appr: "", apprName: "" });
@@ -7559,7 +7574,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* Everyone holding or asking for cash, by company: people given vouchers or cash advance, and anyone with an advance on record. */
   function asPeople() {
     var m = {};
-    function add(uid, cid, name) { if (!uid || !cid || !canSee(cid) || isAnyAdmin(uid)) return; if (!S.isAdmin && !canStep("txn", cid)) return; var k = uid + "|" + cid; if (!m[k]) m[k] = { uid: uid, cid: cid, name: pnm(name) || pnm(userLabel(uid)) || "Person" }; else if (!m[k].name || m[k].name === "Person") m[k].name = pnm(name) || m[k].name; }
+    function add(uid, cid, name) { if (!uid || !cid || !canSee(cid) || isAnyAdmin(uid)) return; if (!S.isAdmin && !canViewPay(cid)) return; var k = uid + "|" + cid; if (!m[k]) m[k] = { uid: uid, cid: cid, name: pnm(name) || pnm(userLabel(uid)) || "Person" }; else if (!m[k].name || m[k].name === "Person") m[k].name = pnm(name) || m[k].name; }
     Object.keys(S.users || {}).forEach(function (uid) { var u = S.users[uid]; if (u.active === false) return; cashCos(u).forEach(function (cid) { add(uid, cid, u.name); }); });
     caList().forEach(function (a) { add(a.uid, a.companyId, a.name); });
     vchList().forEach(function (v) { if (v.settle) add(prepOf(v), v.companyId, v.preparedByName); });
@@ -7570,7 +7585,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* Advances asked for or approved, not yet paid, with the balance when asked and the cash on hand now. */
   function asOpenAdvances() {
-    return caList().filter(function (a) { return (a.status === "approved" || a.status === "pending") && canSee(a.companyId) && (S.isAdmin || canStep("txn", a.companyId)); })
+    return caList().filter(function (a) { return (a.status === "approved" || a.status === "pending") && canSee(a.companyId) && (S.isAdmin || canViewPay(a.companyId)); })
       .map(function (a) { var cb = cashBalance(a.uid, a.companyId); return { a: a, cid: a.companyId, prep: a.uid, prepName: caName(a), ven: "", appr: a.approvedBy || "", date: "", atAsk: cashBalanceAt(a.uid, a.companyId, a.requestedAt || Date.now()), cb: cb, ag: asAgeing(a.uid, a.companyId) }; })
       .sort(function (x, y) { return (x.a.status === "approved" ? 0 : 1) - (y.a.status === "approved" ? 0 : 1) || (x.a.approvedAt || x.a.requestedAt || 0) - (y.a.approvedAt || y.a.requestedAt || 0); });
   }

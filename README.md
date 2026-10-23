@@ -151,6 +151,11 @@ provides the same calls, so the app code did not need rewriting:
   amount is held back at once (it can't be settled by vouchers), and only the financier can mark it received (Advance
   Requests › Cash Being Returned; they may take less). It then comes off the person's balance and their oldest cash first.
   Stored in `cashadv/*` with `kind: "return"`, status `returning` → `returned`.
+- **Chief Accountant** (job `chiefacct`): covers every company, now and later, with no companies or steps to choose
+  in Users. They do the accounting everywhere (Accounting, Debit & Credit Notes, Ledger Statements, vendors and ledgers)
+  and see the finance reports (Transactions, Payables, Advances) for all companies, but don't record payments (no
+  Payment Entry or Advance Requests). The sign-in check (`app_portal`, migration 20261023180000) gives them the Accounts
+  and Finance apps.
 - **Show Activity** (Settings, admins only): one row per person with last sign-in (date and time, "N/A" if never) and
   last active, last edit and number of changes in the period (from the Change Log and record writers, via the admin-only
   `app_activity` database function), entries made by job (purchasers: bills, vouchers, proformas, imports; accountants: bills and

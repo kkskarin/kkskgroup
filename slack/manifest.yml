@@ -1,0 +1,24 @@
+# Slack app for approval alerts. Create it at https://api.slack.com/apps → Create New App → From a manifest,
+# pick your workspace, paste this file, then Install to Workspace.
+display_information:
+  name: KKSK Approvals
+  description: Approve checking reports and cash advances from Slack.
+  background_color: "#009256"
+features:
+  bot_user:
+    display_name: KKSK Approvals
+    always_online: true
+oauth_config:
+  scopes:
+    bot:
+      - chat:write
+      - im:write
+      - users:read
+      - users:read.email
+settings:
+  interactivity:
+    is_enabled: true
+    request_url: https://uqjirmofridjuykeemml.supabase.co/functions/v1/slack-approve
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false

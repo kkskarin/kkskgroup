@@ -151,6 +151,15 @@ provides the same calls, so the app code did not need rewriting:
   amount is held back at once (it can't be settled by vouchers), and only the financier can mark it received (Advance
   Requests › Cash Being Returned; they may take less). It then comes off the person's balance and their oldest cash first.
   Stored in `cashadv/*` with `kind: "return"`, status `returning` → `returned`.
+- **Slack approvals**: when a live checking report starts waiting or a cash advance is requested, the
+  `approval-alert` Edge Function sends the named approver a Slack DM (found by their login email) with **Approve** and
+  **Review in app** buttons. Approve (with a confirm step) goes to the `slack-approve` Edge Function, which checks
+  Slack's signature, that the person tapping is that approver (same email), and that the request is still in the same
+  wait, then approves the full amount as the app does (bill reports: every bill in full; advance reports: the
+  instalment; vouchers: every voucher; cash advances: the amount asked), logs "Approved on Slack" and an audit entry,
+  and turns the message into "✅ approved". Part approvals and send-backs stay in the app (Review opens
+  `/approvals/?go=…` at that request's form). The Slack app is `slack/manifest.yml`; secrets `SLACK_BOT_TOKEN` and
+  `SLACK_SIGNING_SECRET`.
 - **WhatsApp approval alerts** (through Sent): admins and approvers enter their WhatsApp number in Settings › Personalise
   (kept in their own `prefs/<uid>`, readable only by them and the server). When a live checking report starts waiting
   (stage `generated`) or a cash advance is requested, a database trigger calls the `approval-alert` Edge Function with

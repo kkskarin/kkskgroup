@@ -1273,7 +1273,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       <div class="perjump" id="actFromBox" hidden></div><div class="perjump" id="actToBox" hidden></div>
     </div>
     <div class="card list scroll" id="actList"></div>
-    <p class="sub" style="margin-top:10px">Only the work each job does is counted. Purchasers: bills, vouchers, proformas and imports entered. Voucher Makers: vouchers. Accountants and Chief Accountants: bills and vouchers accounted, vendors added or completed. Financiers: payments recorded and cash advances handed over. Approvers and admins: checking reports and cash advances approved.
+    <p class="sub" style="margin-top:10px">Only the work each job does is counted. Purchasers: bills, vouchers, proformas and imports entered (time on a bill, including a proforma's final bill, is from the bill date to when it was uploaded or entered). Voucher Makers: vouchers. Accountants and Chief Accountants: bills and vouchers accounted, vendors added or completed. Financiers: payments recorded and cash advances handed over. Approvers and admins: checking reports and cash advances approved.
       Time taken is from when the work reached them (bill submitted, report sent, approval given…) to when they finished it. Pending is what waits on them now, with how long.</p>
   </section>
   <section id="secPayables" hidden>
@@ -1602,7 +1602,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
      Reports > Transactions shows every item, where it stands and who is responsible. "View as" still opens a person's screens. */
   var ADMIN_HIDE = { "Bills": 1, "Plan Advance": 1, "Imports": 1, "Cash Voucher": 1, "Accounts": 1, "Mark Transaction": 1 };
   /* A financier who only pays out sees Reports (Transactions, Payables) and Payments, nothing else. */
-  var CHIEF_TABS = { "Transactions": 1, "Payables": 1, "Advance Summary": 1, "Accounts": 1, "Notes": 1, "Ledger Books": 1, "Companies": 1, "Vendors": 1, "Ledgers": 1 };
+  var CHIEF_TABS = { "Activity": 1, "Transactions": 1, "Payables": 1, "Advance Summary": 1, "Accounts": 1, "Notes": 1, "Ledger Books": 1, "Companies": 1, "Vendors": 1, "Ledgers": 1 };
   var FIN_TABS = { "Companies": 1, "Vendors": 1, "Ledgers": 1, "Cash Approvals": 1, "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1, "Advance Requests": 1 };
   function finOnly() { return !S.isAdmin && canDo("txn") && STEPS.every(function (st) { return st[0] === "txn" || !canDo(st[0]); }); }
   function navGroups() {
@@ -1710,7 +1710,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (t === "Personalise") { renderPrefs(); show("secPrefs"); return; }
     if (t === "Users" && S.isAdmin) { renderUsers(); renderSupers(); show("secUsers"); }
     else if (t === "Change Log" && S.isAdmin) { auditSub(); renderAudit(); show("secAudit"); }
-    else if (t === "Activity" && S.isAdmin) { if (dataReady()) { acLoad(); renderActivity(); show("secActivity"); } else show("vLoading"); }
+    else if (t === "Activity" && (S.isAdmin || meChief())) { if (dataReady()) { acLoad(); renderActivity(); show("secActivity"); } else show("vLoading"); }
     else if (t === "Archive" && S.isAdmin) { if (dataReady()) { renderArchive(); show("secArch"); } else show("vLoading"); }
     else if (t === "Companies") { if (S.loaded || Object.keys(S.companies || {}).length) { renderList(); show("secList"); } else show("vLoading"); }
     else { $("soonTitle").textContent = tabLabel(t); show("secSoon"); }
@@ -2389,6 +2389,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function syncMyUser() {
     if (S.actId && !S.profiles[S.actId]) { S.actId = ""; S.picked = false; }
     S.myUser = S.actId ? S.profiles[S.actId] : S.loginUser;
+    /* A Chief Accountant sees Show Activity, so they need everyone's names and jobs. */
+    if (!S.isAdmin && isChief(S.myUser) && !S.chiefSub) S.chiefSub = S.db.collection("users").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { var u = Object.assign({}, d.data() || {}); u.id = d.id; m[d.id] = u; }); S.chiefUsers = m; if (S.tab === "Activity" && !$("secActivity").hidden) renderActivity(); }, function () {});
   }
   /* PINs are kept only as a hash. */
   function pinHash(id, pin) {
@@ -9440,7 +9442,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function acDur(ms) { if (ms == null) return ""; var m = Math.max(1, Math.round(ms / 6e4)); if (m < 60) return m + " min"; var h = Math.floor(m / 60); if (h < 24) return h + "h" + (m % 60 ? " " + (m % 60) + "m" : ""); var d = Math.floor(h / 24); return d + "d" + (h % 24 ? " " + (h % 24) + "h" : ""); }
   function acPeople() {
     var m = {};
-    Object.keys(S.users || {}).forEach(function (k) { m[k] = { id: k, name: S.users[k].name || "", u: S.users[k] }; });
+    var US = S.isAdmin ? S.users : S.chiefUsers || {};
+    Object.keys(US || {}).forEach(function (k) { m[k] = { id: k, name: US[k].name || "", u: US[k] }; });
     Object.keys(S.profiles || {}).forEach(function (k) { if (!m[k]) m[k] = { id: k, name: S.profiles[k].name || "", u: S.profiles[k] }; });
     Object.keys(S.admins || {}).forEach(function (k) { if (!m[k]) m[k] = { id: k, name: (S.admins[k] && S.admins[k].name) || userLabel(k) || "Admin", u: null }; });
     Object.keys(m).forEach(function (k) {
@@ -9455,7 +9458,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     function vals(o) { return Object.keys(o || {}).map(function (k) { return o[k]; }); }
     function coN(cid) { var c = S.companies[cid]; return c ? c.shortName || c.name : ""; }
     /* Work done: counted only for people whose job does that kind of work. */
-    function done(uid, kind, label, cid, from, to) { var p = P[uid]; if (!p || !p.kinds[kind] || !to || to < since || to > until) return; p.done.push({ kind: kind, label: label, co: coN(cid), from: from || 0, to: to, ms: from && to >= from ? to - from : null }); }
+    /* end: when the clock stops, if not when it was done (a bill's upload); day: the start is a date, not a time. */
+    function done(uid, kind, label, cid, from, to, end, day) { var p = P[uid], e = end || to; if (!p || !p.kinds[kind] || !to || to < since || to > until) return; p.done.push({ kind: kind, label: label, co: coN(cid), from: from || 0, to: to, day: !!day, ms: from && e >= from ? e - from : null }); }
     function pend(uid, kind, label, cid, from) { var p = P[uid]; if (!p || !p.kinds[kind]) return; p.pend.push({ kind: kind, label: label, co: coN(cid), from: from || 0, age: from ? now - from : null }); }
     var bills = vals(R.bills || S.bills), reports = R.reports || S.reports || {}, vouchers = vals(R.vouchers || S.vouchers), advs = vals(R.advances || S.advances), people = Object.keys(P);
     function vName(id) { var v = S.vendors[id]; return v ? v.name : ""; }
@@ -9464,7 +9468,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     function doers(step, cid, job) { return people.filter(function (k) { var u = P[k].u; return u && u.active !== false && P[k].jobs.indexOf(job) >= 0 && (job === "accountant" && isChief(u) ? true : userHas(Object.assign({ id: k }, u), step, cid)); }); }
     bills.forEach(function (b) {
       var who = b.submittedBy || b.ownerId || b.uploadedBy;
-      if (b.submittedAt) done(who, "bill", bLabel(b), b.companyId, b.uploadedAt && b.uploadedAt < b.submittedAt ? b.uploadedAt : 0, b.submittedAt);
+      /* A purchaser's time on a bill (a proforma's final bill too) is how long after the bill date it was uploaded or entered. */
+      var up = b.uploadedAt || b.submittedAt, bd = ymdOk(b.billDate) ? Date.parse(b.billDate + "T00:00:00") : 0;
+      if (b.submittedAt) done(who, "bill", (b.advanceId ? "Final bill " : "") + bLabel(b), b.companyId, bd && bd <= up ? bd : 0, b.submittedAt, up, true);
       if (b.acctBy && b.acctAt && b.acct === "approved") done(b.acctBy, "billAcct", bLabel(b), b.companyId, b.submittedAt, b.acctAt);
       if (b.status === "done" && b.acct === "pending" && b.companyId) doers("acct", b.companyId, "accountant").concat(people.filter(function (k) { return isChief(P[k].u) && P[k].jobs.indexOf("accountant") < 0; })).forEach(function (k) { pend(k, "billAcct", bLabel(b), b.companyId, b.submittedAt); });
       if (b.acct === "back" && who) pend(who, "bill", bLabel(b) + (b.acctNote ? " — " + b.acctNote : ""), b.companyId, b.acctAt);
@@ -9588,7 +9594,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         { label: "Done", sort: function (d) { return d.to; }, desc: true, cell: function (d, td) { txt(td, stamp(d.to)); } },
         { label: "Work", sort: function (d) { return acKind(d.kind)[1]; }, cell: function (d, td) { txt(td, acKind(d.kind)[1]); } },
         { label: "Item", cls: "desc", cell: function (d, td) { txt(td, d.label); if (d.co) sub(td, d.co); } },
-        { label: "Time Taken", cls: "r num", sort: function (d) { return d.ms; }, cell: function (d, td) { txt(td, d.ms != null ? acDur(d.ms) : "—"); if (d.from) sub(td, "from " + stamp(d.from)); } }
+        { label: "Time Taken", cls: "r num", sort: function (d) { return d.ms; }, cell: function (d, td) { txt(td, d.ms != null ? acDur(d.ms) : "—"); if (d.from) sub(td, d.day ? "bill date " + fmtDay(d.from) : "from " + stamp(d.from)); } }
       ], r.done, { sortIndex: 0, sortDir: -1 });
     }
     if (!r.done.length && !r.pend.length) m.appendChild(el("p", { class: "sub" }, "No work in this period."));

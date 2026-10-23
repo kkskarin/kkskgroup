@@ -688,6 +688,8 @@
 
   /* The super admins as {id, name}, for the app's "Approver" list (the claude.ai version had no such list). */
   /* What the signed-in person may open across KKSK Group. */
+  /* Settings › Show Activity (admins): last sign-in, last active, last edit and edits since a time, per login. */
+  window.bvActivity = function (since) { return ready.then(function () { return sb.rpc("app_activity", { p_since: Math.floor(since || 0) }); }).then(function (r) { if (r.error) throw err("permission_denied", r.error.message); return r.data || []; }); };
   window.bvPortal = function () { return ready.then(function () { return sb.rpc("app_portal"); }).then(function (r) { if (r.error) throw err("unavailable", r.error.message); return r.data || {}; }); };
   /* Super admins (only a super admin can list, add or remove them). */
   window.bvSupers = Object.freeze({

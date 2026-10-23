@@ -151,6 +151,12 @@ provides the same calls, so the app code did not need rewriting:
   amount is held back at once (it can't be settled by vouchers), and only the financier can mark it received (Advance
   Requests › Cash Being Returned; they may take less). It then comes off the person's balance and their oldest cash first.
   Stored in `cashadv/*` with `kind: "return"`, status `returning` → `returned`.
+- **Show Activity** (Settings, admins only): one row per person with last sign-in (date and time, "N/A" if never) and
+  last active, last edit and number of changes in the period (from the Change Log and record writers, via the admin-only
+  `app_activity` database function), entries made (bills submitted, vouchers, checking reports, proformas and imports,
+  cash requests, notes, payments), average response times (Accounting: submitted → accounted; Approving: report sent →
+  approved, cash advance asked → approved; Paying: approval → payment or cash handed over) and what is waiting on them
+  now with its oldest age. Period: 7 days to all time.
 - **Slack approvals**: when a live checking report starts waiting or a cash advance is requested, the
   `approval-alert` Edge Function sends the named approver a Slack DM (found by their login email) with **Approve** and
   **Review in app** buttons. Approve (with a confirm step) goes to the `slack-approve` Edge Function, which checks

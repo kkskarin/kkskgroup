@@ -171,6 +171,9 @@ provides the same calls, so the app code did not need rewriting:
 - **Accounting needs a complete vendor**: a bill is accounted (by the accountant, or in one go by someone who enters and
   accounts) only once its vendor has a type, payment terms, address, a valid GSTIN when registered, and the opening
   balance for the bill's company.
+- **View as**: the header shows the person's own picture (or their initials), and All Apps only when they have more
+  than one app. Personal settings (`prefs/<uid>`: look, picture, WhatsApp number) are readable only by the person and
+  by admins (migration 20261024120000).
 - **Company order**: only the super admin can reorder companies (Masters › Companies).
 - **Slack approvals**: when a live checking report starts waiting or a cash advance is requested, the
   `approval-alert` Edge Function sends the named approver a Slack DM (found by their login email) with **Approve** and

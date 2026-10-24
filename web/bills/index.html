@@ -1475,7 +1475,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* The round picture (or initials) beside the name at the top. */
   function renderMeAvatar() {
     var box = $("me"); if (!box) return; var old = box.querySelector(".meav"); if (old) old.remove();
-    var nm = (S.me && S.me.name) || "", a = S.prefs.avatar, av = a ? el("img", { class: "meav", alt: "", src: a }) : el("span", { class: "meav ini", "aria-hidden": "true" }, initialsOf(nm));
+    var nm = (S.me && S.me.name) || "", a = S.prefs.avatar;
+    /* Viewing as someone: their picture (from their own settings) or their initials, never the admin's. */
+    if (S._adm && S.actId) {
+      var vu = (S.users || {})[S.actId]; nm = (vu && vu.name) || "?"; S.vaPics = S.vaPics || {}; a = S.vaPics[S.actId] || "";
+      if (!(S.actId in S.vaPics) && S.rawDb) { var id = S.actId; S.vaPics[id] = ""; S.rawDb.doc("prefs/" + id).get().then(function (d) { var p = d && d.exists ? d.data() || {} : {}; S.vaPics[id] = p.avatar || ""; if (S._adm && S.actId === id && p.avatar) renderMeAvatar(); }, function () {}); }
+    }
+    var av = a ? el("img", { class: "meav", alt: "", src: a }) : el("span", { class: "meav ini", "aria-hidden": "true" }, initialsOf(nm));
     box.classList.add("hasav"); box.insertBefore(av, box.firstChild);
   }
   /* A picture becomes a 256 × 256 square, centred. */
@@ -12165,7 +12171,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (window.bvSuperAdmins) window.bvSuperAdmins().then(function (l) { S.supers = l || []; }, function () { S.supers = []; });
       return S.user.me().then(function (me) {
         S.me = me || {}; startPrefs();
-        if (window.bvPortal) window.bvPortal().then(function (p) { var a = p.apps || {}; $("appsLink").hidden = !(APP_KEYS.concat(["wb"]).filter(function (k) { return a[k]; }).length > 1); }, function () {});
+        if (window.bvPortal) window.bvPortal().then(function (p) { if (S._adm) { vaApps(); return; } var a = p.apps || {}; $("appsLink").hidden = !(APP_KEYS.concat(["wb"]).filter(function (k) { return a[k]; }).length > 1); }, function () {});
         var box = $("me"); box.textContent = "";
         box.appendChild(el("div", { class: "nm" }, S.me.name || "Signed in")); box.appendChild(el("div", { class: "rl" }, S.me.canEdit ? "Super Admin" : "")); box.hidden = false; renderMeAvatar();
         if (!S.me.canEdit) {

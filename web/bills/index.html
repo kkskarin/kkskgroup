@@ -3,7 +3,7 @@
 <script>/* One page, four apps: the address picks which. /bills/ is the old address of Maintenance. */
 (function () { var seg = location.pathname.split("/")[1] || "";
   if (seg === "bills") { location.replace("/maintenance/" + location.search + location.hash); }
-  window.BV_APP = { maintenance: "mnt", renewable: "re", accounts: "acc", finance: "fin", approvals: "apr" }[seg] || "mnt"; window.BV_HOME = "../"; })();</script>
+  window.BV_APP = { maintenance: "mnt", renewable: "re", "bills-vouchers": "bnv", accounts: "acc", finance: "fin", approvals: "apr" }[seg] || "mnt"; window.BV_HOME = "../"; })();</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script src="../supabase-runtime.js"></script>
 <link rel="stylesheet" href="../auth.css"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
@@ -893,7 +893,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         <div class="f" id="uPinF" hidden><label for="uPin">Profile PIN</label><input class="field num" id="uPin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="4 digits"><span class="hint" id="uPinH"></span><button class="link-btn" id="uPinReset" type="button" hidden>Reset PIN</button><span class="err" id="uEPin" hidden></span></div>
         <div class="f wide" id="uLinkF" hidden><label for="uLink">Link to a Person Already Added</label><select class="field" id="uLink"></select><span class="hint">Pick the person you added without a login, if this request is theirs. Everything entered for them moves to this login.</span></div>
         <div class="f wide" id="uAppsF"><span class="lb">Apps</span>
-          <div class="uapps"><label class="check"><input type="checkbox" id="uAppApr"> Approvals</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check"><input type="checkbox" id="uAppWb"> W/B Costing</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label>
+          <div class="uapps"><label class="check"><input type="checkbox" id="uAppApr"> Approvals</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check" title="For Voucher Makers"><input type="checkbox" id="uAppBnv"> Bills &amp; Vouchers</label><label class="check"><input type="checkbox" id="uAppWb"> W/B Costing</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label>
             <div class="uapp-pp" hidden><span>Production Planning</span><select class="field" id="uPpRole" aria-label="Production Planning role"><option value="">No access</option><option value="approver">Approver</option><option value="planner">Planner</option><option value="floor">Floor Team</option></select>
               <select class="field" id="uPpRegion" aria-label="Production Planning region"><option value="">Erode and Ambur</option><option value="E">Erode</option><option value="A">Ambur</option></select></div></div>
           <span class="hint">They see only the apps given here; with one app they go straight into it. Admins get every app.</span><span class="err" id="uEApps" hidden>Give at least one app.</span></div>
@@ -1592,9 +1592,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
      Accounts keeps the books for every division (ledgers, accounting, notes, companies). Finance approves and pays for every division,
      except a division that pays in its own app (Renewable Energy), which Finance still sees. Every entry carries the division it came from. */
   var APP = window.BV_APP || "mnt";
-  var DIVS = { mnt: { name: "Maintenance & Civil", payIn: "fin" }, re: { name: "Renewable Energy", payIn: "re" } };
-  var APP_NAMES = { mnt: "Maintenance & Civil", re: "Renewable Energy", acc: "Accounts", fin: "Finance", apr: "Approvals" };
-  var APP_KEYS = ["apr", "acc", "fin", "re", "mnt"]; /* the order apps are listed in everywhere */
+  /* Bills & Vouchers (bnv): its own division, a copy of Maintenance & Civil worked by Voucher Makers, who pick who prepared each entry. */
+  var DIVS = { mnt: { name: "Maintenance & Civil", payIn: "fin" }, re: { name: "Renewable Energy", payIn: "re" }, bnv: { name: "Bills & Vouchers", payIn: "fin" } };
+  var APP_NAMES = { mnt: "Maintenance & Civil", re: "Renewable Energy", bnv: "Bills & Vouchers", acc: "Accounts", fin: "Finance", apr: "Approvals" };
+  var APP_KEYS = ["apr", "acc", "fin", "re", "mnt", "bnv"]; /* the order apps are listed in everywhere */
   function appName(k) { return APP_NAMES[k || APP] || ""; }
   /* The division this page works in, or null in Accounts and Finance (every division). */
   var DIV = DIVS[APP] ? APP : null;
@@ -1621,6 +1622,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var NAV_BY_APP = {
     mnt: [REP_TABS, EXP_TABS, ACC_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     re: [REP_TABS, SALES_TABS, EXP_TABS, ACC_TABS, PAY_TABS, MAS_TABS, SET_ALL],
+    bnv: [REP_TABS, EXP_TABS, ACC_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     acc: [REP_TABS, ACC_TABS, MAS_TABS, SET_ALL],
     fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS]
@@ -1907,6 +1909,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function userHas(u, step, cid) {
     if (!u || u.active === false) return false;
     if (step === "acct" && isChief(u) && S.companies && S.companies[cid]) return true;
+    /* In Bills & Vouchers a Voucher Maker enters bills (and their checking reports) wherever they make vouchers. */
+    if (APP === "bnv" && (step === "bills" || step === "bcr") && (u.jobRoles || []).indexOf("vmaker") >= 0) step = step === "bills" ? "vouchers" : "vcr";
     var own = ownCo(u, cid) && (u.companyIds || []).indexOf(cid) < 0;
     if (!own && (u.companyIds || []).indexOf(cid) < 0) return false;
     if (!u.roles) return step !== "appr" && step !== "rec"; /* approving is only ever given on purpose */
@@ -2171,7 +2175,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function fillUserForm(src, roles, balUid) {
     var js = jobsOf(src); jobChecks($("uJobs"), js); $("uJobsE").hidden = true;
-    var ap = appsWith(src); $("uAppMnt").checked = ap.mnt; $("uAppRe").checked = ap.re; $("uReCo").checked = !!(src && src.reCompanies); $("uAppAcc").checked = ap.acc; $("uAppFin").checked = ap.fin; $("uAppApr").checked = ap.apr; $("uAppWb").checked = !!(src && src.apps && src.apps.wb); $("uPpRole").value = (ap.pp && ap.pp.role) || ""; $("uPpRegion").value = (ap.pp && ap.pp.region) || ""; $("uEApps").hidden = true; syncAppsF();
+    var ap = appsWith(src); $("uAppMnt").checked = ap.mnt; $("uAppRe").checked = ap.re; $("uAppBnv").checked = ap.bnv; $("uReCo").checked = !!(src && src.reCompanies); $("uAppAcc").checked = ap.acc; $("uAppFin").checked = ap.fin; $("uAppApr").checked = ap.apr; $("uAppWb").checked = !!(src && src.apps && src.apps.wb); $("uPpRole").value = (ap.pp && ap.pp.role) || ""; $("uPpRegion").value = (ap.pp && ap.pp.region) || ""; $("uEApps").hidden = true; syncAppsF();
     var ua = $("uAppr"); ua.parentNode.replaceChild(approverSelect("uAppr", src.defaultApproverId || ""), ua); $("uAppr").options[0].textContent = "Choose the default approver"; syncApprF();
     if (!roles && js.length) { roles = {}; (src.companyIds || []).forEach(function (cid) { roles[cid] = stepsForJobs(js); }); }
     $("uName").value = src.name || ""; usLoc.close(); usLoc.fill(src.locationId || ""); usDept.close(); usDept.fill(src.deptId || ""); buildChecks($("uCos"), src.companyIds || [], true);
@@ -2189,14 +2193,15 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function hasStepAny(u, step) { if (!u || !u.roles) return true; return Object.keys(u.roles).some(function (k) { return (u.roles[k] || []).indexOf(step) >= 0; }); }
   /* An app opens only for someone whose responsibilities belong in it (and whose tick is on): an accountant never lands in
      Maintenance just because it was ticked. The KKSK Group home (app_portal) applies the same rule. */
-  var APP_STEPS = { mnt: ["bills", "bcr", "adv", "vouchers", "vcr", "cash", "acct", "txn"], re: ["bills", "bcr", "adv", "vouchers", "vcr", "cash", "acct", "txn", "solar"], acc: ["acct"], fin: ["txn"], apr: ["appr", "rec"] };
+  var APP_STEPS = { mnt: ["bills", "bcr", "adv", "vouchers", "vcr", "cash", "acct", "txn"], bnv: ["bills", "bcr", "adv", "vouchers", "vcr", "cash", "acct", "txn"], re: ["bills", "bcr", "adv", "vouchers", "vcr", "cash", "acct", "txn", "solar"], acc: ["acct"], fin: ["txn"], apr: ["appr", "rec"] };
   function rolesFit(roles, k) { if (!roles) return k !== "apr"; return Object.keys(roles).some(function (c) { return (roles[c] || []).some(function (st) { return APP_STEPS[k].indexOf(st) >= 0; }); }); }
   function appsWith(u) {
     var a = (u && u.apps) || {}, bv = a.bv !== false, r = u && u.roles, on = function (k, def) { return bv && (a[k] != null ? !!a[k] : def) && (rolesFit(r, k) || (isChief(u) && (k === "acc" || k === "fin"))); };
-    return { mnt: on("mnt", true), re: on("re", false), acc: on("acc", true), fin: on("fin", true), apr: on("apr", true) };
+    /* Bills & Vouchers is for Voucher Makers (and admins), given on purpose. */
+    return { mnt: on("mnt", true), re: on("re", false), bnv: on("bnv", false) && ((u && u.jobRoles) || []).indexOf("vmaker") >= 0, acc: on("acc", true), fin: on("fin", true), apr: on("apr", true) };
   }
-  function readApps() { return { mnt: $("uAppMnt").checked, re: $("uAppRe").checked, acc: $("uAppAcc").checked, fin: $("uAppFin").checked, apr: $("uAppApr").checked }; }
-  function anyMoneyApp(a) { return !!(a.mnt || a.re || a.acc || a.fin || a.apr); }
+  function readApps() { return { mnt: $("uAppMnt").checked, re: $("uAppRe").checked, bnv: $("uAppBnv").checked, acc: $("uAppAcc").checked, fin: $("uAppFin").checked, apr: $("uAppApr").checked }; }
+  function anyMoneyApp(a) { return !!(a.mnt || a.re || a.bnv || a.acc || a.fin || a.apr); }
   function syncAppsF() {
     var bv = anyMoneyApp(readApps()); $("uPpRegion").hidden = !$("uPpRole").value; $("uReCoF").hidden = !$("uAppRe").checked;
     ["uJobs", "uCos"].forEach(function (id) { var f = $(id).closest(".f"); if (f) f.hidden = !bv; });
@@ -2221,13 +2226,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var obs = null; if (S.balances[balUid] || noLogin || link) { obs = Object.assign({}, (S.balances[balUid] || {}).openings || {}); Array.prototype.forEach.call(document.querySelectorAll("#uOb tr[data-co]"), function (tr) { var cid = tr.getAttribute("data-co"), v = $("uob_" + cid).value.trim(); if (v === "") delete obs[cid]; else if (num(v) != null) obs[cid] = round2(num(v)); }); }
     if (!name) { $("uEName").hidden = false; $("uName").classList.add("bad"); ok = false; }
     if (!loc) { $("uELoc").hidden = false; ok = false; }
-    var ma = readApps(), appBv = anyMoneyApp(ma), ppRole = $("uPpRole").value, apps = { bv: appBv, mnt: ma.mnt, re: ma.re, acc: ma.acc, fin: ma.fin, apr: ma.apr, wb: $("uAppWb").checked, pp: ppRole ? { role: ppRole, region: $("uPpRegion").value || null } : null };
+    var ma = readApps(), appBv = anyMoneyApp(ma), ppRole = $("uPpRole").value, apps = { bv: appBv, mnt: ma.mnt, re: ma.re, bnv: ma.bnv, acc: ma.acc, fin: ma.fin, apr: ma.apr, wb: $("uAppWb").checked, pp: ppRole ? { role: ppRole, region: $("uPpRegion").value || null } : null };
     $("uEApps").hidden = true; $("uEApps").textContent = "Give at least one app."; if (!appBv && !ppRole && !apps.wb) { $("uEApps").hidden = false; ok = false; }
     var jobs0 = readChecks($("uJobs")), chief = jobs0.indexOf("chiefacct") >= 0, chiefOnly = chief && jobs0.length === 1;
     if (appBv && !cos.length && !chiefOnly) { $("uECos").hidden = false; ok = false; }
     /* Each app only for the responsibilities that belong in it (a Chief Accountant fits Accounts and Finance everywhere). */
-    var misfit = APP_KEYS.filter(function (k) { return ma[k] && !rolesFit(roles, k) && !(chief && (k === "acc" || k === "fin")); });
-    if (misfit.length) { $("uEApps").textContent = misfit.map(function (k) { return APP_NAMES[k]; }).join(", ") + (misfit.length > 1 ? " don't" : " doesn't") + " match their responsibilities below. " + ({ mnt: "Maintenance & Civil is for people who enter, account or pay its work.", re: "Renewable Energy is for people who enter, account or pay its work, or do its energy billing.", acc: "Accounts is for accountants (every division).", fin: "Finance is for financiers (every division).", apr: "Approvals is for approvers and approval recorders." })[misfit[0]] + " Untick it, or give the matching responsibility."; $("uEApps").hidden = false; ok = false; }
+    var misfit = APP_KEYS.filter(function (k) { return ma[k] && ((!rolesFit(roles, k) && !(chief && (k === "acc" || k === "fin"))) || (k === "bnv" && jobs0.indexOf("vmaker") < 0)); });
+    if (misfit.length) { $("uEApps").textContent = misfit.map(function (k) { return APP_NAMES[k]; }).join(", ") + (misfit.length > 1 ? " don't" : " doesn't") + " match their responsibilities below. " + ({ mnt: "Maintenance & Civil is for people who enter, account or pay its work.", bnv: "Bills & Vouchers is for Voucher Makers.", re: "Renewable Energy is for people who enter, account or pay its work, or do its energy billing.", acc: "Accounts is for accountants (every division).", fin: "Finance is for financiers (every division).", apr: "Approvals is for approvers and approval recorders." })[misfit[0]] + " Untick it, or give the matching responsibility."; $("uEApps").hidden = false; ok = false; }
     var dept = usDept.value(); if (!dept) { $("uEDept").hidden = false; ok = false; }
     var jobs = readChecks($("uJobs")); $("uJobsE").textContent = "Choose at least one job."; if (appBv && !jobs.length) { $("uJobsE").hidden = false; ok = false; }
     if (jobs.indexOf("recorder") >= 0 && jobs.indexOf("approver") >= 0) { $("uJobsE").textContent = "An Approval Recorder records others' approvals and can't also be an Approver. Untick one."; $("uJobsE").hidden = false; ok = false; }
@@ -2466,7 +2471,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* Viewing as someone shows exactly what they see: only their apps (the choice is kept while moving between apps), their tabs
      and their data. Only Demo/Live and the person menu stay the admin's. Nothing can be approved from another person's seat. */
-  var APP_PATH = { mnt: "maintenance", re: "renewable", acc: "accounts", fin: "finance", apr: "approvals" };
+  var APP_PATH = { mnt: "maintenance", re: "renewable", bnv: "bills-vouchers", acc: "accounts", fin: "finance", apr: "approvals" };
   function viewAppsOf(u) { var a = appsWith(u); return APP_KEYS.filter(function (k) { return a[k]; }); }
   function vaStore(uid) { try { if (uid) sessionStorage.setItem("bvViewAs", uid); else sessionStorage.removeItem("bvViewAs"); } catch (e) {} }
   function vaResume() { if (S._adm || !S.isAdmin || S.vaTried || !vaStored() || !S.loaded || !Object.keys(S.users || {}).length) return false; S.vaTried = true; if (S.users[vaStored()]) { viewAs(vaStored(), true); return true; } vaStore(""); return false; }
@@ -3917,7 +3922,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt),
       tds: b.entryTds || "", tdsSec: b.entryTdsSection || "",
       termDays: b.termDays == null ? "" : String(b.termDays), termChoice: b.termChoice || "", updateVendorTerm: !!b.updateVendorTerm, narration: b.narration || "", advPick: b.advPick || "", advWhy: b.advWhy || "",
-      ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), settle: b.settle ? "yes" : "no"
+      ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", forId: b.madeBy ? b.preparedBy || "" : "", forNew: "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), settle: b.settle ? "yes" : "no"
     };
   }
   function draftFromBill(b) { var D = draftFrom(b); if (!D.ledgers.length && num(D.taxable) != null && num(D.taxable) > 0) D.ledgers.push({ id: "", amt: D.taxable }); return D; }
@@ -3989,6 +3994,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     return Object.assign({ acct: "approved", acctNote: "", tds: t, tdsSection: t > 0 ? D.tdsSec || "" : "" }, acctWho());
   }
   function draftToDoc(D) {
+    var doc = draftToDoc0(D);
+    if (bnvMaker() && D.forId) { var pr = prepResolve(D); if (pr.id) Object.assign(doc, { preparedBy: pr.id, preparedByName: pr.name, madeBy: meId(), madeByName: preparedByText() }); }
+    return doc;
+  }
+  function draftToDoc0(D) {
     return Object.assign({
       companyId: D.companyId || null, vendorId: D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : null,
       vendorNew: { name: D.vNew.name.trim(), gstin: normId(D.vNew.gstin), pan: panOfNew(D), type: D.vNew.type || "", termDays: intOrNull(D.vNew.termDays), address: String(D.vNew.addr || "").trim() },
@@ -3999,7 +4009,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     }, amountsOf(D), prepFields(D.prepBy), approverFields(D.approverId));
   }
   /* Whose cash a bill would come out of, and whether paying it from that cash advance is offered (rupee bills only). */
-  function billWho(D) { return S.isAdmin ? D.prepBy : meId(); }
+  function billWho(D) { return S.isAdmin ? D.prepBy : bnvMaker() ? (D.forId === meId() ? meId() : "") : meId(); }
   function billAdvOk(D) { return (D.currency || "INR") === "INR" && advRel(billWho(D), D.companyId); }
   function billAdvAmt(D) { var a = amountsOf(D); return round2((a && a.total != null ? Number(a.total) || 0 : (num(D.taxable) || 0) + (num(D.gstAmt) || 0)) - (num(D.tds) || 0)); }
   /* PAN is never typed: it is characters 3 to 12 of the GSTIN. */
@@ -4034,6 +4044,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     function E(f, m) { errs.push([f, m]); }
     function DUP(f, m) { errs.push([f, m, true]); }
     if (!D.companyId) E("bcCo", "Choose the company the bill is made out to.");
+    if (bnvMaker()) { if (!D.forId) E("bcFor", "Choose who prepared this bill."); else if (D.forId === "new" && !String(D.forNew || "").trim()) E("bcForNew", "Type the name."); }
     else if (!billCanCo(b, D.companyId)) E("bcCo", "You don't have access to this company.");
     if (S.isAdmin && D.companyId) { if (!D.prepBy) E("bcPrep", "Choose who prepared this bill."); else if (!userHas(S.users[D.prepBy], billStep(b), D.companyId)) E("bcPrep", "That person doesn't hold Bills for this company any more. Choose again."); }
     if (!D.approverId) E("bcAppr", "Choose who approves this bill.");
@@ -4202,6 +4213,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var co = el("select", { class: "field", id: "bcCo" }); fillSelect(co, companyOpts(D.companyId, billStep(b)), D.companyId);
     f.appendChild(fld("Company", co, b.ex && b.ex.companyName ? "On the bill: " + b.ex.companyName : ""));
     if (S.isAdmin) f.appendChild(fld("Prepared by", prepSelect("bcPrep", billStep(b), D.companyId, D.prepBy), "Whose bill this is. Only people given Bills for this company are listed."));
+    if (bnvMaker()) {
+      var bf = el("select", { class: "field", id: "bcFor" }); fillSelect(bf, prepOpts(), D.forId || ""); f.appendChild(fld("Prepared by", bf, "Who prepared this bill: you, or a saved name. It counts as theirs."));
+      var bn = fld("Name", inp("bcForNew", D.forNew || "", { maxlength: "80", autocomplete: "off", "data-fmt": "name" }), "Saved, and offered next time."); bn.hidden = D.forId !== "new"; f.appendChild(bn);
+      bf.addEventListener("change", function () { bn.hidden = bf.value !== "new"; });
+    }
     f.appendChild(fld("Approver", approverSelect("bcAppr", D.approverId), APPR_HINT));
     var stl = el("select", { class: "field", id: "bcSettle" }); fillSelect(stl, [["no", "No, the financier pays the vendor"], ["yes", "Yes, I paid it from my cash advance"]], D.settle === "yes" ? "yes" : "no");
     var stf = fld("Paid from cash advance?", stl, " "); stf.id = "bcSetF"; stf.hidden = true; f.appendChild(stf);
@@ -4270,7 +4286,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     D.vNew.name = $("bcVName").value; D.vNew.type = $("bcVType").value; D.vNew.gstin = $("bcVGstin").value; D.vNew.termDays = $("bcVTerm").value; D.vNew.addr = $("bcVAddr").value;
     D.billNo = $("bcNo").value; D.billDate = $("bcDate").value; D.currency = $("bcCur").value || "INR"; D.rate = $("bcRate").value;
     D.taxable = $("bcTax").value; D.gstAmt = $("bcGst").value;
-    D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value; if ($("bcAppr")) D.approverId = $("bcAppr").value; if ($("bcSettle")) D.settle = $("bcSettle").value;
+    D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value; if ($("bcFor")) { D.forId = $("bcFor").value; D.forNew = $("bcForNew").value; } if ($("bcAppr")) D.approverId = $("bcAppr").value; if ($("bcSettle")) D.settle = $("bcSettle").value;
     if ($("bcTerm")) D.termDays = $("bcTerm").value;
     if ($("bcTds")) { D.tds = $("bcTds").value; D.tdsSec = $("bcTdsSec").value; }
     var r = document.querySelector('input[name="bcTermPick"]:checked'); if (r) D.termChoice = r.value;
@@ -8515,7 +8531,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var co = el("select", { class: "field", id: "vfCo" }); fillSelect(co, companyOpts(D.companyId, "vouchers"), D.companyId); f.appendChild(fld("Company", co));
     if (S.isAdmin) f.appendChild(fld("Prepared by", prepSelect("vfPrep", "vouchers", D.companyId, D.prepBy), "Who made the voucher. Only people given vouchers for this company are listed."));
     if (vMaker()) {
-      var fo = el("select", { class: "field", id: "vfFor" }); fillSelect(fo, vForOpts(D.companyId), D.forId || ""); f.appendChild(fld("Voucher for", fo, "The person whose voucher this is. It counts as theirs: their cash advance and their checking report."));
+      var fo = el("select", { class: "field", id: "vfFor" }); fillSelect(fo, vForOpts(D.companyId), D.forId || ""); f.appendChild(fld(APP === "bnv" ? "Prepared by" : "Voucher for", fo, APP === "bnv" ? "Who prepared this voucher: you, or a saved name. It counts as theirs." : "The person whose voucher this is. It counts as theirs: their cash advance and their checking report."));
       var fn = fld("Name", inp("vfForNew", D.forNew || "", { maxlength: "80", autocomplete: "off", "data-fmt": "name" }), "Saved, and offered next time."); fn.id = "vfForNewF"; fn.hidden = D.forId !== "new"; f.appendChild(fn);
     }
     f.appendChild(fld("Approver", approverSelect("vfAppr", D.approverId), APPR_HINT));
@@ -8578,7 +8594,24 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* A Voucher Maker makes vouchers for other people: someone with a login, or a name from the saved list. The voucher counts as
      theirs (cash advance, checking report); who made it is kept too. */
   function vMaker() { return !S.isAdmin && myJobs().indexOf("vmaker") >= 0; }
+  /* Bills & Vouchers: the Voucher Maker picks who prepared each bill and voucher: themselves or a saved name. */
+  function bnvMaker() { return APP === "bnv" && vMaker(); }
+  function prepOpts() {
+    var o = [["", "Choose who prepared it"], [meId(), "Myself"]];
+    solList(S.vpeople || {}).filter(function (x) { return x.active !== false; }).sort(function (a, b) { return natCmp(a.name, b.name); }).forEach(function (x) { o.push([x.id, x.name]); });
+    o.push(["new", "A new name"]); return o;
+  }
+  /* Turns the choice into a person id, saving a new name to the list. */
+  function prepResolve(D) {
+    var fid = D.forId; if (fid !== "new") return { id: fid, name: vForName(fid) };
+    var nm = smartCase(String(D.forNew || "").trim()); if (!nm) return { id: "", name: "" };
+    var ex = solList(S.vpeople || {}).filter(function (x) { return normName(x.name) === normName(nm); })[0]; if (ex) { D.forId = ex.id; return { id: ex.id, name: ex.name }; }
+    var id = "n_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); S.vpeople = S.vpeople || {}; S.vpeople[id] = { id: id, name: nm, active: true };
+    retry(function () { return S.db.doc("vpeople/" + id).set({ name: nm, active: true, createdAt: Date.now(), createdBy: meId() }); }).catch(function () {});
+    D.forId = id; D.forNew = ""; return { id: id, name: nm };
+  }
   function vForOpts(cid) {
+    if (APP === "bnv") return prepOpts();
     var o = [["", "Choose who the voucher is for"], [meId(), "Myself"]], seen = {}; seen[meId()] = 1;
     (cid ? usersWith("vouchers", cid) : []).forEach(function (u) { if (!seen[u.id]) { seen[u.id] = 1; o.push([u.id, userLabel(u.id)]); } });
     solList(S.vpeople || {}).filter(function (x) { return x.active !== false; }).sort(function (a, b) { return natCmp(a.name, b.name); }).forEach(function (x) { o.push([x.id, x.name]); });
@@ -9453,7 +9486,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var AC = { srv: null, since: -1, busy: false, err: "", from: "", to: "" };
   /* The kinds of work, the jobs that do them, and their words. */
   var ACT_KINDS = [
-    ["bill", "Bills entered", "bill", ["purchaser"]], ["voucher", "Vouchers entered", "voucher", ["purchaser", "vmaker"]], ["proforma", "Proformas entered", "proforma", ["purchaser"]], ["import", "Imports entered", "import", ["purchaser"]],
+    ["bill", "Bills entered", "bill", ["purchaser", "vmaker"]], ["voucher", "Vouchers entered", "voucher", ["purchaser", "vmaker"]], ["proforma", "Proformas entered", "proforma", ["purchaser"]], ["import", "Imports entered", "import", ["purchaser"]],
     ["billAcct", "Bills accounted", "bill accounted", ["accountant", "chiefacct"]], ["vchAcct", "Vouchers accounted", "voucher accounted", ["accountant", "chiefacct"]], ["vendor", "Vendors added or completed", "vendor", ["accountant", "chiefacct"]], ["acctBack", "Sent back to the purchaser", "sent back", ["accountant", "chiefacct"]],
     ["payment", "Payments recorded", "payment", ["financier"]], ["cashGiven", "Cash advances handed over", "cash advance handed over", ["financier"]],
     ["approval", "Checking reports approved", "report approved", ["approver", "admin"]], ["cashAppr", "Cash advances approved", "cash advance approved", ["approver", "admin"]]
@@ -12147,7 +12180,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (t.classList.contains("vnco")) VC.cos[t.getAttribute("data-co")] = t.checked; else if (t.classList.contains("vninc")) VC.sel[t.getAttribute("data-id")] = t.checked;
       updVcrNew();
     });
-    ["uAppMnt", "uAppRe", "uAppAcc", "uAppFin", "uAppApr"].forEach(function (id) { $(id).addEventListener("change", syncAppsF); }); $("uPpRole").addEventListener("change", syncAppsF);
+    ["uAppMnt", "uAppRe", "uAppBnv", "uAppAcc", "uAppFin", "uAppApr"].forEach(function (id) { $(id).addEventListener("change", syncAppsF); }); $("uPpRole").addEventListener("change", syncAppsF);
     $("uJobs").addEventListener("change", function () { if (!S.userEditing) return; $("uJobsE").hidden = true; syncApprF(); var js = readChecks($("uJobs")), cos = readChecks($("uCos")), m = {}; cos.forEach(function (cid) { m[cid] = stepsForJobs(js); }); S.userEditing.roles = m; renderRoleGrid(cos, m); });
     $("uCos").addEventListener("change", function () { if (!S.userEditing) return; var cur = readRoleGrid(), cos = readChecks($("uCos")), m = {}, js = readChecks($("uJobs")); cos.forEach(function (cid) { m[cid] = cur[cid] || (js.length ? stepsForJobs(js) : STEPS.map(function (s) { return s[0]; })); }); renderRoleGrid(cos, m);
       var keep = {}; Array.prototype.forEach.call(document.querySelectorAll("#uOb input"), function (i) { keep[i.id] = i.value; });

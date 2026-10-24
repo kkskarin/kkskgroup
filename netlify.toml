@@ -2,6 +2,7 @@
 #   /                home and sign-in
 #   /maintenance/    Maintenance       } one page (web/bills/index.html); the address picks the app.
 #   /renewable/      Renewable Energy  } /bills/ is the old address of Maintenance and moves there.
+#   /bills-vouchers/ Bills & Vouchers  }
 #   /accounts/       Accounts          }
 #   /finance/        Finance           }
 #   /approvals/      Approvals         }
@@ -18,6 +19,14 @@
   status = 200
 [[redirects]]
   from = "/renewable"
+  to = "/bills/index.html"
+  status = 200
+[[redirects]]
+  from = "/bills-vouchers"
+  to = "/bills/index.html"
+  status = 200
+[[redirects]]
+  from = "/bills-vouchers/*"
   to = "/bills/index.html"
   status = 200
 [[redirects]]

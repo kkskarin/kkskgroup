@@ -175,6 +175,13 @@ provides the same calls, so the app code did not need rewriting:
 - **View as**: everything follows the person (their picture or initials, their look, their apps under All Apps,
   their profile in Personalise); only the view-as menu (switch person / back to admin) and Demo/Live stay the admin's. Personal settings (`prefs/<uid>`: look, picture, WhatsApp number) are readable only by the person and
   by admins (migration 20261024120000).
+- **Bills & Vouchers** (`/bills-vouchers/`, key `bnv`): a division of its own, a copy of Maintenance & Civil worked by
+  Voucher Makers (the app is given in Users and only fits people with that job). Bills, vouchers, checking reports and
+  payments here are kept apart from Maintenance & Civil (records carry `div: "bnv"`; Accounts, Finance and Approvals see
+  them with every division). On each bill and voucher the Voucher Maker picks **Prepared by**: themselves or a saved
+  name (or a new one, saved for next time); the entry counts as that person's, with `madeBy` recording the Voucher
+  Maker. A Voucher Maker enters bills wherever they make vouchers. Companies (and vendors, ledgers) must be ticked as
+  used in Bills & Vouchers. Sign-in check: migration 20261024150000.
 - **Company order**: only the super admin can reorder companies (Masters › Companies).
 - **Slack approvals**: when a live checking report starts waiting or a cash advance is requested, the
   `approval-alert` Edge Function sends the named approver a Slack DM (found by their login email) with **Approve** and

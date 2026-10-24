@@ -156,7 +156,8 @@ provides the same calls, so the app code did not need rewriting:
   and see the finance reports (Transactions, Payables, Advances) for all companies, but don't record payments (no
   Payment Entry or Advance Requests). The sign-in check (`app_portal`, migration 20261023180000) gives them the Accounts
   and Finance apps.
-- **Show Activity** (Settings, admins and Chief Accountants; migration 20261024090000): one row per person with last active and last edit (date and time, "N/A"
+- **Show Activity** (Settings, admins and Chief Accountants, who see only the accounting and finance team:
+  accountants, Chief Accountants and financiers; migration 20261024090000): one row per person with last active and last edit (date and time, "N/A"
   if none; from the admin-only `app_activity` database function), the work done in the period broken down by kind with
   its average time, and what is pending on them now with the oldest age. Only each job's own work counts: purchasers'
   bills, vouchers, proformas and imports entered (a bill's time, a proforma's final bill too, is bill date → uploaded); Voucher Makers' vouchers; accountants' and Chief Accountants' bills
@@ -171,8 +172,8 @@ provides the same calls, so the app code did not need rewriting:
 - **Accounting needs a complete vendor**: a bill is accounted (by the accountant, or in one go by someone who enters and
   accounts) only once its vendor has a type, payment terms, address, a valid GSTIN when registered, and the opening
   balance for the bill's company.
-- **View as**: the header shows the person's own picture (or their initials), and All Apps only when they have more
-  than one app. Personal settings (`prefs/<uid>`: look, picture, WhatsApp number) are readable only by the person and
+- **View as**: everything follows the person (their picture or initials, their look, their apps under All Apps,
+  their profile in Personalise); only the view-as menu (switch person / back to admin) and Demo/Live stay the admin's. Personal settings (`prefs/<uid>`: look, picture, WhatsApp number) are readable only by the person and
   by admins (migration 20261024120000).
 - **Company order**: only the super admin can reorder companies (Masters › Companies).
 - **Slack approvals**: when a live checking report starts waiting or a cash advance is requested, the

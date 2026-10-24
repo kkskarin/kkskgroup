@@ -612,7 +612,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15p
 .me.hasav{display:flex;align-items:center;gap:10px}
 .meav{width:38px;height:38px;border-radius:50%;object-fit:cover;flex:none;border:2px solid var(--line);background:var(--brand-soft)}
 .meav.ini,.pav.ini{display:grid;place-items:center;color:var(--brand-text);font-weight:700;font-size:14px;letter-spacing:.04em}
-.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start;max-width:900px}
+.pcol{display:flex;flex-direction:column;gap:16px;min-width:0}.pcol:empty{display:none}
 .pcard{padding:18px 22px}.pcard h3{margin-top:0}
 .pprof{display:flex;gap:16px;align-items:center}.pprof b{display:block;font-size:16px}
 .pav{width:84px;height:84px;border-radius:50%;object-fit:cover;flex:none;border:3px solid var(--line);background:var(--brand-soft)}.pav.ini{font-size:26px}
@@ -1268,7 +1269,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <div class="card list scroll" id="auList"></div>
   </section>
   <section id="secActivity" hidden>
-    <div class="head"><div><h2>Show Activity</h2><p class="sub">Each person's own work: what they did, how long it took, and what is still waiting on them. Tap a person for the full detail. Only admins and Chief Accountants can see this.</p></div></div>
+    <div class="head"><div><h2>Show Activity</h2><p class="sub" id="actSub">Each person's own work: what they did, how long it took, and what is still waiting on them. Tap a person for the full detail. Only admins and Chief Accountants can see this.</p></div></div>
     <div class="filters">
       <input class="field" id="actQ" type="search" placeholder="Search name or job" aria-label="Search people" autocomplete="off">
       <select class="field" id="actPer" aria-label="Period"><option value="1">Today</option><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option><option value="0">All time</option><option value="custom">Choose dates…</option></select>
@@ -1456,6 +1457,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var loc = prefsLocal(id); if (loc) applyPrefs(loc);
     S.prefsSub = S.rawDb.doc("prefs/" + id).onSnapshot(function (d) {
       var p = d && d.exists ? d.data() || {} : null; if (!p) return;
+      if (S._adm && S.vaOwnLook) { S.vaOwnLook = p; return; }
       applyPrefs(p); try { localStorage.setItem(prefKey(id), JSON.stringify(p)); localStorage.setItem(prefKey(), JSON.stringify(Object.assign({}, p, { avatar: "" }))); } catch (e) {}
       if (S.tab === "Personalise" && !$("secPrefs").hidden) renderPrefs();
     }, function () {});
@@ -1473,13 +1475,21 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function initialsOf(n) { var w = String(n || "").trim().split(/\s+/).filter(Boolean); return ((w[0] || "?").charAt(0) + (w.length > 1 ? w[w.length - 1].charAt(0) : "")).toUpperCase(); }
   /* The round picture (or initials) beside the name at the top. */
+  /* Viewing as someone shows the app in their look (mode, colour, text size); the admin's own look comes back on leaving. */
+  function vaLook() {
+    if (!S._adm || !S.actId || S.vaLookFor === S.actId) return; var l = (S.vaLooks || {})[S.actId]; if (!l) return;
+    if (!S.vaOwnLook) S.vaOwnLook = S.prefs; S.vaLookFor = S.actId;
+    applyPrefs(Object.assign({}, PREF0, l, { avatar: S.vaOwnLook.avatar }));
+  }
+  function vaLookOff() { S.vaLookFor = null; if (!S.vaOwnLook) return; var o = S.vaOwnLook; S.vaOwnLook = null; applyPrefs(o); }
   function renderMeAvatar() {
     var box = $("me"); if (!box) return; var old = box.querySelector(".meav"); if (old) old.remove();
     var nm = (S.me && S.me.name) || "", a = S.prefs.avatar;
     /* Viewing as someone: their picture (from their own settings) or their initials, never the admin's. */
     if (S._adm && S.actId) {
       var vu = (S.users || {})[S.actId]; nm = (vu && vu.name) || "?"; S.vaPics = S.vaPics || {}; a = S.vaPics[S.actId] || "";
-      if (!(S.actId in S.vaPics) && S.rawDb) { var id = S.actId; S.vaPics[id] = ""; S.rawDb.doc("prefs/" + id).get().then(function (d) { var p = d && d.exists ? d.data() || {} : {}; S.vaPics[id] = p.avatar || ""; if (S._adm && S.actId === id && p.avatar) renderMeAvatar(); }, function () {}); }
+      if (!(S.actId in S.vaPics) && S.rawDb) { var id = S.actId; S.vaPics[id] = ""; S.rawDb.doc("prefs/" + id).get().then(function (d) { var p = d && d.exists ? d.data() || {} : {}; S.vaPics[id] = p.avatar || ""; S.vaLooks = S.vaLooks || {}; S.vaLooks[id] = p; if (S._adm && S.actId === id) { vaLook(); if (p.avatar) renderMeAvatar(); } }, function () {}); }
+      else vaLook();
     }
     var av = a ? el("img", { class: "meav", alt: "", src: a }) : el("span", { class: "meav ini", "aria-hidden": "true" }, initialsOf(nm));
     box.classList.add("hasav"); box.insertBefore(av, box.firstChild);
@@ -1500,7 +1510,18 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function prefRow(title, hint, ctl) { var r = el("div", { class: "prow" }), t = el("div", { class: "pl" }); t.appendChild(el("b", null, title)); if (hint) t.appendChild(el("span", { class: "tsub" }, hint)); r.appendChild(t); var c = el("div", { class: "pc" }); c.appendChild(ctl); r.appendChild(c); return r; }
   function renderPrefs() {
-    var box = $("prefBody"); if (!box) return; var p = S.prefs; box.textContent = "";
+    var root = $("prefBody"); if (!root) return; var p = S.prefs; root.textContent = "";
+    /* Viewing as someone: their profile only. Their look and password are theirs to change from their own login. */
+    if (S._adm && S.actId) {
+      var vu = (S.users || {})[S.actId] || {}, vc = el("div", { class: "card pcard" }); vc.appendChild(el("h3", null, "Profile"));
+      var vp = el("div", { class: "pprof" }), pic = (S.vaPics || {})[S.actId];
+      vp.appendChild(pic ? el("img", { class: "pav", alt: "", src: pic }) : el("span", { class: "pav ini", "aria-hidden": "true" }, initialsOf(vu.name)));
+      var vw = el("div"); vw.appendChild(el("b", null, vu.name || "")); vw.appendChild(el("span", { class: "tsub" }, jobsText(jobsOf(vu)) || "")); vp.appendChild(vw); vc.appendChild(vp);
+      vc.appendChild(el("p", { class: "sub", style: "margin:12px 0 0" }, "You are viewing as " + (vu.name || "this person") + ". Their picture, look and password are changed from their own login."));
+      root.appendChild(vc); return;
+    }
+    /* Two columns: profile, WhatsApp and password on the left; appearance (with its Save) on the right. */
+    var colL = el("div", { class: "pcol" }), colR = el("div", { class: "pcol" }), box = colL; root.appendChild(colL); root.appendChild(colR);
     /* profile */
     var c1 = el("div", { class: "card pcard" }); c1.appendChild(el("h3", null, "Profile"));
     var pr = el("div", { class: "pprof" }), big = p.avatar ? el("img", { class: "pav", alt: "Your profile picture", src: p.avatar }) : el("span", { class: "pav ini", "aria-hidden": "true" }, initialsOf(S.me && S.me.name));
@@ -1517,7 +1538,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var cw = el("div", { class: "card pcard" }); cw.appendChild(el("h3", null, "WhatsApp Alerts"));
       var wf = el("div", { class: "form", style: "padding:0" }), wn = inp("prefWa", p.whatsapp || "", { type: "tel", inputmode: "tel", autocomplete: "tel", maxlength: "20", placeholder: "98765 43210" });
       wf.appendChild(fld("WhatsApp Number", wn, "A message comes here when a checking report or cash advance waits for your approval. Indian numbers can be typed without +91."));
-      var wo = el("label", { class: "check", style: "margin-top:8px" }), wc = el("input", { type: "checkbox", id: "prefWaOn" }); wc.checked = p.waAlerts !== false; wo.appendChild(wc); wo.appendChild(document.createTextNode(" Send me approval alerts"));
+      var wo = el("label", { class: "check", style: "margin-top:8px;grid-column:1/-1" }), wc = el("input", { type: "checkbox", id: "prefWaOn" }); wc.checked = p.waAlerts !== false; wo.appendChild(wc); wo.appendChild(document.createTextNode(" Send me approval alerts"));
       wf.appendChild(wo); cw.appendChild(wf);
       var wb = el("button", { type: "button", class: "btn primary", id: "prefWaSave" }, "Save WhatsApp");
       wb.addEventListener("click", function () {
@@ -1528,6 +1549,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var wa = el("div", { class: "acts", style: "margin-top:12px" }); wa.appendChild(wb); cw.appendChild(wa); box.appendChild(cw);
     }
     /* appearance */
+    box = colR;
     var c2 = el("div", { class: "card pcard" }); c2.appendChild(el("h3", null, "Appearance"));
     c2.appendChild(prefRow("Mode", "Light, dark, or follow this device.", prefSeg(THEMES, p.theme, function (v) { pickPref({ theme: v }); }, "Mode")));
     var sw = el("div", { class: "swatches", role: "radiogroup", "aria-label": "Colour" });
@@ -1537,11 +1559,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     c2.appendChild(prefRow("Tables", "Compact fits more rows on screen.", prefSeg(DENS, p.density, function (v) { pickPref({ density: v }); }, "Tables")));
     c2.appendChild(el("p", { class: "sub", style: "margin:12px 0 0" }, "Only your screen changes. PDFs and Excel downloads always keep the standard KKSK format."));
     box.appendChild(c2);
-    var c4 = el("div", { class: "card pcard" }), sa = el("div", { class: "acts" }), sv = el("button", { type: "button", class: "btn primary", id: "prefSave" }, "Save");
+    box = colL;
+    var c4 = el("div", { style: "margin-top:16px;padding-top:14px;border-top:1px solid var(--line)" }), sa = el("div", { class: "acts" }), sv = el("button", { type: "button", class: "btn primary", id: "prefSave" }, "Save");
     sv.disabled = !S.prefDraft; sv.addEventListener("click", savePrefDraft); sa.appendChild(sv);
     if (S.prefDraft) { var dc = el("button", { type: "button", class: "btn" }, "Discard Changes"); dc.addEventListener("click", function () { dropPrefDraft(true); }); sa.appendChild(dc); }
     sa.appendChild(el("span", { class: "tsub", style: "align-self:center" }, S.prefDraft ? "Unsaved changes. Save to keep them on every device; leaving this page without saving goes back to your last saved look." : "Everything here is saved."));
-    c4.appendChild(sa); box.appendChild(c4);
+    c4.appendChild(sa); c2.appendChild(c4);
     /* password */
     if (window.bvAccount) {
       var c3 = el("div", { class: "card pcard" }); c3.appendChild(el("h3", null, "Password"));
@@ -2499,7 +2522,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function exitViewAs() {
     var a = S._adm; if (!a) return;
     if (S.tab === "Bills") { readCard(); doSave(); }
-    S.isAdmin = a.a; S.isSuper = a.s; S.isAppAdmin = a.p; S._adm = null; S.actId = ""; S.myUser = null; S.myReq = null; vaStore("");
+    S.isAdmin = a.a; S.isSuper = a.s; S.isAppAdmin = a.p; S._adm = null; S.actId = ""; S.myUser = null; S.myReq = null; vaStore(""); vaLookOff();
     document.body.classList.toggle("is-admin", !!S.isAdmin); vaApps(); if (window.bvPortal) window.bvPortal().then(function (p) { var ap = p.apps || {}; $("appsLink").hidden = !(APP_KEYS.concat(["wb"]).filter(function (k) { return ap[k]; }).length > 1); }, function () {});
     if (S.raw) applyScope(); invalidate(); renderAdminMe(); setTab(a.tab && a.tab !== "Accounts" ? a.tab : HOME_TAB);
   }
@@ -9450,7 +9473,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function acDur(ms) { if (ms == null) return ""; var m = Math.max(1, Math.round(ms / 6e4)); if (m < 60) return m + " min"; var h = Math.floor(m / 60); if (h < 24) return h + "h" + (m % 60 ? " " + (m % 60) + "m" : ""); var d = Math.floor(h / 24); return d + "d" + (h % 24 ? " " + (h % 24) + "h" : ""); }
   function acPeople() {
     var m = {};
-    var US = S.isAdmin ? S.users : S.chiefUsers || {};
+    var US = S.isAdmin || S._adm ? S.users : S.chiefUsers || {};
     Object.keys(US || {}).forEach(function (k) { m[k] = { id: k, name: US[k].name || "", u: US[k] }; });
     Object.keys(S.profiles || {}).forEach(function (k) { if (!m[k]) m[k] = { id: k, name: S.profiles[k].name || "", u: S.profiles[k] }; });
     Object.keys(S.admins || {}).forEach(function (k) { if (!m[k]) m[k] = { id: k, name: (S.admins[k] && S.admins[k].name) || userLabel(k) || "Admin", u: null }; });
@@ -9546,7 +9569,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var edit = sv && sv.last_edit ? Date.parse(sv.last_edit) : 0, act = Math.max(sv && sv.last_active ? Date.parse(sv.last_active) : 0, sv && sv.last_sign_in ? Date.parse(sv.last_sign_in) : 0, edit);
       var times = p.done.filter(function (d) { return d.ms != null; }).map(function (d) { return d.ms; });
       return { id: k, name: p.name, jobs: p.jobs.map(function (j) { return j === "admin" ? "Admin" : (JOBS.filter(function (x) { return x[0] === j; })[0] || [j, j])[1]; }), active: act, edit: edit, login: !!sv,
-        back: p.back,
+        back: p.back, jobKeys: p.jobs,
         canPend: ["billAcct", "vchAcct", "vendor", "payment", "cashGiven", "approval", "cashAppr"].some(function (kk) { return p.kinds[kk]; }),
         n: p.done.length, pendN: p.pend.length, oldest: p.pend.reduce(function (m0, d) { return Math.max(m0, d.age || 0); }, 0), by: by, avg: times.length ? times.reduce(function (s0, v) { return s0 + v; }, 0) / times.length : null, done: p.done, pend: p.pend };
     });
@@ -9568,7 +9591,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       });
       $("actQ").addEventListener("input", renderActivity);
     }
-    var all = activityRows(), rows = all.filter(function (r) { return (r.n || r.pendN || r.back.length) && (!q || (r.name + " " + r.jobs.join(" ")).toLowerCase().indexOf(q) >= 0); });
+    /* A Chief Accountant sees the accounting and finance team: accountants, Chief Accountants and financiers. */
+    var team = meChief() ? function (r) { return r.jobKeys.some(function (j) { return j === "accountant" || j === "chiefacct" || j === "financier"; }); } : function () { return true; };
+    $("actSub").textContent = meChief() ? "The accounting and finance team's work: what each person did, how long it took, and what is still waiting on them. Tap a person for the full detail." : "Each person's own work: what they did, how long it took, and what is still waiting on them. Tap a person for the full detail. Only admins and Chief Accountants can see this.";
+    var all = activityRows(), rows = all.filter(function (r) { return team(r) && (r.n || r.pendN || r.back.length) && (!q || (r.name + " " + r.jobs.join(" ")).toLowerCase().indexOf(q) >= 0); });
     AC.rows = all;
     if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, q ? "No one matches." : "No work done in this period, and nothing is waiting.")); return; }
     var none = AC.err ? "Couldn't load" : AC.srv ? "N/A" : "Loading…";

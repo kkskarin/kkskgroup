@@ -182,6 +182,14 @@ provides the same calls, so the app code did not need rewriting:
   name (or a new one, saved for next time); the entry counts as that person's, with `madeBy` recording the Voucher
   Maker. A Voucher Maker enters bills wherever they make vouchers. Companies (and vendors, ledgers) must be ticked as
   used in Bills & Vouchers. Sign-in check: migration 20261024150000.
+- **Cheque Templates and printing**: Masters › Cheque Templates (Renewable Energy and Finance; admins and financiers)
+  holds one template per cheque book in `chqtpl/*` (shared by Demo and Live): reference name, bank, the blank cheque
+  scanned on A4 as PDF (kept in storage under `cheques/`), where the cheque sits on the page (mm) and where the date
+  (digit boxes or DD-MM-YYYY), payee, amount in words (two lines), amount in figures and an optional "A/c Payee"
+  crossing go (mm from the cheque's top left), and the text size. A live preview draws a made-up payment on the scan;
+  fields can be dragged into place. In Payment Entry › Paid, a cheque payment has **Print Cheque**: pick the cheque
+  book, check the payee, and download an A4 PDF with only the text at those places (or a test print with the scan
+  behind). Print at 100%. The payment records when and with which template it was printed.
 - **Company order**: only the super admin can reorder companies (Masters › Companies).
 - **Slack approvals**: when a live checking report starts waiting or a cash advance is requested, the
   `approval-alert` Edge Function sends the named approver a Slack DM (found by their login email) with **Approve** and

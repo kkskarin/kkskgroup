@@ -547,6 +547,7 @@ h3{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var
   .t.roles label input{flex:none}
   .t.ob td.c-co{font-weight:700}
   .uresp{padding:0 16px 18px!important}
+@media (max-width:760px){.chqgrid{grid-template-columns:1fr!important}}
 /* Show Activity on phones: the work and pending breakdowns use the card's full width. */
 @media (max-width:760px){#actList td.actwide{grid-column:1/-1}#actList td.actwide .tsub{display:block}#actList td.actnone{display:none}}
   .t.roles .mob-lb{display:inline}
@@ -787,6 +788,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     </div>
     <div class="card uplog" id="lgmImp" hidden></div>
     <div id="lgmList"></div>
+  </section>
+  <section id="secCheques" hidden>
+    <div class="head"><div class="grow"><h2>Cheque Templates</h2><p class="sub">One template for each cheque book: the bank's blank cheque scanned on A4, where the cheque sits on the page, and where the date, payee, amount in words and figures go. The preview shows a made-up payment on the cheque. The financier prints cheques from Payment Entry.</p></div><div class="acts"><button class="btn primary" id="chqAdd" type="button">Add Template</button></div></div>
+    <div id="chqList"></div>
+    <div id="chqEdit" hidden></div>
   </section>
   <section id="secAcct" hidden>
     <div class="head"><div class="grow"><h2>Accounting</h2><p class="sub">Every submitted bill and voucher comes here first. Set the ledgers and TDS and account it; only then can it go into a checking report. Postpone it to come back later, or send it back with a note.</p></div></div>
@@ -1430,7 +1436,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var S = { ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secApr", "secArch"];
+  var VIEWS = ["secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1617,7 +1623,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var ACC_TABS = { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Statements"]] };
   var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Requests", "Advance Requests"], ["Advance Summary", "Advances"]] };
   /* Masters: its own heading. Companies first, then (Renewable Energy) Consumers and PPA Rates, then Vendors and Ledgers. */
-  var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], MASTERS[2]] : MASTERS };
+  /* Cheque Templates: where the financier pays (Renewable Energy pays its own; Finance pays the other divisions). */
+  var CHQ_TAB = ["Cheques", "Cheque Templates", 0, "m"];
+  var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], MASTERS[2], CHQ_TAB] : APP === "fin" ? MASTERS.concat([CHQ_TAB]) : MASTERS };
   var SET_ALL = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Activity", "Show Activity", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] };
   var NAV_BY_APP = {
     mnt: [REP_TABS, EXP_TABS, ACC_TABS, PAY_TABS, MAS_TABS, SET_ALL],
@@ -1641,7 +1649,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {
       var fo = finOnly();
-      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (meChief() && CHIEF_TABS[t[0]]) return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && st[0] !== "rec" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (TAB_STEP[t[0]] === "appr" && canDo("rec")) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
+      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (meChief() && CHIEF_TABS[t[0]]) return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[0] === "Cheques") return S.isAdmin || canDo("txn"); if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && st[0] !== "rec" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (TAB_STEP[t[0]] === "appr" && canDo("rec")) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
         /* The financier's Reports: Payables first, then Payments (Transactions showing payments only). */
         .map(function (t) { return fo && t[0] === "Transactions" ? [t[0], "Payments"] : t; }).sort(function (x, y) { return fo ? (x[0] === "Payables" ? -1 : y[0] === "Payables" ? 1 : 0) : 0; }) };
     }).filter(function (g) { return g.tabs.length; });
@@ -1741,6 +1749,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       return;
     }
     if (t === "Personalise") { renderPrefs(); show("secPrefs"); return; }
+    if (t === "Cheques") { CQ.id = null; CQ.D = null; renderCheques(); show("secCheques"); return; }
     if (t === "Users" && S.isAdmin) { renderUsers(); renderSupers(); show("secUsers"); }
     else if (t === "Change Log" && S.isAdmin) { auditSub(); renderAudit(); show("secAudit"); }
     else if (t === "Activity" && (S.isAdmin || meChief())) { if (dataReady()) { acLoad(); renderActivity(); show("secActivity"); } else show("vLoading"); }
@@ -7064,6 +7073,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Amount", cls: "r num", cell: function (t, td) { td.appendChild(el("b", null, curMoney(t.currency, t.amount))); } },
       { label: "Paid by", cell: function (t, td) { txt(td, modeText(t)); } },
       { label: "", kind: "act", cls: "r", cell: function (t, td) {
+          if (t.kind === "payment" && t.mode === "cheque" && (S.isAdmin || canStep("txn", t.companyId))) { var pc = el("button", { class: "btn sm", type: "button", style: "margin-bottom:6px" }, t.chequePrintedAt ? "Print Cheque Again" : "Print Cheque"); pc.addEventListener("click", function () { chequePrint(t); }); td.appendChild(pc); }
           if (txEditable(t)) {
             var w = el("div", { class: "acts" }), e = el("button", { class: "btn sm" }, "Edit"), u = el("button", { class: "btn sm danger" }, "Undo");
             e.addEventListener("click", function () { adminGate(t.createdAt, "payment", function () { txForm(null, t); }); }); u.addEventListener("click", function () { undoTx(t, u); });
@@ -10196,6 +10206,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       S.raw.vouchers = m; applyScope(); S.vcLoaded = true; onData();
     }, function (e) { S.vcLoaded = true; onData(); toast("Vouchers stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     S.db.collection("payees").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data() || {}; }); S.payees = m; }, function () {});
+    S.db.collection("chqtpl").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.chqtpl = m; if (S.tab === "Cheques" && !CQ.id && !$("secCheques").hidden) renderCheques(); }, function () {});
     S.db.collection("vpeople").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.vpeople = m; }, function () {});
     S.db.collection("cashadv").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var v = Object.assign({}, d.data() || {}); v.id = d.id; if (inDiv(v)) m[d.id] = v; });
@@ -10448,6 +10459,184 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ================= Reports › Ledgers ================= */
   var LGM = { side: "Indirect Expenses", busy: false };
+  /* ================= Cheque Templates (Masters) and cheque printing =================
+     A template is one cheque book: the bank's blank cheque scanned on A4 (PDF), where the cheque sits on the page (mm from
+     the page's top left), and where each field goes (mm from the cheque's top left). Printing writes only the text, at
+     those places on an A4 page, for the cheque laid on the printer as in the scan. */
+  var CQ = { id: null, D: null, busy: false, img: null, drag: null };
+  var CHQ_DEF = { area: { l: 0, t: 0, w: 203, h: 93 }, size: 11, f: { date: { x: 154, y: 8, gap: 5.1 }, payee: { x: 18, y: 21.5, w: 150 }, words: { x: 30, y: 30, w: 133, x2: 8, y2: 38.5 }, figures: { x: 157, y: 38 }, acpayee: { on: true, x: 8, y: 7 } } };
+  var CHQ_FIELDS = [["date", "Date"], ["payee", "Payee"], ["words", "Amount in words"], ["figures", "Amount in figures"], ["acpayee", "A/c Payee"]];
+  function chqCopy(t) { var d = JSON.parse(JSON.stringify(CHQ_DEF)); t = t || {}; if (t.area) Object.assign(d.area, t.area); if (t.size) d.size = t.size; Object.keys(d.f).forEach(function (k) { if (t.f && t.f[k]) Object.assign(d.f[k], t.f[k]); }); return { name: t.name || "", bank: t.bank || "", pad: t.pad || null, area: d.area, size: d.size, f: d.f }; }
+  function chqCan() { return S.isAdmin || canDo("txn"); }
+  /* Rupees in words, the Indian way (lakh, crore). */
+  function inrWords(n) {
+    var ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"], tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+    function two(x) { return x < 20 ? ones[x] : tens[Math.floor(x / 10)] + (x % 10 ? " " + ones[x % 10] : ""); }
+    function three(x) { return (x >= 100 ? ones[Math.floor(x / 100)] + " Hundred" + (x % 100 ? " " : "") : "") + (x % 100 ? two(x % 100) : ""); }
+    function whole(x) {
+      if (!x) return "Zero"; var out = [], cr = Math.floor(x / 1e7); x %= 1e7;
+      if (cr) out.push(whole(cr) + " Crore"); var lk = Math.floor(x / 1e5); x %= 1e5; if (lk) out.push(two(lk) + " Lakh");
+      var th = Math.floor(x / 1e3); x %= 1e3; if (th) out.push(two(th) + " Thousand"); if (x) out.push(three(x)); return out.join(" ");
+    }
+    n = Math.round((Number(n) || 0) * 100); var r = Math.floor(n / 100), p = n % 100;
+    return "Rupees " + whole(r) + (p ? " and " + two(p) + " Paise" : "") + " Only";
+  }
+  /* The text each field shows, for a payment (or the made-up one). */
+  function chqTexts(pay) {
+    var d = String(pay.date || todayYmd()), dm = d.slice(8, 10) + d.slice(5, 7) + d.slice(0, 4);
+    return { date: dm, payee: pay.payee || "", words: inrWords(pay.amount), figures: (Number(pay.amount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/-", acpayee: "A/c Payee" };
+  }
+  var CHQ_SAMPLE = { payee: "Sri Murugan Transports", amount: 123456.75, date: "" };
+  /* Lays the words over one or two lines within their widths; measure gives a string's width in mm. */
+  function chqWordLines(T, words, measure) {
+    var w1 = T.f.words.w, parts = words.split(" "), l1 = "", i = 0;
+    for (; i < parts.length; i++) { var tryL = (l1 ? l1 + " " : "") + parts[i]; if (measure(tryL) > w1 && l1) break; l1 = tryL; }
+    return [l1, parts.slice(i).join(" ")];
+  }
+  /* Draws the made-up payment on the scan, cut to the cheque. Returns the field boxes (in mm) for dragging. */
+  function chqDraw(cv, T, img) {
+    var W = cv.width, k = W / T.area.w, H = Math.round(T.area.h * k); if (cv.height !== H) cv.height = H;
+    var g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+    if (img) { var ppm = img.height / 297; g.drawImage(img, T.area.l * ppm, T.area.t * ppm, T.area.w * ppm, T.area.h * ppm, 0, 0, W, H); }
+    else { g.strokeStyle = "#cbd5d0"; g.strokeRect(1, 1, W - 2, H - 2); g.fillStyle = "#94a3a0"; g.font = Math.round(14) + "px sans-serif"; g.fillText("Upload the scan to see the cheque here", 16, 28); }
+    var px = T.size * 0.3528 * k, tx = chqTexts(CHQ_SAMPLE), boxes = {};
+    g.fillStyle = "#1a2a6c"; g.font = "600 " + px + "px Jost, sans-serif"; g.textBaseline = "alphabetic";
+    function mm(s) { return g.measureText(s).width / k; }
+    function put(key, s, x, y) { g.fillText(s, x * k, y * k); var b = boxes[key] || { x1: 1e9, y1: 1e9, x2: -1e9, y2: -1e9 }; b.x1 = Math.min(b.x1, x); b.y1 = Math.min(b.y1, y - T.size * 0.3528); b.x2 = Math.max(b.x2, x + mm(s)); b.y2 = Math.max(b.y2, y + 1); boxes[key] = b; }
+    var f = T.f;
+    if (Number(f.date.gap) > 0) tx.date.split("").forEach(function (c, i) { put("date", c, f.date.x + i * f.date.gap, f.date.y); }); else put("date", tx.date.slice(0, 2) + "-" + tx.date.slice(2, 4) + "-" + tx.date.slice(4), f.date.x, f.date.y);
+    put("payee", tx.payee, f.payee.x, f.payee.y);
+    var wl = chqWordLines(T, tx.words, mm); put("words", wl[0], f.words.x, f.words.y); if (wl[1]) put("words2", wl[1], f.words.x2, f.words.y2);
+    put("figures", tx.figures, f.figures.x, f.figures.y);
+    if (f.acpayee.on) { put("acpayee", tx.acpayee, f.acpayee.x, f.acpayee.y); g.strokeStyle = "#1a2a6c"; g.lineWidth = 1; var b = boxes.acpayee; g.beginPath(); g.moveTo(b.x1 * k, (b.y1 - 1) * k); g.lineTo(b.x2 * k, (b.y1 - 1) * k); g.moveTo(b.x1 * k, (b.y2 + 0.5) * k); g.lineTo(b.x2 * k, (b.y2 + 0.5) * k); g.stroke(); }
+    return boxes;
+  }
+  function renderCheques() {
+    var list = $("chqList"), ed = $("chqEdit"); $("chqAdd").hidden = !chqCan() || !!CQ.id;
+    if (CQ.id) { list.hidden = true; ed.hidden = false; return renderChequeEdit(); }
+    list.hidden = false; ed.hidden = true; ed.textContent = "";
+    var rows = Object.keys(S.chqtpl || {}).map(function (k) { return S.chqtpl[k]; }).filter(function (t) { return t.active !== false; }).sort(function (a, b) { return natCmp(a.name, b.name); });
+    if (!rows.length) { list.textContent = ""; list.appendChild(el("div", { class: "card empty" }, "No cheque templates yet. Add one for each cheque book: scan a blank cheque on A4 and upload it.")); return; }
+    var box = el("div", { class: "card list" }); list.textContent = ""; list.appendChild(box);
+    sortTable(box, "chqList", [
+      { label: "Reference Name", kind: "co", cell: function (t, td) { td.appendChild(el("b", null, t.name)); } },
+      { label: "Bank", cell: function (t, td) { txt(td, t.bank || ""); } },
+      { label: "Scan", cell: function (t, td) { if (t.pad) td.appendChild(solFileBtn(t.pad)); else txt(td, "Not uploaded"); } },
+      { label: "", kind: "act", cls: "r", cell: function (t, td) { if (!chqCan()) return; var b = el("button", { class: "btn sm" }, "Edit"); b.addEventListener("click", function () { CQ.id = t.id; CQ.D = null; renderCheques(); }); td.appendChild(b); } }
+    ], rows, {});
+  }
+  function renderChequeEdit() {
+    var ed = $("chqEdit"), t = CQ.id === "new" ? null : (S.chqtpl || {})[CQ.id]; if (!CQ.D) { CQ.D = chqCopy(t); CQ.img = null; }
+    var T = CQ.D; ed.textContent = "";
+    var top = el("div", { class: "head" }), bk = el("button", { class: "link-btn", type: "button" }, "Back to Cheque Templates"); bk.addEventListener("click", function () { CQ.id = null; CQ.D = null; renderCheques(); });
+    var hw = el("div", { class: "grow" }); hw.appendChild(bk); hw.appendChild(el("h2", null, t ? "Edit " + t.name : "New Cheque Template")); top.appendChild(hw); ed.appendChild(top);
+    var grid = el("div", { style: "display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;align-items:start", class: "chqgrid" }), L = el("div", { class: "card pcard" }), R = el("div", { class: "card pcard", style: "position:sticky;top:12px" });
+    grid.appendChild(L); grid.appendChild(R); ed.appendChild(grid);
+    var f = el("div", { class: "form", style: "padding:0" });
+    var nm = inp("cqName", T.name, { maxlength: "60", "data-fmt": "name" }), bn = inp("cqBank", T.bank, { maxlength: "60", "data-fmt": "name" });
+    f.appendChild(fld("Reference Name", nm, "How the financier picks it, e.g. \"HDFC current account\".")); f.appendChild(fld("Bank Name", bn));
+    nm.addEventListener("input", function () { T.name = nm.value; }); bn.addEventListener("input", function () { T.bank = bn.value; });
+    var sw = el("div", { class: "f wide" }); sw.appendChild(el("span", { class: "lb" }, "Cheque scan (A4 PDF)"));
+    var sr = el("div", { class: "acts", style: "align-items:center" }), fi = el("input", { type: "file", accept: "application/pdf", hidden: "" }), ub = el("button", { type: "button", class: "btn sm" }, T.pad ? "Replace Scan" : "Upload Scan");
+    if (T.pad) { sr.appendChild(el("span", null, T.pad.name || "cheque.pdf")); sr.appendChild(solFileBtn(T.pad)); }
+    ub.addEventListener("click", function () { fi.click(); }); fi.addEventListener("change", function () { var file = fi.files && fi.files[0]; fi.value = ""; if (file) chqUpload(file, T, ub); });
+    sr.appendChild(ub); sr.appendChild(fi); sw.appendChild(sr); sw.appendChild(el("span", { class: "hint" }, "Scan one blank cheque on A4, at 100% (no fit to page), and save it as PDF.")); f.appendChild(sw);
+    L.appendChild(f);
+    /* dimensions */
+    function num2(v) { var n = Number(String(v).replace(/[^0-9.]/g, "")); return isFinite(n) ? n : 0; }
+    function numIn(id, get, set, hint) { var i = inp(id, String(get()), { inputmode: "decimal", class: "field num" }); i.addEventListener("input", function () { set(num2(i.value)); draw(); }); return fld(hint, i); }
+    function group(title, items) { var g = el("div", { style: "margin-top:14px" }); g.appendChild(el("b", null, title)); var gr = el("div", { style: "margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px" }); items.forEach(function (x) { gr.appendChild(x); }); g.appendChild(gr); L.appendChild(g); }
+    group("Where the cheque sits on the A4 page (mm)", [numIn("cqAl", function () { return T.area.l; }, function (v) { T.area.l = v; }, "From left"), numIn("cqAt", function () { return T.area.t; }, function (v) { T.area.t = v; }, "From top"), numIn("cqAw", function () { return T.area.w; }, function (v) { T.area.w = v || 1; }, "Cheque width"), numIn("cqAh", function () { return T.area.h; }, function (v) { T.area.h = v || 1; }, "Cheque height")]);
+    group("Text", [numIn("cqSz", function () { return T.size; }, function (v) { T.size = v || 11; }, "Size (pt)")]);
+    L.appendChild(el("p", { class: "hint", style: "margin:14px 0 0" }, "Fields, in mm from the cheque's top left (to the start of the text's baseline). Drag them on the preview, or type."));
+    group("Date", [numIn("cqDx", function () { return T.f.date.x; }, function (v) { T.f.date.x = v; }, "Across"), numIn("cqDy", function () { return T.f.date.y; }, function (v) { T.f.date.y = v; }, "Down"), numIn("cqDg", function () { return T.f.date.gap; }, function (v) { T.f.date.gap = v; }, "Box spacing (0 = DD-MM-YYYY)")]);
+    group("Payee", [numIn("cqPx", function () { return T.f.payee.x; }, function (v) { T.f.payee.x = v; }, "Across"), numIn("cqPy", function () { return T.f.payee.y; }, function (v) { T.f.payee.y = v; }, "Down"), numIn("cqPw", function () { return T.f.payee.w; }, function (v) { T.f.payee.w = v; }, "Width")]);
+    group("Amount in words", [numIn("cqWx", function () { return T.f.words.x; }, function (v) { T.f.words.x = v; }, "Across"), numIn("cqWy", function () { return T.f.words.y; }, function (v) { T.f.words.y = v; }, "Down"), numIn("cqWw", function () { return T.f.words.w; }, function (v) { T.f.words.w = v; }, "First line width"), numIn("cqWx2", function () { return T.f.words.x2; }, function (v) { T.f.words.x2 = v; }, "Second line across"), numIn("cqWy2", function () { return T.f.words.y2; }, function (v) { T.f.words.y2 = v; }, "Second line down")]);
+    group("Amount in figures", [numIn("cqFx", function () { return T.f.figures.x; }, function (v) { T.f.figures.x = v; }, "Across"), numIn("cqFy", function () { return T.f.figures.y; }, function (v) { T.f.figures.y = v; }, "Down")]);
+    var ac = el("label", { class: "check", style: "margin-top:14px" }), acb = el("input", { type: "checkbox", id: "cqAc" }); acb.checked = !!T.f.acpayee.on; ac.appendChild(acb); ac.appendChild(document.createTextNode(" Print \"A/c Payee\" crossing")); L.appendChild(ac);
+    acb.addEventListener("change", function () { T.f.acpayee.on = acb.checked; draw(); });
+    group("A/c Payee", [numIn("cqCx", function () { return T.f.acpayee.x; }, function (v) { T.f.acpayee.x = v; }, "Across"), numIn("cqCy", function () { return T.f.acpayee.y; }, function (v) { T.f.acpayee.y = v; }, "Down")]);
+    var foot = el("div", { class: "form-foot" }), sv = el("button", { class: "btn primary", type: "button", id: "cqSave" }, "Save Template"), cn = el("button", { class: "btn", type: "button" }, "Cancel");
+    sv.addEventListener("click", saveChequeTpl); cn.addEventListener("click", function () { CQ.id = null; CQ.D = null; renderCheques(); }); foot.appendChild(sv); foot.appendChild(cn);
+    if (t) { var rm = el("button", { class: "btn danger", type: "button" }, "Remove"); rm.addEventListener("click", function () { if (rm.getAttribute("data-arm") !== "1") { rm.setAttribute("data-arm", "1"); rm.textContent = "Click again to remove"; return; } retry(function () { return S.db.doc("chqtpl/" + t.id).update({ active: false, updatedAt: Date.now(), updatedBy: meId() }); }).then(function () { toast("Template removed."); CQ.id = null; CQ.D = null; renderCheques(); }, function (e) { toast(explain(e)); }); }); foot.appendChild(rm); }
+    L.appendChild(foot);
+    /* preview */
+    R.appendChild(el("h3", null, "Preview")); R.appendChild(el("p", { class: "sub", style: "margin:0 0 10px" }, "A made-up payment of ₹ " + chqTexts(CHQ_SAMPLE).figures.replace("/-", "") + " to " + CHQ_SAMPLE.payee + ", dated today, on your cheque. Drag any field to move it."));
+    var cv = el("canvas", { id: "cqCanvas", width: "900", height: "400", style: "width:100%;height:auto;border:1px solid var(--line);border-radius:8px;touch-action:none;cursor:grab;background:#fff" }); R.appendChild(cv);
+    var boxes = {};
+    function draw() { boxes = chqDraw(cv, T, CQ.img); }
+    function sync() { [["cqDx", T.f.date.x], ["cqDy", T.f.date.y], ["cqPx", T.f.payee.x], ["cqPy", T.f.payee.y], ["cqWx", T.f.words.x], ["cqWy", T.f.words.y], ["cqWx2", T.f.words.x2], ["cqWy2", T.f.words.y2], ["cqFx", T.f.figures.x], ["cqFy", T.f.figures.y], ["cqCx", T.f.acpayee.x], ["cqCy", T.f.acpayee.y]].forEach(function (x) { if ($(x[0])) $(x[0]).value = String(Math.round(x[1] * 10) / 10); }); }
+    function at(e) { var r = cv.getBoundingClientRect(), k = (r.width / T.area.w); return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k }; }
+    cv.addEventListener("pointerdown", function (e) {
+      var p0 = at(e), hit = Object.keys(boxes).filter(function (k) { var b = boxes[k]; return p0.x >= b.x1 - 2 && p0.x <= b.x2 + 2 && p0.y >= b.y1 - 2 && p0.y <= b.y2 + 2; })[0]; if (!hit) return;
+      var key = hit === "words2" ? "words2" : hit, fld0 = key === "words2" ? T.f.words : T.f[key], ox = key === "words2" ? fld0.x2 : fld0.x, oy = key === "words2" ? fld0.y2 : fld0.y;
+      CQ.drag = { key: key, p0: p0, ox: ox, oy: oy }; cv.setPointerCapture(e.pointerId); cv.style.cursor = "grabbing";
+    });
+    cv.addEventListener("pointermove", function (e) {
+      var d = CQ.drag; if (!d) return; var p = at(e), nx = Math.max(0, d.ox + p.x - d.p0.x), ny = Math.max(0, d.oy + p.y - d.p0.y);
+      if (d.key === "words2") { T.f.words.x2 = nx; T.f.words.y2 = ny; } else { T.f[d.key].x = nx; T.f[d.key].y = ny; } draw(); sync();
+    });
+    cv.addEventListener("pointerup", function () { CQ.drag = null; cv.style.cursor = "grab"; });
+    draw();
+    if (T.pad && !CQ.img) padImage(T.pad).then(function (u) { if (!u) return; var im = new Image(); im.onload = function () { CQ.img = im; draw(); }; im.src = u; });
+  }
+  /* The scan must be an A4 PDF; it is kept in the files store. */
+  function chqUpload(f, T, btn) {
+    if (fileType(f) !== "application/pdf") { toast("Choose the scan as a PDF."); return; }
+    if (!window.bvFiles) { toast("Files can't be kept here."); return; }
+    var lb = btn.textContent; btn.disabled = true; btn.textContent = "Checking";
+    openPdf(f).then(function (pdf) { return pdf.getPage(1); }).then(function (pg) {
+      var v = pg.getViewport({ scale: 1 }); if (Math.abs(v.width - 595.28) > 12 || Math.abs(v.height - 841.89) > 12) throw { kind: "size", w: Math.round(v.width / 72 * 25.4), h: Math.round(v.height / 72 * 25.4) };
+      var path = (S.mode === "demo" ? "demo" : "live") + "/cheques/" + (CQ.id || "new") + "/" + Date.now().toString(36) + "-" + fileSafeName(f.name);
+      return window.bvFiles.put(path, f, "application/pdf").then(function () { return path; });
+    }).then(function (path) {
+      T.pad = { path: path, name: str(f.name, 160), type: "application/pdf", size: f.size || 0, at: Date.now(), by: meId() }; CQ.img = null;
+      toast("Scan uploaded. Check the preview, then save."); renderChequeEdit();
+    }, function (e) { btn.disabled = false; btn.textContent = lb; toast(e && e.kind === "size" ? "The scan is " + e.w + " × " + e.h + " mm. It must be A4 (210 × 297 mm), portrait." : "The scan couldn't be uploaded. Try again."); });
+  }
+  function saveChequeTpl() {
+    var T = CQ.D; if (!T || CQ.busy) return; T.name = $("cqName").value.trim(); T.bank = $("cqBank").value.trim();
+    if (!T.name) { errOn("cqName", "Enter a reference name."); return; } if (!T.bank) { errOn("cqBank", "Enter the bank name."); return; }
+    if (!T.pad) { toast("Upload the cheque scan first."); return; }
+    var now = Date.now(), id = CQ.id === "new" ? newId("cq") : CQ.id, old = (S.chqtpl || {})[id];
+    var doc = { name: smartCase(T.name), bank: smartCase(T.bank), pad: T.pad, area: T.area, size: T.size, f: T.f, active: true, updatedAt: now, updatedBy: meId() };
+    if (!old) Object.assign(doc, { createdAt: now, createdBy: meId() });
+    CQ.busy = true; $("cqSave").disabled = true;
+    retry(function () { return old ? S.db.doc("chqtpl/" + id).update(doc) : S.db.doc("chqtpl/" + id).set(doc); }).then(function () { toast("Cheque template saved."); CQ.id = null; CQ.D = null; renderCheques(); }, function (e) { toast(explain(e)); }).then(function () { CQ.busy = false; if ($("cqSave")) $("cqSave").disabled = false; });
+  }
+  /* Print a cheque for a recorded cheque payment: pick the template, check the payee, get an A4 PDF to print on the cheque. */
+  function chequePrint(t) {
+    var tpls = Object.keys(S.chqtpl || {}).map(function (k) { return S.chqtpl[k]; }).filter(function (x) { return x.active !== false && x.pad; }).sort(function (a, b) { return natCmp(a.name, b.name); });
+    if (!tpls.length) { toast("Add a cheque template first (Masters › Cheque Templates)."); return; }
+    var v = S.vendors[t.vendorId], body = el("div", { class: "mform" });
+    var sel = el("select", { class: "field", id: "cpTpl" }); fillSelect(sel, tpls.map(function (x) { return [x.id, x.name + " · " + x.bank]; }), t.chequeTpl || (tpls[0] || {}).id); body.appendChild(fld("Cheque book", sel));
+    body.appendChild(fld("Pay to", inp("cpPayee", (v && (v.chequeName || v.name)) || t.payee || "", { maxlength: "90" }), "As it should read on the cheque."));
+    body.appendChild(el("p", { class: "sub" }, money(t.amount) + " · dated " + fmtDate(t.date) + (t.ref ? " · cheque no. " + t.ref : "")));
+    var tl = el("label", { class: "check" }), tc = el("input", { type: "checkbox", id: "cpTest" }); tl.appendChild(tc); tl.appendChild(document.createTextNode(" Test print: put the scan behind the text (for checking alignment on plain paper)")); body.appendChild(tl);
+    popForm("Print Cheque", "The PDF is A4 with only the cheque's text. Place the cheque on the printer as it sat in the scan, and print at 100% (actual size).", body, "Download PDF", function () {
+      var tp = S.chqtpl[$("cpTpl").value], payee = $("cpPayee").value.trim(); if (!payee) { errOn("cpPayee", "Enter the payee."); return false; }
+      return chequePdf(tp, { payee: payee, amount: t.amount, date: t.date }, $("cpTest").checked).then(function () {
+        S.db.doc("transactions/" + t.id).update({ chequePrintedAt: Date.now(), chequePrintedBy: meId(), chequeTpl: tp.id }).catch(function () {});
+      });
+    });
+  }
+  function chequePdf(tp, pay, withScan) {
+    if (!S.downloads) { toast("Downloads aren't available here."); return Promise.resolve(); }
+    var T = chqCopy(tp), doc;
+    return Promise.all([loadScript(JSPDF), withScan ? padImage(T.pad) : null]).then(function (r) {
+      var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
+      doc = newPdf(jsPDF); var P = 72 / 25.4, ox = T.area.l, oy = T.area.t, f = T.f, tx = chqTexts(pay);
+      if (r[1]) doc.addImage(r[1], "JPEG", 0, 0, 210 * P, 297 * P);
+      doc.setFontSize(T.size); doc.setTextColor(0, 0, 0);
+      function put(s, x, y) { doc.text(s, (ox + x) * P, (oy + y) * P); }
+      if (Number(f.date.gap) > 0) tx.date.split("").forEach(function (c, i) { put(c, f.date.x + i * f.date.gap, f.date.y); }); else put(tx.date.slice(0, 2) + "-" + tx.date.slice(2, 4) + "-" + tx.date.slice(4), f.date.x, f.date.y);
+      put(tx.payee, f.payee.x, f.payee.y);
+      var wl = chqWordLines(T, tx.words, function (s) { return doc.getTextWidth(s) / P; }); put(wl[0], f.words.x, f.words.y); if (wl[1]) put(wl[1], f.words.x2, f.words.y2);
+      put(tx.figures, f.figures.x, f.figures.y);
+      if (f.acpayee.on) { var w = doc.getTextWidth(tx.acpayee) / P, hgt = T.size * 0.3528; put(tx.acpayee, f.acpayee.x, f.acpayee.y); doc.setLineWidth(0.6); doc.line((ox + f.acpayee.x) * P, (oy + f.acpayee.y - hgt - 1) * P, (ox + f.acpayee.x + w) * P, (oy + f.acpayee.y - hgt - 1) * P); doc.line((ox + f.acpayee.x) * P, (oy + f.acpayee.y + 1.5) * P, (ox + f.acpayee.x + w) * P, (oy + f.acpayee.y + 1.5) * P); }
+      return S.downloads.save({ filename: "Cheque " + safeName(pay.payee) + " " + String(pay.date || "") + (withScan ? " TEST" : "") + ".pdf", data: doc.output("blob") });
+    }).then(function () { toast("Cheque PDF ready. Print it at 100% (actual size)."); }, function (e) { var k = e && (e.code || e.kind); toast(k === "declined" ? "Download cancelled." : "The cheque PDF couldn't be made. Try again."); });
+  }
   function renderLedgers() {
     if (IMP.busy) return; /* an upload redraws once it is done */
     var sel = $("lgmCo"), cur = sel.value;
@@ -12186,6 +12375,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var keep = {}; Array.prototype.forEach.call(document.querySelectorAll("#uOb input"), function (i) { keep[i.id] = i.value; });
       renderUserOpenings(S.userEditing.balUid || S.userEditing.uid, cos); Object.keys(keep).forEach(function (k) { if ($(k)) $(k).value = keep[k]; }); });
     $("mkCo").addEventListener("change", renderMark);
+    $("chqAdd").addEventListener("click", function () { CQ.id = "new"; CQ.D = null; renderCheques(); });
     $("mkTabPay").addEventListener("click", function () { MK.view = "pay"; renderMark(); }); $("mkTabDone").addEventListener("click", function () { MK.view = "done"; renderMark(); }); $("mkQ").addEventListener("input", renderDoneTx);
     $("secMark").addEventListener("focusout", function () { setTimeout(function () { var ae = document.activeElement; if (MK.stale && !(ae && $("secMark").contains(ae) && ae.tagName === "INPUT")) renderMark(); }, 0); });
     $("secPlanPay").addEventListener("focusout", function () { setTimeout(function () { var ae = document.activeElement; if (PP.stale && !(ae && $("secPlanPay").contains(ae) && ae.tagName === "INPUT")) { PP.stale = false; renderPlanning(); } }, 0); });
@@ -12299,7 +12489,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* ---- Demo and Live: admins can switch; everyone else always works in Live. The set-up (people, admins, access requests,
      companies, locations, departments, ledgers, preferences) is shared; entries are kept apart. ---- */
-  var NS_SHARED = { users: 1, admins: 1, requests: 1, companies: 1, locations: 1, departments: 1, ledgers: 1, prefs: 1 };
+  var NS_SHARED = { users: 1, admins: 1, requests: 1, companies: 1, locations: 1, departments: 1, ledgers: 1, prefs: 1, chqtpl: 1 };
   function nsPath(p) { if (S.mode !== "demo") return p; var top = String(p).split("/")[0]; return NS_SHARED[top] ? p : "demo__" + p; }
   function nsDb(db) { return { doc: function (p) { return db.doc(nsPath(p)); }, collection: function (p) { return db.collection(nsPath(p)); } }; }
   function modeKey() { return "bv_mode_" + ((S.me && S.me.id) || ""); }

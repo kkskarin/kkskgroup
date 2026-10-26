@@ -2286,8 +2286,8 @@ async function authSubmit(mode){
       const f=userByName(name);if(!f||f.u.role!=="admin")return authErr("No admin account has that username.");
       await db.doc("appusers/"+f.id).set(Object.assign({},f.u,{salt,hash,disabled:false,disabledAt:null,fails:[],updatedAt:now}));authMode="";startSession(f.u.username);return;
     }
-    // While the app is shut after a wipe, an admin reopens it with their own username and the destroy password.
-    if(dormant()){const a=userByName(name);if(a&&a.u.role==="admin"&&!a.u.disabled&&await isDestroyPw(pw)){
+    // While the app is shut after a wipe, an admin reopens it with their own username and the reset password.
+    if(dormant()){const a=userByName(name);if(a&&a.u.role==="admin"&&!a.u.disabled&&await isResetPw(pw)){
       /* restart: whatever cooked-up records are still there go first, so the app starts empty */
       $("#authBody").innerHTML='<h2 class="auth-title">Please wait…</h2><p class="auth-sub" id="wipeProg">Clearing</p>';$("#authBody").dataset.mode="restart";
       try{await sweepWiped(()=>{$("#wipeProg").textContent="Clearing…"})}catch(_){$("#authBody").dataset.mode="";renderAuth();return authErr("Couldn't finish clearing. Check your connection and sign in again.")}
@@ -2400,10 +2400,10 @@ $("#userList").addEventListener("click",async e=>{
 /* ---------- safeguard (destroy command) ----------
    Signing in as the safeguard account asks for its password a second time, then overwrites every record (loads,
    assortments, cost sheets, origins, grades, RH sizes) with a cooked-up stand-in and removes it. The app then shows
-   an error page to everyone. Any admin restarts it by signing in with their own username and the safeguard
+   an error page to everyone. Any admin restarts it by signing in with their own username and the reset
    password: every cooked-up leftover is removed first, so the app starts from scratch; nothing real comes back.
    Sign-in accounts are kept. Only hashes of the safeguard username and password are in this page. */
-const DSALT="kksk-destroy-v1",DU="65a4958053067ecaeab9aff4afab793717f254570e08501a1ea8c474ebc7359c",DP="dbf789fdf41e04aca377ff78fd35f0fb7c027db05aa2a666b1141238e40cc3ed";
+const DSALT="kksk-destroy-v1",DU="65a4958053067ecaeab9aff4afab793717f254570e08501a1ea8c474ebc7359c",DP="8b6affa5a45f1ae8eead505ee45af63cda64be92bda142366791c451d137fa4b",RP="1ffd5b158bc50999b5044638d8e264efd9fe8d866d03b4d2fd443f66c8c484fe";
 const WIPE_COLS=["unloadings","assortments","costsheets","origins","grades","rhsizes"],WSEEN="rhc-wipe-seen";
 /* A cooked-up stand-in for a record: the same field names with made-up codes, numbers and dates, so what is stored
    last looks like a real record but tells nothing true. Each record is overwritten with one of these before it is removed. */
@@ -2468,7 +2468,8 @@ function onMeta(){
   renderUsers();
 }
 function dormant(){return!!(appMeta.wipe&&appMeta.wipe.dormant)}
-async function isDestroyPw(pw){return(await hashPw(pw,DSALT))===DP}
+async function isDestroyPw(pw){const h=await hashPw(pw,DSALT);return h===DP||h===RP}
+async function isResetPw(pw){return(await hashPw(pw,DSALT))===RP}
 /* A plain error page. Shown after a wipe, and to every sign-in until the admin reopens the app. */
 let errShown=false;
 function errorPage(){

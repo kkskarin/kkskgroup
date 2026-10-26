@@ -289,8 +289,12 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   Energy" in Users, at present Prabhu; a company they add is put on their own user record with the steps they hold on
   their other companies, never approving, through `claim_created_company()`): each Renewable Energy company has a generator type (solar or windmill), its
   capacity in MW (AC for solar; the DC figure is worked out as panels × capacity per panel), and its generator HTSCs
-  (transformers), each with a location and either its inverters, with the solar panels under each inverter (make, number,
-  kW per panel), or its windmills (make, capacity); at least one HTSC finishes setting it up. Makes typed before are offered
+  (transformers), each with a site (printed on the invoice), a **location** (a district, from the Locations list) and a
+  **region** (an area of that district, `regions/*` `{name, locId}`, shared; the list is filtered by the location; both are
+  added from the dropdown's "+ Add new", typed once), and either its inverters, each with its **SEI ID**, with the solar
+  panels under each inverter (make, number, kW per panel), or its windmills, each with its **WEG ID** (make, capacity); at
+  least one HTSC finishes setting it up. Every WEG / SEI ID is required and belongs to one transformer only (checked across
+  companies). Makes typed before are offered
   again (separate lists for windmills, inverters and panels). The invoice is set up as **pages** (by default Covering letter, Original for Recipient,
   Triplicate for Supplier; pages can be added, removed, renamed and reordered). Each page has three parts, side by side:
   (1) the wording, in a box the size of the space inside the margins and laid over the letterpad, with a toolbar (undo/redo,
@@ -335,6 +339,14 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   month: submitted bills, proformas and imports until their final tax bill comes (then the bill counts), and cash vouchers;
   cash advances are not counted (the vouchers paid from them are). C is not split by consumer, so it is hidden while
   consumers are filtered.
+- **Cost centres**: a company, its transformers and their WEG / SEI IDs. Every bill and voucher of a company with
+  transformers asks "Where is this expense from?": the company in general, a transformer, or a WEG / SEI ID (its
+  transformer is filled in by itself); saved as `cc` (`""`, `t:<HTSC>` or `u:<ID>`) and `ccT` (the transformer). Entries of
+  other divisions (Maintenance & Civil, Bills & Vouchers) tagged to a transformer or ID count in the Renewable Energy P&L
+  too. **P&L › Profit by cost centre** (same filters) shows A − B, C and profit by company, transformer, WEG / SEI ID,
+  location or region; income is known per transformer from each bill of supply's lines and is not split to WEG / SEI IDs
+  yet (those rows show expenses); transformers roll up to region and location, and company-wide expenses show on a row of
+  their own. Excel has a sheet per view.
 - Tabs in Renewable Energy: Reports (Transactions, Payables, P&L), Sales (Monthly Billing, Invoices), Expenses
   (bills, proformas, imports, vouchers and their checking reports, cash advances), Accounts, Payments, Masters (Companies,
   Consumers, PPA Rates, Vendors, Ledgers), Settings.

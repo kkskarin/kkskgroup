@@ -191,6 +191,21 @@ provides the same calls, so the app code did not need rewriting:
   preview draws a made-up payment on the scan, in black; fields can be dragged into place. Everything prints in black. In Payment Entry › Paid, a cheque payment has **Print Cheque**: pick the cheque
   book, check the payee, and download an A4 PDF with only the text at those places (or a test print with the scan
   behind). Print at 100%. The payment records when and with which template it was printed.
+- **Bank accounts** (Masters › Bank Accounts, Renewable Energy and Finance; admins and financiers): `bankacct/*` (shared by
+  Demo and Live) with company, reference name, bank, branch, city, account number, IFSC; one default per company and a
+  default cheque book per account. Cheque templates are cheque books: each is linked to a bank account and keeps only the
+  first, last and last-used numbers (next = last used + 1; a warning at 5 leaves left, never a block; gaps are fine).
+- **Payment Entry: Plan for Payment / Already Paid.** "To pay" opens on **Plan for Payment**: per company (its bank
+  account and cheque book, defaults filled in), per payee (vendor, or voucher payee), every approved item by due date with
+  a tick and the amount to pay now (part payments leave the rest). Per payee: Cheque, NEFT/RTGS or Cash, and A/c Payee
+  (ticked per payment; always on for NEFT/RTGS). "Select all" and **Print Cheques for All Selected** give one cheque per
+  payee, numbered on from each cheque book (editing one number renumbers the ones after it), one PDF with a page per cheque,
+  and record the payments (`cheques/*` with number, date, payee, amount, A/c Payee, status; each payment carries
+  `chequeId`, `bankAcctId`, `chequeTpl`; a vendor's payment is set against the ticked bills in `billAlloc`). NEFT/RTGS
+  takes a cheque number too; Cash is recorded (under ₹10,000 a payee a day). **Already Paid** is the one-line entry for
+  payments made outside the app: Cheque or NEFT/RTGS (cheque number), Net banking (transaction ID), Credit card, Cash
+  (SWIFT for foreign currency). In Paid, a planned cheque has **Print Again** and **Cancel Cheque** (with a reason): the
+  cheque and its payments are marked cancelled (kept, never counted) and the bills return to Plan for Payment.
 - **Company order**: only the super admin can reorder companies (Masters › Companies).
 - **Slack approvals**: when a live checking report starts waiting or a cash advance is requested, the
   `approval-alert` Edge Function sends the named approver a Slack DM (found by their login email) with **Approve** and

@@ -793,6 +793,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <div class="head"><div class="grow"><h2>Bank Accounts</h2><p class="sub">Each company's bank accounts. One is the company's default, and each account has a default cheque book; both fill in when paying and can be changed. The bank's name, city and account number also go on the salary covering letter.</p></div><div class="acts"><button class="btn primary" id="bankAdd" type="button">Add Bank Account</button></div></div>
     <div id="bankList"></div>
   </section>
+  <section id="secSalary" hidden>
+    <div class="head"><div class="grow"><h2>Salary</h2><p class="sub">Each company's staff list (people or firms, with their bank details and salary) and the salary for each month, which opens filled in from the month before. Issuing prints one cheque "Yourselves for NEFT" for the total on the default account's default cheque book, a covering letter to the branch on the letterpad and the staff list, and records it as a cheque payment.</p></div></div>
+    <div id="salBody"></div>
+  </section>
   <section id="secCheques" hidden>
     <div class="head"><div class="grow"><h2>Cheque Templates</h2><p class="sub">One template for each cheque book: the bank's blank cheque scanned on A4, where the cheque sits on the page, and where the date, payee, amount in words and figures go. The preview shows a made-up payment on the cheque. The financier prints cheques from Payment Entry.</p></div><div class="acts"><button class="btn primary" id="chqAdd" type="button">Add Template</button></div></div>
     <div id="chqList"></div>
@@ -1446,10 +1450,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function money(n) { return "\u20B9 " + amt(n); }
 
-  var S = { regions: {}, ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
+  var S = { staff: {}, salruns: {}, regions: {}, ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secApr", "secArch"];
+  var VIEWS = ["secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1634,7 +1638,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var SALES_TABS = { h: "Sales", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices"]] };
   var EXP_TABS = { h: "Expenses", tabs: [["Bills", "Enter Bills"], ["Checking Report", "Bill Checking"], ["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance Checking"], ["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Voucher Checking"], ["Cash Advance", "Cash Advance"]] };
   var ACC_TABS = { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Statements"]] };
-  var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Requests", "Advance Requests"], ["Advance Summary", "Advances"]] };
+  var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Requests", "Advance Requests"], ["Advance Summary", "Advances"], ["Salary", "Salary"]] };
   /* Masters: its own heading. Companies first, then (Renewable Energy) Consumers and PPA Rates, then Vendors and Ledgers. */
   /* Cheque Templates: where the financier pays (Renewable Energy pays its own; Finance pays the other divisions). */
   var CHQ_TAB = ["Cheques", "Cheque Templates", 0, "m"], BANK_TAB = ["Banks", "Bank Accounts", 0, "m"];
@@ -1657,12 +1661,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var ADMIN_HIDE = { "Bills": 1, "Plan Advance": 1, "Imports": 1, "Cash Voucher": 1, "Accounts": 1, "Mark Transaction": 1 };
   /* A financier who only pays out sees Reports (Transactions, Payables) and Payments, nothing else. */
   var CHIEF_TABS = { "Activity": 1, "Transactions": 1, "Payables": 1, "Advance Summary": 1, "Accounts": 1, "Notes": 1, "Ledger Books": 1, "Companies": 1, "Vendors": 1, "Ledgers": 1 };
-  var FIN_TABS = { "Cheques": 1, "Banks": 1, "Companies": 1, "Vendors": 1, "Ledgers": 1, "Cash Approvals": 1, "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1, "Advance Requests": 1 };
+  var FIN_TABS = { "Salary": 1, "Cheques": 1, "Banks": 1, "Companies": 1, "Vendors": 1, "Ledgers": 1, "Cash Approvals": 1, "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1, "Advance Requests": 1 };
   function finOnly() { return !S.isAdmin && canDo("txn") && STEPS.every(function (st) { return st[0] === "txn" || !canDo(st[0]); }); }
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {
       var fo = finOnly();
-      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (meChief() && CHIEF_TABS[t[0]]) return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[0] === "Cheques" || t[0] === "Banks") return S.isAdmin || canDo("txn"); if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && st[0] !== "rec" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (TAB_STEP[t[0]] === "appr" && canDo("rec")) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
+      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (meChief() && CHIEF_TABS[t[0]]) return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[0] === "Salary") return (APP === "re" || APP === "fin") && (S.isAdmin || canDo("txn")); if (t[0] === "Cheques" || t[0] === "Banks") return S.isAdmin || canDo("txn"); if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && st[0] !== "rec" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (TAB_STEP[t[0]] === "appr" && canDo("rec")) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
         /* The financier's Reports: Payables first, then Payments (Transactions showing payments only). */
         .map(function (t) { return fo && t[0] === "Transactions" ? [t[0], "Payments"] : t; }).sort(function (x, y) { return fo ? (x[0] === "Payables" ? -1 : y[0] === "Payables" ? 1 : 0) : 0; }) };
     }).filter(function (g) { return g.tabs.length; });
@@ -1764,6 +1768,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (t === "Personalise") { renderPrefs(); show("secPrefs"); return; }
     if (t === "Cheques") { CQ.id = null; CQ.D = null; renderCheques(); show("secCheques"); return; }
     if (t === "Banks") { renderBanks(); show("secBanks"); return; }
+    if (t === "Salary") { renderSalary(); show("secSalary"); return; }
     if (t === "Users" && S.isAdmin) { renderUsers(); renderSupers(); show("secUsers"); }
     else if (t === "Change Log" && S.isAdmin) { auditSub(); renderAudit(); show("secAudit"); }
     else if (t === "Activity" && (S.isAdmin || meChief())) { if (dataReady()) { acLoad(); renderActivity(); show("secActivity"); } else show("vLoading"); }
@@ -7071,7 +7076,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var now = Date.now(), up = { cancelled: true, cancelledAt: now, cancelledBy: meId(), cancelReason: sentenceFix(why) };
       return Promise.all((c.txIds || []).map(function (id) { return retry(function () { return S.db.doc("transactions/" + id).update(up); }).then(function () { if (S.txns[id]) Object.assign(S.txns[id], up); }); }))
         .then(function () { return retry(function () { return S.db.doc("cheques/" + c.id).update({ status: "cancelled", cancelledAt: now, cancelledBy: meId(), cancelReason: up.cancelReason }); }); })
-        .then(function () { Object.assign(S.cheques[c.id], { status: "cancelled", cancelReason: up.cancelReason, cancelledAt: now }); invalidate(); toast("Cheque " + c.no + " cancelled. Its bills are back on the list."); renderMark(); renderNav(); }, function (e) { toast(explain(e)); return false; });
+        .then(function () { var sr = c.salRunId && S.salruns[c.salRunId]; return sr && sr.chequeId === c.id ? retry(function () { return S.db.doc("salruns/" + sr.id).update({ status: "draft", chequeId: null, txId: null, updatedAt: now, updatedBy: meId() }); }).then(function () { Object.assign(sr, { status: "draft", chequeId: null, txId: null }); }) : null; })
+        .then(function () { Object.assign(S.cheques[c.id], { status: "cancelled", cancelReason: up.cancelReason, cancelledAt: now }); invalidate(); toast("Cheque " + c.no + " cancelled. " + (c.salRunId ? "The month's salary can be issued again." : "Its bills are back on the list.")); if (c.salRunId && S.tab === "Salary") renderSalary(); else renderMark(); renderNav(); }, function (e) { toast(explain(e)); return false; });
     });
   }
   /* ---- Payment Entry › Advances: approved cash advances, paid out here by the financier ---- */
@@ -7414,6 +7420,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (a) forTxt = (a.kind === "import" ? "Import " : "Proforma ") + (a.piNo || "") + (t.inst != null ? ", instalment " + (Number(t.inst) + 1) : "");
     else if (vv) forTxt = "Voucher " + (vv.voucherNo || "") + (rr ? " · " + rr.no : "");
     else if (rr) forTxt = "Voucher Checking Report " + (rr.no || "");
+    else if (t.salaryRun) forTxt = t.note || "Salary";
     else forTxt = allocLines(t).map(function (l) { return l[0] + ": " + curMoney(t.currency, l[1]); }).join("; ");
     return { kind: "payment", x: t, id: t.id, no: t.kind === "discount" ? "Discount" : "Payment", date: t.date || "", cid: t.companyId, party: v ? v.name : t.payee || "", desc: forTxt, cur: t.currency || "INR",
       amount: Number(t.amount) || 0, paid: Number(t.amount) || 0, bal: 0, step: t.kind === "discount" ? "Discount received" : modeText(t) || "Paid", cls: t.kind === "discount" ? "s-printed" : "s-payment",
@@ -10392,6 +10399,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     S.db.collection("payees").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data() || {}; }); S.payees = m; }, function () {});
     S.db.collection("cheques").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.cheques = m; }, function () {});
     S.db.collection("regions").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.regions = m; }, function () {});
+    S.db.collection("staff").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.staff = m; if (S.tab === "Salary" && !$("secSalary").hidden && !SAL.dirty) renderSalary(); }, function () {});
+    S.db.collection("salruns").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.salruns = m; if (S.tab === "Salary" && !$("secSalary").hidden && !SAL.dirty) renderSalary(); }, function () {});
     S.db.collection("bankacct").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.banks = m; if (S.tab === "Banks" && !$("secBanks").hidden) renderBanks(); }, function () {});
     S.db.collection("chqtpl").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.chqtpl = m; if (S.tab === "Cheques" && !CQ.id && !$("secCheques").hidden) renderCheques(); }, function () {});
     S.db.collection("vpeople").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.vpeople = m; }, function () {});
@@ -10657,6 +10666,181 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function chqNext(tp) { var last = Number(tp && tp.last), first = Number(tp && tp.first); return last > 0 ? last + 1 : first > 0 ? first : 1; }
   function chqLeft(tp, next) { var end = Number(tp && tp.end); return end > 0 ? end - (next != null ? next : chqNext(tp)) + 1 : null; }
   function chqNoText(n, tp) { var w = String((tp && (tp.end || tp.first)) || "").length || 6; return String(n).padStart(Math.max(6, w), "0"); }
+  /* ---- Payments › Salary (Renewable Energy and Finance; admins and financiers) ----
+     staff/<id> {companyId, name, bank, branch, ifsc, accountNo, salary, active, order}: a person or a firm.
+     salruns/<company>_<YYYY-MM> {companyId, month, rows:[{staffId, salary, and at issue name, bank, branch, ifsc, accountNo}], total,
+     status draft|issued, chequeId, txId}. A month not saved yet opens with the rows of the latest month before it (staff since
+     made inactive left out), or else the staff list. Issuing needs the company's default bank account and its default cheque
+     book: the cheque, "Yourselves for NEFT", takes the next number (it can be changed); a transaction records it as a cheque
+     payment. Cancelling the cheque (Payments › Payment Entry › Paid, or here) puts the month back to draft. */
+  var SAL = { co: "", mon: "", view: "run", D: null, dirty: false };
+  var SAL_PAYEE = "Yourselves for NEFT";
+  function salCos() { return sorted().filter(function (c) { return coInApp(c) && (S.isAdmin || canStep("txn", c.id)); }); }
+  function staffList(cid, all) { return Object.keys(S.staff || {}).map(function (k) { return S.staff[k]; }).filter(function (x) { return x.companyId === cid && (all || x.active !== false); }).sort(function (a, b) { return (a.order || 0) - (b.order || 0) || natCmp(a.name, b.name); }); }
+  function salRun(cid, mon) { return (S.salruns || {})[cid + "_" + mon] || null; }
+  function salPrev(cid, mon) { return Object.keys(S.salruns || {}).map(function (k) { return S.salruns[k]; }).filter(function (r) { return r.companyId === cid && r.month < mon; }).sort(function (a, b) { return natCmp(b.month, a.month); })[0] || null; }
+  function salDraft(cid, mon) {
+    var r = salRun(cid, mon); if (r) return { rows: r.rows.map(function (x) { return Object.assign({}, x); }), from: "" };
+    var pv = salPrev(cid, mon); if (pv) return { rows: pv.rows.filter(function (x) { var st = S.staff[x.staffId]; return !st || st.active !== false; }).map(function (x) { return { staffId: x.staffId, salary: x.salary }; }), from: pv.month };
+    return { rows: staffList(cid).map(function (x) { return { staffId: x.id, salary: x.salary }; }), from: "list" };
+  }
+  /* A row's details: as printed once issued, else from the staff list. */
+  function salWho(x, issued) { var st = S.staff[x.staffId] || {}; return issued && x.name ? x : { name: st.name || x.name || "", bank: st.bank || x.bank || "", branch: st.branch || x.branch || "", ifsc: st.ifsc || x.ifsc || "", accountNo: st.accountNo || x.accountNo || "" }; }
+  function salTotal(rows) { return round2(rows.reduce(function (s0, x) { return s0 + n0(x.salary); }, 0)); }
+  function dmy(ymd) { return String(ymd || "").slice(8, 10) + "-" + String(ymd || "").slice(5, 7) + "-" + String(ymd || "").slice(0, 4); }
+  function renderSalary() {
+    var box = $("salBody"); box.textContent = ""; var cos = salCos();
+    if (!cos.length) { box.appendChild(el("div", { class: "card empty" }, "No company to pay salaries for.")); return; }
+    if (!SAL.co || !cos.some(function (c) { return c.id === SAL.co; })) SAL.co = cos[0].id;
+    if (!SAL.mon) SAL.mon = todayYmd().slice(0, 7);
+    var bar = el("div", { class: "filters", style: "display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px" });
+    var cs = el("select", { class: "field", id: "salCo", "aria-label": "Company", style: "width:auto" }); fillSelect(cs, cos.map(function (c) { return [c.id, c.shortName || c.name]; }), SAL.co);
+    cs.addEventListener("change", function () { SAL.co = cs.value; SAL.D = null; SAL.dirty = false; renderSalary(); }); bar.appendChild(cs);
+    var seg = el("div", { class: "seg", role: "group" }); [["run", "Monthly salary"], ["staff", "Staff list"]].forEach(function (v) { var b = el("button", { type: "button", class: SAL.view === v[0] ? "on" : "", "aria-pressed": String(SAL.view === v[0]) }, v[1]); b.addEventListener("click", function () { SAL.view = v[0]; renderSalary(); }); seg.appendChild(b); }); bar.appendChild(seg);
+    if (SAL.view === "run") { var ms = inp("salMon", SAL.mon, { type: "month", style: "width:auto", "aria-label": "Month" }); ms.addEventListener("change", function () { if (/^\d{4}-\d{2}$/.test(ms.value)) { SAL.mon = ms.value; SAL.D = null; SAL.dirty = false; renderSalary(); } }); bar.appendChild(ms); }
+    box.appendChild(bar);
+    if (SAL.view === "staff") { renderStaff(box); return; }
+    var cid = SAL.co, mon = SAL.mon, run = salRun(cid, mon), issued = run && run.status === "issued";
+    if (!SAL.D || SAL.D.key !== cid + "_" + mon) { var dr = salDraft(cid, mon); SAL.D = { key: cid + "_" + mon, rows: dr.rows, from: dr.from }; SAL.dirty = false; }
+    var D = SAL.D, rows = issued ? run.rows : D.rows;
+    box.appendChild(el("h3", { style: "margin:0 0 4px" }, "Salary for the month of " + monthLabel(mon)));
+    box.appendChild(el("p", { class: "sub", style: "margin:0 0 10px" }, issued ? "Issued on cheque " + run.chequeNo + " dated " + fmtDate(run.chequeDate) + "." : run ? "Saved, not issued yet." : D.from === "list" ? "Filled in from the staff list." : D.from ? "Filled in from " + monthLabel(D.from) + ". Change what is different this month." : ""));
+    var w = el("div", { class: "card list" }); box.appendChild(w);
+    if (!rows.length) w.appendChild(el("div", { class: "empty" }, "No staff yet. Add them in Staff list."));
+    else {
+      var t = el("table", { class: "t" }), th = el("tr"); ["S.No", "Name", "Bank / Branch", "IFSC", "Account No", "Salary", ""].forEach(function (h, i) { th.appendChild(el("th", i === 5 ? { class: "r" } : null, h)); }); var thead = el("thead"); thead.appendChild(th); t.appendChild(thead);
+      var tb = el("tbody"); t.appendChild(tb);
+      rows.forEach(function (x, i) {
+        var who = salWho(x, issued), tr = el("tr"); tr.appendChild(el("td", null, String(i + 1)));
+        var n = el("td"); n.appendChild(el("b", null, who.name)); tr.appendChild(n);
+        tr.appendChild(el("td", null, [who.bank, who.branch].filter(Boolean).join(", "))); tr.appendChild(el("td", { class: "mono" }, who.ifsc)); tr.appendChild(el("td", { class: "mono" }, who.accountNo));
+        var sa = el("td", { class: "r num" });
+        if (issued) sa.textContent = money(x.salary); else { var si = inp("salAmt_" + i, x.salary == null ? "" : String(x.salary), { inputmode: "decimal", class: "field num", style: "max-width:130px", "aria-label": "Salary of " + who.name }); si.addEventListener("input", function () { x.salary = si.value.trim() === "" ? null : n0(si.value); SAL.dirty = true; $("salTot").textContent = money(salTotal(D.rows)); }); sa.appendChild(si); }
+        tr.appendChild(sa);
+        var ac = el("td", { class: "r" }); if (!issued) { var rm = el("button", { type: "button", class: "btn sm" }, "Remove"); rm.addEventListener("click", function () { D.rows.splice(i, 1); SAL.dirty = true; renderSalary(); }); ac.appendChild(rm); } tr.appendChild(ac);
+        tb.appendChild(tr);
+      });
+      var tf = el("tr"); tf.appendChild(el("td")); tf.appendChild(el("td", null, "Total")); ["", "", ""].forEach(function () { tf.appendChild(el("td")); }); var tt = el("td", { class: "r num" }); tt.appendChild(el("b", { id: "salTot" }, money(salTotal(rows)))); tf.appendChild(tt); tf.appendChild(el("td")); var tfoot = el("tfoot"); tfoot.appendChild(tf); t.appendChild(tfoot);
+      w.appendChild(t);
+    }
+    var bank = bankDefault(cid), tp = bank ? chqBookDefault(bank.id) : null, ft = el("div", { class: "form-foot", style: "flex-wrap:wrap" });
+    if (issued) {
+      var c = (S.cheques || {})[run.chequeId];
+      var pp = el("button", { type: "button", class: "btn primary", id: "salPrint" }, "Print Pack Again"); pp.addEventListener("click", function () { salPackAsk(run); }); ft.appendChild(pp);
+      if (c && c.status !== "cancelled") { var cc = el("button", { type: "button", class: "btn", id: "salCancel" }, "Cancel Cheque"); cc.addEventListener("click", function () { chequeCancel(c); }); ft.appendChild(cc); }
+      box.appendChild(ft); return;
+    }
+    var avail = staffList(cid).filter(function (x) { return !D.rows.some(function (r) { return r.staffId === x.id; }); });
+    if (avail.length) { var ad = el("select", { class: "field", id: "salAddSt", style: "max-width:280px;margin-top:8px", "aria-label": "Add from the staff list" }); fillSelect(ad, [["", "Add from the staff list (" + avail.length + ")"]].concat(avail.map(function (x) { return [x.id, x.name]; })), ""); ad.addEventListener("change", function () { var st = S.staff[ad.value]; if (!st) return; D.rows.push({ staffId: st.id, salary: st.salary }); SAL.dirty = true; renderSalary(); }); box.appendChild(ad); }
+    var info = el("div", { class: "card", style: "padding:10px 14px;margin-top:12px" });
+    if (!bank) info.appendChild(el("p", { style: "margin:0" }, "No default bank account for " + coLabel(cid) + ". Set one in Masters › Bank Accounts."));
+    else if (!tp) info.appendChild(el("p", { style: "margin:0" }, bankLabel(bank) + " has no default cheque book. Set one in Masters › Cheque Templates."));
+    else {
+      var nx = chqNext(tp), lf = chqLeft(tp, nx);
+      info.appendChild(el("p", { style: "margin:0 0 6px" }, "Cheque \u201c" + SAL_PAYEE + "\u201d on " + bankLabel(bank) + " (" + [bank.bank, bank.branch, bank.city].filter(Boolean).join(", ") + "), book " + tp.name + "." + (lf != null && lf <= 5 ? " Only " + Math.max(0, lf) + (lf === 1 ? " leaf" : " leaves") + " left in this book." : "")));
+      var g = el("div", { class: "solgrid" }); g.appendChild(fld("Cheque number", inp("salNo", chqNoText(nx, tp), { class: "field mono", maxlength: "12" }), "The next in the book. Change it if needed."));
+      g.appendChild(fld("Cheque date", inp("salDate", todayYmd(), { type: "date" }))); info.appendChild(g);
+    }
+    box.appendChild(info);
+    var sv = el("button", { type: "button", class: "btn", id: "salSave" }, "Save"); sv.addEventListener("click", function () { salSave("draft"); }); ft.appendChild(sv);
+    var is = el("button", { type: "button", class: "btn primary", id: "salIssue" }, "Issue Cheque & Print Pack"); is.disabled = !tp || !D.rows.length; is.addEventListener("click", function () { salIssue(bank, tp); }); ft.appendChild(is);
+    box.appendChild(ft);
+  }
+  function salCheck(rows) {
+    for (var i = 0; i < rows.length; i++) { var x = rows[i], who = salWho(x); if (!(n0(x.salary) > 0)) return "Enter the salary of " + (who.name || "row " + (i + 1)) + "."; if (!who.accountNo || !who.ifsc) return who.name + " has no account number or IFSC. Add them in Staff list."; }
+    return rows.length ? "" : "Add at least one person.";
+  }
+  function salSave(status, extra) {
+    var cid = SAL.co, mon = SAL.mon, id = cid + "_" + mon, D = SAL.D, now = Date.now(), old = salRun(cid, mon);
+    var doc = Object.assign({ companyId: cid, month: mon, rows: D.rows.map(function (x) { var o = { staffId: x.staffId, salary: round2(n0(x.salary)) }; if (status === "issued") Object.assign(o, salWho(x)); return o; }), total: salTotal(D.rows), status: status, updatedAt: now, updatedBy: meId() }, old ? {} : { createdAt: now, createdBy: meId() }, extra || {});
+    var full = Object.assign({}, old || {}, doc); delete full.id;
+    return retry(function () { return S.db.doc("salruns/" + id).set(full); }).then(function () { S.salruns[id] = Object.assign({ id: id }, old || {}, doc); SAL.dirty = false; if (status === "draft") { toast("Salary for " + monthLabel(mon) + " saved."); renderSalary(); } return S.salruns[id]; }, function (e) { toast(explain(e)); throw e; });
+  }
+  function salIssue(bank, tp) {
+    var D = SAL.D, err = salCheck(D.rows); if (err) { toast(err); return; }
+    var num = Math.round(n0(String($("salNo").value).replace(/\D/g, ""))), dt = $("salDate").value;
+    if (!(num > 0)) { errOn("salNo", "Type the cheque number."); return; } if (!ymdOk(dt)) { toast("Choose the cheque date."); return; }
+    var no = chqNoText(num, tp);
+    if (Object.keys(S.cheques || {}).some(function (k) { var c = S.cheques[k]; return c.tplId === tp.id && c.num === num && c.status !== "cancelled"; })) { toast("Cheque " + no + " of this book is already used."); return; }
+    var cid = SAL.co, mon = SAL.mon, runId = cid + "_" + mon, total = salTotal(D.rows), now = Date.now(), chqId = newId("cq"), txId = newId("t"), btn = $("salIssue"); btn.disabled = true;
+    var tx = { kind: "payment", companyId: cid, vendorId: null, payee: "Staff salary · " + monthLabel(mon), payeeId: "", currency: "INR", amount: total, rate: null, inr: null, date: dt, reason: "", note: "Salary for the month of " + monthLabel(mon) + ", " + (D.rows.length === 1 ? "1 person" : D.rows.length + " people") + ".", billId: null,
+      mode: "cheque", ref: no, chequeId: chqId, bankAcctId: bank.id, chequeTpl: tp.id, acPayee: false, salaryRun: runId, updatedAt: now, updatedBy: meId(), createdAt: now, createdBy: meId(), byName: preparedByText() };
+    var cq = { companyId: cid, bankAcctId: bank.id, tplId: tp.id, no: no, num: num, date: dt, payee: SAL_PAYEE, vendorId: null, amount: total, currency: "INR", acPayee: false, mode: "cheque", status: "issued", txIds: [txId], salRunId: runId, createdAt: now, createdBy: meId(), byName: preparedByText() };
+    retry(function () { return S.db.doc("transactions/" + txId).set(tx); }).then(function () { S.txns[txId] = Object.assign({ id: txId }, tx); return retry(function () { return S.db.doc("cheques/" + chqId).set(cq); }); })
+      .then(function () { S.cheques = S.cheques || {}; S.cheques[chqId] = Object.assign({ id: chqId }, cq); if (num > (Number(tp.last) || 0)) { tp.last = num; S.db.doc("chqtpl/" + tp.id).update({ last: num, updatedAt: Date.now() }).catch(function () {}); } return salSave("issued", { chequeId: chqId, txId: txId, chequeNo: no, chequeDate: dt, bankAcctId: bank.id, tplId: tp.id, issuedAt: now, issuedBy: meId() }); })
+      .then(function (run) { invalidate(); toast("Salary for " + monthLabel(mon) + " issued on cheque " + no + "."); renderSalary(); renderNav(); salPackAsk(run); }, function (e) { btn.disabled = false; toast(explain(e)); });
+  }
+  function salPackAsk(run) {
+    var tp = (S.chqtpl || {})[run.tplId], pad = coTpl(run.companyId).pad, body = el("div", { class: "mform" });
+    var l1 = el("label", { class: "check" }), c1 = el("input", { type: "checkbox", id: "spTest" }); l1.appendChild(c1); l1.appendChild(document.createTextNode(" Test print: put the cheque scan behind the cheque (plain paper)")); body.appendChild(l1);
+    var l2 = el("label", { class: "check" }), c2 = el("input", { type: "checkbox", id: "spPad" }); c2.checked = !!pad; c2.disabled = !pad; l2.appendChild(c2); l2.appendChild(document.createTextNode(pad ? " Put the letterpad behind the covering letter (plain paper)" : " No letterpad for this company: the letter has its name at the top")); body.appendChild(l2);
+    popForm("Salary print pack · " + monthLabel(run.month), "Page 1 is the cheque (print it on the cheque leaf at 100%), then the covering letter and the staff list.", body, "Download PDF", function () { return salPack(run, tp, $("spTest").checked, $("spPad").checked ? pad : null); });
+  }
+  function salPack(run, tp, test, pad) {
+    if (!S.downloads) { toast("Downloads aren't available here."); return Promise.resolve(); }
+    var co = S.companies[run.companyId] || {}, bank = (S.banks || {})[run.bankAcctId] || bankDefault(run.companyId) || {}, P = 72 / 25.4, m = coTpl(run.companyId).m;
+    return Promise.all([loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }), tp && test ? padImage(tp.pad) : null, pad ? padImage(pad) : null]).then(function (r) {
+      var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
+      var doc = newPdf(jsPDF), W = 210 * P, L = (pad ? m.l : 20) * P, R = W - (pad ? m.r : 20) * P, y = (pad ? m.t : 20) * P;
+      if (tp) { chequePage(doc, chqCopy(tp), { payee: SAL_PAYEE, amount: run.total, date: run.chequeDate, acPayee: false }, test ? r[1] : null); doc.addPage(); }
+      /* the covering letter */
+      if (r[2]) doc.addImage(r[2], "JPEG", 0, 0, W, 297 * P);
+      doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+      if (!r[2]) { doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text(co.name || "", W / 2, y, { align: "center" }); doc.setFont("helvetica", "normal"); doc.setFontSize(9); if (co.address) doc.text(doc.splitTextToSize(co.address, R - L), W / 2, y + 14, { align: "center" }); y += 44; doc.setFontSize(11); }
+      var lh = 15, line = function (t, o) { doc.text(t, L, y, o); y += lh; };
+      doc.text("Date: " + dmy(run.chequeDate), R, y, { align: "right" }); y += lh * 1.5;
+      line("To"); line("The Branch Manager,"); line((bank.bank || "") + ","); line(([bank.branch, bank.city].filter(Boolean).join(", ") || "") + "."); y += lh * 0.6;
+      line("Dear Sir / Madam,"); y += lh * 0.4;
+      doc.setFont("helvetica", "bold"); var sj = doc.splitTextToSize("Sub: Request for our Staff Salary disbursal from our Account \u2013 Reg.", R - L); sj.forEach(function (t) { line(t); });
+      doc.setFont("helvetica", "normal"); line("Ref: Our Current Account No. " + (bank.accountNo || "")); y += lh * 0.6;
+      var amt = (Number(run.total) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      var para = "We enclose our cheque No. " + run.chequeNo + " dated " + dmy(run.chequeDate) + " for Rs. " + amt + "/- (" + inWords(run.total) + ") drawn on our above Current Account No. " + (bank.accountNo || "") + ". We request you to debit our account and credit the salary for the month of " + monthLabel(run.month) + " to the accounts of our staff as per the enclosed list.";
+      doc.splitTextToSize(para, R - L).forEach(function (t) { line(t); }); y += lh * 0.6;
+      line("Thanking you,"); y += lh * 0.4; line("Yours faithfully,"); line("For " + (co.name || "")); y += lh * 3.2;
+      doc.setFont("helvetica", "bold"); line("Authorised Signatory"); doc.setFont("helvetica", "normal"); y += lh; line("Encl: Cheque No. " + run.chequeNo + " and the staff list (" + plural(run.rows.length, "name") + ").");
+      /* the staff list */
+      doc.addPage(); y = 20 * P; L = 14 * P; R = W - 14 * P;
+      doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.text(co.name || "", W / 2, y, { align: "center" }); y += 18;
+      doc.setFontSize(11); doc.text("List of Staff \u2013 Salary for the Month of " + monthLabel(run.month), W / 2, y, { align: "center" }); y += 8;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.text("Cheque No. " + run.chequeNo + " dated " + dmy(run.chequeDate) + " · " + (bank.bank || "") + " A/c No. " + (bank.accountNo || ""), W / 2, y + 12, { align: "center" }); y += 22;
+      var fmt = function (n) { return (Number(n) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+      doc.autoTable({ startY: y, margin: { left: L, right: W - R }, theme: "grid", styles: { font: "helvetica", fontSize: 9, textColor: 0, lineColor: 0, lineWidth: 0.4, cellPadding: 4 }, headStyles: { fillColor: [235, 235, 235], textColor: 0, fontStyle: "bold" }, footStyles: { fillColor: [235, 235, 235], textColor: 0, fontStyle: "bold" },
+        head: [["S.No", "Name", "Bank", "Branch", "IFSC", "Account No", "Salary (Rs.)"]],
+        body: run.rows.map(function (x, i) { return [String(i + 1), x.name || "", x.bank || "", x.branch || "", x.ifsc || "", x.accountNo || "", fmt(x.salary)]; }),
+        foot: [[{ content: "Total", colSpan: 6, styles: { halign: "right" } }, fmt(run.total)]], showFoot: "lastPage", columnStyles: { 0: { halign: "center", cellWidth: 30 }, 6: { halign: "right" } } });
+      var fy = doc.lastAutoTable.finalY + 50; doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text("For " + (co.name || ""), R, fy, { align: "right" }); doc.setFont("helvetica", "bold"); doc.text("Authorised Signatory", R, fy + 40, { align: "right" });
+      return S.downloads.save({ filename: "Salary " + (co.shortName || co.name || "") + " " + monthLabel(run.month) + (test ? " TEST" : "") + ".pdf", data: doc.output("blob") });
+    }).then(function () { toast("Salary print pack ready. Print the cheque page at 100% (actual size)."); }, function (e) { var k = e && (e.code || e.kind); toast(k === "declined" ? "Download cancelled." : "The PDF couldn't be made. Try again."); });
+  }
+  function renderStaff(box) {
+    var cid = SAL.co, rows = staffList(cid, true);
+    var hd = el("div", { style: "display:flex;gap:10px;align-items:center;margin:0 0 8px" }); hd.appendChild(el("h3", { style: "margin:0" }, "Staff of " + coLabel(cid))); hd.appendChild(el("span", { class: "grow" }));
+    var ad = el("button", { type: "button", class: "btn primary", id: "stAdd" }, "Add Staff"); ad.addEventListener("click", function () { staffForm(null); }); hd.appendChild(ad); box.appendChild(hd);
+    var w = el("div", { class: "card list" }); box.appendChild(w);
+    if (!rows.length) { w.appendChild(el("div", { class: "empty" }, "No staff yet. Add each person or firm paid a salary, with their bank details.")); return; }
+    sortTable(w, "staffList", [
+      { label: "Name", sort: function (x) { return x.name; }, cell: function (x, td) { td.appendChild(el("b", null, x.name)); if (x.active === false) sub(td, "Inactive", "color:var(--bad)"); } },
+      { label: "Bank / Branch", cell: function (x, td) { txt(td, x.bank || ""); sub(td, x.branch || ""); } },
+      { label: "IFSC / Account No", cell: function (x, td) { txt(td, x.ifsc || ""); sub(td, x.accountNo || ""); } },
+      { label: "Salary", cls: "r num", sort: function (x) { return n0(x.salary); }, cell: function (x, td) { txt(td, money(x.salary)); } },
+      { label: "", kind: "act", cls: "r", cell: function (x, td) { var e = el("button", { class: "btn sm" }, "Edit"); e.addEventListener("click", function () { staffForm(x); }); td.appendChild(e); } }
+    ], rows, {});
+  }
+  function staffForm(x) {
+    var body = el("div", { class: "mform" });
+    [["stName", "Name", x ? x.name : "", "A person, or a firm paid a monthly fee."], ["stBank", "Bank", x ? x.bank : "", ""], ["stBranch", "Branch", x ? x.branch : "", ""], ["stIfsc", "IFSC", x ? x.ifsc : "", "11 characters, e.g. SBIN0001234."], ["stAcct", "Account Number", x ? x.accountNo : "", ""], ["stSal", "Monthly Salary", x && x.salary != null ? String(x.salary) : "", "Fills in each new month; change it there for one month."]].forEach(function (f) { body.appendChild(fld(f[1], inp(f[0], f[2] || "", f[0] === "stSal" ? { inputmode: "decimal", class: "field num" } : f[0] === "stIfsc" || f[0] === "stAcct" ? { class: "field mono", maxlength: "20" } : { maxlength: "80" }), f[3])); });
+    var al = el("label", { class: "check" }), ac = el("input", { type: "checkbox", id: "stActive" }); ac.checked = !x || x.active !== false; al.appendChild(ac); al.appendChild(document.createTextNode(" Active (inactive staff are left out of new months)")); body.appendChild(al);
+    popForm(x ? "Edit " + x.name : "Add staff", coLabel(SAL.co), body, x ? "Save" : "Add", function () {
+      errClear(body); var nm = $("stName").value.trim().replace(/\s+/g, " "), ifsc = $("stIfsc").value.trim().toUpperCase(), acct = $("stAcct").value.replace(/\s+/g, ""), sal = n0($("stSal").value);
+      if (!nm) { errOn("stName", "Type the name."); return false; }
+      if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) { errOn("stIfsc", "Type a valid IFSC (11 characters, the 5th is 0)."); return false; }
+      if (!/^[0-9A-Za-z]{6,20}$/.test(acct)) { errOn("stAcct", "Type the account number."); return false; }
+      if (!(sal > 0)) { errOn("stSal", "Type the monthly salary."); return false; }
+      var id = x ? x.id : newId("st"), now = Date.now(), doc = { companyId: x ? x.companyId : SAL.co, name: nm, bank: $("stBank").value.trim(), branch: $("stBranch").value.trim(), ifsc: ifsc, accountNo: acct, salary: round2(sal), active: $("stActive").checked, updatedAt: now, updatedBy: meId() };
+      if (!x) Object.assign(doc, { order: staffList(SAL.co, true).length, createdAt: now, createdBy: meId() });
+      return retry(function () { return x ? S.db.doc("staff/" + id).update(doc) : S.db.doc("staff/" + id).set(doc); }).then(function () { S.staff[id] = Object.assign({ id: id }, x || {}, doc); toast(nm + (x ? " saved." : " added.")); renderSalary(); }, function (e) { toast(explain(e)); return false; });
+    });
+  }
   function renderBanks() {
     var box = $("bankList"); $("bankAdd").hidden = !chqCan(); box.textContent = "";
     var rows = bankList(""); if (!rows.length) { box.appendChild(el("div", { class: "card empty" }, "No bank accounts yet. Add each company's account; the first one becomes its default.")); return; }

@@ -195,6 +195,18 @@ provides the same calls, so the app code did not need rewriting:
   Demo and Live) with company, reference name, bank, branch, city, account number, IFSC; one default per company and a
   default cheque book per account. Cheque templates are cheque books: each is linked to a bank account and keeps only the
   first, last and last-used numbers (next = last used + 1; a warning at 5 leaves left, never a block; gaps are fine).
+- **Salary** (Payments › Salary, Renewable Energy and Finance; admins and financiers): each company's **staff list**
+  (`staff/*`: name, a person or a firm, bank, branch, IFSC, account number, monthly salary, active) and the **monthly
+  salary** (`salruns/<company>_<YYYY-MM>`), which opens filled in from the latest month before it (inactive staff left
+  out; anyone on the list can be added) or else from the staff list. **Issue Cheque & Print Pack** takes the company's
+  default bank account and its default cheque book (next number, can be changed; a used number is refused), records a
+  cheque "Yourselves for NEFT" for the total (`cheques`, with `salRunId`) and a cheque payment (`transactions`, payee
+  "Staff salary · Month YYYY", `salaryRun`), and downloads one PDF: the cheque, the covering letter (To the Branch Manager,
+  bank, branch and city; "Request for our Staff Salary disbursal from our Account – Reg."; current account number; cheque
+  number, date, amount in figures and words; credit as per the enclosed list; For the company, Authorised Signatory) on the
+  RE letterpad when the company has one (else its name and address at the top), and "List of Staff – Salary for the Month
+  of …" (S.No, name, bank, branch, IFSC, account number, salary, total). Once issued, the rows keep the details as printed.
+  Cancelling the cheque puts the month back to draft so it can be issued again.
 - **Payment Entry: Plan for Payment / Already Paid.** "To pay" opens on **Plan for Payment**: per company (its bank
   account and cheque book, defaults filled in), per payee (vendor, or voucher payee), every approved item by due date with
   a tick and the amount to pay now (part payments leave the rest). Per payee: Cheque, NEFT/RTGS or Cash, and A/c Payee

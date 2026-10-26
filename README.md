@@ -219,12 +219,16 @@ provides the same calls, so the app code did not need rewriting:
   (SWIFT for foreign currency). In Paid, a planned cheque has **Print Again** and **Cancel Cheque** (with a reason): the
   cheque and its payments are marked cancelled (kept, never counted) and the bills return to Plan for Payment.
 - **NEFT / RTGS form** (inside each cheque template): the bank's own form scanned on A4. On upload Claude finds which of
-  the listed fields it has and where (`NEFT_FIELDS` in `web/bills/index.html` is the list, to be confirmed: date, amount
+  the listed fields it has and where (`NEFT_FIELDS` in `web/bills/index.html` is the standard list: date, amount
   in figures and words, cheque number, remitter name/account/address/phone/PAN, beneficiary name/account/IFSC/bank/
   branch/account type/mobile/address, purpose); fields can be typed in mm (with a box spacing for character boxes) or
   dragged on the preview, and test printed. Data comes from the payment, the company (name, address, phone; PAN from
   GSTIN), its bank account and the vendor's **Bank details** (Masters › Vendors). In Paid, a NEFT/RTGS payment's **NEFT /
   RTGS Form** button stays disabled, listing what is missing, until every field the form needs has data.
+  Banks ask for different things, so each template also has **Extra fields this bank asks for** (`neft.extra`: name,
+  and either "Same every time", typed in the template, e.g. a customer ID, or "Typed when printing", asked in a small
+  dialog for each payment and kept on the cheque record as `neftExtra` for reprints). Claude adds any such field it finds
+  on the form as "Typed when printing"; switch it to "Same every time" where that fits.
 - **Company order**: only the super admin can reorder companies (Masters › Companies).
 - **Slack approvals**: when a live checking report starts waiting or a cash advance is requested, the
   `approval-alert` Edge Function sends the named approver a Slack DM (found by their login email) with **Approve** and

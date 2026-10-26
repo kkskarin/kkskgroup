@@ -11786,15 +11786,16 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       "Decide which document it is:",
       "- \"generation\": generation statement from the SE/EDC of the generator's circle: export and import units by slot C1 to C5, net units, injection loss, and the applicable charges table (C001 AMR, C002 O&M, C003 transmission, C004 system operation, C005 RKVAh, C006 import energy, C007 scheduling, C008 other, C010 DSM).",
       "- \"allotment\": energy allotment order: how the generator's net units are split between consumers slot by slot, and which consumer each generator charge (M.R., O.M., T.R.C, S.O., R.K., N.E., S.H., O., D.C.) is billed to.",
-      "- \"adjusted\": energy adjusted report: each consumer's line-loss %, gross and net allotted units, and units adjusted in their HT bill, by slot.",
+      "- \"adjusted\": energy adjusted report: each consumer's line-loss %, gross and net allotted units, and units adjusted in their HT bill, by slot; and the generator's units banked (carried to the energy bank, windmills) and lapsed (not adjusted and not banked, so lost) this month.",
       "- \"htbill\": one consumer's HT bill, with a working sheet (SOLAR and WIND rows by slot) and an \"Abstract for OA adjustment charges\" listing generator HTSCs.",
       "- \"other\": anything else.",
       "Rules: numbers are plain numbers without commas (4,97,794 is 497794); units are kWh; rupees as numbers; anything not shown is 0 or \"\". \"month\" is the energy month billed as YYYY-MM (not the issue date). Dates as YYYY-MM-DD. HTSC numbers as printed, digits only. Slot arrays always have 5 numbers for C1 to C5.",
       "Reply with only JSON in the shape for its type:",
       "generation: {\"type\":\"generation\",\"generator_htsc\":\"\",\"company\":\"\",\"capacity_kw\":0,\"circle\":\"\",\"month\":\"\",\"period\":\"\",\"generation_date\":\"\",\"voltage\":\"\",\"injection_loss_pct\":0,\"export\":[0,0,0,0,0],\"import\":[0,0,0,0,0],\"net\":[0,0,0,0,0],\"net_total\":0,\"kvah\":0,\"rkvah\":0,\"charges\":{\"C001\":0,\"C002\":0,\"C003\":0,\"C004\":0,\"C005\":0,\"C006\":0,\"C007\":0,\"C008\":0,\"C010\":0}}",
       "allotment: {\"type\":\"allotment\",\"generator_htsc\":\"\",\"month\":\"\",\"consumers\":[{\"htsc\":\"\",\"name\":\"\",\"circle\":\"\",\"slots\":[0,0,0,0,0],\"total\":0,\"charges\":{\"MR\":0,\"OM\":0,\"TRC\":0,\"SO\":0,\"RK\":0,\"NE\":0,\"SH\":0,\"O\":0,\"DC\":0},\"banking\":0}]}",
-      "adjusted: {\"type\":\"adjusted\",\"generator_htsc\":\"\",\"month\":\"\",\"report_date\":\"\",\"consumers\":[{\"htsc\":\"\",\"name\":\"\",\"loss_pct\":0,\"gross\":[0,0,0,0,0],\"net\":[0,0,0,0,0],\"adjusted\":[0,0,0,0,0],\"surplus\":0}]}",
+      "adjusted: {\"type\":\"adjusted\",\"generator_htsc\":\"\",\"month\":\"\",\"report_date\":\"\",\"consumers\":[{\"htsc\":\"\",\"name\":\"\",\"loss_pct\":0,\"gross\":[0,0,0,0,0],\"net\":[0,0,0,0,0],\"adjusted\":[0,0,0,0,0],\"surplus\":0,\"banked\":0,\"lapsed\":0}],\"banked_units\":0,\"lapsed_units\":0}",
       "htbill: {\"type\":\"htbill\",\"month\":\"\",\"consumer_htsc\":\"\",\"name\":\"\",\"address\":\"\",\"gstin\":\"\",\"circle\":\"\",\"bill_no\":\"\",\"bill_date\":\"\",\"due_date\":\"\",\"solar_units\":[0,0,0,0,0],\"wind_units\":[0,0,0,0,0],\"other_sources_units\":0,\"oa\":[{\"generator_htsc\":\"\",\"C001\":0,\"C002\":0,\"C003\":0,\"C004\":0,\"C005\":0,\"C006\":0,\"C007\":0,\"C008\":0,\"C010\":0,\"wheeling\":0}],\"self_generation_tax\":0,\"net_payable\":0}",
+      "For the adjusted report, \"banked_units\" and \"lapsed_units\" are the generator's totals for the month as printed (banked, banking, to bank / lapsed, lapse, unutilised); 0 when not shown.",
       "For the HT bill, \"oa\" has one entry for each generator HTSC in the OA adjustment abstract, and \"self_generation_tax\" is the whole bill's figure (item 24).",
       "other: {\"type\":\"other\"}",
       scanned ? "The pages are attached as images." : "The document text follows.\n\n" + text
@@ -11873,8 +11874,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
             var cs = {}; (r.consumers || []).forEach(function (c) { var h = htscOf(c.htsc); if (!h) return; var ch = {}; SOL_GCH.forEach(function (g) { ch[g[0]] = n0((c.charges || {})[g[1]]); }); cs[h] = { name: c.name || "", slots: arr5(c.slots), total: n0(c.total) || sum5(c.slots), charges: ch, banking: n0(c.banking) }; });
             d.allot = { consumers: cs, file: file, readAt: now }; what = "Allotment order, " + plural(Object.keys(cs).length, "consumer");
           } else if (type === "adjusted") {
-            var ca = {}; (r.consumers || []).forEach(function (c) { var h = htscOf(c.htsc); if (!h) return; ca[h] = { name: c.name || "", loss: n0(c.loss_pct), gross: arr5(c.gross), net: arr5(c.net), adjusted: arr5(c.adjusted), surplus: n0(c.surplus) }; });
-            d.adj = { date: r.report_date || "", consumers: ca, file: file, readAt: now }; what = "Adjusted report, " + plural(Object.keys(ca).length, "consumer");
+            var ca = {}; (r.consumers || []).forEach(function (c) { var h = htscOf(c.htsc); if (!h) return; ca[h] = { name: c.name || "", loss: n0(c.loss_pct), gross: arr5(c.gross), net: arr5(c.net), adjusted: arr5(c.adjusted), surplus: n0(c.surplus), banked: n0(c.banked), lapsed: n0(c.lapsed) }; });
+            d.adj = { date: r.report_date || "", consumers: ca, banked: n0(r.banked_units), lapsed: n0(r.lapsed_units), file: file, readAt: now }; what = "Adjusted report, " + plural(Object.keys(ca).length, "consumer");
           } else {
             var h = htscOf(r.consumer_htsc), row = (r.oa || []).filter(function (o) { return htscOf(o.generator_htsc) === plant; })[0] || {}, oa = { wheeling: n0(row.wheeling) };
             SOL_GCH.forEach(function (g) { oa[g[0]] = n0(row[g[0]]); });
@@ -11891,6 +11892,23 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         });
       });
     });
+  }
+
+  /* ---- Banked and lapsed units, per generator HTSC and month, as read from the uploaded reports ----
+     Windmills: banked and lapsed; solar: lapsed only. The adjusted report's own totals are used when printed, else the
+     consumers' banked / lapsed figures; failing those, units not adjusted (surplus) are banked for a windmill and lapse for
+     solar. Figures confirmed when a bill of supply is issued are kept on the month (bl) and win over what was read.
+     Not split to WEG / SEI IDs yet. */
+  function blRead(plant, month) {
+    var md = monthDoc(plant, month), wind = plantKind(plant) === "wind", out = { banked: 0, lapsed: 0, src: "" };
+    if (!md) return out;
+    if (md.bl) return { banked: wind ? n0(md.bl.banked) : 0, lapsed: n0(md.bl.lapsed), src: "confirmed " + (md.bl.at ? fmtDate(new Date(md.bl.at).toISOString().slice(0, 10)) : "") };
+    var a = md.adj, cs = a ? solList(a.consumers || {}) : [], sum = function (k) { return round2(cs.reduce(function (s0, c) { return s0 + n0(c[k]); }, 0)); };
+    if (!a) return out;
+    var bk = n0(a.banked) || sum("banked"), lp = n0(a.lapsed) || sum("lapsed"), sur = sum("surplus");
+    if (bk || lp) return { banked: wind ? bk : 0, lapsed: lp + (wind ? 0 : bk), src: "adjusted report" };
+    if (sur) return wind ? { banked: sur, lapsed: 0, src: "adjusted report (units not adjusted)" } : { banked: 0, lapsed: sur, src: "adjusted report (units not adjusted)" };
+    return { banked: 0, lapsed: 0, src: "adjusted report" };
   }
 
   /* ---- Issuing a bill of supply ---- */
@@ -11916,8 +11934,18 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var sm = el("div", { class: "card", style: "padding:10px 14px;margin-top:6px" });
     c.lines.forEach(function (l) { sm.appendChild(el("p", { style: "margin:0 0 4px" }, (c.lines.length > 1 ? "HTSC " + l.htsc + " from " + l.plant + ": " : "") + units(l.billed) + " units × ₹" + l.rate.rate + " = " + rs(l.A))); });
     sm.appendChild(el("p", { style: "margin:4px 0 0" }, "Energy charges " + rs(c.A) + ", less " + rs(c.B) + " = " + rs(c.net)));
+    var blPl = c.plants.filter(function (x, i, a) { return a.indexOf(x) === i; }), blBox = el("div", { class: "card", style: "padding:10px 14px;margin-top:6px" });
+    blBox.appendChild(el("b", null, "Banked and lapsed units · " + monthLabel(month))); blBox.appendChild(el("p", { class: "sub", style: "margin:2px 0 6px" }, "For each generator HTSC, as read from the uploaded reports. Correct them if needed; they are saved with the month. Not split to WEG / SEI IDs yet."));
+    blPl.forEach(function (pl, i) {
+      var r0 = blRead(pl, month), wind = plantKind(pl) === "wind", g = el("div", { class: "solgrid" });
+      var lb = el("div", { style: "align-self:center" }); lb.appendChild(el("b", { class: "mono" }, pl)); lb.appendChild(el("span", { class: "hint", style: "display:block" }, r0.src ? (r0.src.indexOf("confirmed") === 0 ? "As " : "From the ") + r0.src : "No adjusted report uploaded")); g.appendChild(lb);
+      if (wind) g.appendChild(fld("Banked units", inp("siBk_" + i, r0.banked ? String(r0.banked) : "0", { inputmode: "decimal", class: "field num" })));
+      g.appendChild(fld("Lapsed units", inp("siLp_" + i, r0.lapsed ? String(r0.lapsed) : "0", { inputmode: "decimal", class: "field num" })));
+      blBox.appendChild(g);
+    });
+    function blNow() { return blPl.map(function (pl, i) { var bk = $("siBk_" + i), lp = $("siLp_" + i); return { plant: pl, kind: plantKind(pl), banked: bk ? round2(n0(bk.value)) : 0, lapsed: lp ? round2(n0(lp.value)) : 0 }; }); }
     if (c.warns) sm.appendChild(el("p", { class: "sub", style: "margin:6px 0 0" }, plural(c.warns, "check") + " to look at."));
-    body.appendChild(sm);
+    body.appendChild(sm); body.appendChild(blBox);
     setTimeout(function () { var di = $("siDate"); if (di) di.addEventListener("change", function () { if (ymdOk(di.value) && !touched) $("siNo").value = nextInvNo(cid, di.value).no; }); }, 0);
     /* The bill of supply as it will be saved, for issuing or for a preview. */
     function invDoc(n, dt, days, now) {
@@ -11942,8 +11970,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (!typed) { errOn("siNo", "Type the invoice number."); return false; }
       if (invNoUsed(cid, typed)) { errOn("siNo", "Invoice " + typed + " is already used by " + (co.shortName || co.name) + "."); return false; }
       if (typed !== n.no) { var mm = /-(\d+)-(\d{2})\/(\d{2})$/.exec(typed); n = { no: typed, fy: mm ? mm[2] + "-" + mm[3] : n.fy, seq: mm ? Number(mm[1]) : n.seq }; }
-      var id = newId("si"), now = Date.now(), doc = invDoc(n, dt, days, now);
+      var id = newId("si"), now = Date.now(), doc = invDoc(n, dt, days, now), bl = blNow();
+      if (bl.some(function (x) { return x.banked < 0 || x.lapsed < 0; })) { toast("Banked and lapsed units can't be below 0."); return false; }
+      doc.bl = bl;
       return retry(function () { return S.db.doc("solar_invoices/" + id).set(doc); }).then(function () {
+        bl.forEach(function (x) { var md = monthDoc(x.plant, month), o = md && md.bl; if (!o || o.banked !== x.banked || o.lapsed !== x.lapsed) solSaveMonth(x.plant, month, function (d) { d.bl = { banked: x.banked, lapsed: x.lapsed, at: now, by: meId() }; }).catch(function () {}); });
         SOL.inv[id] = Object.assign({ id: id }, doc); toast("Invoice " + n.no + " issued."); solRender();
         if (S.downloads) solInvoicePdf(SOL.inv[id]);
         return true;

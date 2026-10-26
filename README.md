@@ -330,6 +330,11 @@ row (SOLAR or WIND) is billed and the wording on the bill.
 - **Issue** (with Preview PDF before issuing): number SHORT-NNN-YY/YY (e.g. ARA-001-26/27), one series per company per financial year, suggested and editable when
   issuing but never one already used; the PDF holds the company's pages. An issued invoice is locked; cancel it (admin, with a
   reason) and issue a new one for corrections.
+- **Banked and lapsed units**: the adjusted report is also read for the generator's units banked (windmills) and lapsed
+  this month (its totals, else the consumers' figures, else units not adjusted: banked for a windmill, lapsed for solar).
+  The Issue dialog shows them for each generator HTSC on the bill (windmill: banked and lapsed; solar: lapsed only), to
+  correct before saving; they are kept on the invoice (`bl`) and on the month (`solar_months.bl`, which then wins over what
+  was read). Not split to WEG / SEI IDs yet.
 - **Invoices**: register, receipts with TDS under 194Q, ageing 0–30/31–60/61–90/90+, Excel.
 - **Reports › P&L**: filters for financial year, calendar year, months, season (Winter Jan–Feb, Summer Mar–May, South-west
   monsoon Jun–Sep, North-east monsoon Oct–Dec), solar or windmill, companies, consumers and ledgers (C counts only the chosen

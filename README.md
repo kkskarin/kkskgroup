@@ -183,11 +183,19 @@ provides the same calls, so the app code did not need rewriting:
   Maker. A Voucher Maker enters bills wherever they make vouchers. Companies (and vendors, ledgers) must be ticked as
   used in Bills & Vouchers. Sign-in check: migration 20261024150000.
 - **Cheque Templates and printing**: Masters › Cheque Templates (Renewable Energy and Finance; admins and financiers)
-  holds one template per cheque book in `chqtpl/*` (shared by Demo and Live): reference name, bank, the blank cheque
-  scanned on A4 as PDF (kept in storage under `cheques/`), where the cheque sits on the page (mm) and where the date
-  (digit boxes or DD-MM-YYYY), payee, amount in words (two lines), amount in figures and an optional "A/c Payee"
-  crossing go (mm from the cheque's top left), and the text size. On upload the cheque's edges are found on the page
-  (where it stops being white) and Claude reads the cheque to place each field ("Find Fields Again" repeats it). A live
+  holds one template per bank's cheque layout in `chqtpl/*` (shared by Demo and Live): reference name, bank, a blank
+  cheque scanned or photographed at any size (PDF, JPG or PNG; kept in storage under `cheques/`), where the cheque sits
+  on the A4 page when printing (mm) and where the date (digit boxes or DD-MM-YYYY), payee, amount in words (two lines),
+  amount in figures and an optional "A/c Payee" crossing go (mm from the cheque's top left), and the text size.
+  **Scan clean-up** on upload (OpenCV.js, loaded only there): the cheque's four corners are found (edges, then the largest
+  four-sided outline, else the box around it; a scan already cropped to the cheque is taken whole), the cheque is
+  straightened (perspective) and cropped a hair inside its edges, turned landscape and, when Claude sees it upside down,
+  turned round, then made clearer (one levels stretch for all colours, so the logo and tint keep their colours, and
+  sharpened). Size: what a flat scan measures when that is a cheque's size, else 203 × 93 mm. The original stays as
+  uploaded (`pad`), the cleaned cheque is a JPEG (`clean`, 12 px per mm) with the corners used (`corners`); **Adjust
+  Corners** shows the original with the four corners to drag and applies them again. Templates with an older A4 scan
+  keep working as before until a new scan is uploaded. Then Claude reads the cheque to place each field ("Find Fields
+  Again" repeats it). A live
   preview draws a made-up payment on the scan, in black; fields can be dragged into place. Everything prints in black. In Payment Entry › Paid, a cheque payment has **Print Cheque**: pick the cheque
   book, check the payee, and download an A4 PDF with only the text at those places (or a test print with the scan
   behind). Print at 100%. The payment records when and with which template it was printed.

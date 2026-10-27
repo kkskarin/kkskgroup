@@ -10812,7 +10812,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function salPack(run, tp, test, pad) {
     if (!S.downloads) { toast("Downloads aren't available here."); return Promise.resolve(); }
     var co = S.companies[run.companyId] || {}, bank = (S.banks || {})[run.bankAcctId] || bankDefault(run.companyId) || {}, P = 72 / 25.4, m = coTpl(run.companyId).m;
-    return Promise.all([loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }), tp && test ? padImage(tp.pad) : null, pad ? padImage(pad) : null]).then(function (r) {
+    return Promise.all([loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }), tp && test ? chqScanUrl(tp) : null, pad ? padImage(pad) : null]).then(function (r) {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
       var doc = newPdf(jsPDF), W = 210 * P, L = (pad ? m.l : 20) * P, R = W - (pad ? m.r : 20) * P, y = (pad ? m.t : 20) * P;
       if (tp) { chequePage(doc, chqCopy(tp), { payee: SAL_PAYEE, amount: run.total, date: run.chequeDate, acPayee: false }, test ? r[1] : null); doc.addPage(); }
@@ -10917,7 +10917,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var CQ = { id: null, D: null, busy: false, img: null, drag: null };
   var CHQ_DEF = { area: { l: 0, t: 0, w: 203, h: 93 }, size: 11, f: { date: { x: 154, y: 8, gap: 5.1 }, payee: { x: 18, y: 21.5, w: 150 }, words: { x: 30, y: 30, w: 133, x2: 8, y2: 38.5 }, figures: { x: 157, y: 38 }, acpayee: { on: true, x: 8, y: 7 } } };
   var CHQ_FIELDS = [["date", "Date"], ["payee", "Payee"], ["words", "Amount in words"], ["figures", "Amount in figures"], ["acpayee", "A/c Payee"]];
-  function chqCopy(t) { var d = JSON.parse(JSON.stringify(CHQ_DEF)); t = t || {}; if (t.area) Object.assign(d.area, t.area); if (t.size) d.size = t.size; Object.keys(d.f).forEach(function (k) { if (t.f && t.f[k]) Object.assign(d.f[k], t.f[k]); }); return { name: t.name || "", bank: t.bank || "", bankAcctId: t.bankAcctId || "", first: t.first || "", end: t.end || "", last: t.last || "", neft: t.neft ? JSON.parse(JSON.stringify(t.neft)) : { pad: null, size: 10, fields: [] }, pad: t.pad || null, area: d.area, size: d.size, f: d.f }; }
+  function chqCopy(t) { var d = JSON.parse(JSON.stringify(CHQ_DEF)); t = t || {}; if (t.area) Object.assign(d.area, t.area); if (t.size) d.size = t.size; Object.keys(d.f).forEach(function (k) { if (t.f && t.f[k]) Object.assign(d.f[k], t.f[k]); }); return { name: t.name || "", bank: t.bank || "", bankAcctId: t.bankAcctId || "", first: t.first || "", end: t.end || "", last: t.last || "", neft: t.neft ? JSON.parse(JSON.stringify(t.neft)) : { pad: null, size: 10, fields: [] }, pad: t.pad || null, clean: t.clean || null, corners: t.corners || null, area: d.area, size: d.size, f: d.f }; }
   function chqCan() { return S.isAdmin || canDo("txn"); }
   /* Rupees in words, the Indian way (lakh, crore). */
   function inrWords(n) {
@@ -10948,7 +10948,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function chqDraw(cv, T, img) {
     var W = cv.width, k = W / T.area.w, H = Math.round(T.area.h * k); if (cv.height !== H) cv.height = H;
     var g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
-    if (img) { var ppm = img.height / 297; g.drawImage(img, T.area.l * ppm, T.area.t * ppm, T.area.w * ppm, T.area.h * ppm, 0, 0, W, H); }
+    if (img && T.clean) g.drawImage(img, 0, 0, W, H);
+    else if (img) { var ppm = img.height / 297; g.drawImage(img, T.area.l * ppm, T.area.t * ppm, T.area.w * ppm, T.area.h * ppm, 0, 0, W, H); }
     else { g.strokeStyle = "#cbd5d0"; g.strokeRect(1, 1, W - 2, H - 2); g.fillStyle = "#94a3a0"; g.font = Math.round(14) + "px sans-serif"; g.fillText("Upload the scan to see the cheque here", 16, 28); }
     var px = T.size * 0.3528 * k, tx = chqTexts(CHQ_SAMPLE), boxes = {};
     g.fillStyle = "#000"; g.font = "600 " + px + "px Jost, sans-serif"; g.textBaseline = "alphabetic";
@@ -10987,19 +10988,20 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var nm = inp("cqName", T.name, { maxlength: "60", "data-fmt": "name" }), bn = bankNameSelect("cqBank", T.bank, function (v) { T.bank = v; });
     f.appendChild(fld("Reference Name", nm, "How it is picked, e.g. \"HDFC cheque\".")); f.appendChild(fld("Bank Name", bn, "Every account of this bank uses this template unless it picks another. Cheque numbers are kept on each bank account."));
     nm.addEventListener("input", function () { T.name = nm.value; });
-    var sw = el("div", { class: "f wide" }); sw.appendChild(el("span", { class: "lb" }, "Cheque scan (A4 PDF)"));
-    var sr = el("div", { class: "acts", style: "align-items:center" }), fi = el("input", { type: "file", accept: "application/pdf", hidden: "" }), ub = el("button", { type: "button", class: "btn sm" }, T.pad ? "Replace Scan" : "Upload Scan");
+    var sw = el("div", { class: "f wide" }); sw.appendChild(el("span", { class: "lb" }, "Cheque scan or photo"));
+    var sr = el("div", { class: "acts", style: "align-items:center" }), fi = el("input", { type: "file", accept: "application/pdf,image/jpeg,image/png,image/webp", hidden: "" }), ub = el("button", { type: "button", class: "btn sm" }, T.pad ? "Replace Scan" : "Upload Scan");
     if (T.pad) { sr.appendChild(el("span", null, T.pad.name || "cheque.pdf")); sr.appendChild(solFileBtn(T.pad)); }
     ub.addEventListener("click", function () { fi.click(); }); fi.addEventListener("change", function () { var file = fi.files && fi.files[0]; fi.value = ""; if (file) chqUpload(file, T, ub); });
     sr.appendChild(ub); sr.appendChild(fi);
     if (T.pad) { var db = el("button", { type: "button", class: "btn sm" }, "Find Fields Again"); db.addEventListener("click", function () { chqDetect(T); }); sr.appendChild(db); }
-    sw.appendChild(sr); sw.appendChild(el("span", { class: "hint" }, "Scan one blank cheque on A4, at 100% (no fit to page), and save it as PDF. On upload the cheque's size and its fields are found automatically; drag anything that's off.")); f.appendChild(sw);
+    if (T.clean) { var cb2 = el("button", { type: "button", class: "btn sm", id: "cqCorners" }, "Adjust Corners"); cb2.addEventListener("click", function () { chqCornerEdit(T, cb2); }); sr.appendChild(cb2); }
+    sw.appendChild(sr); sw.appendChild(el("span", { class: "hint" }, "A blank cheque, scanned or photographed, any size (PDF, JPG or PNG). On upload it is straightened, turned the right way up, cropped to its edges and made clearer, keeping the bank's colours; then its fields are found. If the edges are off, use Adjust Corners. Drag any field that's off." + (T.pad && !T.clean ? " This template has an older A4 scan; upload it again to have it cleaned up." : ""))); f.appendChild(sw);
     L.appendChild(f);
     /* dimensions */
     function num2(v) { var n = Number(String(v).replace(/[^0-9.]/g, "")); return isFinite(n) ? n : 0; }
     function numIn(id, get, set, hint) { var i = inp(id, String(get()), { inputmode: "decimal", class: "field num" }); i.addEventListener("input", function () { set(num2(i.value)); draw(); }); return fld(hint, i); }
     function group(title, items) { var g = el("div", { style: "margin-top:14px" }); g.appendChild(el("b", null, title)); var gr = el("div", { style: "margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px" }); items.forEach(function (x) { gr.appendChild(x); }); g.appendChild(gr); L.appendChild(g); }
-    group("Where the cheque sits on the A4 page (mm)", [numIn("cqAl", function () { return T.area.l; }, function (v) { T.area.l = v; }, "From left"), numIn("cqAt", function () { return T.area.t; }, function (v) { T.area.t = v; }, "From top"), numIn("cqAw", function () { return T.area.w; }, function (v) { T.area.w = v || 1; }, "Cheque width"), numIn("cqAh", function () { return T.area.h; }, function (v) { T.area.h = v || 1; }, "Cheque height")]);
+    group(T.clean ? "Where the cheque sits on the A4 page when printing (mm): lay the cheque on the paper there" : "Where the cheque sits on the A4 page (mm)", [numIn("cqAl", function () { return T.area.l; }, function (v) { T.area.l = v; }, "From left"), numIn("cqAt", function () { return T.area.t; }, function (v) { T.area.t = v; }, "From top"), numIn("cqAw", function () { return T.area.w; }, function (v) { T.area.w = v || 1; }, "Cheque width"), numIn("cqAh", function () { return T.area.h; }, function (v) { T.area.h = v || 1; }, "Cheque height")]);
     group("Text", [numIn("cqSz", function () { return T.size; }, function (v) { T.size = v || 11; }, "Size (pt)")]);
     L.appendChild(el("p", { class: "hint", style: "margin:14px 0 0" }, "Fields, in mm from the cheque's top left (to the start of the text's baseline). Drag them on the preview, or type."));
     group("Date", [numIn("cqDx", function () { return T.f.date.x; }, function (v) { T.f.date.x = v; }, "Across"), numIn("cqDy", function () { return T.f.date.y; }, function (v) { T.f.date.y = v; }, "Down"), numIn("cqDg", function () { return T.f.date.gap; }, function (v) { T.f.date.gap = v; }, "Box spacing (0 = DD-MM-YYYY)")]);
@@ -11031,31 +11033,153 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
     cv.addEventListener("pointerup", function () { CQ.drag = null; cv.style.cursor = "grab"; });
     draw();
-    if (T.pad && !CQ.img) padImage(T.pad).then(function (u) { if (!u) return; var im = new Image(); im.onload = function () { CQ.img = im; draw(); }; im.src = u; });
+    if (T.pad && !CQ.img) chqScanUrl(T).then(function (u) { if (!u) return; var im = new Image(); im.onload = function () { CQ.img = im; draw(); }; im.src = u; });
     neftEditor(ed, T);
   }
   /* The scan must be an A4 PDF; it is kept in the files store. */
-  function chqUpload(f, T, btn) {
-    if (fileType(f) !== "application/pdf") { toast("Choose the scan as a PDF."); return; }
-    if (!window.bvFiles) { toast("Files can't be kept here."); return; }
-    var lb = btn.textContent; btn.disabled = true; btn.textContent = "Checking";
-    openPdf(f).then(function (pdf) { return pdf.getPage(1); }).then(function (pg) {
-      var v = pg.getViewport({ scale: 1 }); if (Math.abs(v.width - 595.28) > 12 || Math.abs(v.height - 841.89) > 12) throw { kind: "size", w: Math.round(v.width / 72 * 25.4), h: Math.round(v.height / 72 * 25.4) };
-      var path = (S.mode === "demo" ? "demo" : "live") + "/cheques/" + (CQ.id || "new") + "/" + Date.now().toString(36) + "-" + fileSafeName(f.name);
-      return window.bvFiles.put(path, f, "application/pdf").then(function () { return path; });
-    }).then(function (path) {
-      T.pad = { path: path, name: str(f.name, 160), type: "application/pdf", size: f.size || 0, at: Date.now(), by: meId() }; CQ.img = null;
-      renderChequeEdit(); return chqDetect(T);
-    }, function (e) { btn.disabled = false; btn.textContent = lb; toast(e && e.kind === "size" ? "The scan is " + e.w + " × " + e.h + " mm. It must be A4 (210 × 297 mm), portrait." : "The scan couldn't be uploaded. Try again."); });
+  /* ---- The cheque scan, cleaned up. A blank cheque, scanned or photographed at any size (PDF, JPG, PNG). Its four corners are
+     found (OpenCV: edges, then the largest four-sided outline; failing that, the box around the largest outline; a scan
+     already cropped to the cheque is taken whole), then it is straightened (perspective), cropped to its edges, turned
+     landscape and, if Claude sees it upside down, turned round. Then it is made clearer: the darkest and brightest parts
+     stretched to full range by the same amount on every colour (so the bank's logo and tint keep their colours) and the
+     print sharpened. Size: what a flat scan measures, when that is a cheque's size; else the CTS-2010 size. The original is
+     kept as uploaded (T.pad), the cleaned cheque as a JPEG (T.clean) and the corners found (T.corners) for Adjust Corners. ---- */
+  var OPENCV = "https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.10.0-release.1/dist/opencv.js", CHQ_PPM = 12;
+  function cvLib() {
+    return loadScript(OPENCV).then(function () {
+      var c = window.cv; if (!c) throw { kind: "lib" };
+      /* resolved wrapped: the module is itself "then-able", which would loop a promise */
+      return new Promise(function (res, rej) { var n = 0; (function wait() { if (c.Mat && c.imread) return res({ cv: c }); if (++n > 600) return rej({ kind: "lib" }); setTimeout(wait, 100); })(); });
+    });
   }
-  /* From the scan: the cheque's edges (where the page stops being white) and, by asking Claude, where each field goes. */
+  var CLEANS = {};
+  function chqScanUrl(T) {
+    if (T && T.clean && T.clean.path) { if (!window.bvFiles) return Promise.resolve(null); if (!CLEANS[T.clean.path]) CLEANS[T.clean.path] = window.bvFiles.get(T.clean.path).then(blobData).catch(function () { delete CLEANS[T.clean.path]; return null; }); return CLEANS[T.clean.path]; }
+    return padImage(T && T.pad);
+  }
+  /* The upload as a canvas, and how many mm one pixel is when the file knows (a PDF page); 0 for a photo. */
+  function chqSourceCanvas(f) {
+    if (fileType(f) === "application/pdf") return openPdf(f).then(function (pdf) { return pdf.getPage(1); }).then(function (pg) { var v = pg.getViewport({ scale: 1 }); return renderPdfCanvas(pg, 3200).then(function (cv) { return { cv: cv, mmpp: (v.width / 72 * 25.4) / cv.width }; }); });
+    return createImageBitmap(f, { imageOrientation: "from-image" }).then(function (bm) {
+      var k = Math.min(1, 3200 / Math.max(bm.width, bm.height)), cv = document.createElement("canvas"); cv.width = Math.round(bm.width * k); cv.height = Math.round(bm.height * k);
+      cv.getContext("2d").drawImage(bm, 0, 0, cv.width, cv.height); return { cv: cv, mmpp: 0 };
+    });
+  }
+  function chqOrder(pts) { /* top left, top right, bottom right, bottom left */
+    var c = pts.reduce(function (a, p) { return { x: a.x + p.x / 4, y: a.y + p.y / 4 }; }, { x: 0, y: 0 });
+    var srt = pts.slice().sort(function (a, b) { return Math.atan2(a.y - c.y, a.x - c.x) - Math.atan2(b.y - c.y, b.x - c.x); });
+    var tl = 0; srt.forEach(function (p, i) { if (p.x + p.y < srt[tl].x + srt[tl].y) tl = i; });
+    return [0, 1, 2, 3].map(function (i) { return srt[(tl + i) % 4]; });
+  }
+  /* Corners as fractions of the source's width and height. */
+  function chqCorners(c, src) {
+    var k = Math.min(1, 1000 / Math.max(src.width, src.height)), sm = document.createElement("canvas"); sm.width = Math.round(src.width * k); sm.height = Math.round(src.height * k);
+    sm.getContext("2d").drawImage(src, 0, 0, sm.width, sm.height);
+    var m = c.imread(sm), g = new c.Mat(), e = new c.Mat(), cs = new c.MatVector(), h = new c.Mat(), ker = c.Mat.ones(5, 5, c.CV_8U), out = null, W = sm.width, H = sm.height;
+    try {
+      c.cvtColor(m, g, c.COLOR_RGBA2GRAY); c.GaussianBlur(g, g, new c.Size(5, 5), 0); c.Canny(g, e, 25, 80); c.dilate(e, e, ker); c.morphologyEx(e, e, c.MORPH_CLOSE, ker);
+      c.findContours(e, cs, h, c.RETR_EXTERNAL, c.CHAIN_APPROX_SIMPLE);
+      var best = -1, ba = 0; for (var i = 0; i < cs.size(); i++) { var a = c.contourArea(cs.get(i)); if (a > ba) { ba = a; best = i; } }
+      if (best >= 0 && ba > W * H * 0.2) {
+        var cnt = cs.get(best), ap = new c.Mat(), peri = c.arcLength(cnt, true);
+        c.approxPolyDP(cnt, ap, 0.02 * peri, true);
+        if (ap.rows === 4 && c.isContourConvex(ap)) { out = []; for (var j = 0; j < 4; j++) out.push({ x: ap.data32S[j * 2], y: ap.data32S[j * 2 + 1] }); }
+        else { var rr = c.minAreaRect(cnt), ps = c.RotatedRect.points(rr); out = ps.map(function (p) { return { x: p.x, y: p.y }; }); }
+        ap.delete();
+      }
+    } finally { [m, g, e, cs, h, ker].forEach(function (x) { x.delete(); }); }
+    /* nothing big enough: the scan is already the cheque */
+    if (!out || out.some(function (p) { return p.x < -W * 0.05 || p.y < -H * 0.05 || p.x > W * 1.05 || p.y > H * 1.05; })) out = [{ x: 0, y: 0 }, { x: W, y: 0 }, { x: W, y: H }, { x: 0, y: H }];
+    return chqOrder(out).map(function (p) { return { x: Math.min(1, Math.max(0, p.x / W)), y: Math.min(1, Math.max(0, p.y / H)) }; });
+  }
+  function chqRotate(cv, deg) { var o = document.createElement("canvas"), q = deg % 180 !== 0; o.width = q ? cv.height : cv.width; o.height = q ? cv.width : cv.height; var g = o.getContext("2d"); g.translate(o.width / 2, o.height / 2); g.rotate(deg * Math.PI / 180); g.drawImage(cv, -cv.width / 2, -cv.height / 2); return o; }
+  /* Straighten, turn, clear up. Gives the cheque canvas and its size in mm. */
+  function chqFinish(c, src, q) {
+    var W = src.cv.width, H = src.cv.height, P = q.map(function (p) { return { x: p.x * W, y: p.y * H }; }), d = function (a, b) { return Math.hypot(a.x - b.x, a.y - b.y); };
+    var wpx = (d(P[0], P[1]) + d(P[3], P[2])) / 2, hpx = (d(P[0], P[3]) + d(P[1], P[2])) / 2, land = wpx >= hpx, lng = Math.max(wpx, hpx), sht = Math.min(wpx, hpx);
+    var wmm = 203, hmm = 93; if (src.mmpp && lng * src.mmpp > 150 && lng * src.mmpp < 230 && sht * src.mmpp > 60 && sht * src.mmpp < 115) { wmm = Math.round(lng * src.mmpp * 10) / 10; hmm = Math.round(sht * src.mmpp * 10) / 10; }
+    var ow = Math.round((land ? wmm : hmm) * CHQ_PPM), oh = Math.round((land ? hmm : wmm) * CHQ_PPM);
+    var m = c.imread(src.cv), o = new c.Mat(), sT = c.matFromArray(4, 1, c.CV_32FC2, [P[0].x, P[0].y, P[1].x, P[1].y, P[2].x, P[2].y, P[3].x, P[3].y]), ti = Math.round(0.4 * CHQ_PPM), dT = c.matFromArray(4, 1, c.CV_32FC2, [-ti, -ti, ow + ti, -ti, ow + ti, oh + ti, -ti, oh + ti]) /* a hair inside the edges, so no background shows */, M = c.getPerspectiveTransform(sT, dT);
+    var cv = document.createElement("canvas");
+    try {
+      c.warpPerspective(m, o, M, new c.Size(ow, oh), c.INTER_CUBIC, c.BORDER_REPLICATE);
+      /* clarity: one stretch for every colour (hues kept), from the 0.5% darkest to the 99% brightest, then sharpen */
+      var g = new c.Mat(); c.cvtColor(o, g, c.COLOR_RGBA2GRAY); var hist = new Array(256).fill(0), gd = g.data; for (var i = 0; i < gd.length; i += 3) hist[gd[i]]++;
+      var tot = hist.reduce(function (a, b) { return a + b; }, 0), acc = 0, lo = 0, hi = 255; for (i = 0; i < 256; i++) { acc += hist[i]; if (acc < tot * 0.005) lo = i; if (acc < tot * 0.99) hi = i + 1; } g.delete();
+      if (hi - lo > 40) { var al = 255 / (hi - lo); o.convertTo(o, -1, al, -lo * al); }
+      var bl = new c.Mat(); c.GaussianBlur(o, bl, new c.Size(0, 0), 1.4); c.addWeighted(o, 1.55, bl, -0.55, 0, o); bl.delete();
+      c.imshow(cv, o);
+    } finally { [m, o, sT, dT, M].forEach(function (x) { x.delete(); }); }
+    if (!land) cv = chqRotate(cv, 90);
+    /* the right way up: Claude looks at a small copy */
+    var up = !S.sample ? Promise.resolve(0) : new Promise(function (res) { var t = document.createElement("canvas"), k = 1000 / cv.width; t.width = 1000; t.height = Math.round(cv.height * k); t.getContext("2d").drawImage(cv, 0, 0, t.width, t.height); t.toBlob(res, "image/jpeg", 0.85); })
+      .then(function (b) { return S.sample.json("This image is a bank cheque. Is it upside down (the bank's name and the printed text read upside down, the MICR code line at the top)? Reply only JSON {\"upside_down\": true or false}.", { images: [b], modelTier: "default" }); })
+      .then(function (r) { return r && r.upside_down === true ? 180 : 0; }, function () { return 0; });
+    return up.then(function (deg) { return { cv: deg ? chqRotate(cv, 180) : cv, wmm: wmm, hmm: hmm }; });
+  }
+  /* Keeps the cleaned cheque and fits the template to it. */
+  function chqKeepClean(T, r, base, q) {
+    return new Promise(function (res, rej) { r.cv.toBlob(function (b) { if (b) res(b); else rej({ kind: "open" }); }, "image/jpeg", 0.93); }).then(function (blob) {
+      var path = base + "-clean.jpg";
+      return window.bvFiles.put(path, blob, "image/jpeg").then(function () {
+        var had = !!T.clean; T.clean = { path: path, type: "image/jpeg", w: r.cv.width, h: r.cv.height, at: Date.now(), by: meId() }; T.corners = q; CQ.img = null;
+        T.area = { l: had ? T.area.l : Math.round((210 - r.wmm) / 2 * 10) / 10, t: had ? T.area.t : 0, w: r.wmm, h: r.hmm };
+      });
+    });
+  }
+  function chqUpload(f, T, btn) {
+    var ty = fileType(f); if (!/^(application\/pdf|image\/(jpeg|png|webp))$/.test(ty)) { toast("Choose the scan as a PDF, or a photo (JPG or PNG)."); return; }
+    if (!window.bvFiles) { toast("Files can't be kept here."); return; }
+    var lb = btn.textContent, src = null, q = null, base = (S.mode === "demo" ? "demo" : "live") + "/cheques/" + (CQ.id || "new") + "/" + Date.now().toString(36); btn.disabled = true; btn.textContent = "Cleaning up";
+    toast("Straightening and cleaning up the cheque…");
+    chqSourceCanvas(f).then(function (s0) { src = s0; return cvLib(); }).then(function (L) { q = chqCorners(L.cv, src.cv); return chqFinish(L.cv, src, q); })
+      .then(function (r) { var path = base + "-" + fileSafeName(f.name); return window.bvFiles.put(path, f, ty).then(function () { T.pad = { path: path, name: str(f.name, 160), type: ty, size: f.size || 0, at: Date.now(), by: meId() }; return chqKeepClean(T, r, base, q); }); })
+      .then(function () { renderChequeEdit(); return chqDetect(T); }, function (e) { btn.disabled = false; btn.textContent = lb; toast(e && e.kind === "lib" ? "The image tools didn't load. Check the connection and try again." : "The scan couldn't be cleaned up. Try another scan or photo."); });
+  }
+  /* Adjust Corners: the original with the four corners found; drag them onto the cheque's corners and apply. */
+  function chqCornerEdit(T, btn) {
+    if (!T.pad || !window.bvFiles) return; var lb = btn.textContent; btn.disabled = true; btn.textContent = "Opening";
+    window.bvFiles.get(T.pad.path).then(function (b) { return chqSourceCanvas(new File([b], T.pad.name || "scan", { type: T.pad.type || b.type })); }).then(function (src) {
+      btn.disabled = false; btn.textContent = lb;
+      var q = (T.corners || [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }]).map(function (p) { return { x: p.x, y: p.y }; });
+      var body = el("div"), cv = el("canvas", { id: "cqCornerCv", style: "width:100%;height:auto;touch-action:none;cursor:crosshair;border:1px solid var(--line);border-radius:8px" }); body.appendChild(cv);
+      var k = Math.min(1, 900 / src.cv.width); cv.width = Math.round(src.cv.width * k); cv.height = Math.round(src.cv.height * k);
+      function draw() { var g = cv.getContext("2d"); g.drawImage(src.cv, 0, 0, cv.width, cv.height); g.strokeStyle = "#0a7d4f"; g.lineWidth = 2; g.beginPath(); q.forEach(function (p, i) { var x = p.x * cv.width, y = p.y * cv.height; if (i) g.lineTo(x, y); else g.moveTo(x, y); }); g.closePath(); g.stroke(); q.forEach(function (p) { g.fillStyle = "rgba(10,125,79,.85)"; g.beginPath(); g.arc(p.x * cv.width, p.y * cv.height, 9, 0, 7); g.fill(); }); }
+      var drag = -1; function at(e) { var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height }; }
+      cv.addEventListener("pointerdown", function (e) { var p = at(e), bi = -1, bd = 1e9; q.forEach(function (c0, i) { var dd = Math.hypot((c0.x - p.x) * cv.width, (c0.y - p.y) * cv.height); if (dd < bd) { bd = dd; bi = i; } }); if (bd < 40) { drag = bi; cv.setPointerCapture(e.pointerId); } });
+      cv.addEventListener("pointermove", function (e) { if (drag < 0) return; var p = at(e); q[drag] = { x: Math.min(1, Math.max(0, p.x)), y: Math.min(1, Math.max(0, p.y)) }; draw(); });
+      cv.addEventListener("pointerup", function () { drag = -1; });
+      draw();
+      popForm("Adjust corners", "Drag the four dots onto the cheque's corners, then apply. The cheque is straightened and cleaned up again; the fields stay where they are.", body, "Apply", function () {
+        var qq = chqOrder(q.map(function (p) { return { x: p.x, y: p.y }; }));
+        return cvLib().then(function (L) { return chqFinish(L.cv, src, qq); }).then(function (r) { return chqKeepClean(T, r, (S.mode === "demo" ? "demo" : "live") + "/cheques/" + (CQ.id || "new") + "/" + Date.now().toString(36), qq); })
+          .then(function () { renderChequeEdit(); toast("Cheque straightened again. Save the template to keep it."); }, function () { toast("That didn't work. Try again."); return false; });
+      });
+    }, function () { btn.disabled = false; btn.textContent = lb; toast("The original scan couldn't be opened."); });
+  }
+  /* Asks Claude where each field goes on the cheque: the part of im from off (mm) of the template's size, ppm pixels per mm. */
+  function chqFields(T, im, ppm, off) {
+    if (!S.sample) return Promise.resolve(null);
+    var cc = document.createElement("canvas"); cc.width = Math.round(T.area.w * ppm); cc.height = Math.round(T.area.h * ppm);
+    cc.getContext("2d").drawImage(im, off.l * ppm, off.t * ppm, T.area.w * ppm, T.area.h * ppm, 0, 0, cc.width, cc.height);
+    return new Promise(function (res) { cc.toBlob(res, "image/jpeg", 0.92); }).then(function (blob) {
+        return S.sample.json("This image is one blank Indian bank cheque, cropped to its edges. It is " + T.area.w + " mm wide and " + T.area.h + " mm tall. "
+          + "Give where a writer should put each field, as fractions of the image's width (x) and height (y) from the top left. For each line, y is the printed line the text sits on. "
+          + "Return JSON: {\"date\":{\"x\":left edge of the first date digit box,\"y\":bottom of the date boxes,\"boxes\":number of date boxes (8 for DDMMYYYY, 0 if there are none),\"gap\":distance between the left edges of two neighbouring date boxes},"
+          + "\"payee\":{\"x\":where the payee's name starts after the word Pay,\"y\":the Pay line,\"x_end\":where that line ends},"
+          + "\"words\":{\"x\":where the amount in words starts after Rupees,\"y\":the first Rupees line,\"x_end\":where that line ends,\"x2\":where the second line starts,\"y2\":the second line},"
+          + "\"figures\":{\"x\":inside the amount box (after the ₹ sign),\"y\":the bottom of the text space in that box},"
+          + "\"acpayee\":{\"x\":top left corner area, clear of the bank's name,\"y\":its line}}. Use numbers between 0 and 1.", { images: [blob], modelTier: "default" });
+    });
+  }
   function chqDetect(T) {
     if (!T.pad) return Promise.resolve();
     toast("Reading the scan: finding the cheque and its fields…");
-    return padImage(T.pad).then(function (u) {
+    return chqScanUrl(T).then(function (u) {
       if (!u) throw { kind: "img" };
       return new Promise(function (res, rej) { var im = new Image(); im.onload = function () { res(im); }; im.onerror = rej; im.src = u; });
     }).then(function (im) {
+      if (T.clean) return chqFields(T, im, im.width / T.area.w, { l: 0, t: 0 });
       var ppm = im.height / 297, sc = 0.25, w = Math.round(im.width * sc), h = Math.round(im.height * sc), cv = document.createElement("canvas"); cv.width = w; cv.height = h;
       var g = cv.getContext("2d"); g.drawImage(im, 0, 0, w, h); var d = g.getImageData(0, 0, w, h).data, x1 = w, y1 = h, x2 = -1, y2 = -1;
       /* a pixel belongs to the cheque when it is clearly not white; rows and columns need a few such pixels, so specks don't count */
@@ -11068,18 +11192,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         /* a whole page of content is not a cheque: keep the standard size then */
         if (a.w > 120 && a.w < 230 && a.h > 50 && a.h < 140) T.area = a; else T.area = { l: a.l, t: a.t, w: 203, h: 93 };
       }
-      if (!S.sample) return null;
-      var cc = document.createElement("canvas"); cc.width = Math.round(T.area.w * ppm); cc.height = Math.round(T.area.h * ppm);
-      cc.getContext("2d").drawImage(im, T.area.l * ppm, T.area.t * ppm, T.area.w * ppm, T.area.h * ppm, 0, 0, cc.width, cc.height);
-      return new Promise(function (res) { cc.toBlob(res, "image/jpeg", 0.92); }).then(function (blob) {
-        return S.sample.json("This image is one blank Indian bank cheque, cropped to its edges. It is " + T.area.w + " mm wide and " + T.area.h + " mm tall. "
-          + "Give where a writer should put each field, as fractions of the image's width (x) and height (y) from the top left. For each line, y is the printed line the text sits on. "
-          + "Return JSON: {\"date\":{\"x\":left edge of the first date digit box,\"y\":bottom of the date boxes,\"boxes\":number of date boxes (8 for DDMMYYYY, 0 if there are none),\"gap\":distance between the left edges of two neighbouring date boxes},"
-          + "\"payee\":{\"x\":where the payee's name starts after the word Pay,\"y\":the Pay line,\"x_end\":where that line ends},"
-          + "\"words\":{\"x\":where the amount in words starts after Rupees,\"y\":the first Rupees line,\"x_end\":where that line ends,\"x2\":where the second line starts,\"y2\":the second line},"
-          + "\"figures\":{\"x\":inside the amount box (after the ₹ sign),\"y\":the bottom of the text space in that box},"
-          + "\"acpayee\":{\"x\":top left corner area, clear of the bank's name,\"y\":its line}}. Use numbers between 0 and 1.", { images: [blob], modelTier: "default" });
-      });
+      return chqFields(T, im, ppm, T.area);
     }).then(function (r) {
       var f = T.f, W = T.area.w, H = T.area.h, ok = 0;
       function n(v) { v = Number(v); return isFinite(v) && v >= 0 && v <= 1 ? v : null; }
@@ -11251,7 +11364,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!T.name) { errOn("cqName", "Enter a reference name."); return; } if (!T.bank) { errOn("cqBank", "Choose the bank."); return; }
     if (!T.pad) { toast("Upload the cheque scan first."); return; }
     var now = Date.now(), id = CQ.id === "new" ? newId("cq") : CQ.id, old = (S.chqtpl || {})[id];
-    var doc = { neft: T.neft && (T.neft.pad || (T.neft.fields || []).length) ? T.neft : null, name: smartCase(T.name), bank: T.bank, pad: T.pad, area: T.area, size: T.size, f: T.f, active: true, updatedAt: now, updatedBy: meId() };
+    var doc = { neft: T.neft && (T.neft.pad || (T.neft.fields || []).length) ? T.neft : null, name: smartCase(T.name), bank: T.bank, clean: T.clean || null, corners: T.corners || null, pad: T.pad, area: T.area, size: T.size, f: T.f, active: true, updatedAt: now, updatedBy: meId() };
     if (!old) Object.assign(doc, { createdAt: now, createdBy: meId() });
     CQ.busy = true; $("cqSave").disabled = true;
     retry(function () { return old ? S.db.doc("chqtpl/" + id).update(doc) : S.db.doc("chqtpl/" + id).set(doc); }).then(function () {
@@ -11269,7 +11382,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* Writes one cheque's text on the current page, at its template's places. */
   function chequePage(doc, T, pay, scan) {
     var P = 72 / 25.4, ox = T.area.l, oy = T.area.t, f = T.f, tx = chqTexts(pay);
-    if (scan) doc.addImage(scan, "JPEG", 0, 0, 210 * P, 297 * P);
+    if (scan && T.clean) doc.addImage(scan, "JPEG", ox * P, oy * P, T.area.w * P, T.area.h * P); else if (scan) doc.addImage(scan, "JPEG", 0, 0, 210 * P, 297 * P);
     doc.setFontSize(T.size); doc.setTextColor(0, 0, 0); doc.setDrawColor(0, 0, 0);
     function put(s0, x, y) { doc.text(s0, (ox + x) * P, (oy + y) * P); }
     if (Number(f.date.gap) > 0) tx.date.split("").forEach(function (c, i) { put(c, f.date.x + i * f.date.gap, f.date.y); }); else put(tx.date.slice(0, 2) + "-" + tx.date.slice(2, 4) + "-" + tx.date.slice(4), f.date.x, f.date.y);
@@ -11283,7 +11396,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!S.downloads) { toast("Downloads aren't available here."); return Promise.resolve(); }
     var tps = {}; cs.forEach(function (c) { var tp = (S.chqtpl || {})[c.tplId]; if (tp) tps[tp.id] = tp; });
     var ids = Object.keys(tps), scans = {};
-    return Promise.all([loadScript(JSPDF)].concat(withScan ? ids.map(function (id) { return padImage(tps[id].pad).then(function (u) { scans[id] = u; }); }) : [])).then(function () {
+    return Promise.all([loadScript(JSPDF)].concat(withScan ? ids.map(function (id) { return chqScanUrl(tps[id]).then(function (u) { scans[id] = u; }); }) : [])).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
       var doc = newPdf(jsPDF), n = 0;
       cs.forEach(function (c) { var tp = tps[c.tplId]; if (!tp) return; if (n++) doc.addPage(); chequePage(doc, chqCopy(tp), { payee: c.payee, amount: c.amount, date: c.date, acPayee: c.acPayee }, withScan ? scans[tp.id] : null); });

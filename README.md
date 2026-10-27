@@ -12,7 +12,7 @@
 | `/finance/` | Finance: the only place payments are planned and recorded, for every division; advances, payables, salary, bank accounts, cheque and NEFT/RTGS templates | KKSK Group |
 | `/approvals/` | Approvals: checking reports (bill, advance and voucher checking reports) and cash advances from every division, approved by admins or recorded by the financier on their behalf | KKSK Group |
 | `/costing/` (`web/costing/index.html`) | W/B Costing: lot unloading, assortment piece by piece, cost sheets, costing report per origin (moved from a claude.ai artifact, started empty). Group sign-in first (Settings › Users › Apps › W/B Costing, `apps.wb`; admins always), then the app's own usernames and passwords; the first account is made by a Super Admin. Records live in `wb_*` collections of `app_docs`. **Grades** and **RH Sizes** are lookups (`wb_grades`, `wb_rhsizes`: code + order) managed under Reports › Grades / RH Sizes (add, reorder, delete); the Super Admin's first visit seeds the 15 standard RH sizes in order; a new cost sheet opens with every grade from the list in the list's order (an untouched new sheet keeps following the list), a saved sheet shows its grades in that order, a grade can't appear twice in a sheet (flagged while typing, refused on save), and a grade typed into a sheet joins the list when the sheet is saved; main tabs are Costing (the costing report; the app opens here), Unloading, Assortment, Cost Sheet, Data (Origins, RH Sizes, Grades, Users); on Unloading, Assortment and Cost Sheet the list on the left shows Drafts then Submitted (search filters both; a submitted assortment has a Costing button), and the action bar sits at the end of the form (fixed to the bottom on phones) with + New, Discard (drops unsaved changes, or clears the screen), Delete (saved entries), Save Draft and Submit; a load unloading starts with no size rows and the sizes are ticked (or a new one added inline, which joins the lookup). The header has **All Apps** (back to the KKSK Group home). Refreshing the page always asks for the app sign-in again. **Demo / Live**: admins, and users an admin switches Demo on for (Data › Users › Demo On/Off), get a switch; Demo keeps its own records (`wbdemo_*`) and its own unsent drafts, and the switch keeps the person signed in. **View As** (admins): see the app as another of its users; nothing can be saved meanwhile. **Safeguard**: signing in as the safeguard account (its username and password are kept only as PBKDF2 hashes in the page; the password is asked a second time) overwrites every record in `wb_` and `wbdemo_` `unloadings/assortments/costsheets/origins/grades/rhsizes` with a cooked-up stand-in of the same shape, removes it, and shuts the app behind a fake error page. Any costing admin restarts it with their own username and the safeguard password: leftovers are cooked and removed again first, the app reopens empty, and the standard RH sizes are re-seeded. Nothing real is restored. This reaches only what the app can write, not Supabase's backups | KKSK Group |
-| `/production/` (`web/production/index.html`) | Production Planning — **hidden for now** (no tile; the address sends people home; access already given is kept) (Live on the KKSK-Production tables; Demo sample for admins) | KKSK-Production, through the hand-over |
+| `/production/` (`web/production/index.html`) | Production Planning (Live on the KKSK-Production tables; Demo sample for admins) | KKSK-Production, through the hand-over |
 
 - **One page, five apps.** Maintenance, Renewable Energy, Accounts and Finance are all `web/bills/index.html`; `netlify.toml`
   serves it at each address and the address picks the app (`BV_APP`: mnt, re, acc, fin). `/bills/` (the old Bills & Vouchers)
@@ -36,7 +36,7 @@
   `apps.mnt/re/bnv`, Maintenance & Civil on unless said otherwise): the divisions a person works for. Accounts opens for an
   Accountant (or Chief Accountant), Finance for a Financier (or Chief Accountant), Approvals for an Approver or Approval
   Recorder, with no ticks; a division app opens for entering in a ticked division (Sales ticks Renewable Energy by itself).
-  At least one division is needed by Purchasers, Voucher Makers, Accountants, Financiers and Sales. In Accounts and
+  At least one division is needed by Purchasers, Expenses Operators, Accountants, Financiers and Sales. In Accounts and
   Finance a person sees only their divisions' bills, vouchers, payments, notes and cash advances (`inDiv`); admins and a
   Chief Accountant see every division; Approvals is unaffected.
   **Approvers (the admins).** In Approvals, Checking Reports and Cash Advances open on **Assigned to me** (what names them,
@@ -44,16 +44,25 @@
   another approver asks **Approving as**: Myself, or **On behalf of <name>** (they approved it but couldn't in the app),
   saved as `onBehalf`, `behalfMode: "admin"`, `paperById/Name`, `behalfByName` and shown "Approved by Arin on behalf of
   Akheel". The approver on each entry is still a default the person entering can change.
+  **Demo per person.** Settings › Users has a **Demo** switch on each person (`users.demoOk`); with it on they get the
+  Demo / Live pill and choose. In Demo they practise the steps after their own (chain: Purchaser → Accountant → Approval →
+  Financier): an Accountant also enters; a Financier also enters, accounts, approves (in an admin's name, chosen in the
+  form; `behalfMode: "admin"`) and pays, with the apps for those steps opening for them in Demo. Real companies are shown;
+  Demo users can't add companies, change ledgers or cheque templates (shared with Live); vendors and bank accounts made
+  in Demo are Demo-only (`bankacct` is no longer shared, so Demo starts without bank accounts). Live never changes.
+  **Chief Accountant** is no longer offered in the role list; whoever already has it keeps it.
+  **Production Planning** is its own app again (tile back, address open). In KKSK Users it is a single tick (a new person
+  starts as Floor Team); roles and plant are set in Production Planning's own Users tab.
   **Purchaser and Approver never go together** on one person (Users, sign-up requests, own role picker, profiles; per
   company, Approval with purchase steps is refused too).
   Accounts decides which divisions may use each ledger (Ledgers › Edit › Divisions that use it).
 - **Workflow.** Every bill, voucher, proforma and import goes: data entry → accounting → approval → payment.
   Jobs: Purchaser (entry), Accountant (accounting), Approver (approval), Approval Recorder (records paper approvals),
-  Voucher Maker (vouchers for other people), Financier (payment), Sales (energy billing); any mix may be held, except Approver with
+  Expenses Operator (vouchers for other people), Financier (payment), Sales (energy billing); any mix may be held, except Approver with
   Approval Recorder. In Users each company has one tick per pair: **Bills & BCR**, **Vouchers & VCR**, **Proformas, Imports &
   ACR** (steps `bills`+`bcr`, `vouchers`+`vcr`, saved together; either half on an older record gives both). Checking reports are
   made only from the person's own bills and vouchers (and those of the profiles linked to their login, or vouchers they made as a
-  Voucher Maker), and they see only those reports and vouchers. On the bill form GST shows as GST (CGST + SGST) or GST (IGST), from the vendor's and company's states.
+  Expenses Operator), and they see only those reports and vouchers. On the bill form GST shows as GST (CGST + SGST) or GST (IGST), from the vendor's and company's states.
   A Purchaser who is also the Accountant for a company accounts a bill as they record it (ledgers and TDS on the bill form);
   it skips Accounting but still goes to approval. The accountant "accounts" entries; only the Approver step "approves".
 - **Approvals** happen only in the Approvals app, for admins and people with Approval. An Approver sees and approves only the
@@ -63,7 +72,7 @@
   for companies where they hold the Approval Recorder step. They choose who signed (the named approver by default) and it is saved
   in that person's name, "recorded by" them. An Approval Recorder is never offered as an approver. Approving can be for the full
   amount or a part. No approving while viewing as someone.
-- **Vouchers** are made by the person they belong to, or by a **Voucher Maker** for someone else (a person with a login, or a
+- **Vouchers** are made by the person they belong to, or by a **Expenses Operator** for someone else (a person with a login, or a
   name from the saved list `vpeople/*`); the voucher counts as that person's (cash advance only for people with a login, and their
   checking report), and keeps who made it. **3 or fewer** vouchers of a person for a company go for approval without a checking
   report ("Send for approval"): they are printed one per page and signed. 4 or more go into a Voucher Checking Report.
@@ -185,7 +194,7 @@ provides the same calls, so the app code did not need rewriting:
   accountants, Chief Accountants and financiers; migration 20261024090000): one row per person with last active and last edit (date and time, "N/A"
   if none; from the admin-only `app_activity` database function), the work done in the period broken down by kind with
   its average time, and what is pending on them now with the oldest age. Only each job's own work counts: purchasers'
-  bills, vouchers, proformas and imports entered (a bill's time, a proforma's final bill too, is bill date → uploaded); Voucher Makers' vouchers; accountants' and Chief Accountants' bills
+  bills, vouchers, proformas and imports entered (a bill's time, a proforma's final bill too, is bill date → uploaded); Expenses Operators' vouchers; accountants' and Chief Accountants' bills
   and vouchers accounted, vendors added or completed and items sent back to the purchaser (from each bill's and voucher's
   `acctLog`); anything sent back (by the accountant, or left out by the approver) also shows against the purchaser as
   "Sent back to them for correction" with who sent it and why; financiers' payments and cash advances handed over; approvers'
@@ -205,9 +214,9 @@ provides the same calls, so the app code did not need rewriting:
   "from <division>"; **Open in …** opens it in the app it was made in (`?go=b:<id>` / `?go=v:<id>`), where it is changed.
   It is also a division of its own (the app is given in Users to people who enter bills or vouchers). Bills, vouchers, checking reports and
   payments here are kept apart from Maintenance & Civil (records carry `div: "bnv"`; Accounts, Finance and Approvals see
-  them with every division). On each bill and voucher the Voucher Maker picks **Prepared by**: themselves or a saved
+  them with every division). On each bill and voucher the Expenses Operator picks **Prepared by**: themselves or a saved
   name (or a new one, saved for next time); the entry counts as that person's, with `madeBy` recording the Voucher
-  Maker. A Voucher Maker enters bills wherever they make vouchers. Companies (and vendors, ledgers) must be ticked as
+  Maker. A Expenses Operator enters bills wherever they make vouchers. Companies (and vendors, ledgers) must be ticked as
   used in Bills & Vouchers. Sign-in check: migration 20261024150000.
 - **Cheque Templates and printing**: Masters › Cheque Templates (Finance only; admins and financiers)
   holds one template per bank's cheque layout in `chqtpl/*` (shared by Demo and Live): reference name, bank, a blank

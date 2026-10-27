@@ -12914,9 +12914,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* ---- Core plus app-specific fields. Every bill and voucher has the same core (what Accounts, Approvals and Finance work
      from); each division app adds its own fields on top, kept under ext.<app> and shown only in that app. A new app only
      lists its fields here. Renewable Energy's is the cost centre (transformer, WEG / SEI ID), below. ---- */
-  var APP_EXT = {
-    mnt: [["machine", "Machine type", "The machine or equipment the work was on."], ["section", "Section", "Where the work was done."]]
-  };
+  var APP_EXT = {}; /* none yet besides Renewable Energy's cost centre; e.g. mnt: [["key", "Label", "Hint"]] */
   function extOf(x, app) { var e = x && x.ext && x.ext[app]; if (e) return e; if (app === "re" && x && (x.cc || x.ccT)) return { cc: x.cc || "", ccT: x.ccT || "" }; return {}; }
   /* Values typed before in this app's field, offered again. */
   function extList(k) { var m = {}; [S.raw && S.raw.bills, S.raw && S.raw.vouchers].forEach(function (src) { Object.keys(src || {}).forEach(function (id) { var v = (extOf(src[id], DIV) || {})[k]; if (v) m[String(v).toLowerCase()] = String(v); }); }); var id = "xl_" + k, dl = $(id); if (!dl) { dl = el("datalist", { id: id }); document.body.appendChild(dl); } dl.textContent = ""; Object.keys(m).map(function (q) { return m[q]; }).sort(natCmp).forEach(function (v) { dl.appendChild(el("option", { value: v })); }); return id; }

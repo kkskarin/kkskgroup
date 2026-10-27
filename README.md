@@ -29,9 +29,8 @@
   waits in each (division apps: their unfinished bills and anything sent back; Accounts: to account; Approvals: waiting
   for them; Finance: approved, not yet paid in full, and approved cash advances to hand over); its badge totals the other apps.
   **Core plus app-specific fields**: every bill and voucher has one core that Accounts, Approvals and Finance work from;
-  each division app adds its own fields under `ext.<app>`, shown only there (`APP_EXT`): Maintenance & Civil, Machine type
-  and Section (typed, earlier values offered); Renewable Energy, the cost centre (`ext.re.cc` / `ccT`; older entries'
-  top-level `cc` still read). A new division only lists its fields there.
+  a division app can add its own fields under `ext.<app>`, shown only there (`APP_EXT`, empty for now); Renewable Energy's
+  is the cost centre (`ext.re.cc` / `ccT`; older entries' top-level `cc` still read).
   **Purchaser and Approver never go together** on one person (Users, sign-up requests, own role picker, profiles; per
   company, Approval with purchase steps is refused too).
   Accounts decides which divisions may use each ledger (Ledgers › Edit › Divisions that use it).

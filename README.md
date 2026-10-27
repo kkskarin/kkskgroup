@@ -189,7 +189,7 @@ provides the same calls, so the app code did not need rewriting:
   amount in figures and an optional "A/c Payee" crossing go (mm from the cheque's top left), and the text size.
   **Scan clean-up** on upload (OpenCV.js, loaded only there): the cheque's four corners are found (outlines from edges, from
   the paper being brighter than its background, e.g. a scanner lid, even when the cheque touches the glass's edge, and from
-  it being darker; the most cheque-like, about 2.2 : 1, wins; a scan already cropped to the cheque is taken whole; if
+  it being darker; the page's own colour, taken from the border, and everything that differs from it, which catches a pale tint on white; the most cheque-like, about 2.2 : 1, wins; a scan already cropped to the cheque is taken whole; if
   nothing is found it says so and Adjust Corners is used), the cheque is
   straightened (perspective) and cropped a hair inside its edges, turned landscape and, when Claude sees it upside down,
   turned round, then made clearer (one levels stretch for all colours, so the logo and tint keep their colours, and
@@ -239,6 +239,9 @@ provides the same calls, so the app code did not need rewriting:
   dragged on the preview, and test printed. Data comes from the payment, the company (name, address, phone; PAN from
   GSTIN), its bank account and the vendor's **Bank details** (Masters › Vendors). In Paid, a NEFT/RTGS payment's **NEFT /
   RTGS Form** button stays disabled, listing what is missing, until every field the form needs has data.
+  **Two-line fields**: any NEFT / RTGS field can have a first-line width and a second line (across / down, or dragged on
+  the preview); text that doesn't fit the first line goes on to the second (Claude also reads second lines, e.g. amount in
+  words or an address). On the cheque, the amount in words and the payee can both run to a second line.
   Banks ask for different things, so each template also has **Extra fields this bank asks for** (`neft.extra`: name,
   and either "Same every time", typed in the template, e.g. a customer ID, or "Typed when printing", asked in a small
   dialog for each payment and kept on the cheque record as `neftExtra` for reprints). Claude adds any such field it finds

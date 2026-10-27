@@ -10939,6 +10939,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   var CHQ_SAMPLE = { payee: "Sri Murugan Transports", amount: 123456.75, date: "" };
   /* Lays the words over one or two lines within their widths; measure gives a string's width in mm. */
+  /* A field written over two lines: what fits in the first line's width (mm), the rest on the second. No width or no
+     second line: one line. */
+  function twoLines(text, w1, two, measure) {
+    if (!(w1 > 0) || !two || measure(text) <= w1) return [text, ""];
+    var parts = String(text).split(" "), l1 = "", i = 0;
+    for (; i < parts.length; i++) { var tryL = (l1 ? l1 + " " : "") + parts[i]; if (measure(tryL) > w1 && l1) break; l1 = tryL; }
+    return [l1, parts.slice(i).join(" ")];
+  }
   function chqWordLines(T, words, measure) {
     var w1 = T.f.words.w, parts = words.split(" "), l1 = "", i = 0;
     for (; i < parts.length; i++) { var tryL = (l1 ? l1 + " " : "") + parts[i]; if (measure(tryL) > w1 && l1) break; l1 = tryL; }
@@ -10957,7 +10965,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     function put(key, s, x, y) { g.fillText(s, x * k, y * k); var b = boxes[key] || { x1: 1e9, y1: 1e9, x2: -1e9, y2: -1e9 }; b.x1 = Math.min(b.x1, x); b.y1 = Math.min(b.y1, y - T.size * 0.3528); b.x2 = Math.max(b.x2, x + mm(s)); b.y2 = Math.max(b.y2, y + 1); boxes[key] = b; }
     var f = T.f;
     if (Number(f.date.gap) > 0) tx.date.split("").forEach(function (c, i) { put("date", c, f.date.x + i * f.date.gap, f.date.y); }); else put("date", tx.date.slice(0, 2) + "-" + tx.date.slice(2, 4) + "-" + tx.date.slice(4), f.date.x, f.date.y);
-    put("payee", tx.payee, f.payee.x, f.payee.y);
+    var pl = twoLines(tx.payee, Number(f.payee.w), Number(f.payee.y2) > 0, mm); put("payee", pl[0], f.payee.x, f.payee.y); if (pl[1]) put("payee2", pl[1], Number(f.payee.x2) || f.payee.x, f.payee.y2);
     var wl = chqWordLines(T, tx.words, mm); put("words", wl[0], f.words.x, f.words.y); if (wl[1]) put("words2", wl[1], f.words.x2, f.words.y2);
     put("figures", tx.figures, f.figures.x, f.figures.y);
     if (f.acpayee.on) { put("acpayee", tx.acpayee, f.acpayee.x, f.acpayee.y); g.strokeStyle = "#000"; g.lineWidth = 1; var b = boxes.acpayee; g.beginPath(); g.moveTo(b.x1 * k, (b.y1 - 1) * k); g.lineTo(b.x2 * k, (b.y1 - 1) * k); g.moveTo(b.x1 * k, (b.y2 + 0.5) * k); g.lineTo(b.x2 * k, (b.y2 + 0.5) * k); g.stroke(); }
@@ -11005,7 +11013,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     group("Text", [numIn("cqSz", function () { return T.size; }, function (v) { T.size = v || 11; }, "Size (pt)")]);
     L.appendChild(el("p", { class: "hint", style: "margin:14px 0 0" }, "Fields, in mm from the cheque's top left (to the start of the text's baseline). Drag them on the preview, or type."));
     group("Date", [numIn("cqDx", function () { return T.f.date.x; }, function (v) { T.f.date.x = v; }, "Across"), numIn("cqDy", function () { return T.f.date.y; }, function (v) { T.f.date.y = v; }, "Down"), numIn("cqDg", function () { return T.f.date.gap; }, function (v) { T.f.date.gap = v; }, "Box spacing (0 = DD-MM-YYYY)")]);
-    group("Payee", [numIn("cqPx", function () { return T.f.payee.x; }, function (v) { T.f.payee.x = v; }, "Across"), numIn("cqPy", function () { return T.f.payee.y; }, function (v) { T.f.payee.y = v; }, "Down"), numIn("cqPw", function () { return T.f.payee.w; }, function (v) { T.f.payee.w = v; }, "Width")]);
+    group("Payee", [numIn("cqPx", function () { return T.f.payee.x; }, function (v) { T.f.payee.x = v; }, "Across"), numIn("cqPy", function () { return T.f.payee.y; }, function (v) { T.f.payee.y = v; }, "Down"), numIn("cqPw", function () { return T.f.payee.w; }, function (v) { T.f.payee.w = v; }, "Width"), numIn("cqPx2", function () { return T.f.payee.x2 || 0; }, function (v) { T.f.payee.x2 = v; }, "Second line across"), numIn("cqPy2", function () { return T.f.payee.y2 || 0; }, function (v) { T.f.payee.y2 = v; }, "Second line down (0 = one line)")]);
     group("Amount in words", [numIn("cqWx", function () { return T.f.words.x; }, function (v) { T.f.words.x = v; }, "Across"), numIn("cqWy", function () { return T.f.words.y; }, function (v) { T.f.words.y = v; }, "Down"), numIn("cqWw", function () { return T.f.words.w; }, function (v) { T.f.words.w = v; }, "First line width"), numIn("cqWx2", function () { return T.f.words.x2; }, function (v) { T.f.words.x2 = v; }, "Second line across"), numIn("cqWy2", function () { return T.f.words.y2; }, function (v) { T.f.words.y2 = v; }, "Second line down")]);
     group("Amount in figures", [numIn("cqFx", function () { return T.f.figures.x; }, function (v) { T.f.figures.x = v; }, "Across"), numIn("cqFy", function () { return T.f.figures.y; }, function (v) { T.f.figures.y = v; }, "Down")]);
     var ac = el("label", { class: "check", style: "margin-top:14px" }), acb = el("input", { type: "checkbox", id: "cqAc" }); acb.checked = !!T.f.acpayee.on; ac.appendChild(acb); ac.appendChild(document.createTextNode(" Show \"A/c Payee\" in the preview (it is ticked per payment when planning)")); L.appendChild(ac);
@@ -11020,16 +11028,16 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var cv = el("canvas", { id: "cqCanvas", width: "900", height: "400", style: "width:100%;height:auto;border:1px solid var(--line);border-radius:8px;touch-action:none;cursor:grab;background:#fff" }); R.appendChild(cv);
     var boxes = {};
     function draw() { boxes = chqDraw(cv, T, CQ.img); }
-    function sync() { [["cqDx", T.f.date.x], ["cqDy", T.f.date.y], ["cqPx", T.f.payee.x], ["cqPy", T.f.payee.y], ["cqWx", T.f.words.x], ["cqWy", T.f.words.y], ["cqWx2", T.f.words.x2], ["cqWy2", T.f.words.y2], ["cqFx", T.f.figures.x], ["cqFy", T.f.figures.y], ["cqCx", T.f.acpayee.x], ["cqCy", T.f.acpayee.y]].forEach(function (x) { if ($(x[0])) $(x[0]).value = String(Math.round(x[1] * 10) / 10); }); }
+    function sync() { [["cqDx", T.f.date.x], ["cqDy", T.f.date.y], ["cqPx", T.f.payee.x], ["cqPy", T.f.payee.y], ["cqPx2", T.f.payee.x2 || 0], ["cqPy2", T.f.payee.y2 || 0], ["cqWx", T.f.words.x], ["cqWy", T.f.words.y], ["cqWx2", T.f.words.x2], ["cqWy2", T.f.words.y2], ["cqFx", T.f.figures.x], ["cqFy", T.f.figures.y], ["cqCx", T.f.acpayee.x], ["cqCy", T.f.acpayee.y]].forEach(function (x) { if ($(x[0])) $(x[0]).value = String(Math.round(x[1] * 10) / 10); }); }
     function at(e) { var r = cv.getBoundingClientRect(), k = (r.width / T.area.w); return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k }; }
     cv.addEventListener("pointerdown", function (e) {
       var p0 = at(e), hit = Object.keys(boxes).filter(function (k) { var b = boxes[k]; return p0.x >= b.x1 - 2 && p0.x <= b.x2 + 2 && p0.y >= b.y1 - 2 && p0.y <= b.y2 + 2; })[0]; if (!hit) return;
-      var key = hit === "words2" ? "words2" : hit, fld0 = key === "words2" ? T.f.words : T.f[key], ox = key === "words2" ? fld0.x2 : fld0.x, oy = key === "words2" ? fld0.y2 : fld0.y;
+      var key = hit, two = key === "words2" || key === "payee2", fld0 = key === "words2" ? T.f.words : key === "payee2" ? T.f.payee : T.f[key], ox = two ? (Number(fld0.x2) || fld0.x) : fld0.x, oy = two ? fld0.y2 : fld0.y;
       CQ.drag = { key: key, p0: p0, ox: ox, oy: oy }; cv.setPointerCapture(e.pointerId); cv.style.cursor = "grabbing";
     });
     cv.addEventListener("pointermove", function (e) {
       var d = CQ.drag; if (!d) return; var p = at(e), nx = Math.max(0, d.ox + p.x - d.p0.x), ny = Math.max(0, d.oy + p.y - d.p0.y);
-      if (d.key === "words2") { T.f.words.x2 = nx; T.f.words.y2 = ny; } else { T.f[d.key].x = nx; T.f[d.key].y = ny; } draw(); sync();
+      if (d.key === "words2") { T.f.words.x2 = nx; T.f.words.y2 = ny; } else if (d.key === "payee2") { T.f.payee.x2 = nx; T.f.payee.y2 = ny; } else { T.f[d.key].x = nx; T.f[d.key].y = ny; } draw(); sync();
     });
     cv.addEventListener("pointerup", function () { CQ.drag = null; cv.style.cursor = "grab"; });
     draw();
@@ -11102,6 +11110,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var e = new c.Mat(); c.Canny(g, e, 25, 80); c.dilate(e, e, ker); c.morphologyEx(e, e, c.MORPH_CLOSE, ker); from(e, "edges"); e.delete();
       c.threshold(g, b, 0, 255, c.THRESH_BINARY + c.THRESH_OTSU); c.morphologyEx(b, b, c.MORPH_OPEN, big); c.morphologyEx(b, b, c.MORPH_CLOSE, big); from(b, "bright");
       c.bitwise_not(b, b); from(b, "dark");
+      /* the page's own colour, from the border, and everything that differs from it (a pale tint on white, or paper on a grey lid) */
+      var bl = new c.Mat(); c.GaussianBlur(m, bl, new c.Size(5, 5), 0); var px = bl.data, rs = [], gs = [], bs = [], add = function (x, y) { var o = (y * W + x) * 4; rs.push(px[o]); gs.push(px[o + 1]); bs.push(px[o + 2]); };
+      for (var x = 0; x < W; x += 2) for (var y0 = 0; y0 < 4; y0++) { add(x, y0); add(x, H - 1 - y0); } for (var y = 0; y < H; y += 2) for (var x0 = 0; x0 < 4; x0++) { add(x0, y); add(W - 1 - x0, y); }
+      var med = function (a) { a.sort(function (p1, p2) { return p1 - p2; }); return a[a.length >> 1]; }, br = med(rs), bgc = med(gs), bb = med(bs);
+      var df = new c.Mat(H, W, c.CV_8UC1), dd = df.data; for (var q = 0, n = W * H; q < n; q++) { var o = q * 4; dd[q] = Math.min(255, Math.max(Math.abs(px[o] - br), Math.abs(px[o + 1] - bgc), Math.abs(px[o + 2] - bb)) * 3); }
+      var t0 = c.threshold(df, b, 0, 255, c.THRESH_BINARY + c.THRESH_OTSU); if (t0 < 24) c.threshold(df, b, 24, 255, c.THRESH_BINARY);
+      var huge = c.Mat.ones(25, 25, c.CV_8U); c.morphologyEx(b, b, c.MORPH_CLOSE, huge); c.morphologyEx(b, b, c.MORPH_OPEN, big); from(b, "background"); [bl, df, huge].forEach(function (z) { z.delete(); });
     } finally { [m, g, b, ker, big].forEach(function (x) { x.delete(); }); }
     cands.sort(function (x, y) { return y.s - x.s; });
     var best = cands[0], whole = [{ x: 0, y: 0 }, { x: W, y: 0 }, { x: W, y: H }, { x: 0, y: H }];
@@ -11268,10 +11283,15 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var px = (N.size || 10) * 0.3528 * k, boxes = {}; g.fillStyle = "#000"; g.font = "600 " + px + "px Jost, sans-serif";
     (N.fields || []).forEach(function (f, i) {
       var t = String(vals[f.k] || ""); if (f.k === "date" && !vals.date) t = neftDateText(); if (f.k === "date" && !(Number(f.gap) > 0)) t = t.slice(0, 2) + "-" + t.slice(2, 4) + "-" + t.slice(4);
-      var x1 = f.x, y = f.y, x2 = f.x;
+      var x1 = f.x, y = f.y, x2 = f.x, th = (N.size || 10) * 0.3528, mm = function (s0) { return g.measureText(s0).width / k; };
       if (Number(f.gap) > 0) t.replace(/\s+/g, "").split("").forEach(function (ch, j) { g.fillText(ch, (f.x + j * f.gap) * k, y * k); x2 = f.x + (j + 1) * f.gap; });
-      else { var w = f.w ? Math.min(g.measureText(t).width, f.w * k) : g.measureText(t).width; g.fillText(t, f.x * k, y * k, f.w ? f.w * k : undefined); x2 = f.x + w / k; }
-      boxes[i] = { x1: x1, y1: y - (N.size || 10) * 0.3528, x2: Math.max(x2, x1 + 5), y2: y + 1 };
+      else {
+        var ls = twoLines(t, Number(f.w), Number(f.y2) > 0, mm), one = Number(f.y2) > 0 ? ls[0] : t;
+        g.fillText(one, f.x * k, y * k, f.w && !(Number(f.y2) > 0) ? f.w * k : undefined); x2 = f.x + Math.min(mm(one), f.w && !(Number(f.y2) > 0) ? f.w : 1e9);
+        if (Number(f.y2) > 0) { var lx = Number(f.x2) || f.x; if (ls[1]) g.fillText(ls[1], lx * k, f.y2 * k); boxes[i + "b"] = { x1: lx, y1: f.y2 - th, x2: lx + Math.max(mm(ls[1] || ""), 20), y2: f.y2 + 1 }; if (!ls[1]) { g.save(); g.strokeStyle = "rgba(10,125,79,.5)"; g.setLineDash([4, 3]); g.strokeRect(lx * k, (f.y2 - th) * k, 20 * k, (th + 1) * k); g.restore(); } }
+        if (Number(f.w) > 0 && Number(f.y2) > 0) { g.save(); g.strokeStyle = "rgba(10,125,79,.35)"; g.beginPath(); g.moveTo((f.x + f.w) * k, (y - th) * k); g.lineTo((f.x + f.w) * k, (y + 1) * k); g.stroke(); g.restore(); }
+      }
+      boxes[i] = { x1: x1, y1: y - th, x2: Math.max(x2, x1 + 5), y2: y + 1 };
     });
     return boxes;
   }
@@ -11294,11 +11314,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         { label: "Field", kind: "co", cell: function (f, td) { var s0 = el("select", { class: "field" }); fillSelect(s0, neftAll(N).map(function (x) { return [x[0], x[1]]; }), f.k); s0.addEventListener("change", function () { f.k = s0.value; draw(); }); td.appendChild(s0); } },
         { label: "Across", cell: function (f, td) { var i = el("input", { class: "field num", inputmode: "decimal", style: "max-width:70px", "data-nf": "x" }); i.value = String(f.x); i.addEventListener("input", function () { f.x = Number(i.value) || 0; draw(); }); td.appendChild(i); } },
         { label: "Down", cell: function (f, td) { var i = el("input", { class: "field num", inputmode: "decimal", style: "max-width:70px", "data-nf": "y" }); i.value = String(f.y); i.addEventListener("input", function () { f.y = Number(i.value) || 0; draw(); }); td.appendChild(i); } },
+        { label: "Width", cell: function (f, td) { var i = el("input", { class: "field num", inputmode: "decimal", style: "max-width:60px", title: "First line's width in mm; longer text goes on to line 2 (0 = no limit)" }); i.value = String(f.w || 0); i.addEventListener("input", function () { f.w = Number(i.value) || 0; draw(); }); td.appendChild(i); } },
+        { label: "Line 2 across / down", cell: function (f, td) { var a = el("input", { class: "field num", inputmode: "decimal", style: "max-width:56px", title: "Second line: mm from the left (0 = under the first)" }), b2 = el("input", { class: "field num", inputmode: "decimal", style: "max-width:56px;margin-left:4px", title: "Second line: mm from the top (0 = one line only)" }); a.value = String(f.x2 || 0); b2.value = String(f.y2 || 0); a.addEventListener("input", function () { f.x2 = Number(a.value) || 0; draw(); }); b2.addEventListener("input", function () { f.y2 = Number(b2.value) || 0; if (f.y2 && !f.w) f.w = 120; draw(); }); td.appendChild(a); td.appendChild(b2); } },
         { label: "Box gap", cell: function (f, td) { var i = el("input", { class: "field num", inputmode: "decimal", style: "max-width:60px", title: "0 = written normally; otherwise one character per box, this many mm apart" }); i.value = String(f.gap || 0); i.addEventListener("input", function () { f.gap = Number(i.value) || 0; draw(); }); td.appendChild(i); } },
         { label: "", kind: "act", cls: "r", cell: function (f, td) { var x = el("button", { class: "link-btn", type: "button", style: "color:var(--bad)" }, "Remove"); x.addEventListener("click", function () { N.fields.splice(N.fields.indexOf(f), 1); rows(); draw(); }); td.appendChild(x); } }
       ], N.fields, {});
     }
-    var add = el("button", { class: "btn sm", type: "button", style: "margin-top:8px" }, "Add Field"); add.addEventListener("click", function () { N.fields.push({ k: "purpose", x: 20, y: 60, w: 0, gap: 0 }); rows(); draw(); }); L.appendChild(add);
+    var add = el("button", { class: "btn sm", type: "button", style: "margin-top:8px" }, "Add Field"); add.addEventListener("click", function () { N.fields.push({ k: "purpose", x: 20, y: 60, w: 0, gap: 0, x2: 0, y2: 0 }); rows(); draw(); }); L.appendChild(add);
     rows();
     /* this bank's own fields */
     var xw = el("div", { style: "margin-top:16px" }); L.appendChild(xw);
@@ -11319,8 +11341,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var cv = el("canvas", { width: "800", height: "1131", style: "width:100%;height:auto;border:1px solid var(--line);border-radius:8px;touch-action:none;cursor:grab;background:#fff" }); R.appendChild(cv);
     var img = null, boxes = {}, drag = null; function draw() { boxes = neftDraw(cv, N, img, neftSample(N)); }
     function at(e) { var r = cv.getBoundingClientRect(), k = r.width / 210; return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k }; }
-    cv.addEventListener("pointerdown", function (e) { var p0 = at(e), hit = Object.keys(boxes).filter(function (i) { var b = boxes[i]; return p0.x >= b.x1 - 2 && p0.x <= b.x2 + 2 && p0.y >= b.y1 - 2 && p0.y <= b.y2 + 2; })[0]; if (hit == null) return; var f = N.fields[hit]; drag = { f: f, p0: p0, ox: f.x, oy: f.y }; cv.setPointerCapture(e.pointerId); });
-    cv.addEventListener("pointermove", function (e) { if (!drag) return; var p = at(e); drag.f.x = Math.round(Math.max(0, drag.ox + p.x - drag.p0.x) * 10) / 10; drag.f.y = Math.round(Math.max(0, drag.oy + p.y - drag.p0.y) * 10) / 10; draw(); });
+    cv.addEventListener("pointerdown", function (e) { var p0 = at(e), hit = Object.keys(boxes).filter(function (i) { var b = boxes[i]; return p0.x >= b.x1 - 2 && p0.x <= b.x2 + 2 && p0.y >= b.y1 - 2 && p0.y <= b.y2 + 2; })[0]; if (hit == null) return; var two = /b$/.test(hit), f = N.fields[parseInt(hit, 10)]; drag = { f: f, two: two, p0: p0, ox: two ? (Number(f.x2) || f.x) : f.x, oy: two ? f.y2 : f.y }; cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener("pointermove", function (e) { if (!drag) return; var p = at(e), nx = Math.round(Math.max(0, drag.ox + p.x - drag.p0.x) * 10) / 10, ny = Math.round(Math.max(0, drag.oy + p.y - drag.p0.y) * 10) / 10; if (drag.two) { drag.f.x2 = nx; drag.f.y2 = ny; } else { drag.f.x = nx; drag.f.y = ny; } draw(); });
     cv.addEventListener("pointerup", function () { if (drag) { drag = null; rows(); } });
     draw(); padImage(N.pad).then(function (u) { if (!u) return; var im = new Image(); im.onload = function () { img = im; draw(); }; im.src = u; });
   }
@@ -11343,13 +11365,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       return S.sample.json("This image is an Indian bank's blank NEFT / RTGS request form, one page. Find where a writer should fill in each of these fields if the form has it: "
         + neftAll(N).map(function (f) { return f[0] + " = " + f[1]; }).join("; ") + ". If a field appears twice (for example a counterfoil), give the main one. "
         + "If the form asks the remitter to fill in something that is not in this list (for example a customer ID, a branch code, a mobile for the remitter's SMS), add it with \"k\":\"other\" and a short \"label\". Leave out signatures, bank-use-only boxes and the bank's own stamps. "
-        + "Return JSON {\"fields\":[{\"k\":field key,\"x\":left edge where the writing starts,\"y\":the line or box bottom the text sits on,\"boxes\":number of character boxes (0 if it is a line),\"gap\":distance between the left edges of two neighbouring boxes}]}, with x, y and gap as fractions of the image width (x, gap) and height (y). Leave out fields the form doesn't have.", { images: [blob], modelTier: "default" });
+        + "Return JSON {\"fields\":[{\"k\":field key,\"x\":left edge where the writing starts,\"y\":the line or box bottom the text sits on,\"x_end\":where that line ends,\"boxes\":number of character boxes (0 if it is a line),\"gap\":distance between the left edges of two neighbouring boxes,\"x2\":where its second line starts if the field has one (amount in words and addresses often do), else 0,\"y2\":that second line, else 0}]}, with x, x_end, x2, gap as fractions of the image width and y, y2 of its height. Leave out fields the form doesn't have.", { images: [blob], modelTier: "default" });
     }).then(function (r) {
       var out = [], known = neftAll(N), added = 0, ft = neftFit(N); N.extra = N.extra || [];
       ((r && r.fields) || []).forEach(function (f) { var x = Number(f.x), y = Number(f.y); if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) return;
         if (f.k === "other" && String(f.label || "").trim()) { var lb = String(f.label).trim().slice(0, 40), ex = N.extra.filter(function (e) { return String(e.label || "").toLowerCase() === lb.toLowerCase(); })[0]; if (!ex) { ex = { k: "x_" + Date.now().toString(36) + (added++), label: lb, from: "ask", value: "" }; N.extra.push(ex); } f.k = ex.k; }
         else if (!known.some(function (d) { return d[0] === f.k; })) return;
-        out.push({ k: f.k, x: Math.round((ft.x + x * ft.w + 1) * 10) / 10, y: Math.round((ft.y + y * ft.h - 1) * 10) / 10, w: 0, gap: Number(f.boxes) > 0 && Number(f.gap) > 0 ? Math.round(Number(f.gap) * ft.w * 10) / 10 : 0 }); });
+        var r1 = function (v) { return Math.round(v * 10) / 10; }, X = function (v) { return ft.x + v * ft.w; }, Y = function (v) { return ft.y + v * ft.h; }, has2 = Number(f.y2) > 0 && Number(f.y2) <= 1, xe = Number(f.x_end);
+        out.push({ k: f.k, x: r1(X(x) + 1), y: r1(Y(y) - 1), w: has2 && xe > x && xe <= 1 ? r1(X(xe) - X(x) - 2) : 0, gap: Number(f.boxes) > 0 && Number(f.gap) > 0 ? r1(Number(f.gap) * ft.w) : 0, x2: has2 ? r1(X(Number(f.x2) || x) + 1) : 0, y2: has2 ? r1(Y(Number(f.y2)) - 1) : 0 }); });
       if (out.length) N.fields = out; if (CQ.D === T) renderChequeEdit();
       toast(out.length ? plural(out.length, "field") + " found on the form" + (added ? ", " + added + " of them this bank's own (see Extra fields: say whether each is the same every time)" : "") + ". Check the preview and drag anything that's off." : "No fields could be read; add them with Add Field.");
     }, function () { if (CQ.D === T) renderChequeEdit(); toast("The form couldn't be read automatically; add the fields with Add Field."); });
@@ -11360,7 +11383,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
       var doc = newPdf(jsPDF), P = 72 / 25.4, ft = neftFit(N); if (r[1]) doc.addImage(r[1], "JPEG", ft.x * P, ft.y * P, ft.w * P, ft.h * P);
       doc.setFontSize(N.size || 10); doc.setTextColor(0, 0, 0);
-      (N.fields || []).forEach(function (f) { var t = String(vals[f.k] || ""); if (f.k === "date" && !t) t = neftDateText(); if (f.k === "date" && !(Number(f.gap) > 0)) t = t.slice(0, 2) + "-" + t.slice(2, 4) + "-" + t.slice(4); if (Number(f.gap) > 0) t.replace(/\s+/g, "").split("").forEach(function (ch, j) { doc.text(ch, (f.x + j * f.gap) * P, f.y * P); }); else doc.text(t, f.x * P, f.y * P); });
+      (N.fields || []).forEach(function (f) { var t = String(vals[f.k] || ""); if (f.k === "date" && !t) t = neftDateText(); if (f.k === "date" && !(Number(f.gap) > 0)) t = t.slice(0, 2) + "-" + t.slice(2, 4) + "-" + t.slice(4); if (Number(f.gap) > 0) t.replace(/\s+/g, "").split("").forEach(function (ch, j) { doc.text(ch, (f.x + j * f.gap) * P, f.y * P); }); else { var ls = twoLines(t, Number(f.w), Number(f.y2) > 0, function (s0) { return doc.getTextWidth(s0) / P; }); doc.text(ls[0], f.x * P, f.y * P); if (ls[1]) doc.text(ls[1], (Number(f.x2) || f.x) * P, f.y2 * P); } });
       return S.downloads.save({ filename: name + ".pdf", data: doc.output("blob") });
     }).then(function () { toast("NEFT / RTGS form ready. Print it at 100% (actual size)."); }, function (e) { toast(e && e.code === "declined" ? "Download cancelled." : "The form PDF couldn't be made. Try again."); });
   }
@@ -11405,7 +11428,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     doc.setFontSize(T.size); doc.setTextColor(0, 0, 0); doc.setDrawColor(0, 0, 0);
     function put(s0, x, y) { doc.text(s0, (ox + x) * P, (oy + y) * P); }
     if (Number(f.date.gap) > 0) tx.date.split("").forEach(function (c, i) { put(c, f.date.x + i * f.date.gap, f.date.y); }); else put(tx.date.slice(0, 2) + "-" + tx.date.slice(2, 4) + "-" + tx.date.slice(4), f.date.x, f.date.y);
-    put(tx.payee, f.payee.x, f.payee.y);
+    var pl = twoLines(tx.payee, Number(f.payee.w), Number(f.payee.y2) > 0, function (s1) { return doc.getTextWidth(s1) / P; }); put(pl[0], f.payee.x, f.payee.y); if (pl[1]) put(pl[1], Number(f.payee.x2) || f.payee.x, f.payee.y2);
     var wl = chqWordLines(T, tx.words, function (s1) { return doc.getTextWidth(s1) / P; }); put(wl[0], f.words.x, f.words.y); if (wl[1]) put(wl[1], f.words.x2, f.words.y2);
     put(tx.figures, f.figures.x, f.figures.y);
     if (pay.acPayee) { var w = doc.getTextWidth(tx.acpayee) / P, hgt = T.size * 0.3528; put(tx.acpayee, f.acpayee.x, f.acpayee.y); doc.setLineWidth(0.6); doc.line((ox + f.acpayee.x) * P, (oy + f.acpayee.y - hgt - 1) * P, (ox + f.acpayee.x + w) * P, (oy + f.acpayee.y - hgt - 1) * P); doc.line((ox + f.acpayee.x) * P, (oy + f.acpayee.y + 1.5) * P, (ox + f.acpayee.x + w) * P, (oy + f.acpayee.y + 1.5) * P); }

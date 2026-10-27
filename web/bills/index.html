@@ -6979,8 +6979,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       fillSelect(bs, banks.length ? banks.map(function (b) { return [b.id, bankLabel(b)]; }) : [["", "No bank account (Masters › Bank Accounts)"]], bk ? bk.id : "");
       bs.addEventListener("change", function () { MK.pl.bank[c.id] = bs.value; MK.pl.book[c.id] = ""; renderMark(); }); hd.appendChild(bs);
       var books = bk ? chqBooks(bk.id) : [], tp = plBook(c.id), ts = el("select", { class: "field", style: "width:auto;min-width:160px", "aria-label": "Cheque book for " + c.name });
-      fillSelect(ts, books.length ? books.map(function (t) { return [t.id, t.name]; }) : [["", "No cheque book"]], tp ? tp.id : ""); ts.addEventListener("change", function () { MK.pl.book[c.id] = ts.value; renderMark(); }); hd.appendChild(ts);
-      if (tp) { var nx = chqNext(tp), lf = chqLeft(tp, nx); hd.appendChild(el("span", { class: "tsub", style: lf != null && lf <= 5 ? "color:var(--warn);font-weight:600" : "" }, "Next cheque " + chqNoText(nx, tp) + (lf != null ? " · " + Math.max(0, lf) + (lf === 1 ? " leaf" : " leaves") + " left" : ""))); }
+      fillSelect(ts, books.length ? books.map(function (t) { return [t.id, t.name]; }) : [["", "No cheque template for " + (bk ? bk.bank : "this bank")]], tp ? tp.id : ""); ts.addEventListener("change", function () { MK.pl.book[c.id] = ts.value; renderMark(); }); hd.appendChild(ts);
+      if (bk) { var nx = chqNext(bk), lf = chqLeft(bk, nx); hd.appendChild(el("span", { class: "tsub", style: lf != null && lf <= CHQ_WARN ? "color:var(--warn);font-weight:600" : "" }, "Next cheque " + chqNoText(nx, bk) + (lf != null ? " · " + chqLeftText(bk, nx) : ""))); }
       card.appendChild(hd);
       gs.forEach(function (g) {
         var gw = el("div", { style: "border-top:1px solid var(--line);padding:12px 16px" }), top = el("div", { style: "display:flex;flex-wrap:wrap;gap:10px;align-items:center" });
@@ -7011,19 +7011,19 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function planIssue(gs, mode) {
     if (!gs.length) return;
     var body = el("div", { class: "mform" }), date = todayYmd(), numbered = mode !== "cash", lines = [];
-    var missing = gs.filter(function (g) { return numbered && !plBook(g.cid); }).map(function (g) { return coLabel(g.cid); });
-    if (missing.length) { toast("Add a bank account and cheque book for " + missing.filter(function (x, i, a) { return a.indexOf(x) === i; }).join(", ") + " first (Masters)."); return; }
+    var missing = gs.filter(function (g) { return numbered && (!plBank(g.cid) || (mode === "cheque" && !plBook(g.cid))); }).map(function (g) { return coLabel(g.cid); });
+    if (missing.length) { toast("Add a bank account and a cheque template for its bank for " + missing.filter(function (x, i, a) { return a.indexOf(x) === i; }).join(", ") + " first (Masters)."); return; }
     body.appendChild(fld("Date", dateBox("plDate", date, { min: addDays(todayYmd(), -30), max: addDays(todayYmd(), 90), label: "Cheque date" }), numbered ? "The date on every cheque." : "The date paid."));
     var next = {}, tw = el("div", { class: "list", style: "margin-top:8px" }); body.appendChild(tw);
-    gs.forEach(function (g) { var tp = plBook(g.cid), k = tp ? tp.id : ""; if (numbered && next[k] == null) next[k] = chqNext(tp); lines.push({ g: g, tp: tp, no: numbered ? next[k]++ : null, amt: plSelTotal(g) }); });
-    function cascade(from) { var tpId = lines[from].tp && lines[from].tp.id, n = lines[from].no; for (var i = from + 1; i < lines.length; i++) if (lines[i].tp && lines[i].tp.id === tpId) { n++; lines[i].no = n; var inEl = $("plNo_" + i); if (inEl) inEl.value = chqNoText(n, lines[i].tp); } }
+    gs.forEach(function (g) { var tp = plBook(g.cid), bk = plBank(g.cid), k = bk ? bk.id : ""; if (numbered && next[k] == null) next[k] = chqNext(bk); lines.push({ g: g, tp: tp, bk: bk, no: numbered ? next[k]++ : null, amt: plSelTotal(g) }); });
+    function cascade(from) { var bkId = lines[from].bk && lines[from].bk.id, n = lines[from].no; for (var i = from + 1; i < lines.length; i++) if (lines[i].bk && lines[i].bk.id === bkId) { n++; lines[i].no = n; var inEl = $("plNo_" + i); if (inEl) inEl.value = chqNoText(n, lines[i].bk); } }
     var cols = [
-      { label: "Pay to", kind: "co", cell: function (l, td) { td.appendChild(el("b", null, l.g.name)); sub(td, coLabel(l.g.cid) + (numbered ? " · " + (l.tp ? l.tp.name : "") : "")); } },
+      { label: "Pay to", kind: "co", cell: function (l, td) { td.appendChild(el("b", null, l.g.name)); sub(td, coLabel(l.g.cid) + (numbered ? " · " + bankLabel(l.bk) + (l.tp ? " · " + l.tp.name : "") : "")); } },
       { label: "Amount", cls: "r num", cell: function (l, td) { td.appendChild(el("b", null, curMoney(l.g.cur, l.amt))); } }
     ];
-    if (numbered) cols.push({ label: mode === "neft" ? "Cheque No (with NEFT)" : "Cheque No", cell: function (l, td) { var i = lines.indexOf(l), inEl = inp("plNo_" + i, chqNoText(l.no, l.tp), { inputmode: "numeric", class: "field num", style: "max-width:120px" });
-        inEl.addEventListener("change", function () { var n0 = Number(inEl.value.replace(/\D/g, "")); if (!n0) { inEl.value = chqNoText(l.no, l.tp); return; } l.no = n0; inEl.value = chqNoText(n0, l.tp); cascade(i); }); td.appendChild(inEl);
-        var lf = chqLeft(l.tp, l.no); if (lf != null && lf <= 5) sub(td, lf <= 0 ? "Past the cheque book's last number" : lf + (lf === 1 ? " leaf" : " leaves") + " left", "color:var(--warn);font-weight:600"); } });
+    if (numbered) cols.push({ label: mode === "neft" ? "Cheque No (with NEFT)" : "Cheque No", cell: function (l, td) { var i = lines.indexOf(l), inEl = inp("plNo_" + i, chqNoText(l.no, l.bk), { inputmode: "numeric", class: "field num", style: "max-width:120px" });
+        inEl.addEventListener("change", function () { var n0 = Number(inEl.value.replace(/\D/g, "")); if (!n0) { inEl.value = chqNoText(l.no, l.bk); return; } l.no = n0; inEl.value = chqNoText(n0, l.bk); cascade(i); }); td.appendChild(inEl);
+        var lf = chqLeft(l.bk, l.no); if (lf != null && lf <= CHQ_WARN) sub(td, chqLeftText(l.bk, l.no), "color:var(--warn);font-weight:600"); } });
     if (mode === "cheque") cols.push({ label: "A/c Payee", cell: function (l, td) { txt(td, MK.pl.acp[l.g.key] ? "Yes" : "No"); } });
     sortTable(tw, "plIssue", cols, lines, {});
     var tl = null; if (mode === "cheque") { tl = el("label", { class: "check", style: "margin-top:10px" }); var tc = el("input", { type: "checkbox", id: "plTest" }); tl.appendChild(tc); tl.appendChild(document.createTextNode(" Test print: put the scan behind the text (plain paper)")); body.appendChild(tl); }
@@ -7045,7 +7045,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var now = Date.now(), made = [], job = Promise.resolve(), maxNo = {};
     lines.forEach(function (l) {
       var g = l.g, tp = l.tp, bank = plBank(g.cid), ack = mode === "neft" ? true : mode === "cheque" ? !!MK.pl.acp[g.key] : false, chqId = mode === "cash" ? null : newId("cq");
-      var ref = l.no != null ? chqNoText(l.no, tp) : "", payee = g.name, txIds = [];
+      var ref = l.no != null ? chqNoText(l.no, bank) : "", payee = g.name, txIds = [];
       var vendorAlloc = {}, vendorAmt = 0, others = [];
       g.items.forEach(function (it) { if (!MK.pl.sel[it.key]) return; var a = plAmt(it); if (a <= 0.004) return; if (it.it) { vendorAmt += a; if (it.it.b) vendorAlloc[it.it.b.id] = round2((vendorAlloc[it.it.b.id] || 0) + a); } else others.push({ it: it, a: a }); });
       var extra = { mode: mode, ref: ref, chequeId: chqId, bankAcctId: bank ? bank.id : null, chequeTpl: tp ? tp.id : null, acPayee: ack, planned: true };
@@ -7057,13 +7057,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (chqId) {
         var cdoc = { companyId: g.cid, bankAcctId: bank ? bank.id : null, tplId: tp ? tp.id : null, no: ref, num: l.no, date: d, payee: payee, vendorId: g.vid || null, amount: round2(l.amt), currency: g.cur, acPayee: ack, mode: mode, status: "issued", txIds: txIds, createdAt: now, createdBy: meId(), byName: preparedByText() };
         job = job.then(function () { return retry(function () { return S.db.doc("cheques/" + chqId).set(cdoc); }).then(function () { S.cheques = S.cheques || {}; S.cheques[chqId] = Object.assign({ id: chqId }, cdoc); made.push(S.cheques[chqId]); }); });
-        if (tp) maxNo[tp.id] = Math.max(maxNo[tp.id] || 0, l.no);
+        if (bank && l.no != null) maxNo[bank.id] = Math.max(maxNo[bank.id] || 0, l.no);
       }
       g.items.forEach(function (it) { delete MK.pl.sel[it.key]; delete MK.pl.amt[it.key]; });
     });
     MK.busy = true;
     return job.then(function () {
-      Object.keys(maxNo).forEach(function (tid) { var tp = S.chqtpl[tid]; if (tp && maxNo[tid] > (Number(tp.last) || 0)) { tp.last = maxNo[tid]; S.db.doc("chqtpl/" + tid).update({ last: maxNo[tid], updatedAt: Date.now() }).catch(function () {}); } });
+      Object.keys(maxNo).forEach(function (bid) { chqUsed((S.banks || {})[bid], maxNo[bid]); });
       MK.busy = false; invalidate(); toast(mode === "cash" ? "Cash payments recorded." : plural(made.length, mode === "neft" ? "NEFT / RTGS payment" : "cheque") + " recorded."); renderMark(); renderNav();
       return mode === "cash" ? [true] : made;
     }, function (e) { MK.busy = false; toast(explain(e)); renderMark(); return null; });
@@ -10401,6 +10401,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     S.db.collection("regions").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.regions = m; }, function () {});
     S.db.collection("staff").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.staff = m; if (S.tab === "Salary" && !$("secSalary").hidden && !SAL.dirty) renderSalary(); }, function () {});
     S.db.collection("salruns").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.salruns = m; if (S.tab === "Salary" && !$("secSalary").hidden && !SAL.dirty) renderSalary(); }, function () {});
+    S.db.collection("banknames").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.banknames = m; }, function () {});
     S.db.collection("bankacct").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.banks = m; if (S.tab === "Banks" && !$("secBanks").hidden) renderBanks(); }, function () {});
     S.db.collection("chqtpl").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.chqtpl = m; if (S.tab === "Cheques" && !CQ.id && !$("secCheques").hidden) renderCheques(); }, function () {});
     S.db.collection("vpeople").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = Object.assign({ id: d.id }, d.data() || {}); }); S.vpeople = m; }, function () {});
@@ -10659,13 +10660,45 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function bankList(cid) { return Object.keys(S.banks || {}).map(function (k) { return S.banks[k]; }).filter(function (b) { return b.active !== false && (!cid || b.companyId === cid); }).sort(function (a, b) { return coCmpId(a.companyId, b.companyId) || (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0) || natCmp(a.name, b.name); }); }
   function bankDefault(cid) { var l = bankList(cid); return l.filter(function (b) { return b.isDefault; })[0] || l[0] || null; }
   function bankLabel(b) { return b ? (b.name || b.bank) + (b.accountNo ? " · ••" + String(b.accountNo).slice(-4) : "") : ""; }
-  /* Cheque books (templates) of an account, and its default. */
-  function chqBooks(bankId) { return Object.keys(S.chqtpl || {}).map(function (k) { return S.chqtpl[k]; }).filter(function (t) { return t.active !== false && t.pad && (!bankId || t.bankAcctId === bankId); }).sort(function (a, b) { return natCmp(a.name, b.name); }); }
-  function chqBookDefault(bankId) { var b = (S.banks || {})[bankId], l = chqBooks(bankId); return (b && b.chequeTplId && (S.chqtpl || {})[b.chequeTplId] && S.chqtpl[b.chequeTplId].active !== false ? S.chqtpl[b.chequeTplId] : null) || l[0] || null; }
-  /* Serial numbers: only the first, last and last used are kept; the next is last used + 1. Never blocks, warns at 5 leaves left. */
-  function chqNext(tp) { var last = Number(tp && tp.last), first = Number(tp && tp.first); return last > 0 ? last + 1 : first > 0 ? first : 1; }
-  function chqLeft(tp, next) { var end = Number(tp && tp.end); return end > 0 ? end - (next != null ? next : chqNext(tp)) + 1 : null; }
-  function chqNoText(n, tp) { var w = String((tp && (tp.end || tp.first)) || "").length || 6; return String(n).padStart(Math.max(6, w), "0"); }
+  /* A cheque template is only a layout for a bank's cheques, not tied to an account. An account uses its chosen template,
+     else the first template of the same bank. */
+  function sameBank(a, b) { return String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase(); }
+  function chqBooks(bankId) { var b = (S.banks || {})[bankId], all = Object.keys(S.chqtpl || {}).map(function (k) { return S.chqtpl[k]; }).filter(function (t) { return t.active !== false && t.pad; }).sort(function (x, y) { return natCmp(x.name, y.name); }); return b ? all.filter(function (t) { return sameBank(t.bank, b.bank); }) : all; }
+  function chqBookDefault(bankId) { var b = (S.banks || {})[bankId], l = chqBooks(bankId), t = b && b.chequeTplId && (S.chqtpl || {})[b.chequeTplId]; return (t && t.active !== false ? t : null) || l[0] || null; }
+  /* Cheque numbers belong to the bank account: only its first, last and last used are kept; the next is last used + 1.
+     Never blocks; from 15 leaves left it asks for the next cheque book's numbers. An account saved before this keeps the
+     numbers its cheque book template had until they are entered on the account. */
+  var CHQ_WARN = 15;
+  function chqNums(b) {
+    if (!b) return {}; if (b.first || b.end || b.last) return b;
+    var old = Object.keys(S.chqtpl || {}).map(function (k) { return S.chqtpl[k]; }).filter(function (t) { return t.bankAcctId === b.id && (t.first || t.end || t.last); })[0];
+    return old || b;
+  }
+  function chqNext(b) { var x = chqNums(b), last = Number(x.last), first = Number(x.first); return last > 0 ? last + 1 : first > 0 ? first : 1; }
+  function chqLeft(b, next) { var end = Number(chqNums(b).end); return end > 0 ? end - (next != null ? next : chqNext(b)) + 1 : null; }
+  function chqNoText(n, b) { var x = chqNums(b), w = String(x.end || x.first || "").length || 6; return String(n).padStart(Math.max(6, w), "0"); }
+  function chqLeftText(b, next) { var lf = chqLeft(b, next); return lf == null ? "" : lf <= 0 ? "Past the last cheque number: enter the new cheque book's numbers in Masters › Bank Accounts" : lf + (lf === 1 ? " leaf" : " leaves") + " left" + (lf <= CHQ_WARN ? ": enter the next cheque book's numbers in Masters › Bank Accounts" : ""); }
+  /* After cheques are printed, the account's last used number moves on. */
+  function chqUsed(b, n) { if (!b || !(n > (Number(chqNums(b).last) || 0))) return; var x = chqNums(b), up = { last: n, updatedAt: Date.now() }; if (x !== b) { up.first = Number(x.first) || null; up.end = Number(x.end) || null; b.first = up.first; b.end = up.end; } b.last = n; S.db.doc("bankacct/" + b.id).update(up).catch(function () {}); }
+  /* Bank names: one list for bank accounts and cheque templates (banknames/*, shared, plus every name already used). */
+  function bankNames() { var m = {}; [S.banknames || {}, S.banks || {}, S.chqtpl || {}].forEach(function (src, i) { Object.keys(src).forEach(function (k) { var x = src[k]; if (i === 0 ? x.active === false : !x.bank) return; var nm = String(i === 0 ? x.name : x.bank).trim(); if (nm && !m[nm.toLowerCase()]) m[nm.toLowerCase()] = nm; }); }); return Object.keys(m).map(function (k) { return m[k]; }).sort(natCmp); }
+  function bankNameSelect(id, val, onPick) {
+    var sel = el("select", { class: "field", id: id });
+    function fill(v) { var l = bankNames(); if (v && !l.some(function (x) { return sameBank(x, v); })) l.push(v); fillSelect(sel, [["", "Choose the bank"]].concat(l.map(function (x) { return [x, x]; })).concat([[ADD_LOC, "+ Add new bank"]]), (l.filter(function (x) { return sameBank(x, v); })[0]) || ""); }
+    fill(val);
+    sel.addEventListener("change", function () {
+      if (sel.value !== ADD_LOC) { val = sel.value; onPick(val); return; }
+      sel.value = val || "";
+      var nm = inp("bnNew", "", { maxlength: "60", "data-fmt": "name" }), body = el("div", { class: "mform" }); body.appendChild(fld("Bank Name", nm, "e.g. HDFC Bank, State Bank of India."));
+      popForm("Add bank", "Typed once, then picked from the list for bank accounts and cheque templates.", body, "Add", function () {
+        var name = smartCase(nm.value.trim().replace(/\s+/g, " ")); if (!name) { nm.classList.add("bad"); nm.focus(); return false; }
+        var same = bankNames().filter(function (x) { return sameBank(x, name); })[0]; if (same) { val = same; fill(same); onPick(same); toast(same + " is already in the list, so it has been selected."); return; }
+        var nid = "bn_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), d = { name: name, active: true, createdAt: Date.now(), createdBy: meId() };
+        return retry(function () { return S.db.doc("banknames/" + nid).set(d); }).then(function () { S.banknames = S.banknames || {}; S.banknames[nid] = Object.assign({ id: nid }, d); val = name; fill(name); onPick(name); toast(name + " added."); }, function (e) { toast(explain(e)); return false; });
+      });
+    });
+    return sel;
+  }
   /* ---- Payments › Salary (Renewable Energy and Finance; admins and financiers) ----
      staff/<id> {companyId, name, bank, branch, ifsc, accountNo, salary, active, order}: a person or a firm.
      salruns/<company>_<YYYY-MM> {companyId, month, rows:[{staffId, salary, and at issue name, bank, branch, ifsc, accountNo}], total,
@@ -10734,11 +10767,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (avail.length) { var ad = el("select", { class: "field", id: "salAddSt", style: "max-width:280px;margin-top:8px", "aria-label": "Add from the staff list" }); fillSelect(ad, [["", "Add from the staff list (" + avail.length + ")"]].concat(avail.map(function (x) { return [x.id, x.name]; })), ""); ad.addEventListener("change", function () { var st = S.staff[ad.value]; if (!st) return; D.rows.push({ staffId: st.id, salary: st.salary }); SAL.dirty = true; renderSalary(); }); box.appendChild(ad); }
     var info = el("div", { class: "card", style: "padding:10px 14px;margin-top:12px" });
     if (!bank) info.appendChild(el("p", { style: "margin:0" }, "No default bank account for " + coLabel(cid) + ". Set one in Masters › Bank Accounts."));
-    else if (!tp) info.appendChild(el("p", { style: "margin:0" }, bankLabel(bank) + " has no default cheque book. Set one in Masters › Cheque Templates."));
+    else if (!tp) info.appendChild(el("p", { style: "margin:0" }, "No cheque template for " + (bank.bank || "this bank") + ". Add one in Masters › Cheque Templates."));
     else {
-      var nx = chqNext(tp), lf = chqLeft(tp, nx);
-      info.appendChild(el("p", { style: "margin:0 0 6px" }, "Cheque \u201c" + SAL_PAYEE + "\u201d on " + bankLabel(bank) + " (" + [bank.bank, bank.branch, bank.city].filter(Boolean).join(", ") + "), book " + tp.name + "." + (lf != null && lf <= 5 ? " Only " + Math.max(0, lf) + (lf === 1 ? " leaf" : " leaves") + " left in this book." : "")));
-      var g = el("div", { class: "solgrid" }); g.appendChild(fld("Cheque number", inp("salNo", chqNoText(nx, tp), { class: "field mono", maxlength: "12" }), "The next in the book. Change it if needed."));
+      var nx = chqNext(bank), lf = chqLeft(bank, nx);
+      info.appendChild(el("p", { style: "margin:0 0 6px" }, "Cheque \u201c" + SAL_PAYEE + "\u201d on " + bankLabel(bank) + " (" + [bank.bank, bank.branch, bank.city].filter(Boolean).join(", ") + "), template " + tp.name + "." + (lf != null && lf <= CHQ_WARN ? " " + chqLeftText(bank, nx) + "." : "")));
+      var g = el("div", { class: "solgrid" }); g.appendChild(fld("Cheque number", inp("salNo", chqNoText(nx, bank), { class: "field mono", maxlength: "12" }), "The next cheque of this account. Change it if needed."));
       g.appendChild(fld("Cheque date", inp("salDate", todayYmd(), { type: "date" }))); info.appendChild(g);
     }
     box.appendChild(info);
@@ -10760,14 +10793,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var D = SAL.D, err = salCheck(D.rows); if (err) { toast(err); return; }
     var num = Math.round(n0(String($("salNo").value).replace(/\D/g, ""))), dt = $("salDate").value;
     if (!(num > 0)) { errOn("salNo", "Type the cheque number."); return; } if (!ymdOk(dt)) { toast("Choose the cheque date."); return; }
-    var no = chqNoText(num, tp);
-    if (Object.keys(S.cheques || {}).some(function (k) { var c = S.cheques[k]; return c.tplId === tp.id && c.num === num && c.status !== "cancelled"; })) { toast("Cheque " + no + " of this book is already used."); return; }
+    var no = chqNoText(num, bank);
+    if (Object.keys(S.cheques || {}).some(function (k) { var c = S.cheques[k]; return c.bankAcctId === bank.id && c.num === num && c.status !== "cancelled"; })) { toast("Cheque " + no + " of this account is already used."); return; }
     var cid = SAL.co, mon = SAL.mon, runId = cid + "_" + mon, total = salTotal(D.rows), now = Date.now(), chqId = newId("cq"), txId = newId("t"), btn = $("salIssue"); btn.disabled = true;
     var tx = { kind: "payment", companyId: cid, vendorId: null, payee: "Staff salary · " + monthLabel(mon), payeeId: "", currency: "INR", amount: total, rate: null, inr: null, date: dt, reason: "", note: "Salary for the month of " + monthLabel(mon) + ", " + (D.rows.length === 1 ? "1 person" : D.rows.length + " people") + ".", billId: null,
       mode: "cheque", ref: no, chequeId: chqId, bankAcctId: bank.id, chequeTpl: tp.id, acPayee: false, salaryRun: runId, updatedAt: now, updatedBy: meId(), createdAt: now, createdBy: meId(), byName: preparedByText() };
     var cq = { companyId: cid, bankAcctId: bank.id, tplId: tp.id, no: no, num: num, date: dt, payee: SAL_PAYEE, vendorId: null, amount: total, currency: "INR", acPayee: false, mode: "cheque", status: "issued", txIds: [txId], salRunId: runId, createdAt: now, createdBy: meId(), byName: preparedByText() };
     retry(function () { return S.db.doc("transactions/" + txId).set(tx); }).then(function () { S.txns[txId] = Object.assign({ id: txId }, tx); return retry(function () { return S.db.doc("cheques/" + chqId).set(cq); }); })
-      .then(function () { S.cheques = S.cheques || {}; S.cheques[chqId] = Object.assign({ id: chqId }, cq); if (num > (Number(tp.last) || 0)) { tp.last = num; S.db.doc("chqtpl/" + tp.id).update({ last: num, updatedAt: Date.now() }).catch(function () {}); } return salSave("issued", { chequeId: chqId, txId: txId, chequeNo: no, chequeDate: dt, bankAcctId: bank.id, tplId: tp.id, issuedAt: now, issuedBy: meId() }); })
+      .then(function () { S.cheques = S.cheques || {}; S.cheques[chqId] = Object.assign({ id: chqId }, cq); chqUsed(bank, num); return salSave("issued", { chequeId: chqId, txId: txId, chequeNo: no, chequeDate: dt, bankAcctId: bank.id, tplId: tp.id, issuedAt: now, issuedBy: meId() }); })
       .then(function (run) { invalidate(); toast("Salary for " + monthLabel(mon) + " issued on cheque " + no + "."); renderSalary(); renderNav(); salPackAsk(run); }, function (e) { btn.disabled = false; toast(explain(e)); });
   }
   function salPackAsk(run) {
@@ -10849,22 +10882,27 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Company", kind: "co", cell: function (b, td) { td.appendChild(el("b", null, coLabel(b.companyId))); if (b.isDefault) sub(td, "Default account", "color:var(--ok);font-weight:600"); } },
       { label: "Account", cell: function (b, td) { txt(td, b.name || ""); sub(td, [b.bank, b.branch, b.city].filter(Boolean).join(", ")); } },
       { label: "Account No / IFSC", cell: function (b, td) { txt(td, b.accountNo || ""); sub(td, b.ifsc || ""); } },
-      { label: "Default Cheque Book", cell: function (b, td) { var t = chqBookDefault(b.id); if (!t) { txt(td, "None yet"); return; } txt(td, t.name); var nx = chqNext(t), lf = chqLeft(t, nx); sub(td, "Next " + chqNoText(nx, t) + (lf != null ? " · " + Math.max(0, lf) + (lf === 1 ? " leaf" : " leaves") + " left" : ""), lf != null && lf <= 5 ? "color:var(--warn);font-weight:600" : ""); } },
+      { label: "Cheque Numbers", cell: function (b, td) { var x = chqNums(b); if (!x.first && !x.end && !x.last) { txt(td, "Not entered"); return; } var nx = chqNext(b), lf = chqLeft(b, nx); txt(td, (x.first ? chqNoText(x.first, b) : "?") + " – " + (x.end ? chqNoText(x.end, b) : "?")); sub(td, "Next " + chqNoText(nx, b) + (lf != null ? " · " + chqLeftText(b, nx) : ""), lf != null && lf <= CHQ_WARN ? "color:var(--warn);font-weight:600" : ""); } },
+      { label: "Cheque Template", cell: function (b, td) { var t = chqBookDefault(b.id); txt(td, t ? t.name : "None for " + (b.bank || "this bank")); } },
       { label: "", kind: "act", cls: "r", cell: function (b, td) { if (!chqCan()) return; var e = el("button", { class: "btn sm" }, "Edit"); e.addEventListener("click", function () { bankForm(b); }); td.appendChild(e); } }
     ], rows, {});
   }
   function bankForm(b) {
     var body = el("div", { class: "mform" }), cos = sorted().filter(function (c) { return coInApp(c); });
-    var co = el("select", { class: "field", id: "bkCo" }); fillSelect(co, [["", "Choose the company"]].concat(cos.map(function (c) { return [c.id, c.shortName || c.name]; })), b ? b.companyId : cos.length === 1 ? cos[0].id : "");
+    var co = el("select", { class: "field", id: "baCo" }); fillSelect(co, [["", "Choose the company"]].concat(cos.map(function (c) { return [c.id, c.shortName || c.name]; })), b ? b.companyId : cos.length === 1 ? cos[0].id : "");
     body.appendChild(fld("Company", co));
-    [["bkName", "Reference Name", b ? b.name : "", "e.g. HDFC current account"], ["bkBank", "Bank Name", b ? b.bank : "", ""], ["bkBranch", "Branch", b ? b.branch : "", ""], ["bkCity", "City", b ? b.city : "", "Goes on the salary covering letter."], ["bkNo", "Account Number", b ? b.accountNo : "", ""], ["bkIfsc", "IFSC", b ? b.ifsc : "", ""]].forEach(function (x) { body.appendChild(fld(x[1], inp(x[0], x[2] || "", { maxlength: "60", "data-fmt": x[0] === "bkIfsc" || x[0] === "bkNo" ? "" : "name" }), x[3])); });
+    var bnk = b ? b.bank : "", bsel = bankNameSelect("bkBank", bnk, function (v) { bnk = v; var bs = Object.keys(S.chqtpl || {}).map(function (k) { return S.chqtpl[k]; }).filter(function (t) { return t.active !== false && t.pad && sameBank(t.bank, v); }); fillSelect(cb, [["", bs.length ? "The first one for this bank" : "No template for this bank yet (Cheque Templates)"]].concat(bs.map(function (t) { return [t.id, t.name]; })), ""); });
+    body.appendChild(fld("Bank Name", bsel, "Pick from the list, or add a new bank."));
+    [["bkName", "Reference Name", b ? b.name : "", "e.g. HDFC current account"], ["bkBranch", "Branch", b ? b.branch : "", ""], ["bkCity", "City", b ? b.city : "", "Goes on the salary covering letter."], ["bkNo", "Account Number", b ? b.accountNo : "", ""], ["bkIfsc", "IFSC", b ? b.ifsc : "", ""]].forEach(function (x) { body.appendChild(fld(x[1], inp(x[0], x[2] || "", { maxlength: "60", "data-fmt": x[0] === "bkIfsc" || x[0] === "bkNo" ? "" : "name" }), x[3])); });
     var dl = el("label", { class: "check" }), dc = el("input", { type: "checkbox", id: "bkDef" }); dc.checked = b ? !!b.isDefault : true; dl.appendChild(dc); dl.appendChild(document.createTextNode(" The company's default account")); body.appendChild(dl);
-    var cb = el("select", { class: "field", id: "bkTpl" }), books = b ? chqBooks(b.id) : []; fillSelect(cb, [["", books.length ? "Choose" : "No cheque book yet (add one in Cheque Templates)"]].concat(books.map(function (t) { return [t.id, t.name]; })), b ? (chqBookDefault(b.id) || {}).id || "" : "");
-    body.appendChild(fld("Default Cheque Book", cb, "Cheque books are added in Cheque Templates and linked to this account there."));
+    var x0 = b ? chqNums(b) : {};
+    [["baFirst", "First Cheque No", "first"], ["baEnd", "Last Cheque No", "end"], ["baLast", "Last Used No", "last"]].forEach(function (x) { body.appendChild(fld(x[1], inp(x[0], x0[x[2]] ? String(x0[x[2]]) : "", { inputmode: "numeric", class: "field num", maxlength: "10" }), x[2] === "last" ? "Moves on by itself after each print; the next cheque is this + 1. From " + CHQ_WARN + " leaves left you are asked for the next book's numbers." : x[2] === "first" ? "Of the cheque book in use." : "")); });
+    var cb = el("select", { class: "field", id: "bkTpl" }), books = b ? chqBooks(b.id) : []; fillSelect(cb, [["", books.length ? "The first one for this bank" : "No template for this bank yet (Cheque Templates)"]].concat(books.map(function (t) { return [t.id, t.name]; })), b && b.chequeTplId && books.some(function (t) { return t.id === b.chequeTplId; }) ? b.chequeTplId : "");
+    body.appendChild(fld("Cheque Template", cb, "Templates are made per bank in Cheque Templates."));
     if (b) { var rm = el("button", { class: "link-btn", type: "button", style: "color:var(--bad);margin-top:8px" }, "Remove this account"); rm.addEventListener("click", function () { if (rm.getAttribute("data-arm") !== "1") { rm.setAttribute("data-arm", "1"); rm.textContent = "Click again to remove"; return; } retry(function () { return S.db.doc("bankacct/" + b.id).update({ active: false, isDefault: false, updatedAt: Date.now(), updatedBy: meId() }); }).then(function () { toast("Account removed."); var m = document.querySelector(".modal-bg"); if (m) m.remove(); }, function (e) { toast(explain(e)); }); }); body.appendChild(rm); }
     popForm(b ? "Edit Bank Account" : "Add Bank Account", "", body, "Save", function () {
-      errClear(body); var cid = co.value, d = { companyId: cid, name: smartCase($("bkName").value.trim()), bank: smartCase($("bkBank").value.trim()), branch: smartCase($("bkBranch").value.trim()), city: smartCase($("bkCity").value.trim()), accountNo: $("bkNo").value.replace(/\s+/g, ""), ifsc: $("bkIfsc").value.trim().toUpperCase(), chequeTplId: cb.value || null, active: true, updatedAt: Date.now(), updatedBy: meId() };
-      var ok = true; if (!cid) { errOn("bkCo", "Choose the company."); ok = false; } if (!d.bank) { errOn("bkBank", "Enter the bank name."); ok = false; } if (!d.accountNo) { errOn("bkNo", "Enter the account number."); ok = false; }
+      errClear(body); var cid = co.value, d = { companyId: cid, name: smartCase($("bkName").value.trim()), bank: bnk, branch: smartCase($("bkBranch").value.trim()), city: smartCase($("bkCity").value.trim()), accountNo: $("bkNo").value.replace(/\s+/g, ""), ifsc: $("bkIfsc").value.trim().toUpperCase(), chequeTplId: cb.value || null, first: Number($("baFirst").value.replace(/\D/g, "")) || null, end: Number($("baEnd").value.replace(/\D/g, "")) || null, last: Number($("baLast").value.replace(/\D/g, "")) || null, active: true, updatedAt: Date.now(), updatedBy: meId() };
+      var ok = true; if (!cid) { errOn("baCo", "Choose the company."); ok = false; } if (!d.bank) { errOn("bkBank", "Choose the bank."); ok = false; } if (d.first && d.end && d.end < d.first) { errOn("baEnd", "The last cheque number is before the first."); ok = false; } if (!d.accountNo) { errOn("bkNo", "Enter the account number."); ok = false; }
       if (d.ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(d.ifsc)) { errOn("bkIfsc", "An IFSC looks like HDFC0001234."); ok = false; } if (!ok) return false;
       if (!d.name) d.name = d.bank;
       var others = bankList(cid).filter(function (x) { return !b || x.id !== b.id; }); d.isDefault = dc.checked || !others.length;
@@ -10933,8 +10971,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var box = el("div", { class: "card list" }); list.textContent = ""; list.appendChild(box);
     sortTable(box, "chqList", [
       { label: "Reference Name", kind: "co", cell: function (t, td) { td.appendChild(el("b", null, t.name)); } },
-      { label: "Bank Account", cell: function (t, td) { var b = (S.banks || {})[t.bankAcctId]; txt(td, b ? coLabel(b.companyId) + " · " + bankLabel(b) : t.bank || "Not linked"); if (b && chqBookDefault(b.id) && chqBookDefault(b.id).id === t.id) sub(td, "Default cheque book"); } },
-      { label: "Numbers", cell: function (t, td) { if (!t.first && !t.end && !t.last) { txt(td, "—"); return; } var nx = chqNext(t), lf = chqLeft(t, nx); txt(td, (t.first ? chqNoText(t.first, t) : "?") + " – " + (t.end ? chqNoText(t.end, t) : "?")); sub(td, "Next " + chqNoText(nx, t) + (lf != null ? " · " + Math.max(0, lf) + " left" : ""), lf != null && lf <= 5 ? "color:var(--warn);font-weight:600" : ""); } },
+      { label: "Bank", cell: function (t, td) { txt(td, t.bank || ""); var n = bankList("").filter(function (b) { return chqBookDefault(b.id) === t; }).length; if (n) sub(td, "Used by " + plural(n, "account")); } },
       { label: "Scan", cell: function (t, td) { if (t.pad) td.appendChild(solFileBtn(t.pad)); else txt(td, "Not uploaded"); } },
       { label: "", kind: "act", cls: "r", cell: function (t, td) { if (!chqCan()) return; var b = el("button", { class: "btn sm" }, "Edit"); b.addEventListener("click", function () { CQ.id = t.id; CQ.D = null; renderCheques(); }); td.appendChild(b); } }
     ], rows, {});
@@ -10947,13 +10984,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var grid = el("div", { style: "display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;align-items:start", class: "chqgrid" }), L = el("div", { class: "card pcard" }), R = el("div", { class: "card pcard", style: "position:sticky;top:12px" });
     grid.appendChild(L); grid.appendChild(R); ed.appendChild(grid);
     var f = el("div", { class: "form", style: "padding:0" });
-    var nm = inp("cqName", T.name, { maxlength: "60", "data-fmt": "name" }), bn = inp("cqBank", T.bank, { maxlength: "60", "data-fmt": "name" });
-    f.appendChild(fld("Reference Name", nm, "How the financier picks it, e.g. \"HDFC current account\".")); f.appendChild(fld("Bank Name", bn));
-    var ba = el("select", { class: "field", id: "cqBankAcct" }); fillSelect(ba, [["", "Choose the bank account"]].concat(bankList("").map(function (b) { return [b.id, coLabel(b.companyId) + " · " + bankLabel(b)]; })), T.bankAcctId || "");
-    ba.addEventListener("change", function () { T.bankAcctId = ba.value; var b = (S.banks || {})[ba.value]; if (b && !T.bank) { T.bank = b.bank; bn.value = b.bank; } });
-    var baF = fld("Bank Account", ba, "The account this cheque book draws on (Masters › Bank Accounts)."); baF.classList.add("wide"); f.appendChild(baF);
-    [["cqFirst", "First Cheque No", "first"], ["cqEnd", "Last Cheque No", "end"], ["cqLast", "Last Used No", "last"]].forEach(function (x) { var i = inp(x[0], String(T[x[2]] || ""), { inputmode: "numeric", class: "field num", maxlength: "10" }); i.addEventListener("input", function () { T[x[2]] = i.value.replace(/\D/g, ""); }); f.appendChild(fld(x[1], i, x[2] === "last" ? "Updated by the app after each print. The next cheque is this + 1." : "")); });
-    nm.addEventListener("input", function () { T.name = nm.value; }); bn.addEventListener("input", function () { T.bank = bn.value; });
+    var nm = inp("cqName", T.name, { maxlength: "60", "data-fmt": "name" }), bn = bankNameSelect("cqBank", T.bank, function (v) { T.bank = v; });
+    f.appendChild(fld("Reference Name", nm, "How it is picked, e.g. \"HDFC cheque\".")); f.appendChild(fld("Bank Name", bn, "Every account of this bank uses this template unless it picks another. Cheque numbers are kept on each bank account."));
+    nm.addEventListener("input", function () { T.name = nm.value; });
     var sw = el("div", { class: "f wide" }); sw.appendChild(el("span", { class: "lb" }, "Cheque scan (A4 PDF)"));
     var sr = el("div", { class: "acts", style: "align-items:center" }), fi = el("input", { type: "file", accept: "application/pdf", hidden: "" }), ub = el("button", { type: "button", class: "btn sm" }, T.pad ? "Replace Scan" : "Upload Scan");
     if (T.pad) { sr.appendChild(el("span", null, T.pad.name || "cheque.pdf")); sr.appendChild(solFileBtn(T.pad)); }
@@ -11094,10 +11127,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     (nf.fields || []).forEach(function (f) { if (ask[f.k] || !String(vals[f.k] || "").trim()) { if (ask[f.k]) return; var src = (neftAll(nf).filter(function (x) { return x[0] === f.k; })[0] || [])[2]; out.push(neftLabel(f.k, nf).toLowerCase() + (src ? " (" + src + ")" : "")); } });
     return out;
   }
+  /* The scan can be any size; it is laid on an A4 page, scaled to fit from the top left, and the fields are placed in mm on that A4 page. */
+  function neftFit(N) { var p0 = (N && N.pad) || {}, w = Number(p0.wmm) || 210, h = Number(p0.hmm) || 297, k = Math.min(210 / w, 297 / h); return { x: 0, y: 0, w: w * k, h: h * k }; }
   function neftDraw(cv, N, img, vals) {
     var W = cv.width, k = W / 210, H = Math.round(297 * k); if (cv.height !== H) cv.height = H;
     var g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
-    if (img) g.drawImage(img, 0, 0, W, H); else { g.fillStyle = "#94a3a0"; g.font = "16px sans-serif"; g.fillText("Upload the bank's NEFT / RTGS form to see it here", 20, 40); }
+    if (img) { var ft = neftFit(N); g.strokeStyle = "#d0d7d4"; g.strokeRect(0.5, 0.5, W - 1, H - 1); g.drawImage(img, ft.x * k, ft.y * k, ft.w * k, ft.h * k); } else { g.fillStyle = "#94a3a0"; g.font = "16px sans-serif"; g.fillText("Upload the bank's NEFT / RTGS form to see it here", 20, 40); }
     var px = (N.size || 10) * 0.3528 * k, boxes = {}; g.fillStyle = "#000"; g.font = "600 " + px + "px Jost, sans-serif";
     (N.fields || []).forEach(function (f, i) {
       var t = String(vals[f.k] || ""); if (f.k === "date" && !vals.date) t = neftDateText(); if (f.k === "date" && !(Number(f.gap) > 0)) t = t.slice(0, 2) + "-" + t.slice(2, 4) + "-" + t.slice(4);
@@ -11110,7 +11145,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function neftEditor(ed, T) {
     var N = T.neft = T.neft || { pad: null, size: 10, fields: [] }, card = el("div", { class: "card pcard", style: "margin-top:16px" }); ed.appendChild(card);
-    card.appendChild(el("h3", null, "NEFT / RTGS Form")); card.appendChild(el("p", { class: "sub", style: "margin:0 0 10px" }, "The bank's own NEFT / RTGS form for this cheque book, scanned on A4. Claude finds its fields on upload; drag them on the preview or type. A form is printed for NEFT / RTGS payments once the vendor's bank details are saved (Masters › Vendors). A/c Payee is always on for NEFT / RTGS."));
+    card.appendChild(el("h3", null, "NEFT / RTGS Form")); card.appendChild(el("p", { class: "sub", style: "margin:0 0 10px" }, "The bank's own NEFT / RTGS form, scanned at any size (PDF); it is printed on A4, the scan scaled to fit from the top left. Claude finds its fields on upload; drag them on the preview or type. A form is printed for NEFT / RTGS payments once the vendor's bank details are saved (Masters › Vendors). A/c Payee is always on for NEFT / RTGS."));
     var row = el("div", { class: "acts", style: "align-items:center;margin-bottom:10px" }), fi = el("input", { type: "file", accept: "application/pdf", hidden: "" }), ub = el("button", { type: "button", class: "btn sm" }, N.pad ? "Replace Form Scan" : "Upload Form Scan");
     if (N.pad) { row.appendChild(el("span", null, N.pad.name || "neft.pdf")); row.appendChild(solFileBtn(N.pad)); }
     ub.addEventListener("click", function () { fi.click(); }); fi.addEventListener("change", function () { var f = fi.files && fi.files[0]; fi.value = ""; if (f) neftUpload(f, T, ub); }); row.appendChild(ub); row.appendChild(fi);
@@ -11161,11 +11196,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (fileType(f) !== "application/pdf") { toast("Choose the form as a PDF."); return; }
     var lb = btn.textContent; btn.disabled = true; btn.textContent = "Checking";
     openPdf(f).then(function (pdf) { return pdf.getPage(1); }).then(function (pg) {
-      var v = pg.getViewport({ scale: 1 }); if (Math.abs(v.width - 595.28) > 12 || Math.abs(v.height - 841.89) > 12) throw { kind: "size", w: Math.round(v.width / 72 * 25.4), h: Math.round(v.height / 72 * 25.4) };
+      var v = pg.getViewport({ scale: 1 }), dims = { wmm: Math.round(v.width / 72 * 25.4 * 10) / 10, hmm: Math.round(v.height / 72 * 25.4 * 10) / 10 };
       var path = (S.mode === "demo" ? "demo" : "live") + "/cheques/" + (CQ.id || "new") + "/neft-" + Date.now().toString(36) + "-" + fileSafeName(f.name);
-      return window.bvFiles.put(path, f, "application/pdf").then(function () { return path; });
-    }).then(function (path) { T.neft.pad = { path: path, name: str(f.name, 160), type: "application/pdf", size: f.size || 0, at: Date.now(), by: meId() }; renderChequeEdit(); return neftDetect(T); },
-      function (e) { btn.disabled = false; btn.textContent = lb; toast(e && e.kind === "size" ? "The scan is " + e.w + " × " + e.h + " mm. It must be A4 (210 × 297 mm), portrait." : "The form couldn't be uploaded. Try again."); });
+      return window.bvFiles.put(path, f, "application/pdf").then(function () { return { path: path, dims: dims }; });
+    }).then(function (r0) { T.neft.pad = Object.assign({ path: r0.path, name: str(f.name, 160), type: "application/pdf", size: f.size || 0, at: Date.now(), by: meId() }, r0.dims); renderChequeEdit(); return neftDetect(T); },
+      function (e) { btn.disabled = false; btn.textContent = lb; toast("The form couldn't be uploaded. Try again."); });
   }
   /* Claude reads the form: which fields it has, and where to write each one. */
   function neftDetect(T) {
@@ -11173,16 +11208,16 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!S.sample) { toast("Claude isn't available here; add the fields by hand."); return Promise.resolve(); }
     toast("Reading the NEFT / RTGS form: finding its fields…");
     return padImage(N.pad).then(function (u) { return fetch(u).then(function (r) { return r.blob(); }); }).then(function (blob) {
-      return S.sample.json("This image is an Indian bank's blank NEFT / RTGS request form, one A4 page (210 × 297 mm). Find where a writer should fill in each of these fields if the form has it: "
+      return S.sample.json("This image is an Indian bank's blank NEFT / RTGS request form, one page. Find where a writer should fill in each of these fields if the form has it: "
         + neftAll(N).map(function (f) { return f[0] + " = " + f[1]; }).join("; ") + ". If a field appears twice (for example a counterfoil), give the main one. "
         + "If the form asks the remitter to fill in something that is not in this list (for example a customer ID, a branch code, a mobile for the remitter's SMS), add it with \"k\":\"other\" and a short \"label\". Leave out signatures, bank-use-only boxes and the bank's own stamps. "
-        + "Return JSON {\"fields\":[{\"k\":field key,\"x\":left edge where the writing starts,\"y\":the line or box bottom the text sits on,\"boxes\":number of character boxes (0 if it is a line),\"gap\":distance between the left edges of two neighbouring boxes}]}, with x, y and gap as fractions of the page width (x, gap) and height (y). Leave out fields the form doesn't have.", { images: [blob], modelTier: "default" });
+        + "Return JSON {\"fields\":[{\"k\":field key,\"x\":left edge where the writing starts,\"y\":the line or box bottom the text sits on,\"boxes\":number of character boxes (0 if it is a line),\"gap\":distance between the left edges of two neighbouring boxes}]}, with x, y and gap as fractions of the image width (x, gap) and height (y). Leave out fields the form doesn't have.", { images: [blob], modelTier: "default" });
     }).then(function (r) {
-      var out = [], known = neftAll(N), added = 0; N.extra = N.extra || [];
+      var out = [], known = neftAll(N), added = 0, ft = neftFit(N); N.extra = N.extra || [];
       ((r && r.fields) || []).forEach(function (f) { var x = Number(f.x), y = Number(f.y); if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) return;
         if (f.k === "other" && String(f.label || "").trim()) { var lb = String(f.label).trim().slice(0, 40), ex = N.extra.filter(function (e) { return String(e.label || "").toLowerCase() === lb.toLowerCase(); })[0]; if (!ex) { ex = { k: "x_" + Date.now().toString(36) + (added++), label: lb, from: "ask", value: "" }; N.extra.push(ex); } f.k = ex.k; }
         else if (!known.some(function (d) { return d[0] === f.k; })) return;
-        out.push({ k: f.k, x: Math.round((x * 210 + 1) * 10) / 10, y: Math.round((y * 297 - 1) * 10) / 10, w: 0, gap: Number(f.boxes) > 0 && Number(f.gap) > 0 ? Math.round(Number(f.gap) * 210 * 10) / 10 : 0 }); });
+        out.push({ k: f.k, x: Math.round((ft.x + x * ft.w + 1) * 10) / 10, y: Math.round((ft.y + y * ft.h - 1) * 10) / 10, w: 0, gap: Number(f.boxes) > 0 && Number(f.gap) > 0 ? Math.round(Number(f.gap) * ft.w * 10) / 10 : 0 }); });
       if (out.length) N.fields = out; if (CQ.D === T) renderChequeEdit();
       toast(out.length ? plural(out.length, "field") + " found on the form" + (added ? ", " + added + " of them this bank's own (see Extra fields: say whether each is the same every time)" : "") + ". Check the preview and drag anything that's off." : "No fields could be read; add them with Add Field.");
     }, function () { if (CQ.D === T) renderChequeEdit(); toast("The form couldn't be read automatically; add the fields with Add Field."); });
@@ -11191,7 +11226,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!S.downloads) { toast("Downloads aren't available here."); return Promise.resolve(); }
     return Promise.all([loadScript(JSPDF), withScan ? padImage(N.pad) : null]).then(function (r) {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
-      var doc = newPdf(jsPDF), P = 72 / 25.4; if (r[1]) doc.addImage(r[1], "JPEG", 0, 0, 210 * P, 297 * P);
+      var doc = newPdf(jsPDF), P = 72 / 25.4, ft = neftFit(N); if (r[1]) doc.addImage(r[1], "JPEG", ft.x * P, ft.y * P, ft.w * P, ft.h * P);
       doc.setFontSize(N.size || 10); doc.setTextColor(0, 0, 0);
       (N.fields || []).forEach(function (f) { var t = String(vals[f.k] || ""); if (f.k === "date" && !t) t = neftDateText(); if (f.k === "date" && !(Number(f.gap) > 0)) t = t.slice(0, 2) + "-" + t.slice(2, 4) + "-" + t.slice(4); if (Number(f.gap) > 0) t.replace(/\s+/g, "").split("").forEach(function (ch, j) { doc.text(ch, (f.x + j * f.gap) * P, f.y * P); }); else doc.text(t, f.x * P, f.y * P); });
       return S.downloads.save({ filename: name + ".pdf", data: doc.output("blob") });
@@ -11212,16 +11247,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
   }
   function saveChequeTpl() {
-    var T = CQ.D; if (!T || CQ.busy) return; T.name = $("cqName").value.trim(); T.bank = $("cqBank").value.trim();
-    if (!T.name) { errOn("cqName", "Enter a reference name."); return; } if (!T.bank) { errOn("cqBank", "Enter the bank name."); return; }
+    var T = CQ.D; if (!T || CQ.busy) return; T.name = $("cqName").value.trim();
+    if (!T.name) { errOn("cqName", "Enter a reference name."); return; } if (!T.bank) { errOn("cqBank", "Choose the bank."); return; }
     if (!T.pad) { toast("Upload the cheque scan first."); return; }
     var now = Date.now(), id = CQ.id === "new" ? newId("cq") : CQ.id, old = (S.chqtpl || {})[id];
-    if (!T.bankAcctId) { errOn("cqBankAcct", "Choose the bank account."); return; }
-    var doc = { neft: T.neft && (T.neft.pad || (T.neft.fields || []).length) ? T.neft : null, name: smartCase(T.name), bank: smartCase(T.bank), bankAcctId: T.bankAcctId, first: Number(T.first) || null, end: Number(T.end) || null, last: Number(T.last) || null, pad: T.pad, area: T.area, size: T.size, f: T.f, active: true, updatedAt: now, updatedBy: meId() };
+    var doc = { neft: T.neft && (T.neft.pad || (T.neft.fields || []).length) ? T.neft : null, name: smartCase(T.name), bank: T.bank, pad: T.pad, area: T.area, size: T.size, f: T.f, active: true, updatedAt: now, updatedBy: meId() };
     if (!old) Object.assign(doc, { createdAt: now, createdBy: meId() });
     CQ.busy = true; $("cqSave").disabled = true;
     retry(function () { return old ? S.db.doc("chqtpl/" + id).update(doc) : S.db.doc("chqtpl/" + id).set(doc); }).then(function () {
-      var ba = (S.banks || {})[doc.bankAcctId]; if (ba && !ba.chequeTplId) S.db.doc("bankacct/" + ba.id).update({ chequeTplId: id }).catch(function () {});
       toast("Cheque template saved."); CQ.id = null; CQ.D = null; renderCheques(); }, function (e) { toast(explain(e)); }).then(function () { CQ.busy = false; if ($("cqSave")) $("cqSave").disabled = false; });
   }
   /* NEFT / RTGS form printing comes with the form templates (Cheque Templates). */
@@ -13259,7 +13292,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* ---- Demo and Live: admins can switch; everyone else always works in Live. The set-up (people, admins, access requests,
      companies, locations, departments, ledgers, preferences) is shared; entries are kept apart. ---- */
-  var NS_SHARED = { users: 1, admins: 1, requests: 1, companies: 1, locations: 1, departments: 1, ledgers: 1, prefs: 1, chqtpl: 1, bankacct: 1, regions: 1 };
+  var NS_SHARED = { users: 1, admins: 1, requests: 1, companies: 1, locations: 1, departments: 1, ledgers: 1, prefs: 1, chqtpl: 1, bankacct: 1, regions: 1, banknames: 1 };
   function nsPath(p) { if (S.mode !== "demo") return p; var top = String(p).split("/")[0]; return NS_SHARED[top] ? p : "demo__" + p; }
   function nsDb(db) { return { doc: function (p) { return db.doc(nsPath(p)); }, collection: function (p) { return db.collection(nsPath(p)); } }; }
   function modeKey() { return "bv_mode_" + ((S.me && S.me.id) || ""); }

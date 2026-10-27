@@ -192,9 +192,12 @@ provides the same calls, so the app code did not need rewriting:
   book, check the payee, and download an A4 PDF with only the text at those places (or a test print with the scan
   behind). Print at 100%. The payment records when and with which template it was printed.
 - **Bank accounts** (Masters › Bank Accounts, Renewable Energy and Finance; admins and financiers): `bankacct/*` (shared by
-  Demo and Live) with company, reference name, bank, branch, city, account number, IFSC; one default per company and a
-  default cheque book per account. Cheque templates are cheque books: each is linked to a bank account and keeps only the
-  first, last and last-used numbers (next = last used + 1; a warning at 5 leaves left, never a block; gaps are fine).
+  Demo and Live) with company, bank name, reference name, branch, city, account number, IFSC and the cheque numbers: first,
+  last and last used (next = last used + 1; from 15 leaves left it asks for the next book's numbers, never a block; gaps
+  are fine); one default account per company. **Bank names** are one lookup (`banknames/*`, shared, plus every name already
+  used) for bank accounts and cheque templates, with "+ Add new bank". A **cheque template** is only a layout for a bank's
+  cheques, not tied to an account: an account uses the template it picks, else the first one of its bank. Accounts saved
+  before this keep the numbers their old cheque book template had until they are entered on the account.
 - **Salary** (Payments › Salary, Renewable Energy and Finance; admins and financiers): each company's **staff list**
   (`staff/*`: name, a person or a firm, bank, branch, IFSC, account number, monthly salary, active) and the **monthly
   salary** (`salruns/<company>_<YYYY-MM>`), which opens filled in from the latest month before it (inactive staff left
@@ -218,7 +221,8 @@ provides the same calls, so the app code did not need rewriting:
   payments made outside the app: Cheque or NEFT/RTGS (cheque number), Net banking (transaction ID), Credit card, Cash
   (SWIFT for foreign currency). In Paid, a planned cheque has **Print Again** and **Cancel Cheque** (with a reason): the
   cheque and its payments are marked cancelled (kept, never counted) and the bills return to Plan for Payment.
-- **NEFT / RTGS form** (inside each cheque template): the bank's own form scanned on A4. On upload Claude finds which of
+- **NEFT / RTGS form** (inside each cheque template): the bank's own form, scanned at any size and printed on A4 (the scan
+  scaled to fit from the top left; fields in mm on the A4 page). On upload Claude finds which of
   the listed fields it has and where (`NEFT_FIELDS` in `web/bills/index.html` is the standard list: date, amount
   in figures and words, cheque number, remitter name/account/address/phone/PAN, beneficiary name/account/IFSC/bank/
   branch/account type/mobile/address, purpose); fields can be typed in mm (with a box spacing for character boxes) or

@@ -913,10 +913,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         <div class="f" id="uPinF" hidden><label for="uPin">Profile PIN</label><input class="field num" id="uPin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="4 digits"><span class="hint" id="uPinH"></span><button class="link-btn" id="uPinReset" type="button" hidden>Reset PIN</button><span class="err" id="uEPin" hidden></span></div>
         <div class="f wide" id="uLinkF" hidden><label for="uLink">Link to a Person Already Added</label><select class="field" id="uLink"></select><span class="hint">Pick the person you added without a login, if this request is theirs. Everything entered for them moves to this login.</span></div>
         <div class="f wide" id="uAppsF"><span class="lb">Apps</span>
-          <div class="uapps"><label class="check"><input type="checkbox" id="uAppApr"> Approvals</label><label class="check"><input type="checkbox" id="uAppAcc"> Accounts</label><label class="check"><input type="checkbox" id="uAppFin"> Finance</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check" title="For Voucher Makers"><input type="checkbox" id="uAppBnv"> Bills &amp; Vouchers</label><label class="check"><input type="checkbox" id="uAppWb"> W/B Costing</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label>
+          <div class="uapps"><label class="check"><input type="checkbox" id="uAppBv"> Bills, Accounts, Finance &amp; Approvals</label><span hidden><input type="checkbox" id="uAppApr"><input type="checkbox" id="uAppAcc"><input type="checkbox" id="uAppFin"></span><label class="check"><input type="checkbox" id="uAppWb"> W/B Costing</label>
             <div class="uapp-pp" hidden><span>Production Planning</span><select class="field" id="uPpRole" aria-label="Production Planning role"><option value="">No access</option><option value="approver">Approver</option><option value="planner">Planner</option><option value="floor">Floor Team</option></select>
               <select class="field" id="uPpRegion" aria-label="Production Planning region"><option value="">Erode and Ambur</option><option value="E">Erode</option><option value="A">Ambur</option></select></div></div>
-          <span class="hint">They see only the apps given here; with one app they go straight into it. Admins get every app.</span><span class="err" id="uEApps" hidden>Give at least one app.</span></div>
+          <span class="hint">Accounts, Finance and Approvals come with the role (Accountant, Financier, Approver or Approval Recorder; a Chief Accountant gets Accounts and Finance). With one app they go straight into it. Admins get every app.</span><span class="err" id="uEApps" hidden>Give at least one app.</span></div>
+        <div class="f wide" id="uDivF" hidden><span class="lb">Divisions</span>
+          <div class="uapps"><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppBnv"> Bills &amp; Vouchers</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label></div>
+          <span class="hint">The divisions this person works for: where they enter bills and vouchers (Purchaser, Voucher Maker), and whose entries they see in Accounts (Accountant) and Finance (Financier). Sales is Renewable Energy. A Chief Accountant covers every division; an Approver sees what names them.</span><span class="err" id="uEDiv" hidden>Tick at least one division.</span></div>
         <div class="f"><label for="uName">Name</label><input class="field" id="uName" data-fmt="name" maxlength="60" autocomplete="off"><span class="err" id="uEName" hidden>Enter the user's name.</span></div>
         <div class="f" id="uMailF" hidden><label for="uMail">Login Email</label><input class="field" id="uMail" type="email" autocomplete="off" maxlength="120" placeholder="name@example.com"><span class="hint">Any email: their own, Gmail, Yahoo or kksk.in.</span><span class="err" id="uEMail" hidden></span></div>
         <div class="f" id="uPwF" hidden><label for="uPw" id="uPwL">Password</label><input class="field" id="uPw" type="text" autocomplete="new-password" maxlength="72" spellcheck="false"><span class="hint" id="uPwH">At least 8 characters. Give it to them; they can change it under Settings.</span><span class="err" id="uEPw" hidden></span></div>
@@ -1027,7 +1030,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secCashAppr" hidden>
     <div class="head"><div><h2>Cash Advances</h2><p class="sub" id="capSub"></p></div><span class="grow"></span>
-      <select class="field" id="capDiv" aria-label="Filter by division" style="width:auto;min-width:180px"></select></div>
+      <select class="field" id="capWho" aria-label="Assigned to" style="width:auto;min-width:200px;margin-right:8px" hidden></select><select class="field" id="capDiv" aria-label="Filter by division" style="width:auto;min-width:180px"></select></div>
     <h3 style="margin-top:4px">Waiting for approval <span id="capPendN"></span></h3>
     <div class="card list scroll" id="capPend"></div>
     <h3 style="margin-top:28px">Approved, not paid out yet</h3>
@@ -1038,6 +1041,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <div class="head">
       <div><h2>Checking Reports</h2><p class="sub" id="apSub">Checking reports from every division waiting to be approved for payment. Open one to approve it bill by bill.</p></div>
       <span class="grow"></span>
+      <select class="field" id="apWho" aria-label="Assigned to" style="width:auto;min-width:200px" hidden></select>
       <select class="field" id="apDiv" aria-label="Filter by division" style="width:auto;min-width:180px"></select>
     </div>
     <div class="stats" id="apStats"></div>
@@ -1630,7 +1634,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var DIV = DIVS[APP] ? APP : null;
   function divOf(x) { return (x && x.div) || "mnt"; }
   function divName(x) { return (DIVS[typeof x === "string" ? x : divOf(x)] || DIVS.mnt).name; }
-  function inDiv(x) { return !DIV || divOf(x) === DIV; }
+  function inDiv(x) { if (DIV) return divOf(x) === DIV; return (APP !== "acc" && APP !== "fin") || myDivAll() || myDivs().indexOf(divOf(x)) >= 0; }
+  /* In Accounts and Finance a person sees their divisions' entries; admins and a Chief Accountant every division. */
+  function myDivAll() { return S.isAdmin || meChief() || !S.myUser; }
+  function myDivs() { return divsOf(S.myUser); }
   /* Payments are recorded in Finance only; elsewhere they are shown, not paid. */
   function payHere(x) { return APP === "fin"; }
   /* Headings, each with its own tabs. Tab keys stay the same inside the app; labels are what people see. */
@@ -2214,7 +2221,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function fillUserForm(src, roles, balUid) {
     var js = jobsOf(src); jobChecks($("uJobs"), js); $("uJobsE").hidden = true;
-    var ap = appsWith(src); $("uAppMnt").checked = ap.mnt; $("uAppRe").checked = ap.re; $("uAppBnv").checked = ap.bnv; $("uReCo").checked = !!(src && src.reCompanies); $("uAppAcc").checked = ap.acc; $("uAppFin").checked = ap.fin; $("uAppApr").checked = ap.apr; $("uAppWb").checked = !!(src && src.apps && src.apps.wb); $("uPpRole").value = (ap.pp && ap.pp.role) || ""; $("uPpRegion").value = (ap.pp && ap.pp.region) || ""; $("uEApps").hidden = true; syncAppsF();
+    var ap = appsWith(src), dv = divsOf(src); $("uAppMnt").checked = dv.indexOf("mnt") >= 0; $("uAppRe").checked = dv.indexOf("re") >= 0; $("uAppBnv").checked = dv.indexOf("bnv") >= 0; $("uReCo").checked = !!(src && src.reCompanies); $("uAppBv").checked = !src || !src.apps || src.apps.bv !== false; $("uAppWb").checked = !!(src && src.apps && src.apps.wb); $("uPpRole").value = (ap.pp && ap.pp.role) || ""; $("uPpRegion").value = (ap.pp && ap.pp.region) || ""; $("uEApps").hidden = true; syncAppsF();
     var ua = $("uAppr"); ua.parentNode.replaceChild(approverSelect("uAppr", src.defaultApproverId || ""), ua); $("uAppr").options[0].textContent = "Choose the default approver"; syncApprF();
     if (!roles && js.length) { roles = {}; (src.companyIds || []).forEach(function (cid) { roles[cid] = stepsForJobs(js); }); }
     $("uName").value = src.name || ""; usLoc.close(); usLoc.fill(src.locationId || ""); usDept.close(); usDept.fill(src.deptId || ""); buildChecks($("uCos"), src.companyIds || [], true);
@@ -2237,15 +2244,20 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var ENTRY_STEPS = ["bills", "bcr", "adv", "vouchers", "vcr", "cash"];
   var APP_STEPS = { mnt: ENTRY_STEPS, bnv: ENTRY_STEPS, re: ENTRY_STEPS.concat(["solar"]), acc: ["acct"], fin: ["txn"], apr: ["appr", "rec"] };
   function rolesFit(roles, k) { if (!roles) return k !== "apr"; return Object.keys(roles).some(function (c) { return (roles[c] || []).some(function (st) { return APP_STEPS[k].indexOf(st) >= 0; }); }); }
+  /* Apps come with the role: Accounts for accounting (or a Chief Accountant), Finance for paying (or a Chief Accountant),
+     Approvals for approving or recording approvals, a division app for entering in a division ticked for the person. */
   function appsWith(u) {
-    var a = (u && u.apps) || {}, bv = a.bv !== false, r = u && u.roles, on = function (k, def) { return bv && (a[k] != null ? !!a[k] : def) && (rolesFit(r, k) || (isChief(u) && (k === "acc" || k === "fin"))); };
-    /* Bills & Vouchers is given on purpose, to people who enter bills or vouchers. */
-    return { mnt: on("mnt", true), re: on("re", false), bnv: on("bnv", false), acc: on("acc", true), fin: on("fin", true), apr: on("apr", true) };
+    var a = (u && u.apps) || {}, bv = a.bv !== false, r = u && u.roles, dv = divsOf(u), chief = isChief(u);
+    var div = function (k) { return bv && dv.indexOf(k) >= 0 && rolesFit(r, k); };
+    return { mnt: div("mnt"), re: div("re"), bnv: div("bnv"), acc: bv && (rolesFit(r, "acc") || chief), fin: bv && (rolesFit(r, "fin") || chief), apr: bv && rolesFit(r, "apr") };
   }
-  function readApps() { return { mnt: $("uAppMnt").checked, re: $("uAppRe").checked, bnv: $("uAppBnv").checked, acc: $("uAppAcc").checked, fin: $("uAppFin").checked, apr: $("uAppApr").checked }; }
-  function anyMoneyApp(a) { return !!(a.mnt || a.re || a.bnv || a.acc || a.fin || a.apr); }
+  /* The divisions a person works for (Maintenance & Civil unless said otherwise, as before). */
+  function divsOf(u) { var a = (u && u.apps) || {}; return Object.keys(DIVS).filter(function (k) { return a[k] != null ? !!a[k] : k === "mnt"; }); }
+  /* Divisions ticked = the person's scope; Accounts, Finance and Approvals come with the role (always "on" here). */
+  function readApps() { var bv = $("uAppBv").checked; return { bv: bv, mnt: bv && $("uAppMnt").checked, re: bv && ($("uAppRe").checked || readChecks($("uJobs")).indexOf("solar") >= 0), bnv: bv && $("uAppBnv").checked, acc: bv, fin: bv, apr: bv }; }
+  function anyMoneyApp(a) { return a.bv != null ? !!a.bv : !!(a.mnt || a.re || a.bnv || a.acc || a.fin || a.apr); }
   function syncAppsF() {
-    var bv = anyMoneyApp(readApps()); $("uPpRegion").hidden = !$("uPpRole").value; $("uReCoF").hidden = !$("uAppRe").checked;
+    var bv = $("uAppBv").checked; $("uPpRegion").hidden = !$("uPpRole").value; $("uDivF").hidden = !bv; if (readChecks($("uJobs")).indexOf("solar") >= 0) $("uAppRe").checked = true; $("uReCoF").hidden = !$("uAppRe").checked;
     ["uJobs", "uCos"].forEach(function (id) { var f = $(id).closest(".f"); if (f) f.hidden = !bv; });
     var rs = document.querySelector("#secUser .uresp"); if (rs) rs.hidden = !bv;
     if (!bv) $("uApprF").hidden = true; else syncApprF();
@@ -2273,8 +2285,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var jobs0 = readChecks($("uJobs")), chief = jobs0.indexOf("chiefacct") >= 0, chiefOnly = chief && jobs0.length === 1;
     if (appBv && !cos.length && !chiefOnly) { $("uECos").hidden = false; ok = false; }
     /* Each app only for the responsibilities that belong in it (a Chief Accountant fits Accounts and Finance everywhere). */
-    var misfit = APP_KEYS.filter(function (k) { return ma[k] && ((!rolesFit(roles, k) && !(chief && (k === "acc" || k === "fin"))) || (k === "bnv" && jobs0.indexOf("vmaker") < 0)); });
-    if (misfit.length) { $("uEApps").textContent = misfit.map(function (k) { return APP_NAMES[k]; }).join(", ") + (misfit.length > 1 ? " don't" : " doesn't") + " match their responsibilities below. " + ({ mnt: "Maintenance & Civil is for people who enter, account or pay its work.", bnv: "Bills & Vouchers is for Voucher Makers.", re: "Renewable Energy is for people who enter, account or pay its work, or do its energy billing.", acc: "Accounts is for accountants (every division).", fin: "Finance is for financiers (every division).", apr: "Approvals is for approvers and approval recorders." })[misfit[0]] + " Untick it, or give the matching responsibility."; $("uEApps").hidden = false; ok = false; }
+    /* Divisions: needed by everyone who enters, accounts or pays (a Chief Accountant covers every division; an Approver needs none). */
+    var needDiv = appBv && jobs0.some(function (j) { return ["purchaser", "vmaker", "accountant", "financier", "solar"].indexOf(j) >= 0; }) && !chiefOnly;
+    $("uEDiv").hidden = true; if (needDiv && !(ma.mnt || ma.re || ma.bnv)) { $("uEDiv").hidden = false; ok = false; }
     var dept = usDept.value(); if (!dept) { $("uEDept").hidden = false; ok = false; }
     var jobs = readChecks($("uJobs")); $("uJobsE").textContent = "Choose at least one job."; if (appBv && !jobs.length) { $("uJobsE").hidden = false; ok = false; }
     if (jobsClash(jobs)) { $("uJobsE").textContent = CLASH_MSG; $("uJobsE").hidden = false; ok = false; }
@@ -2547,7 +2560,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var st = stageOf(r);
       if (st === "payment") { goDone("Report " + r.no + " is already approved."); return true; }
       if (st !== "generated" && st !== "printed") { goDone("Report " + r.no + " isn't waiting for approval any more."); return true; }
-      if (!apprMine(r)) { goDone("Report " + r.no + " waits for another approver."); return true; }
+      if (S.isAdmin) APV.who = "*"; else if (!apprMine(r)) { goDone("Report " + r.no + " waits for another approver."); return true; }
       goDone(); setTab("Approvals"); openReport(id);
       if (r.kind === "vcr") openVcrApprove(r); else if (r.kind === "inst") instApproveForm(r); else crApproveForm(r);
       return true;
@@ -2598,8 +2611,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     }
     if (k === "acc") { var w = function (x) { return !x.acct || x.acct === "pending"; }; rawArr(R.bills).forEach(function (b) { if (b.status === "done" && w(b) && can("acct", b.companyId)) n++; }); rawArr(R.vouchers).forEach(function (v) { if (v.status !== "deleted" && w(v) && can("acct", v.companyId)) n++; }); return n; }
     if (k === "apr") {
-      rawArr(R.reports).forEach(function (r) { var st = stageOf(r); if ((st === "generated" || st === "printed") && (S.isAdmin || reportApproverId(r) === me)) n++; });
-      rawArr(R.cashadv).forEach(function (a) { if (a.status === "pending" && a.kind !== "return" && (S.isAdmin || caApproverId(a) === me)) n++; });
+      var mineA = function (id) { return id === me || (S.isAdmin && !id); };
+      rawArr(R.reports).forEach(function (r) { var st = stageOf(r); if ((st === "generated" || st === "printed") && mineA(reportApproverId(r))) n++; });
+      rawArr(R.cashadv).forEach(function (a) { if (a.status === "pending" && a.kind !== "return" && mineA(caApproverId(a))) n++; });
       return n;
     }
     if (k === "fin") {
@@ -5882,7 +5896,16 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
      app they have (Maintenance & Civil also through Finance), or every division when they have none of those apps. */
   function recDivs() { var a = (S.myUser && S.myUser.apps) || {}, l = Object.keys(DIVS).filter(function (k) { return !!(a[k] || (k === "mnt" && a.fin)); }); return l.length ? l : Object.keys(DIVS); }
   function apprForMe(x, namedId) { return namedId === meId() || (canDo("rec") && recDivs().indexOf(divOf(x)) >= 0); }
-  function apprMine(r) { if (S.isAdmin) return true; return APP === "apr" && apprForMe(r, reportApproverId(r)) && apprCos(r).some(function (cid) { return canApprove(cid); }); }
+  /* Admins (the group's approvers) see what names them by default, and can pick another approver or everyone. Items naming
+     nobody show with their own. */
+  function whoOk(st, id) { if (st.who == null) st.who = meId(); return st.who === "*" || id === st.who || (!id && st.who === meId()); }
+  function whoSelect(sel, st, rerender) {
+    if (!S.isAdmin || S._adm) { sel.hidden = true; return; } if (st.who == null) st.who = meId();
+    var me = meId(), others = approverList().filter(function (a) { return a.id !== me; });
+    fillSelect(sel, [[me, "Assigned to me"]].concat(others.map(function (a) { return [a.id, "Assigned to " + a.name]; })).concat([["*", "Everyone's"]]), st.who); st.who = sel.value; sel.hidden = false;
+    if (!sel._on) { sel._on = 1; sel.addEventListener("change", function () { st.who = sel.value; rerender(); }); }
+  }
+  function apprMine(r) { if (S.isAdmin) return whoOk(APV, reportApproverId(r)); return APP === "apr" && apprForMe(r, reportApproverId(r)) && apprCos(r).some(function (cid) { return canApprove(cid); }); }
   /* The approver a checking report is for: saved on it, or (older reports) the one most of its entries name. */
   function reportApproverId(r) { return r.approverId || reportApprover(r); }
   function apprKind(r) { return r.kind === "vcr" ? (r.direct ? "Vouchers (no checking report)" : "Voucher Checking Report") : r.kind === "inst" ? "Advance Checking Report" : "Bill Checking Report"; }
@@ -5899,12 +5922,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* "Approved by Asha", or "Recorded by Ravi on behalf of management · signed by Asha on paper". */
   function apprByText(r) {
+    if (r.onBehalf && r.behalfMode === "admin") return "Approved by " + (pnm(r.behalfByName) || userLabel(r.approvedBy) || "an admin") + " on behalf of " + (pnm(r.paperByName) || "the approver");
     if (r.onBehalf) return "Signed by " + (pnm(r.paperByName) || "the approver") + " on paper · recorded by " + (pnm(r.behalfByName) || userLabel(r.approvedBy) || "the approval recorder");
     return "Approved by " + (userLabel(r.approvedBy) || approverName({ approverId: r.approvedBy }) || "an admin");
   }
   function openAppr(r) { if (r.kind === "vcr") openVcr(r.id); else openReport(r.id); }
   function renderApprovals() {
-    var ds = $("apDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), APV.div); APV.div = ds.value;
+    var ds = $("apDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), APV.div); APV.div = ds.value; whoSelect($("apWho"), APV, renderApprovals);
     $("apSub").textContent = S.isAdmin ? "Checking reports from every division waiting to be approved for payment. Open one to approve it bill by bill." : (canDo("rec") ? "Checking reports from " + recDivs().map(function (k) { return DIVS[k].name; }).join(" and ") + " waiting to be approved for payment. Record an approval signed on paper by choosing who signed it." : "Checking reports that name you as approver, waiting to be approved for payment. Open one to approve it bill by bill.");
     var w = apprWaiting(), done = apprRecent(), tot = {};
     w.forEach(function (r) { curAdd(tot, r.currency || "INR", r.kind === "vcr" ? (r.payable != null ? r.payable : r.total) : r.kind === "inst" ? r.total : payableOf(r)); });
@@ -5931,12 +5955,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* ---- Approvals › Cash Advances: requests from every division ---- */
   var CAP = { div: "" };
-  function capMine(a) { return (S.isAdmin || ((canStep("appr", a.companyId) || canStep("rec", a.companyId)) && apprForMe(a, caApproverId(a)))) && (!CAP.div || divOf(a) === CAP.div); }
+  function capMine(a) { if (S.isAdmin) return whoOk(CAP, caApproverId(a)) && (!CAP.div || divOf(a) === CAP.div); return (canStep("appr", a.companyId) || canStep("rec", a.companyId)) && apprForMe(a, caApproverId(a)) && (!CAP.div || divOf(a) === CAP.div); }
   /* A cash advance is approved by the approver named on it, or else the person's default approver. */
   function caApproverId(a) { if (a.approverId) return a.approverId; var u = (S.users || {})[a.uid] || (S.profiles || {})[a.uid]; return (u && u.defaultApproverId) || ""; }
   function capPending() { return caList().filter(function (a) { return a.status === "pending" && capMine(a); }); }
   function renderCashAppr() {
-    var ds = $("capDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), CAP.div); CAP.div = ds.value;
+    var ds = $("capDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), CAP.div); CAP.div = ds.value; whoSelect($("capWho"), CAP, renderCashAppr);
     $("capSub").textContent = S.isAdmin ? "Cash advances people have asked for, from every division. Approve one, or change the amount; the financier then pays it out in Finance." : (canDo("rec") ? "Cash advances asked for in " + recDivs().map(function (k) { return DIVS[k].name; }).join(" and ") + "; record approvals signed on paper." : "Cash advances that name you as approver.") + " Approve one, or change the amount; the financier then pays it out in Finance.";
     var pend = capPending().sort(function (a, b) { return (a.requestedAt || 0) - (b.requestedAt || 0); });
     var appr = caList().filter(function (a) { return a.status === "approved" && capMine(a); }).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); });
@@ -5959,6 +5983,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* In an approval form: who signed it on paper (asked only when the financier records it on management's behalf). */
   function behalfField(body, def) {
+    S._bhAdm = null;
+    /* An admin approving what names another approver: as themselves, or on that approver's behalf (they approved it but couldn't in the app). */
+    if (APP === "apr" && S.isAdmin && !S._adm && def && def !== meId()) {
+      S._bh = false; var nm = (approverList().filter(function (a) { return a.id === def; })[0] || {}).name || userLabel(def) || "the approver";
+      S._bhAdm = { id: def, name: nm }; var sel = el("select", { class: "field", id: "bhAs" }); fillSelect(sel, [["", "Myself"], [def, "On behalf of " + nm + " (they approved it)"]], "");
+      body.insertBefore(fld("Approving as", sel, "This names " + nm + " as approver. Approve it yourself, or record that " + nm + " approved it and you are entering it for them."), body.firstChild); return;
+    }
     S._bh = canBehalf(def); if (!S._bh) return;
     var list = approverList(), sel = el("select", { class: "field", id: "bhBy" });
     fillSelect(sel, [["", "Choose who signed it on paper"]].concat(list.map(function (a) { return [a.id, a.name]; })), list.some(function (a) { return a.id === def; }) ? def : "");
@@ -5966,12 +5997,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     body.insertBefore(f, body.firstChild);
   }
   function behalfRead() {
+    if (S._bhAdm) { var as = $("bhAs") && $("bhAs").value; return as ? { onBehalf: true, behalfMode: "admin", paperById: as, paperByName: S._bhAdm.name, behalfByName: pnm(preparedByText()) } : {}; }
     if (!S._bh) return {};
     var v = $("bhBy") && $("bhBy").value; if (!v) { errOn("bhBy", "Choose who signed it on paper."); return null; }
     var a = approverList().filter(function (x) { return x.id === v; })[0];
     return { onBehalf: true, paperById: v, paperByName: a ? a.name : "", behalfByName: pnm(preparedByText()) };
   }
-  function behalfNote(x) { return x && x.onBehalf ? "Signed by " + pnm(x.paperByName) + " on paper, recorded by " + pnm(x.behalfByName) : ""; }
+  function behalfNote(x) { return x && x.onBehalf ? (x.behalfMode === "admin" ? "Approved on behalf of " + pnm(x.paperByName) + " by " + pnm(x.behalfByName) : "Signed by " + pnm(x.paperByName) + " on paper, recorded by " + pnm(x.behalfByName)) : ""; }
   /* The approver most of a report's bills or vouchers name, to suggest who signed it. */
   function reportApprover(r) {
     var n = {}, items = r.kind === "vcr" ? (r.voucherIds || []).map(function (id) { return S.vouchers[id]; }) : r.kind === "inst" ? [S.advances[r.advanceId]] : (r.billIds || []).map(function (id) { return S.bills[id]; });
@@ -10438,10 +10470,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (r.kind === "inst") return !!S.advances[r.advanceId];
       return (r.billIds || []).some(function (id) { return S.bills[id]; });
     });
+    /* payments, cash advances and notes follow the same division scope */
+    var only = function (src) { var m = {}; Object.keys(src || {}).forEach(function (k) { if (inDiv(src[k])) m[k] = src[k]; }); return m; };
+    if (R.txns) S.txns = only(R.txns); if (R.cashadv) S.cashadv = only(R.cashadv); if (R.notes) S.notes = only(R.notes);
   }
   function startData() {
     if (S.dataStarted) return; S.dataStarted = true;
-    S.raw = { bills: {}, vouchers: {}, advances: {}, reports: {}, txns: {}, cashadv: {} };
+    S.raw = { bills: {}, vouchers: {}, advances: {}, reports: {}, txns: {}, cashadv: {}, notes: {} };
     if (APP === "re") solStart();
     S.db.collection("ledgers").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var l = Object.assign({}, d.data() || {}); l.id = d.id; m[d.id] = l; });
@@ -10468,8 +10503,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       S.txns = m; S.raw.txns = all; S.tLoaded = true; invalidate(); onData(); appSwBadge();
     }, function (e) { S.tLoaded = true; onData(); toast("Payments stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
     S.db.collection("notes").onSnapshot(function (snap) {
-      var m = {}; snap.docs.forEach(function (d) { var n = Object.assign({}, d.data() || {}); n.id = d.id; if (inDiv(n)) m[d.id] = n; });
-      S.notes = m; invalidate(); onData();
+      var m = {}, all = {}; snap.docs.forEach(function (d) { var n = Object.assign({}, d.data() || {}); n.id = d.id; all[d.id] = n; if (inDiv(n)) m[d.id] = n; });
+      S.notes = m; S.raw.notes = all; invalidate(); onData();
     }, function () {});
     S.db.collection("vouchers").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var v = Object.assign({}, d.data() || {}); v.id = d.id; m[d.id] = v; });
@@ -13469,7 +13504,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (t.classList.contains("vnco")) VC.cos[t.getAttribute("data-co")] = t.checked; else if (t.classList.contains("vninc")) VC.sel[t.getAttribute("data-id")] = t.checked;
       updVcrNew();
     });
-    ["uAppMnt", "uAppRe", "uAppBnv", "uAppAcc", "uAppFin", "uAppApr"].forEach(function (id) { $(id).addEventListener("change", syncAppsF); }); $("uPpRole").addEventListener("change", syncAppsF);
+    ["uAppBv", "uAppMnt", "uAppRe", "uAppBnv"].forEach(function (id) { $(id).addEventListener("change", syncAppsF); }); $("uJobs").addEventListener("change", function () { if (S.userEditing) syncAppsF(); }); $("uPpRole").addEventListener("change", syncAppsF);
     $("uJobs").addEventListener("change", function () { if (!S.userEditing) return; $("uJobsE").hidden = true; syncApprF(); var js = readChecks($("uJobs")), cos = readChecks($("uCos")), m = {}; cos.forEach(function (cid) { m[cid] = stepsForJobs(js); }); S.userEditing.roles = m; renderRoleGrid(cos, m); });
     $("uCos").addEventListener("change", function () { if (!S.userEditing) return; var cur = readRoleGrid(), cos = readChecks($("uCos")), m = {}, js = readChecks($("uJobs")); cos.forEach(function (cid) { m[cid] = cur[cid] || (js.length ? stepsForJobs(js) : STEPS.map(function (s) { return s[0]; })); }); renderRoleGrid(cos, m);
       var keep = {}; Array.prototype.forEach.call(document.querySelectorAll("#uOb input"), function (i) { keep[i.id] = i.value; });

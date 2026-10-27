@@ -31,6 +31,19 @@
   **Core plus app-specific fields**: every bill and voucher has one core that Accounts, Approvals and Finance work from;
   a division app can add its own fields under `ext.<app>`, shown only there (`APP_EXT`, empty for now); Renewable Energy's
   is the cost centre (`ext.re.cc` / `ccT`; older entries' top-level `cc` still read).
+  **Apps come with the role; divisions are the scope** (migration 20261028090000). Settings › Users has one switch,
+  "Bills, Accounts, Finance & Approvals", then **Divisions** (Maintenance & Civil, Renewable Energy, Bills & Vouchers;
+  `apps.mnt/re/bnv`, Maintenance & Civil on unless said otherwise): the divisions a person works for. Accounts opens for an
+  Accountant (or Chief Accountant), Finance for a Financier (or Chief Accountant), Approvals for an Approver or Approval
+  Recorder, with no ticks; a division app opens for entering in a ticked division (Sales ticks Renewable Energy by itself).
+  At least one division is needed by Purchasers, Voucher Makers, Accountants, Financiers and Sales. In Accounts and
+  Finance a person sees only their divisions' bills, vouchers, payments, notes and cash advances (`inDiv`); admins and a
+  Chief Accountant see every division; Approvals is unaffected.
+  **Approvers (the admins).** In Approvals, Checking Reports and Cash Advances open on **Assigned to me** (what names them,
+  and anything naming nobody); "Assigned to <name>" or "Everyone's" shows the others'. Approving an item that names
+  another approver asks **Approving as**: Myself, or **On behalf of <name>** (they approved it but couldn't in the app),
+  saved as `onBehalf`, `behalfMode: "admin"`, `paperById/Name`, `behalfByName` and shown "Approved by Arin on behalf of
+  Akheel". The approver on each entry is still a default the person entering can change.
   **Purchaser and Approver never go together** on one person (Users, sign-up requests, own role picker, profiles; per
   company, Approval with purchase steps is refused too).
   Accounts decides which divisions may use each ledger (Ledgers › Edit › Divisions that use it).

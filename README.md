@@ -5,10 +5,11 @@
 | Path | What | Supabase project |
 | --- | --- | --- |
 | `/` (`web/index.html`, `web/portal.js`) | KKSK Group home: sign-in, then a tile per app (straight into the app when a person has only one) | KKSK Group |
-| `/maintenance/` | Maintenance & Civil: the division's bills, proformas, imports, cash vouchers and checking reports | KKSK Group |
-| `/renewable/` | Renewable Energy: the same for that division, plus its own Payment Entry and energy billing for solar plants and windmills | KKSK Group |
+| `/maintenance/` | Maintenance & Civil: the division's bills, proformas, imports, cash vouchers and checking reports (entry only) | KKSK Group |
+| `/renewable/` | Renewable Energy: the same for that division, plus Sales (energy billing for solar plants and windmills) | KKSK Group |
+| `/bills-vouchers/` | Bills & Vouchers: its own entries, plus every division's bills and vouchers read-only (All Bills & Vouchers) | KKSK Group |
 | `/accounts/` | Accounts: every division's accounting, ledgers, debit and credit notes, ledger books, companies | KKSK Group |
-| `/finance/` | Finance: Payment Entry and advances, payables | KKSK Group |
+| `/finance/` | Finance: the only place payments are planned and recorded, for every division; advances, payables, salary, bank accounts, cheque and NEFT/RTGS templates | KKSK Group |
 | `/approvals/` | Approvals: checking reports (bill, advance and voucher checking reports) and cash advances from every division, approved by admins or recorded by the financier on their behalf | KKSK Group |
 | `/costing/` (`web/costing/index.html`) | W/B Costing: lot unloading, assortment piece by piece, cost sheets, costing report per origin (moved from a claude.ai artifact, started empty). Group sign-in first (Settings › Users › Apps › W/B Costing, `apps.wb`; admins always), then the app's own usernames and passwords; the first account is made by a Super Admin. Records live in `wb_*` collections of `app_docs`. **Grades** and **RH Sizes** are lookups (`wb_grades`, `wb_rhsizes`: code + order) managed under Reports › Grades / RH Sizes (add, reorder, delete); the Super Admin's first visit seeds the 15 standard RH sizes in order; a new cost sheet opens with every grade from the list in the list's order (an untouched new sheet keeps following the list), a saved sheet shows its grades in that order, a grade can't appear twice in a sheet (flagged while typing, refused on save), and a grade typed into a sheet joins the list when the sheet is saved; main tabs are Costing (the costing report; the app opens here), Unloading, Assortment, Cost Sheet, Data (Origins, RH Sizes, Grades, Users); on Unloading, Assortment and Cost Sheet the list on the left shows Drafts then Submitted (search filters both; a submitted assortment has a Costing button), and the action bar sits at the end of the form (fixed to the bottom on phones) with + New, Discard (drops unsaved changes, or clears the screen), Delete (saved entries), Save Draft and Submit; a load unloading starts with no size rows and the sizes are ticked (or a new one added inline, which joins the lookup). The header has **All Apps** (back to the KKSK Group home). Refreshing the page always asks for the app sign-in again. **Demo / Live**: admins, and users an admin switches Demo on for (Data › Users › Demo On/Off), get a switch; Demo keeps its own records (`wbdemo_*`) and its own unsent drafts, and the switch keeps the person signed in. **View As** (admins): see the app as another of its users; nothing can be saved meanwhile. **Safeguard**: signing in as the safeguard account (its username and password are kept only as PBKDF2 hashes in the page; the password is asked a second time) overwrites every record in `wb_` and `wbdemo_` `unloadings/assortments/costsheets/origins/grades/rhsizes` with a cooked-up stand-in of the same shape, removes it, and shuts the app behind a fake error page. Any costing admin restarts it with their own username and the safeguard password: leftovers are cooked and removed again first, the app reopens empty, and the standard RH sizes are re-seeded. Nothing real is restored. This reaches only what the app can write, not Supabase's backups | KKSK Group |
 | `/production/` (`web/production/index.html`) | Production Planning — **hidden for now** (no tile; the address sends people home; access already given is kept) (Live on the KKSK-Production tables; Demo sample for admins) | KKSK-Production, through the hand-over |
@@ -17,10 +18,22 @@
   serves it at each address and the address picks the app (`BV_APP`: mnt, re, acc, fin). `/bills/` (the old Bills & Vouchers)
   moves to `/maintenance/`. Every bill, report, proforma, voucher, payment, note and cash advance carries `div` (mnt or re;
   none means mnt). Maintenance and Renewable Energy each see only their own; Accounts and Finance see every division.
-  **The app decides the scope, a person's jobs decide the tabs.** Every app has the same headings in the same order (Reports,
-  [Sales,] Expenses, Accounts, Payments, Masters, Settings); a division app (Maintenance & Civil, Renewable Energy) holds all of that
-  division's work for whoever does it there (so a Renewable Energy purchaser + accountant + financier works only in that app);
-  Accounts is accounting for every division and Finance is paying for every division.
+  **One home app per job.** Each job's steps appear only in its home app (`APP_STEPS`, and `app_portal()` in migration
+  20261027120000): the division apps (Maintenance & Civil, Renewable Energy, Bills & Vouchers, and future ones) are for
+  entering bills, proformas, imports and vouchers and their checking reports and cash advances (Renewable Energy also Sales);
+  **Accounts** is the only place accounting happens (bills are never accounted while entered); **Approvals** the only place
+  approvals happen (plus Slack's Approve); **Finance** the only place payments are planned and recorded, for every division
+  including Renewable Energy, and the only place bank accounts, cheque and NEFT/RTGS templates and salary are kept (other
+  apps only read them). A person with several jobs uses several apps; all share one database, so nothing is entered twice.
+  An entry is changed only in the app it was made in. The header's **Apps** switcher lists the person's apps with what
+  waits in each (division apps: their unfinished bills and anything sent back; Accounts: to account; Approvals: waiting
+  for them; Finance: approved, not yet paid in full, and approved cash advances to hand over); its badge totals the other apps.
+  **Core plus app-specific fields**: every bill and voucher has one core that Accounts, Approvals and Finance work from;
+  each division app adds its own fields under `ext.<app>`, shown only there (`APP_EXT`): Maintenance & Civil, Machine type
+  and Section (typed, earlier values offered); Renewable Energy, the cost centre (`ext.re.cc` / `ccT`; older entries'
+  top-level `cc` still read). A new division only lists its fields there.
+  **Purchaser and Approver never go together** on one person (Users, sign-up requests, own role picker, profiles; per
+  company, Approval with purchase steps is refused too).
   Accounts decides which divisions may use each ledger (Ledgers › Edit › Divisions that use it).
 - **Workflow.** Every bill, voucher, proforma and import goes: data entry → accounting → approval → payment.
   Jobs: Purchaser (entry), Accountant (accounting), Approver (approval), Approval Recorder (records paper approvals),
@@ -175,14 +188,16 @@ provides the same calls, so the app code did not need rewriting:
 - **View as**: everything follows the person (their picture or initials, their look, their apps under All Apps,
   their profile in Personalise); only the view-as menu (switch person / back to admin) and Demo/Live stay the admin's. Personal settings (`prefs/<uid>`: look, picture, WhatsApp number) are readable only by the person and
   by admins (migration 20261024120000).
-- **Bills & Vouchers** (`/bills-vouchers/`, key `bnv`): a division of its own, a copy of Maintenance & Civil worked by
-  Voucher Makers (the app is given in Users and only fits people with that job). Bills, vouchers, checking reports and
+- **Bills & Vouchers** (`/bills-vouchers/`, key `bnv`): the group-wide expense app. **Expenses › All Bills & Vouchers**
+  lists every bill and voucher of the person's companies from every division, read-only, with where each stands and
+  "from <division>"; **Open in …** opens it in the app it was made in (`?go=b:<id>` / `?go=v:<id>`), where it is changed.
+  It is also a division of its own (the app is given in Users to people who enter bills or vouchers). Bills, vouchers, checking reports and
   payments here are kept apart from Maintenance & Civil (records carry `div: "bnv"`; Accounts, Finance and Approvals see
   them with every division). On each bill and voucher the Voucher Maker picks **Prepared by**: themselves or a saved
   name (or a new one, saved for next time); the entry counts as that person's, with `madeBy` recording the Voucher
   Maker. A Voucher Maker enters bills wherever they make vouchers. Companies (and vendors, ledgers) must be ticked as
   used in Bills & Vouchers. Sign-in check: migration 20261024150000.
-- **Cheque Templates and printing**: Masters › Cheque Templates (Renewable Energy and Finance; admins and financiers)
+- **Cheque Templates and printing**: Masters › Cheque Templates (Finance only; admins and financiers)
   holds one template per bank's cheque layout in `chqtpl/*` (shared by Demo and Live): reference name, bank, a blank
   cheque scanned or photographed at any size (PDF, JPG or PNG; kept in storage under `cheques/`), where the cheque sits
   on the A4 page when printing (mm) and where the date (digit boxes or DD-MM-YYYY), payee, amount in words (two lines),
@@ -201,14 +216,14 @@ provides the same calls, so the app code did not need rewriting:
   preview draws a made-up payment on the scan, in black; fields can be dragged into place. Everything prints in black. In Payment Entry › Paid, a cheque payment has **Print Cheque**: pick the cheque
   book, check the payee, and download an A4 PDF with only the text at those places (or a test print with the scan
   behind). Print at 100%. The payment records when and with which template it was printed.
-- **Bank accounts** (Masters › Bank Accounts, Renewable Energy and Finance; admins and financiers): `bankacct/*` (shared by
+- **Bank accounts** (Masters › Bank Accounts, Finance only; admins and financiers; other apps read them): `bankacct/*` (shared by
   Demo and Live) with company, bank name, reference name, branch, city, account number, IFSC and the cheque numbers: first,
   last and last used (next = last used + 1; from 15 leaves left it asks for the next book's numbers, never a block; gaps
   are fine); one default account per company. **Bank names** are one lookup (`banknames/*`, shared, plus every name already
   used) for bank accounts and cheque templates, with "+ Add new bank". A **cheque template** is only a layout for a bank's
   cheques, not tied to an account: an account uses the template it picks, else the first one of its bank. Accounts saved
   before this keep the numbers their old cheque book template had until they are entered on the account.
-- **Salary** (Payments › Salary, Renewable Energy and Finance; admins and financiers): each company's **staff list**
+- **Salary** (Payments › Salary, Finance; admins and financiers): each company's **staff list**
   (`staff/*`: name, a person or a firm, bank, branch, IFSC, account number, monthly salary, active) and the **monthly
   salary** (`salruns/<company>_<YYYY-MM>`), which opens filled in from the latest month before it (inactive staff left
   out; anyone on the list can be added) or else from the staff list. **Issue Cheque & Print Pack** takes the company's
@@ -386,7 +401,7 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   yet (those rows show expenses); transformers roll up to region and location, and company-wide expenses show on a row of
   their own. Excel has a sheet per view.
 - Tabs in Renewable Energy: Reports (Transactions, Payables, P&L), Sales (Monthly Billing, Invoices), Expenses
-  (bills, proformas, imports, vouchers and their checking reports, cash advances), Accounts, Payments, Masters (Companies,
-  Consumers, PPA Rates, Vendors, Ledgers), Settings.
+  (bills, proformas, imports, vouchers and their checking reports, cash advances), Masters (Companies, Consumers, PPA
+  Rates, Vendors, Ledgers), Settings. Its accounting is in Accounts and its payments in Finance.
 - Who may use it: the Renewable Energy app plus the Sales job for the generator's company.
   The division's own expenses go through its Bills and Cash Vouchers, so they reach Accounts like any other.

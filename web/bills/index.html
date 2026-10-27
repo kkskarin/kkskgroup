@@ -11071,25 +11071,44 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var tl = 0; srt.forEach(function (p, i) { if (p.x + p.y < srt[tl].x + srt[tl].y) tl = i; });
     return [0, 1, 2, 3].map(function (i) { return srt[(tl + i) % 4]; });
   }
-  /* Corners as fractions of the source's width and height. */
+  /* Corners as fractions of the source's width and height. Outlines are gathered three ways: from edges (a cheque photographed
+     on a table), the paper brighter than its background (a scanner lid, even when the cheque touches the glass's edge) and
+     the paper darker than it (a tinted cheque on white). The best is the one most like a cheque: a sizeable four-sided
+     shape whose sides are about 2.2 : 1. A scan already cropped to the cheque is taken whole. */
+  var CHQ_RATIO = 203 / 93;
   function chqCorners(c, src) {
     var k = Math.min(1, 1000 / Math.max(src.width, src.height)), sm = document.createElement("canvas"); sm.width = Math.round(src.width * k); sm.height = Math.round(src.height * k);
     sm.getContext("2d").drawImage(src, 0, 0, sm.width, sm.height);
-    var m = c.imread(sm), g = new c.Mat(), e = new c.Mat(), cs = new c.MatVector(), h = new c.Mat(), ker = c.Mat.ones(5, 5, c.CV_8U), out = null, W = sm.width, H = sm.height;
+    var W = sm.width, H = sm.height, cands = [], m = c.imread(sm), g = new c.Mat(), b = new c.Mat(), ker = c.Mat.ones(5, 5, c.CV_8U), big = c.Mat.ones(15, 15, c.CV_8U);
+    function quadOf(cnt) {
+      var ap = new c.Mat(), peri = c.arcLength(cnt, true), pts = null; c.approxPolyDP(cnt, ap, 0.02 * peri, true);
+      if (ap.rows === 4 && c.isContourConvex(ap)) { pts = []; for (var j = 0; j < 4; j++) pts.push({ x: ap.data32S[j * 2], y: ap.data32S[j * 2 + 1] }); }
+      else pts = c.RotatedRect.points(c.minAreaRect(cnt)).map(function (p) { return { x: p.x, y: p.y }; });
+      ap.delete(); return pts;
+    }
+    function score(pts) {
+      var o = chqOrder(pts), d = function (a, b2) { return Math.hypot(a.x - b2.x, a.y - b2.y); }, w = (d(o[0], o[1]) + d(o[3], o[2])) / 2, h = (d(o[0], o[3]) + d(o[1], o[2])) / 2;
+      if (!(w > 0 && h > 0)) return 0; var r = Math.max(w, h) / Math.min(w, h), a = w * h / (W * H);
+      if (a < 0.04 || a > 0.995) return 0;
+      return a * Math.exp(-3 * Math.abs(Math.log(r / CHQ_RATIO)));
+    }
+    function from(mask, how) {
+      var cs = new c.MatVector(), hh = new c.Mat(); c.findContours(mask, cs, hh, c.RETR_EXTERNAL, c.CHAIN_APPROX_SIMPLE);
+      var list = []; for (var i = 0; i < cs.size(); i++) { var cnt = cs.get(i), a = c.contourArea(cnt); if (a > W * H * 0.04) list.push(quadOf(cnt)); }
+      list.forEach(function (pts) { cands.push({ pts: pts, s: score(pts), how: how }); }); cs.delete(); hh.delete();
+    }
     try {
-      c.cvtColor(m, g, c.COLOR_RGBA2GRAY); c.GaussianBlur(g, g, new c.Size(5, 5), 0); c.Canny(g, e, 25, 80); c.dilate(e, e, ker); c.morphologyEx(e, e, c.MORPH_CLOSE, ker);
-      c.findContours(e, cs, h, c.RETR_EXTERNAL, c.CHAIN_APPROX_SIMPLE);
-      var best = -1, ba = 0; for (var i = 0; i < cs.size(); i++) { var a = c.contourArea(cs.get(i)); if (a > ba) { ba = a; best = i; } }
-      if (best >= 0 && ba > W * H * 0.2) {
-        var cnt = cs.get(best), ap = new c.Mat(), peri = c.arcLength(cnt, true);
-        c.approxPolyDP(cnt, ap, 0.02 * peri, true);
-        if (ap.rows === 4 && c.isContourConvex(ap)) { out = []; for (var j = 0; j < 4; j++) out.push({ x: ap.data32S[j * 2], y: ap.data32S[j * 2 + 1] }); }
-        else { var rr = c.minAreaRect(cnt), ps = c.RotatedRect.points(rr); out = ps.map(function (p) { return { x: p.x, y: p.y }; }); }
-        ap.delete();
-      }
-    } finally { [m, g, e, cs, h, ker].forEach(function (x) { x.delete(); }); }
-    /* nothing big enough: the scan is already the cheque */
-    if (!out || out.some(function (p) { return p.x < -W * 0.05 || p.y < -H * 0.05 || p.x > W * 1.05 || p.y > H * 1.05; })) out = [{ x: 0, y: 0 }, { x: W, y: 0 }, { x: W, y: H }, { x: 0, y: H }];
+      c.cvtColor(m, g, c.COLOR_RGBA2GRAY); c.GaussianBlur(g, g, new c.Size(7, 7), 0);
+      var e = new c.Mat(); c.Canny(g, e, 25, 80); c.dilate(e, e, ker); c.morphologyEx(e, e, c.MORPH_CLOSE, ker); from(e, "edges"); e.delete();
+      c.threshold(g, b, 0, 255, c.THRESH_BINARY + c.THRESH_OTSU); c.morphologyEx(b, b, c.MORPH_OPEN, big); c.morphologyEx(b, b, c.MORPH_CLOSE, big); from(b, "bright");
+      c.bitwise_not(b, b); from(b, "dark");
+    } finally { [m, g, b, ker, big].forEach(function (x) { x.delete(); }); }
+    cands.sort(function (x, y) { return y.s - x.s; });
+    var best = cands[0], whole = [{ x: 0, y: 0 }, { x: W, y: 0 }, { x: W, y: H }, { x: 0, y: H }];
+    /* the whole image wins when it is itself cheque-shaped and nothing better was found */
+    var ws = Math.exp(-3 * Math.abs(Math.log(Math.max(W, H) / Math.min(W, H) / CHQ_RATIO)));
+    var out = best && best.s > 0.05 && !(ws > 0.6 && best.s < ws * 0.5) ? best.pts : whole;
+    CQ.cornerHow = out === whole ? (ws > 0.6 ? "whole" : "none") : best.how;
     return chqOrder(out).map(function (p) { return { x: Math.min(1, Math.max(0, p.x / W)), y: Math.min(1, Math.max(0, p.y / H)) }; });
   }
   function chqRotate(cv, deg) { var o = document.createElement("canvas"), q = deg % 180 !== 0; o.width = q ? cv.height : cv.width; o.height = q ? cv.width : cv.height; var g = o.getContext("2d"); g.translate(o.width / 2, o.height / 2); g.rotate(deg * Math.PI / 180); g.drawImage(cv, -cv.width / 2, -cv.height / 2); return o; }
@@ -11134,7 +11153,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     toast("Straightening and cleaning up the cheque…");
     chqSourceCanvas(f).then(function (s0) { src = s0; return cvLib(); }).then(function (L) { q = chqCorners(L.cv, src.cv); return chqFinish(L.cv, src, q); })
       .then(function (r) { var path = base + "-" + fileSafeName(f.name); return window.bvFiles.put(path, f, ty).then(function () { T.pad = { path: path, name: str(f.name, 160), type: ty, size: f.size || 0, at: Date.now(), by: meId() }; return chqKeepClean(T, r, base, q); }); })
-      .then(function () { renderChequeEdit(); return chqDetect(T); }, function (e) { btn.disabled = false; btn.textContent = lb; toast(e && e.kind === "lib" ? "The image tools didn't load. Check the connection and try again." : "The scan couldn't be cleaned up. Try another scan or photo."); });
+      .then(function () { renderChequeEdit(); if (CQ.cornerHow === "none") { toast("The cheque's edges couldn't be found on this scan. Use Adjust Corners to mark them."); return; } return chqDetect(T); }, function (e) { btn.disabled = false; btn.textContent = lb; toast(e && e.kind === "lib" ? "The image tools didn't load. Check the connection and try again." : "The scan couldn't be cleaned up. Try another scan or photo."); });
   }
   /* Adjust Corners: the original with the four corners found; drag them onto the cheque's corners and apply. */
   function chqCornerEdit(T, btn) {

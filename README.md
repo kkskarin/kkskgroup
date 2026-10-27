@@ -187,8 +187,10 @@ provides the same calls, so the app code did not need rewriting:
   cheque scanned or photographed at any size (PDF, JPG or PNG; kept in storage under `cheques/`), where the cheque sits
   on the A4 page when printing (mm) and where the date (digit boxes or DD-MM-YYYY), payee, amount in words (two lines),
   amount in figures and an optional "A/c Payee" crossing go (mm from the cheque's top left), and the text size.
-  **Scan clean-up** on upload (OpenCV.js, loaded only there): the cheque's four corners are found (edges, then the largest
-  four-sided outline, else the box around it; a scan already cropped to the cheque is taken whole), the cheque is
+  **Scan clean-up** on upload (OpenCV.js, loaded only there): the cheque's four corners are found (outlines from edges, from
+  the paper being brighter than its background, e.g. a scanner lid, even when the cheque touches the glass's edge, and from
+  it being darker; the most cheque-like, about 2.2 : 1, wins; a scan already cropped to the cheque is taken whole; if
+  nothing is found it says so and Adjust Corners is used), the cheque is
   straightened (perspective) and cropped a hair inside its edges, turned landscape and, when Claude sees it upside down,
   turned round, then made clearer (one levels stretch for all colours, so the logo and tint keep their colours, and
   sharpened). Size: what a flat scan measures when that is a cheque's size, else 203 × 93 mm. The original stays as

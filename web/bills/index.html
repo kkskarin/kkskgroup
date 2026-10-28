@@ -1358,7 +1358,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   </section>
   <section id="secAdvReq" hidden>
     <div class="head">
-      <div><h2>Advance Requests</h2><p class="sub">Cash advances the approver has passed, company by company: what to withdraw, then hand over to each person; or pay a person straight to their account. Also the cash people are returning.</p></div>
+      <div><h2>Advance Requests</h2><p class="sub">Cash advances the approver has passed, company by company: withdraw the cash once for the company, then hand each person their share; or pay a person straight to their account. Also the cash people are returning.</p></div>
       <span class="grow"></span>
       <select class="field" id="arCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
@@ -9348,8 +9348,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
 
   /* ================= Payments › Advance Requests (the financier) =================
-     Approved cash advances by company: what to withdraw for them, then each handed over from that cash; or paid
-     straight to the person's account. And the cash people are returning. */
+     Approved cash advances by company: the cash is withdrawn once for the company (everything waiting), then each person
+     is handed their share from it; or a person is paid straight to their account. And the cash people are returning. */
   var AQ = { sel: {}, busy: false };
   function arCan(cid) { return canStep("txn", cid) && !S.isAdmin; }
   function arSees(a) { return canSee(a.companyId) && (S.isAdmin || canStep("txn", a.companyId)) && payHere(a); }
@@ -9366,13 +9366,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!rows.length) box.appendChild(el("div", { class: "card empty" }, "No approved cash advances are waiting. An advance appears here once the approver passes it."));
     sorted().forEach(function (c) {
       var rs = rows.filter(function (a) { return a.companyId === c.id; }).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); }); if (!rs.length) return;
-      var wd = rs.filter(function (a) { return !a.wdId; }), sl = AQ.sel[c.id] || (AQ.sel[c.id] = {});
-      Object.keys(sl).forEach(function (k) { if (!wd.some(function (a) { return a.id === k; })) delete sl[k]; });
+      var wd = rs.filter(function (a) { return !a.wdId; });
       var card = el("div", { class: "card mkco" }), hd = el("div", { class: "cohead" });
       hd.appendChild(el("b", null, c.name)); hd.appendChild(el("span", null, (wd.length ? "Withdraw " + money(sum(wd, amt)) + " for " + plural(wd.length, "advance") : "Nothing more to withdraw") + (rs.length > wd.length ? " · " + money(sum(rs.filter(function (a) { return a.wdId; }), amt)) + " withdrawn, to hand over" : ""))); card.appendChild(hd);
       var tb = el("div", { class: "list scroll" }); card.appendChild(tb); box.appendChild(card);
       sortTable(tb, "ar_" + c.id, [
-        { label: "", kind: "act", cell: function (a, td) { if (a.wdId || !arCan(a.companyId)) return; var cb = el("input", { type: "checkbox", "aria-label": "Withdraw for " + caName(a) }); cb.checked = !!sl[a.id]; cb.addEventListener("change", function () { if (cb.checked) sl[a.id] = 1; else delete sl[a.id]; renderAdvReq(); }); td.appendChild(cb); } },
         { label: "Person", kind: "co", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, "Approved " + fmtDay(a.approvedAt) + (Number(a.approvedAmount) !== Number(a.amount) ? ", asked " + money(a.amount) : "")); } },
         { label: "Purpose", cls: "desc", cell: function (a, td) { txt(td, a.purpose || ""); if (a.note) sub(td, "Approver: " + a.note); } },
         { label: "Amount", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.approvedAmount))); } }].concat(caCashCols()).concat([
@@ -9382,13 +9380,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
             if (a.wdId) { var h = el("button", { class: "btn sm primary" }, "Hand Over"); h.addEventListener("click", function () { caReceive(a, "cash"); }); w.appendChild(h); var u = el("button", { class: "btn sm" }, "Undo Withdrawal"); u.addEventListener("click", function () { if (armed(u)) caUpdate(a, { wdId: null, wdDate: null, wdMode: null, wdRef: null, wdAt: null, wdBy: null }, "Withdrawal undone for " + caName(a) + "."); }); w.appendChild(u); }
             else { var d = el("button", { class: "btn sm" }, "Pay Directly"); d.addEventListener("click", function () { caReceive(a, "neft"); }); w.appendChild(d); }
             td.appendChild(w); } }]), rs, { sortIndex: -1 });
-      var ids = Object.keys(sl);
+      /* one withdrawal for the company: everything waiting to be withdrawn */
       if (wd.length && arCan(c.id)) {
-        var ft = el("div", { class: "form-foot", style: "padding:10px 16px" }), all = el("button", { class: "link-btn", type: "button" }, ids.length === wd.length ? "Untick all" : "Tick all");
-        all.addEventListener("click", function () { if (ids.length === wd.length) AQ.sel[c.id] = {}; else wd.forEach(function (a) { sl[a.id] = 1; }); renderAdvReq(); });
-        var go = el("button", { class: "btn primary", type: "button" }, ids.length ? "Withdraw " + money(sum(wd.filter(function (a) { return sl[a.id]; }), amt)) : "Tick the advances to withdraw"); go.disabled = !ids.length;
-        go.addEventListener("click", function () { arWithdraw(c.id, wd.filter(function (a) { return sl[a.id]; })); });
-        ft.appendChild(go); ft.appendChild(all); card.appendChild(ft);
+        var ft = el("div", { class: "form-foot", style: "padding:10px 16px" }), go = el("button", { class: "btn primary", type: "button" }, "Withdraw " + money(sum(wd, amt)) + " for " + (c.shortName || c.name));
+        go.addEventListener("click", function () { arWithdraw(c.id, wd); });
+        ft.appendChild(go); ft.appendChild(el("span", { class: "hint" }, "One withdrawal for the company, covering " + plural(wd.length, "advance") + ". A person can instead be paid directly to their account.")); card.appendChild(ft);
       }
     });
     $("arRetN").textContent = rets.length ? "(" + rets.length + ")" : ""; box = $("arRet");
@@ -9415,21 +9411,21 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
           td.appendChild(u); } }
     ], done, { sortIndex: -1 });
   }
-  /* One withdrawal from the bank for the ticked advances of a company; each is then handed over from that cash. */
+  /* One withdrawal from the bank for the company's advances waiting; each is then handed over from that cash. */
   function arWithdraw(cid, xs) {
     if (!xs.length || AQ.busy) return;
     var tot = round2(xs.reduce(function (s0, a) { return s0 + (Number(a.approvedAmount) || 0); }, 0)), body = el("div", { class: "mform" });
     body.appendChild(fld("Date withdrawn", dateBox("arWdDate", todayYmd(), { max: todayYmd(), label: "Choose the date withdrawn" }), "Up to today."));
     var md = el("select", { class: "field", id: "arWdMode" }); fillSelect(md, [["cheque", "Self cheque"], ["atm", "ATM / card"], ["counter", "At the bank counter"]], "cheque"); body.appendChild(fld("How", md));
     body.appendChild(fld("Reference", inp("arWdRef", "", { maxlength: "60", placeholder: "Cheque number, if any" })));
-    popForm("Withdraw cash", money(tot) + " for " + coLabel(cid) + ": " + xs.map(function (a) { return caName(a) + " " + money(a.approvedAmount); }).join(", ") + ". Then hand each person their share.", body, "Withdrawn", function () {
+    popForm("Withdraw cash for " + coLabel(cid), money(tot) + " for the company, covering " + plural(xs.length, "approved advance") + ". Then hand each person their share from it.", body, "Withdrawn", function () {
       errClear(body); var d = parseDate($("arWdDate").value), m = md.value, r = $("arWdRef").value.trim();
       if (!d) { errOn("arWdDate", "Choose the date."); return false; }
       if (m === "cheque" && !r) { errOn("arWdRef", "Enter the cheque number."); return false; }
       var wid = newId("wd"), now = Date.now(), patch = { wdId: wid, wdDate: d, wdMode: m, wdRef: r, wdTotal: tot, wdAt: now, wdBy: meId(), updatedAt: now, updatedBy: meId() };
       AQ.busy = true;
       return Promise.all(xs.map(function (a) { return retry(function () { return S.db.doc("cashadv/" + a.id).update(patch); }).then(function () { S.cashadv[a.id] = Object.assign({}, a, patch); }); }))
-        .then(function () { AQ.busy = false; AQ.sel[cid] = {}; toast(money(tot) + " withdrawn for " + coLabel(cid) + ". Hand each person their share."); renderAdvReq(); renderNav(); return true; }, function (e) { AQ.busy = false; toast(explain(e)); renderAdvReq(); return false; });
+        .then(function () { AQ.busy = false; toast(money(tot) + " withdrawn for " + coLabel(cid) + ". Hand each person their share."); renderAdvReq(); renderNav(); return true; }, function (e) { AQ.busy = false; toast(explain(e)); renderAdvReq(); return false; });
     });
   }
 

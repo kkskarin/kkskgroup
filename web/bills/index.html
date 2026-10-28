@@ -408,6 +408,11 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .costgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:6px}
 .modal.wide{max-width:520px;max-height:calc(100vh - 32px);overflow:auto}
 .modal.sigm{max-width:640px}
+.aitalk textarea{width:100%;min-height:72px}
+.aitalk.nested{border-top:1px solid var(--line,#e2e8f0);padding-top:12px;margin-top:14px}
+.airefs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.airefs .chip{font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line,#cbd5e1);background:var(--surface,#fff);color:inherit;cursor:pointer}
+.airefs .chip[aria-pressed="true"]{background:var(--accent,#0f766e);border-color:var(--accent,#0f766e);color:#fff}
 .tpgrid{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:16px;align-items:start}
 .tpform .card{margin-bottom:12px}
 .tprow{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px}
@@ -800,9 +805,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   </section>
 
   <section id="secLedgers" hidden>
-    <div class="head"><div class="grow"><h2>Ledgers</h2><p class="sub">The expense ledgers every bill and voucher is posted to. Tick the companies that use each one; a ledger ticked for several companies is shared. Only the accountant can add or change ledgers.</p></div><div class="acts2"><button class="btn primary" id="lgmAdd" type="button">Add Ledger</button></div></div>
+    <div class="head"><div class="grow"><h2>Ledgers</h2><p class="sub">The expense ledgers every bill and voucher is posted to. Tick the companies that use each one; a ledger ticked for several companies is shared. Only the accountant can add or change ledgers. The Duties &amp; Taxes ledgers come from GST and TDS, in every company, and are changed only there.</p></div><div class="acts2"><button class="btn primary" id="lgmAdd" type="button">Add Ledger</button></div></div>
     <div class="filters">
-      <div class="seg" role="tablist" aria-label="Ledger group"><button type="button" role="tab" id="lgmSideD" aria-selected="false">Direct Expenses <span></span></button><button type="button" role="tab" id="lgmSideI" aria-selected="true">Indirect Expenses <span></span></button></div>
+      <div class="seg" role="tablist" aria-label="Ledger group"><button type="button" role="tab" id="lgmSideD" aria-selected="false">Direct Expenses <span></span></button><button type="button" role="tab" id="lgmSideI" aria-selected="true">Indirect Expenses <span></span></button><button type="button" role="tab" id="lgmSideT" aria-selected="false">Duties &amp; Taxes <span></span></button><button type="button" role="tab" id="lgmSideG" aria-selected="false">GST</button><button type="button" role="tab" id="lgmSideS" aria-selected="false">TDS</button></div>
       <select class="field" id="lgmCo" aria-label="Filter by company"></select>
       <input class="field" id="lgmQ" type="search" placeholder="Search ledger or sub group" aria-label="Search ledgers" autocomplete="off">
     </div>
@@ -4422,7 +4427,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     lgf.appendChild(el("span", { class: "err", id: "bcLedE", hidden: "" })); f.appendChild(lgf);
     if (oneStopAny()) {
       var tf = fld("TDS (₹)", inp("bcTds", D.tds || "", { inputmode: "decimal", class: "field num" }), "You also account bills: enter the TDS (0 if none). The bill is accounted as you submit it.");
-      var tsel = el("select", { class: "field", id: "bcTdsSec" }); fillSelect(tsel, [["", "No TDS"]].concat(TDS_SECTIONS), D.tdsSec || ""); var sf = fld("TDS section", tsel);
+      var tsel = el("select", { class: "field", id: "bcTdsSec" }); fillSelect(tsel, [["", "No TDS"]].concat(tdsOptions(D.tdsSec)), D.tdsSec || ""); var sf = fld("TDS section", tsel);
       tf.classList.add("onestop"); sf.classList.add("onestop"); f.appendChild(tf); f.appendChild(sf);
     }
     var rf = fld("Exchange rate", inp("bcRate", D.rate, { inputmode: "decimal", class: "field num" }), " "); rf.id = "bcRateF"; rf.className = "f wide"; f.appendChild(rf);
@@ -10594,6 +10599,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (S.dataStarted) return; S.dataStarted = true;
     S.raw = { bills: {}, vouchers: {}, advances: {}, reports: {}, txns: {}, cashadv: {}, notes: {} };
     if (APP === "re") solStart();
+    S.db.collection("taxes").onSnapshot(function (snap) {
+      var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data() || {}; }); S.taxes = m; onData();
+    }, function () {});
     S.db.collection("ledgers").onSnapshot(function (snap) {
       var m = {}; snap.docs.forEach(function (d) { var l = Object.assign({}, d.data() || {}); l.id = d.id; m[d.id] = l; });
       S.ledgers = m; onData();
@@ -10677,7 +10685,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function canLedgers() { return S.isAdmin || (canDo("acct") && S.mode !== "demo"); }
   function ledAll() { return Object.keys(S.ledgers || {}).map(function (k) { return S.ledgers[k]; }); }
   function ledCmp(a, b) { return LED_MAINS.indexOf(a.main) - LED_MAINS.indexOf(b.main) || natCmp(a.sub, b.sub) || natCmp(a.name, b.name); }
-  function ledFor(cid) { return ledAll().filter(function (l) { return l.active !== false && ledInApp(l) && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
+  function ledFor(cid) { return ledAll().filter(function (l) { return !l.tax && l.active !== false && ledInApp(l) && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
   /* Accounts decides which divisions may use a ledger; a ledger with none ticked is open to every division. */
   function ledInApp(l) { if (PV_ALL) return true; return !DIV || ((l.apps && l.apps.length) ? l.apps : ["mnt"]).indexOf(DIV) >= 0; }
   function ledAppsText(l) { return ((l.apps && l.apps.length) ? l.apps : ["mnt"]).map(function (k) { return divName(k); }).join(", "); }
@@ -11293,6 +11301,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var cv = el("canvas", { id: "cqCanvas", width: "900", height: "400", style: "width:100%;height:auto;border:1px solid var(--line);border-radius:8px;touch-action:none;cursor:grab;background:#fff" }); R.appendChild(cv);
     var boxes = {};
     function draw() { boxes = chqDraw(cv, T, CQ.img); }
+    aiTalk(L, Object.assign(chqTalk(T, cv), { inCard: true }));
     function sync() { [["cqDx", T.f.date.x], ["cqDy", T.f.date.y], ["cqPx", T.f.payee.x], ["cqPy", T.f.payee.y], ["cqPx2", T.f.payee.x2 || 0], ["cqPy2", T.f.payee.y2 || 0], ["cqWx", T.f.words.x], ["cqWy", T.f.words.y], ["cqWx2", T.f.words.x2], ["cqWy2", T.f.words.y2], ["cqFx", T.f.figures.x], ["cqFy", T.f.figures.y], ["cqCx", T.f.acpayee.x], ["cqCy", T.f.acpayee.y]].forEach(function (x) { if ($(x[0])) $(x[0]).value = String(Math.round(x[1] * 10) / 10); }); }
     function at(e) { var r = cv.getBoundingClientRect(), k = (r.width / T.area.w); return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k }; }
     cv.addEventListener("pointerdown", function (e) {
@@ -11611,6 +11620,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     extras();
     var cv = el("canvas", { width: "800", height: "1131", style: "width:100%;height:auto;border:1px solid var(--line);border-radius:8px;touch-action:none;cursor:grab;background:#fff" }); R.appendChild(cv);
     var img = null, boxes = {}, drag = null;
+    aiTalk(L, Object.assign(neftTalk(T, N, cv), { inCard: true }));
     function draw() {
       boxes = neftDraw(cv, N, img, neftSample(N));
       if (sel < 0) return; var g = cv.getContext("2d"), k = cv.width / 210; g.save(); g.strokeStyle = "#0a7d4f"; g.lineWidth = 2; g.fillStyle = "rgba(10,125,79,.10)";
@@ -11728,12 +11738,18 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (IMP.busy) return; /* an upload redraws once it is done */
     var sel = $("lgmCo"), cur = sel.value;
     fillSelect(sel, [["", "All companies"]].concat(activeCompanies().map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
-    $("lgmAdd").hidden = !canLedgers(); if (canImport()) impButtons("ledgers", $("lgmAdd").parentNode);
+    var taxSide = LGM.side === "gst" || LGM.side === "tds", exp = LED_MAINS.indexOf(LGM.side) >= 0;
+    $("lgmAdd").hidden = !canLedgers() || !exp; if (canImport()) impButtons("ledgers", $("lgmAdd").parentNode);
+    Array.prototype.forEach.call($("lgmAdd").parentNode.querySelectorAll("button:not(#lgmAdd)"), function (b) { b.hidden = !exp; });
+    $("lgmQ").hidden = taxSide; sel.hidden = taxSide;
+    [["lgmSideT", TAX_MAIN], ["lgmSideG", "gst"], ["lgmSideS", "tds"]].forEach(function (x) { $(x[0]).setAttribute("aria-selected", LGM.side === x[1] ? "true" : "false"); });
+    $("lgmSideT").querySelector("span").textContent = "(" + ledAll().filter(function (l) { return l.main === TAX_MAIN && l.active !== false && ledInApp(l); }).length + ")";
+    if (taxSide) { $("lgmSideD").setAttribute("aria-selected", "false"); $("lgmSideI").setAttribute("aria-selected", "false"); var tb0 = $("lgmList"); tb0.textContent = ""; renderTaxes(LGM.side, tb0); return; }
     var all = ledAll().filter(ledInApp), q = $("lgmQ").value.trim().toLowerCase(), cid = sel.value;
     LED_MAINS.forEach(function (m, i) { var b = $(i ? "lgmSideI" : "lgmSideD"); b.setAttribute("aria-selected", LGM.side === m ? "true" : "false"); b.querySelector("span").textContent = "(" + all.filter(function (l) { return l.main === m && l.active !== false && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).length + ")"; });
-    var rows = all.filter(function (l) { return l.main === LGM.side && (!cid || (l.companyIds || []).indexOf(cid) >= 0) && (!q || (l.name + " " + l.sub).toLowerCase().indexOf(q) >= 0); }).sort(ledCmp);
+    var rows = all.filter(function (l) { return l.main === LGM.side && (!cid || l.allCos || (l.companyIds || []).indexOf(cid) >= 0) && (!q || (l.name + " " + l.sub).toLowerCase().indexOf(q) >= 0); }).sort(ledCmp);
     var use = ledUse(), box = $("lgmList"); box.textContent = "";
-    if (!rows.length) { box.appendChild(el("div", { class: "card empty" }, q || cid ? "No ledgers match." : "No " + LGM.side.toLowerCase() + " ledgers yet." + (canLedgers() ? " Use Add Ledger." : ""))); return; }
+    if (!rows.length) { box.appendChild(el("div", { class: "card empty" }, q || cid ? "No ledgers match." : LGM.side === TAX_MAIN ? "No tax ledgers yet. They are made by the GST rates and TDS sections." : "No " + LGM.side.toLowerCase() + " ledgers yet." + (canLedgers() ? " Use Add Ledger." : ""))); return; }
     var subs = {}, order = []; rows.forEach(function (l) { if (!subs[l.sub]) { subs[l.sub] = []; order.push(l.sub); } subs[l.sub].push(l); });
     order.forEach(function (sb) {
       var det = el("details", { class: "card ppprep" }), sm = el("summary", { class: "cohead" }); if (q) det.open = true;
@@ -11741,17 +11757,20 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var tb = el("div", { class: "list scroll" }); det.appendChild(tb); box.appendChild(det);
       sortTable(tb, "lgm_" + sb, [
         { label: "Ledger", kind: "co", sort: function (l) { return l.name; }, cell: function (l, td) { td.appendChild(el("b", null, l.name)); if (l.active === false) sub(td, "Turned off"); } },
-        { label: "Companies", cell: function (l, td) { td.appendChild(companyTags(l.companyIds)); if ((l.companyIds || []).length > 1) sub(td, "Shared"); } },
+        { label: "Companies", cell: function (l, td) { if (l.allCos) { td.appendChild(el("span", { class: "tag" }, "All companies")); sub(td, "Also any added later"); return; } td.appendChild(companyTags(l.companyIds)); if ((l.companyIds || []).length > 1) sub(td, "Shared"); } },
         { label: "Used in", sort: function (l) { return ledAppsText(l); }, cell: function (l, td) { txt(td, ledAppsText(l)); } },
         { label: "Used", cls: "r num", sort: function (l) { return use[l.id] || 0; }, cell: function (l, td) { txt(td, String(use[l.id] || 0)); } },
-        { label: "", kind: "act", cls: "r", cell: function (l, td) { if (!canLedgers()) return; var e = el("button", { class: "btn sm" }, "Edit"); e.addEventListener("click", function () { ledForm(l); }); td.appendChild(e); } }
+        { label: "", kind: "act", cls: "r", cell: function (l, td) {
+          /* tax ledgers are changed only in GST or TDS */
+          if (l.locked) { var g = el("button", { class: "link-btn", type: "button", title: "Made by " + (l.tax === "tds" ? "TDS" : "GST") + "; changed only there" }, "🔒 Set in " + (l.tax === "tds" ? "TDS" : "GST")); g.addEventListener("click", function () { LGM.side = l.tax === "tds" ? "tds" : "gst"; renderLedgers(); }); td.appendChild(g); return; }
+          if (!canLedgers()) return; var e = el("button", { class: "btn sm" }, "Edit"); e.addEventListener("click", function () { ledForm(l); }); td.appendChild(e); } }
       ], subs[sb], { sortIndex: 0 });
     });
   }
   /* How many bills and vouchers use each ledger, across every division. */
   function ledUse() { var m = {}, R = S.raw || {}; [R.bills || S.bills, R.vouchers || S.vouchers].forEach(function (src) { Object.keys(src || {}).forEach(function (k) { (src[k].ledgers || []).forEach(function (x) { m[x.id] = (m[x.id] || 0) + 1; }); }); }); return m; }
   function ledForm(l) {
-    if (!canLedgers()) return;
+    if (!canLedgers() || (l && l.locked)) return; /* tax ledgers change only in GST or TDS */
     var body = el("div", { class: "mform" }), isNew = !l; l = l || { main: LGM.side, sub: "", name: "", companyIds: [], active: true };
     var ms = el("select", { class: "field", id: "lfMain" }); fillSelect(ms, LED_MAINS.map(function (m) { return [m, m]; }), l.main); body.appendChild(fld("Main group", ms));
     var subsAll = {}; ledAll().forEach(function (x) { subsAll[x.main + "|" + x.sub] = x.sub; });
@@ -11873,13 +11892,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!isB) {
       var vt = el("select", { class: "field", id: "aoType" }); fillSelect(vt, [["", "Choose the type"]].concat(VTYPES_V), D.vtype); vt.disabled = locked; form.appendChild(fld("Type of voucher", vt));
       var gs = el("select", { class: "field", id: "aoGst" }); fillSelect(gs, [["N/A", "Not applicable"], ["RCM", "RCM (reverse charge)"]], D.gstApp); gs.disabled = locked; var gf = fld("GST applicable", gs, "Only for Self Invoice and Freight & Transport."); form.appendChild(gf);
-      var rs = el("select", { class: "field", id: "aoRate" }); fillSelect(rs, [["", "Choose the rate"], ["5", "5%"], ["12", "12%"], ["18", "18%"], ["28", "28%"]], D.gstRate); rs.disabled = locked; var rf2 = fld("GST rate under RCM", rs, "Split equally into CGST and SGST on the print."); form.appendChild(rf2);
+      var rs = el("select", { class: "field", id: "aoRate" }); fillSelect(rs, [["", "Choose the rate"]].concat(gstRateOptions(D.gstRate)), D.gstRate); rs.disabled = locked; var rf2 = fld("GST rate under RCM", rs, "Split equally into CGST and SGST on the print."); form.appendChild(rf2);
       var syncG = function () { var other = D.vtype && D.vtype !== "Cash Voucher"; gf.hidden = !other; rf2.hidden = !(other && D.gstApp === "RCM"); };
       vt.addEventListener("change", function () { D.vtype = vt.value; syncG(); }); gs.addEventListener("change", function () { D.gstApp = gs.value; syncG(); }); rs.addEventListener("change", function () { D.gstRate = rs.value; }); syncG();
     }
     var ti = inp("aoTds", D.tds, { inputmode: "decimal", class: "field num" }); ti.disabled = locked; ti.addEventListener("input", function () { D.tds = ti.value; }); ti.addEventListener("blur", function () { if (num(ti.value) != null) ti.value = fmtInput(ti.value); });
     form.appendChild(fld("TDS" + (isB && x.currency && x.currency !== "INR" ? " (" + x.currency + ")" : " (₹)"), ti, "Enter 0 if none is deducted. The vendor is paid the total less this."));
-    var ts = el("select", { class: "field", id: "aoSec" }); fillSelect(ts, [["", "No TDS"]].concat(TDS_SECTIONS), D.sec); ts.disabled = locked; ts.addEventListener("change", function () { D.sec = ts.value; }); form.appendChild(fld("TDS section", ts));
+    var ts = el("select", { class: "field", id: "aoSec" }); fillSelect(ts, [["", "No TDS"]].concat(tdsOptions(D.sec)), D.sec); ts.disabled = locked; ts.addEventListener("change", function () { D.sec = ts.value; }); form.appendChild(fld("TDS section", ts));
     var lf = el("div", { class: "f wide" }); lf.appendChild(el("span", { class: "lb" }, isB ? "Ledgers" : "Ledger"));
     var eo = { id: "aoLed", lines: D.lines, max: isB ? MAX_LED.bill : MAX_LED.voucher, cid: function () { return x.companyId; }, base: function () { return D.base; }, baseLabel: isB ? "taxable amount" : "total", suggest: isB ? function () { return suggestBill(x, x.companyId, x.vendorId, D.base); } : null };
     lf.appendChild(ledEditor(eo)); lf.appendChild(el("span", { class: "hint" }, isB ? "Up to 4 ledgers. The amounts must add up to the taxable amount, " + amt2(D.base) + "." : "Up to 2 ledgers. The amounts must add up to the total, " + amt2(D.base) + ".")); lf.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" }));
@@ -12019,6 +12038,114 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
   }
 
+  /* ================= GST and TDS: the tax ledgers, the same in every company =================
+     Kept in taxes/<id> (shared by Demo and Live): TDS sections ({ kind: "tds", sec, nature, rate, rate2, ledName }) and GST
+     rates ({ kind: "gst", rate, type: Input | Output | RCM }). Each makes its ledgers under Duties & Taxes (ledgers/tax_<id>,
+     and _cgst, _sgst, _igst for GST), open to every company, today's and any added later (allCos), and every division.
+     Those ledgers are locked in the Ledgers list: they are made, changed and removed only here. The TDS sections are the
+     ones offered when a bill or voucher is accounted, the GST rates the ones offered for reverse charge. */
+  var TAX_MAIN = "Duties & Taxes";
+  function taxAll(kind) {
+    return Object.keys(S.taxes || {}).map(function (k) { return Object.assign({ id: k }, S.taxes[k]); }).filter(function (t) { return t.kind === kind; })
+      .sort(function (a, b) { return kind === "gst" ? (Number(a.rate) || 0) - (Number(b.rate) || 0) || natCmp(a.type, b.type) : natCmp(a.sec, b.sec); });
+  }
+  function pct(n) { return (Math.round((Number(n) || 0) * 1000) / 1000) + "%"; }
+  function tdsLedName(t) { return t.ledName || "TDS Payable u/s " + t.sec; }
+  /* The ledgers a tax makes: [[ledger id, name], ...] */
+  function taxLedgers(t) {
+    if (t.kind === "tds") return [["tax_" + t.id, tdsLedName(t)]];
+    var r = Number(t.rate) || 0, h = r / 2, pre = t.type === "Output" ? "Output " : t.type === "RCM" ? "RCM " : "Input ", post = t.type === "RCM" ? " Payable" : "";
+    return [["tax_" + t.id + "_cgst", pre + "CGST" + post + " @ " + pct(h)], ["tax_" + t.id + "_sgst", pre + "SGST" + post + " @ " + pct(h)], ["tax_" + t.id + "_igst", pre + "IGST" + post + " @ " + pct(r)]];
+  }
+  function taxSave(t, id) {
+    var doc = Object.assign({}, t); delete doc.id; doc.updatedAt = Date.now(); doc.by = meId(); if (!id) doc.createdAt = doc.updatedAt;
+    id = id || "tx" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); var full = Object.assign({ id: id }, doc), old = S.taxes && S.taxes[id] ? taxLedgers(Object.assign({ id: id }, S.taxes[id])) : [];
+    var keep = {}, job = retry(function () { return S.db.doc("taxes/" + id).set(doc); });
+    taxLedgers(full).forEach(function (x) {
+      keep[x[0]] = 1; var cur = (S.ledgers || {})[x[0]] || {};
+      var ld = { main: TAX_MAIN, sub: t.kind === "tds" ? "TDS" : "GST", name: x[1], tax: t.kind, taxId: id, locked: true, allCos: true, companyIds: [], apps: Object.keys(DIVS), active: doc.active !== false, createdAt: cur.createdAt || doc.updatedAt, updatedAt: doc.updatedAt, by: meId() };
+      job = job.then(function () { return retry(function () { return S.db.doc("ledgers/" + x[0]).set(ld); }); });
+    });
+    old.forEach(function (x) { if (!keep[x[0]]) job = job.then(function () { return retry(function () { return S.db.doc("ledgers/" + x[0]).delete(); }); }); });
+    return job;
+  }
+  function taxDelete(t) {
+    var job = retry(function () { return S.db.doc("taxes/" + t.id).delete(); });
+    taxLedgers(t).forEach(function (x) { job = job.then(function () { return retry(function () { return S.db.doc("ledgers/" + x[0]).delete(); }); }); });
+    return job;
+  }
+  /* What the accounting forms offer (the standard list until the TDS section is filled in). */
+  function tdsOptions(cur) {
+    var l = taxAll("tds").filter(function (t) { return t.active !== false; }).map(function (t) { return [t.sec, t.sec + ", " + (t.nature || "") + (t.rate != null && t.rate !== "" ? " (" + pct(t.rate) + (t.rate2 != null && t.rate2 !== "" ? " / " + pct(t.rate2) : "") + ")" : "")]; });
+    if (!l.length) l = TDS_SECTIONS.slice(); if (cur && !l.some(function (o) { return o[0] === cur; })) l.push([cur, cur]); return l;
+  }
+  function gstRateOptions(cur) {
+    var m = {}; taxAll("gst").forEach(function (t) { if (t.active !== false && Number(t.rate) > 0) m[Number(t.rate)] = 1; });
+    var l = Object.keys(m).map(Number).sort(function (a, b) { return a - b; }); if (!l.length) l = [5, 12, 18, 28];
+    if (cur && l.indexOf(Number(cur)) < 0) l.push(Number(cur)); return l.map(function (r) { return [String(r), pct(r)]; });
+  }
+  /* Ledgers › GST and TDS: the list, with add, change and remove for the accountant (or an admin). */
+  function renderTaxes(kind, box) {
+    var can = canLedgers(), list = taxAll(kind), use = {};
+    if (kind === "tds") [S.raw && S.raw.bills, S.raw && S.raw.vouchers].forEach(function (src) { Object.keys(src || {}).forEach(function (k) { var s0 = src[k].tdsSection; if (s0) use[s0] = (use[s0] || 0) + 1; }); });
+    var hd = el("div", { class: "card pcard", style: "margin-bottom:12px" });
+    hd.appendChild(el("p", { class: "sub", style: "margin:0" }, kind === "tds" ? "Each TDS section makes its own ledger under Duties & Taxes, in every company (also any company added later). The sections listed here are the ones offered when a bill or voucher is accounted." : "Each GST rate makes its CGST, SGST and IGST ledgers under Duties & Taxes, in every company (also any company added later). The rates listed here are the ones offered for reverse charge."));
+    if (can) { var ab = el("button", { type: "button", class: "btn primary sm", id: kind === "tds" ? "tdsAdd" : "gstAdd", style: "margin-top:10px" }, kind === "tds" ? "Add TDS Section" : "Add GST Rate"); ab.addEventListener("click", function () { taxForm(kind, null); }); hd.appendChild(ab); }
+    box.appendChild(hd);
+    if (!list.length) { box.appendChild(el("div", { class: "card empty" }, kind === "tds" ? "No TDS sections yet." : "No GST rates yet.")); return; }
+    var w = el("div", { class: "card list scroll" }); box.appendChild(w);
+    var cols = kind === "tds" ? [
+      { label: "Section", cell: function (t, td) { td.appendChild(el("b", null, t.sec)); if (t.active === false) sub(td, "Turned off"); } },
+      { label: "Nature of payment", cls: "desc", cell: function (t, td) { txt(td, t.nature || ""); } },
+      { label: "Rate", cell: function (t, td) { txt(td, t.rate != null && t.rate !== "" ? pct(t.rate) : "-"); if (t.rate2 != null && t.rate2 !== "") sub(td, pct(t.rate2) + " for others"); } },
+      { label: "Ledger", cell: function (t, td) { txt(td, tdsLedName(t)); sub(td, "All companies"); } },
+      { label: "Used", cls: "r num", cell: function (t, td) { txt(td, String(use[t.sec] || 0)); } }
+    ] : [
+      { label: "Rate", cell: function (t, td) { td.appendChild(el("b", null, pct(t.rate))); if (t.active === false) sub(td, "Turned off"); } },
+      { label: "Type", cell: function (t, td) { txt(td, t.type === "Output" ? "Output (sales)" : t.type === "RCM" ? "Reverse charge payable" : "Input (purchases)"); } },
+      { label: "Ledgers", cls: "desc", cell: function (t, td) { txt(td, taxLedgers(t).map(function (x) { return x[1]; }).join(" · ")); sub(td, "All companies"); } }
+    ];
+    if (can) cols.push({ label: "", kind: "act", cls: "r", cell: function (t, td) { var e = el("button", { class: "btn sm" }, "Edit"); e.addEventListener("click", function () { taxForm(kind, t); }); td.appendChild(e); } });
+    sortTable(w, "tax_" + kind, cols, list, { sortIndex: 0 });
+  }
+  function taxForm(kind, t) {
+    if (!canLedgers()) return; var isNew = !t; t = t || (kind === "tds" ? { kind: "tds", sec: "", nature: "", rate: "", rate2: "", active: true } : { kind: "gst", rate: "", type: "Input", active: true });
+    var body = el("div", { class: "mform" });
+    if (kind === "tds") {
+      body.appendChild(fld("Section", inp("txSec", t.sec, { maxlength: "12", placeholder: "e.g. 194C" })));
+      body.appendChild(fld("Nature of payment", inp("txNat", t.nature, { maxlength: "60", placeholder: "e.g. Contractors" })));
+      body.appendChild(fld("Rate %", inp("txRate", t.rate == null ? "" : String(t.rate), { inputmode: "decimal", class: "field num", placeholder: "e.g. 1" }), "For individuals and HUFs, or the only rate."));
+      body.appendChild(fld("Rate % for others", inp("txRate2", t.rate2 == null ? "" : String(t.rate2), { inputmode: "decimal", class: "field num", placeholder: "Leave empty if the same" }), "Companies, firms and others, where it differs."));
+      body.appendChild(fld("Ledger name", inp("txLed", t.ledName || "", { maxlength: "80", placeholder: "TDS Payable u/s " + (t.sec || "194C") }), "Leave empty for “TDS Payable u/s <section>”."));
+    } else {
+      body.appendChild(fld("GST rate %", inp("txRate", t.rate == null ? "" : String(t.rate), { inputmode: "decimal", class: "field num", placeholder: "e.g. 18" }), "The full rate: CGST and SGST are half each, IGST the whole."));
+      var ty = el("select", { class: "field", id: "txType" }); fillSelect(ty, [["Input", "Input (purchases)"], ["Output", "Output (sales)"], ["RCM", "Reverse charge payable"]], t.type || "Input"); body.appendChild(fld("Type", ty));
+    }
+    var on = el("label", { class: "check", style: "margin-top:6px" }), oc = el("input", { type: "checkbox", id: "txOn" }); oc.checked = t.active !== false; on.appendChild(oc); on.appendChild(document.createTextNode(" In use")); body.appendChild(on);
+    var del = null;
+    if (!isNew) { del = el("button", { type: "button", class: "btn sm", style: "margin-top:12px;color:var(--bad)" }, kind === "tds" ? "Remove This Section" : "Remove This Rate"); body.appendChild(del); }
+    var close = popForm(isNew ? (kind === "tds" ? "Add TDS Section" : "Add GST Rate") : "Change " + (kind === "tds" ? "TDS Section " + t.sec : "GST " + pct(t.rate) + " " + (t.type || "Input")), "Its ledgers are made in every company, now and later, and are changed only here.", body, "Save", function () {
+      errClear(body); var n = function (id) { var v = $(id).value.trim(); if (v === "") return ""; var x = Number(v.replace(/[%\s]/g, "")); return isFinite(x) && x >= 0 && x <= 100 ? x : null; };
+      var d0 = { kind: kind, active: $("txOn").checked };
+      if (kind === "tds") {
+        d0.sec = $("txSec").value.trim().replace(/\s+/g, ""); d0.nature = $("txNat").value.trim(); d0.rate = n("txRate"); d0.rate2 = n("txRate2"); d0.ledName = $("txLed").value.trim();
+        if (!d0.sec) { errOn("txSec", "Enter the section, e.g. 194C."); return false; }
+        if (taxAll("tds").some(function (x) { return x.sec === d0.sec && x.id !== t.id; })) { errOn("txSec", "Section " + d0.sec + " is already listed."); return false; }
+        if (!d0.nature) { errOn("txNat", "Enter what it is for."); return false; }
+        if (d0.rate === null || d0.rate2 === null) { errOn(d0.rate === null ? "txRate" : "txRate2", "Enter a rate between 0 and 100."); return false; }
+      } else {
+        d0.rate = n("txRate"); d0.type = $("txType").value;
+        if (d0.rate === null || d0.rate === "" || !(d0.rate > 0)) { errOn("txRate", "Enter the GST rate, e.g. 18."); return false; }
+        if (taxAll("gst").some(function (x) { return Number(x.rate) === d0.rate && (x.type || "Input") === d0.type && x.id !== t.id; })) { errOn("txRate", "GST " + pct(d0.rate) + " " + d0.type + " is already listed."); return false; }
+      }
+      return taxSave(Object.assign({}, isNew ? {} : S.taxes[t.id], d0), isNew ? null : t.id).then(function () { toast(isNew ? "Added. Its ledgers are in every company." : "Saved. Its ledgers are updated in every company."); renderLedgers(); return true; }, function (e) { toast(explain(e)); return false; });
+    });
+    if (del) del.addEventListener("click", function () {
+      if (del.getAttribute("data-arm") !== "1") { del.setAttribute("data-arm", "1"); del.textContent = "Click again to remove it and its ledgers"; return; }
+      del.disabled = true; taxDelete(t).then(function () { close(); toast("Removed, with its ledgers. Entries already accounted keep what they say."); renderLedgers(); }, function (e) { del.disabled = false; toast(explain(e)); });
+    });
+  }
+
   /* ================= Settings › Templates: the look and wording of the internal prints =================
      Prints whose layout someone else fixes (company letterpads, cheques, bank NEFT / RTGS forms) have their own templates
      elsewhere; these are the ones decided here. Each document has one template, set by an admin in the Bills & Vouchers
@@ -12111,6 +12238,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       }
       left.appendChild(pick);
       var locked = !!(TP.div && T.useDefault);
+      if (!locked) aiTalk(left, { key: "pt_" + tplId(), what: "the " + tplDocName(TP.key) + " print (A4)" + (TP.div ? ", the " + DIVS[TP.div].name + " version" : ""), skip: TP.key, rules: ptTalkRules,
+        get: function () { var c = JSON.parse(JSON.stringify(TP.t)); delete c.at; delete c.by; delete c.byName; return c; }, clean: ptClean,
+        apply: function (n) { TP.t = n; TP.dirty = true; renderTpl(); }, shot: function () { var c = document.querySelector("#tpPrev canvas"); return c ? canvasBlob(c) : Promise.resolve(null); } });
       if (locked) left.appendChild(el("p", { class: "sub" }, DIVS[TP.div].name + " prints the default " + tplDocName(TP.key) + ". Untick “Same as the default” to give it its own version."));
       else {
         /* look */
@@ -12169,8 +12299,18 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* one preview at a time (each lends the page's data and downloads to the print for a moment); a newer one replaces a waiting one */
   function ptPreview() { var run = ++TP.run; TP.chain = (TP.chain || Promise.resolve()).then(function () { if (run === TP.run) return ptPreview1(run); }); }
   function ptPreview1(run) {
-    var out = $("tpPrev"); if (!out) return; var key = TP.key, div = TP.div, T = TP.t && !TP.t.useDefault ? TP.t : ptOf(key, "");
+    var out = $("tpPrev"); if (!out) return; var key = TP.key;
     out.textContent = ""; out.appendChild(el("p", { class: "sub" }, "Preparing the preview…"));
+    return ptMake(key, TP.div, TP.t && !TP.t.useDefault ? TP.t : ptOf(key, "")).then(function (o) {
+      if (run !== TP.run) return;
+      if (o.blob && o.seen) { var fresh = !TP.seen; TP.seen = o.seen; if (fresh) tplWords(); }
+      if (!o.blob) { out.textContent = ""; out.appendChild(el("p", { class: "sub" }, (o.said ? o.said + " " : "") + "There is nothing of this kind to preview yet. Changes still apply to the next one printed.")); return; }
+      return tplShow(o.blob, out, run);
+    });
+  }
+  /* One internal print, made with template T from the latest real data of every division: { blob, seen (labels used), said }.
+     Not queued: callers run it on TP.chain. */
+  function ptMake(key, div, T) {
     var keep = { tpls: S.tpls, dl: S.downloads, bills: S.bills, vouchers: S.vouchers, advances: S.advances, reports: S.reports, txns: S.txns, cashadv: S.cashadv, notes: S.notes, toast: toast };
     var R = S.raw || {}, said = "";
     function restore() { TPL_CAP = null; PV_ALL = false; S.tpls = keep.tpls; S.downloads = keep.dl; ["bills", "vouchers", "advances", "reports", "txns", "cashadv", "notes"].forEach(function (k) { S[k] = keep[k]; }); toast = keep.toast; invalidate(); }
@@ -12199,13 +12339,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       }, function () { res(null); });
     });
     /* the document is built synchronously once its scripts are in, so the stand-ins can go as soon as it has been saved */
-    return got.then(function (blob) {
-      var cap = TPL_CAP; restore(); if (run !== TP.run) return;
-      if (blob && cap && cap.doc && cap.doc.__seen) { var fresh = !TP.seen; TP.seen = cap.doc.__seen; if (fresh) tplWords(); }
-      if (!blob) { out.textContent = ""; out.appendChild(el("p", { class: "sub" }, (said ? said + " " : "") + "There is nothing of this kind to preview yet. Changes still apply to the next one printed.")); return; }
-      return tplShow(blob, out, run);
-    });
+    return got.then(function (blob) { var cap = TPL_CAP; restore(); return { blob: blob, seen: cap && cap.doc && cap.doc.__seen, said: said }; });
   }
+  /* The same, in turn with the previews (for Claude's references). */
+  function ptMakeQueued(key) { var p0 = (TP.chain || Promise.resolve()).then(function () { return ptMake(key, "", ptOf(key, "")); }); TP.chain = p0.then(function () {}, function () {}); return p0; }
   function tplShow(blob, out, run) {
     return blob.arrayBuffer().then(function (ab) {
       return pdfLib().then(function (L) { return L.getDocument({ data: new Uint8Array(ab) }).promise; }).then(function (pdf) {
@@ -12215,6 +12352,130 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         return job;
       });
     }).catch(function () { out.textContent = ""; out.appendChild(el("p", { class: "sub" }, "The preview couldn't be shown.")); });
+  }
+
+  /* ================= Ask Claude, on every template =================
+     One box for every template (the internal prints, cheques, NEFT / RTGS forms; the letterpad pages have their own, with
+     the same references): say what to change, by typing or speaking. Claude sees the template as it prints now and,
+     when asked, other documents as references: the latest real voucher and each internal print (ticked, or named in the
+     request, e.g. "like the voucher"), or a sample attached. Its answer replaces the template's settings in the editor,
+     to check and save; Undo steps back. */
+  var AI_REFS = [["voucher", "Voucher", /\bvouchers?\b(?!\s+check)/i], ["bcr", "Bill Checking Report", /\bbill check|\bbcr\b/i], ["acr", "Advance Checking Report", /\badvance check|\bacr\b/i], ["vcr", "Voucher Checking Report", /\bvoucher check|\bvcr\b/i],
+    ["stmt", "Vendor Statement", /\b(vendor )?statement\b/i], ["books", "Ledger Statement", /\bledger statement|\bledger book/i], ["payables", "Payables", /\bpayables?\b|\bageing\b/i], ["plan", "Payment Plan", /\bpayment plan\b/i], ["tx", "Transactions", /\btransactions? (report|pdf)\b/i]];
+  var AI_ST = {};
+  function pdfImage(blob) { return openPdf(blob).then(function (pdf) { return pdf.getPage(1); }).then(function (p1) { return renderPdfCanvas(p1, 1500); }).then(canvasBlob); }
+  /* the latest voucher, printed as it is now */
+  function aiVoucherPdf() {
+    var src = (S.raw && S.raw.vouchers) || S.vouchers || {}, vs = Object.keys(src).map(function (k) { return Object.assign({ id: k }, src[k]); }).sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); }), v = vs[0];
+    if (!v) return Promise.resolve(null);
+    return loadScript(JSPDF).then(function () { return sigsFor(v); }).then(function (sg) { var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) return null; var doc = new jsPDF({ orientation: "landscape", unit: "mm", format: VCH_PAGE, compress: true }); pdfFonts(doc); drawVoucher(doc, v, sg); return doc.output("blob"); });
+  }
+  function aiRefImage(k) { return (k === "voucher" ? aiVoucherPdf() : ptMakeQueued(k).then(function (o) { return o.blob; })).then(function (b) { return b ? pdfImage(b) : null; }).catch(function () { return null; }); }
+  /* which references go with a request: those ticked, and those it names */
+  function aiRefKeys(st, text, skip) { return AI_REFS.filter(function (r) { return r[0] !== skip && (st.refs[r[0]] || r[2].test(text || "")); }).map(function (r) { return r[0]; }); }
+  function aiRefsPicker(box, st, skip, noFile) {
+    var w = el("div", { class: "airefs" }); w.appendChild(el("span", { class: "hint" }, "Show Claude:"));
+    AI_REFS.forEach(function (r) { if (r[0] === skip) return; var b = el("button", { type: "button", class: "chip", "aria-pressed": st.refs[r[0]] ? "true" : "false" }, r[1]); b.addEventListener("click", function () { st.refs[r[0]] = !st.refs[r[0]]; b.setAttribute("aria-pressed", st.refs[r[0]] ? "true" : "false"); }); w.appendChild(b); });
+    var fi = el("input", { type: "file", accept: "image/*,application/pdf", hidden: "" }), fb = el("button", { type: "button", class: "chip", "aria-pressed": st.file ? "true" : "false" }, st.file ? "Sample: " + st.file.name : "Attach a Sample");
+    fb.addEventListener("click", function () { if (st.file) { st.file = null; fb.textContent = "Attach a Sample"; fb.setAttribute("aria-pressed", "false"); return; } fi.click(); });
+    fi.addEventListener("change", function () { var f = fi.files && fi.files[0]; fi.value = ""; if (f) { st.file = f; fb.textContent = "Sample: " + f.name; fb.setAttribute("aria-pressed", "true"); } });
+    if (!noFile) { w.appendChild(fb); w.appendChild(fi); } box.appendChild(w);
+  }
+  /* the pictures for a request: what is ticked or named, then the attached sample; [[label, blob], ...] */
+  function aiRefPictures(st, text, skip, room) {
+    var keys = aiRefKeys(st, text, skip).slice(0, Math.max(0, room - (st.file ? 1 : 0))), job = Promise.resolve([]);
+    keys.forEach(function (k) { job = job.then(function (acc) { return aiRefImage(k).then(function (b) { if (b) acc.push([(AI_REFS.filter(function (r) { return r[0] === k; })[0] || [])[1] || k, b]); return acc; }); }); });
+    if (st.file) job = job.then(function (acc) { var f = st.file, p = fileType(f) === "application/pdf" ? pdfImage(f) : Promise.resolve(f); return p.then(function (b) { acc.push(["The attached sample", b]); return acc; }, function () { return acc; }); });
+    return job;
+  }
+  /* o: key (keeps the box's history), what (one line), rules (the settings explained), get(), clean(answer, current),
+     apply(new settings), shot() (the template as it prints now, a picture), skip (a reference that is this very document) */
+  function aiTalk(box, o) {
+    var st = AI_ST[o.key] = AI_ST[o.key] || { hist: [], note: "", refs: {}, file: null, text: "" };
+    var card = el("div", { class: o.inCard ? "aitalk nested" : "card pcard aitalk" }); card.appendChild(el("h3", null, "Ask Claude"));
+    card.appendChild(el("p", { class: "sub", style: "margin:0 0 6px" }, "Say what to change. Claude sees this template as it prints, and any document you tick or name (“make it like the voucher”)."));
+    var q = el("textarea", { class: "field", rows: "3", "aria-label": "Ask Claude to change " + o.what, placeholder: o.place || "e.g. “Make the headings maroon and hide the GST column.”" }); q.value = st.text || ""; q.addEventListener("input", function () { st.text = q.value; }); card.appendChild(q);
+    aiRefsPicker(card, st, o.skip);
+    var aa = el("div", { class: "acts", style: "margin-top:6px;align-items:center" }), go = el("button", { type: "button", class: "btn primary sm" }, "Ask Claude"), note = el("span", { class: "hint", style: "flex:1;min-width:160px" }, st.note || "");
+    var Rec = window.SpeechRecognition || window.webkitSpeechRecognition, mic = null;
+    if (Rec) { mic = el("button", { type: "button", class: "btn sm", title: "Speak instead of typing", "aria-label": "Speak" }, "🎤 Speak"); mic.addEventListener("click", function () { tplDictate(Rec, q, mic); setTimeout(function () { st.text = q.value; }, 0); }); }
+    var undo = el("button", { type: "button", class: "btn sm" }, "Undo Claude's Change"); undo.hidden = !st.hist.length;
+    undo.addEventListener("click", function () { if (!st.hist.length) return; st.note = "Claude's change undone."; o.apply(st.hist.pop()); });
+    go.addEventListener("click", function () {
+      var ask = q.value.trim(); st.text = q.value; if (!ask) { note.textContent = "Write what Claude should change."; return; }
+      if (!S.sample) { note.textContent = "Claude isn't available here."; return; }
+      var lb = go.textContent; go.disabled = true; go.textContent = "Claude is working…"; note.textContent = "";
+      var room = Math.min(4, (S.sLimits && S.sLimits.images && S.sLimits.images.maxCount) || 4), cur = o.get();
+      Promise.all([o.shot ? o.shot().catch(function () { return null; }) : null, aiRefPictures(st, ask, o.skip, room - 1)]).then(function (r) {
+        var pics = [], labels = []; if (r[0]) { pics.push(r[0]); labels.push("Picture 1 is " + o.what + " as it prints now, with sample figures."); }
+        r[1].forEach(function (x) { pics.push(x[1]); labels.push("Picture " + pics.length + " is a reference: " + x[0] + "."); });
+        var prompt = [
+          "You change a print template in the accounts app of an Indian company group (KKSK). The template: " + o.what + ".",
+          "Its settings now, as JSON:\n" + JSON.stringify(cur),
+          typeof o.rules === "function" ? o.rules() : o.rules,
+          labels.join(" "),
+          r[1].length ? "When the request says to follow a reference, match its look (colours, wording, what shows and where) as far as these settings allow, and say what couldn't be matched." : "",
+          "Change only what is asked and keep every other setting as it is.",
+          "What to do: " + ask,
+          "Reply with only JSON: {\"template\": the whole new settings in the same shape, \"note\": \"one or two short sentences: what you changed, and anything you couldn't do\"}"
+        ].filter(Boolean).join("\n\n");
+        return S.sample.json(prompt, { images: pics.length ? pics : undefined, modelTier: "default" });
+      }).then(function (res) {
+        var nt = o.clean(res && res.template, cur); if (!nt) throw { kind: "empty" };
+        st.hist.push(JSON.parse(JSON.stringify(cur))); if (st.hist.length > 20) st.hist.shift();
+        st.note = "Claude: " + str((res && res.note) || "Done.", 240) + " Check the preview, then save."; st.text = ""; o.apply(nt);
+      }).catch(function (e) { go.disabled = false; go.textContent = lb; note.textContent = e && e.kind === "empty" ? "Claude didn't give back a template. Try saying it another way." : "Claude couldn't do it (" + ((e && (e.kind || e.code || e.message)) || "error") + ")."; });
+    });
+    q.addEventListener("keydown", function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); go.click(); } });
+    aa.appendChild(go); if (mic) aa.appendChild(mic); aa.appendChild(undo); aa.appendChild(note); card.appendChild(aa);
+    if (!S.sample) { go.disabled = true; note.textContent = "Claude isn't available here."; }
+    box.appendChild(card); return card;
+  }
+  function aiNum(v, lo, hi) { var n = Number(v); return isFinite(n) && n >= lo && n <= hi ? Math.round(n * 100) / 100 : null; }
+  /* -- internal prints -- */
+  function ptTalkRules() {
+    var seen = TP.seen || {}, labs = TPL_KINDS.map(function (k) { return (seen[k[0]] || []).length ? k[0] + " (" + k[1] + "): " + seen[k[0]].map(function (x) { return JSON.stringify(x); }).join(", ") : ""; }).filter(Boolean).join("\n");
+    return "The settings: accent (\"#rrggbb\", headings, rules and text; default #10281f), fill (\"#rrggbb\", table heads and totals; default #ecf5f0), text (table text size, % : 90, 100, 110 or 120), logo (false hides the company logo), facts (false hides the key facts strip under the title), sigImg (false: no signatures in the sign-off boxes), foot (a short note printed at the foot of each page, up to 80 characters), lab (labels: keys are \"<kind>:<label as printed now>\", the value is the new wording, or false to leave it out; leave a label out of lab to print it as standard). The page layout itself (A4, positions, tables) is fixed and can't change." +
+      (labs ? "\nThe labels this document prints now, by kind:\n" + labs : "");
+  }
+  function ptClean(x, cur) {
+    if (!x || typeof x !== "object") return null; var o = {};
+    if (cur.useDefault != null) o.useDefault = cur.useDefault;
+    ["accent", "fill"].forEach(function (k) { if (/^#[0-9a-f]{6}$/i.test(String(x[k] || ""))) o[k] = String(x[k]).toLowerCase(); });
+    var t = aiNum(x.text, 80, 130); if (t) o.text = Math.round(t / 10) * 10;
+    ["logo", "facts", "sigImg"].forEach(function (k) { if (x[k] === false) o[k] = false; });
+    if (x.foot) o.foot = str(String(x.foot), 80);
+    o.lab = {}; Object.keys(x.lab || {}).forEach(function (k) { var v = x.lab[k]; if (!/^(subs|facts|sections|cols|net|signs):./.test(k)) return; if (v === false) o.lab[k] = false; else if (typeof v === "string" && v.trim()) o.lab[k] = str(v.trim(), 60); });
+    return o;
+  }
+  /* -- cheques -- */
+  function chqTalk(T, cv) {
+    return { key: "chq_" + (CQ.id || "new"), what: "a bank cheque layout (where the date, payee, amount in words and figures and A/c Payee are written on " + (T.bank || "the bank") + "'s blank cheque)", skip: "",
+      place: "e.g. “Move the payee 2 mm down and make the text a little bigger.”",
+      rules: "Sizes are in mm from the cheque's top left corner; the cheque is " + T.area.w + " × " + T.area.h + " mm. size is the text size in points (6 to 20). f.date: x, y and gap (spacing between the date boxes; 0 writes the date normally). f.payee and f.words: x, y, w (width of line 1; longer text goes on to line 2), x2 and y2 (where line 2 starts; y2 0 = one line). f.figures: x, y. f.acpayee: on (true or false), x, y. y is the baseline of the text. Picture 1 shows the scan with a made-up payment written on it.",
+      get: function () { return { size: T.size, f: JSON.parse(JSON.stringify(T.f)) }; },
+      clean: function (x, cur) {
+        if (!x || typeof x !== "object" || !x.f) return null; var o = JSON.parse(JSON.stringify(cur)), sz = aiNum(x.size, 6, 20); if (sz) o.size = sz;
+        Object.keys(o.f).forEach(function (k) { var a = x.f[k]; if (!a) return; Object.keys(o.f[k]).forEach(function (p) { if (p === "on") { if (typeof a.on === "boolean") o.f[k].on = a.on; return; } var n = aiNum(a[p], 0, 400); if (n != null) o.f[k][p] = n; }); ["x2", "y2", "w"].forEach(function (p) { if (o.f[k][p] == null && a[p] != null && aiNum(a[p], 0, 400) != null && (k === "payee" || k === "words")) o.f[k][p] = aiNum(a[p], 0, 400); }); });
+        return o;
+      },
+      apply: function (n) { T.size = n.size; T.f = n.f; renderChequeEdit(); },
+      shot: function () { return canvasBlob(cv); } };
+  }
+  /* -- NEFT / RTGS forms -- */
+  function neftTalk(T, N, cv) {
+    var keys = neftAll(N).map(function (f) { return f[0]; });
+    return { key: "neft_" + (CQ.id || "new"), what: "a bank's NEFT / RTGS request form layout (where each detail is written on the scanned form, printed on A4)", skip: "",
+      place: "e.g. “The beneficiary IFSC is 3 mm too far left; and put the purpose on two lines.”",
+      rules: "Sizes are in mm from the top left of the A4 page (210 × 297). size is the text size in points (6 to 20). fields is a list; each has k (which detail: " + neftAll(N).map(function (f) { return f[0] + " = " + f[1]; }).join("; ") + "), x and y (where line 1 starts, y is the baseline), w (width of line 1; 0 = no limit), gap (0 = written normally; else one character per box, this far apart), x2 and y2 (line 2; y2 0 = one line). A detail can appear more than once. Picture 1 shows the form with sample details written on it.",
+      get: function () { return { size: N.size || 10, fields: JSON.parse(JSON.stringify(N.fields || [])) }; },
+      clean: function (x, cur) {
+        if (!x || typeof x !== "object" || !Array.isArray(x.fields)) return null; var sz = aiNum(x.size, 6, 20);
+        var fs = x.fields.slice(0, 60).map(function (f) { if (!f || keys.indexOf(f.k) < 0) return null; var o = { k: f.k }; ["x", "y", "w", "gap", "x2", "y2"].forEach(function (p) { o[p] = aiNum(f[p], 0, 400) || 0; }); return o.y > 0 ? o : null; }).filter(Boolean);
+        return fs.length ? { size: sz || cur.size, fields: fs } : null;
+      },
+      apply: function (n) { N.size = n.size; N.fields = n.fields; renderChequeEdit(); },
+      shot: function () { return canvasBlob(cv); } };
   }
 
   /* ================= Signatures ================= */
@@ -13576,7 +13837,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     /* (2) Claude */
     var ai = el("div", { class: "tplai" }), q = el("textarea", { class: "field", rows: "3", placeholder: "Ask Claude to write or change this page, e.g. \"Put the bank details in a small box at the bottom left and make the heading green.\"", "aria-label": "Ask Claude about page " + (pi + 1) });
     ai.appendChild(el("span", { class: "lb" }, "Ask Claude"));
-    ai.appendChild(q);
+    ai.appendChild(q); pg._ai = pg._ai || { refs: {}, file: null }; aiRefsPicker(ai, pg._ai, "", true);
     var aa = el("div", { class: "acts", style: "margin-top:6px;align-items:center" }), go = el("button", { type: "button", class: "btn primary sm" }, "Ask Claude"), note = el("span", { class: "hint", style: "flex:1;min-width:160px" }, pg._note || "");
     var mic = null, Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (Rec) { mic = el("button", { type: "button", class: "btn sm", title: "Speak instead of typing", "aria-label": "Speak" }, "🎤 Speak"); mic.addEventListener("click", function () { tplDictate(Rec, q, mic); }); }
@@ -13622,10 +13883,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       "This page is named \"" + (pg.name || "") + "\". Its current HTML:\n" + (pg.html || "(empty)"),
       "What to do: " + ask,
       pg._ref ? "A picture of a page to follow is attached; copy its layout and wording style, but use the fields above for anything that changes from bill to bill." : "",
+      "{REFS}",
       "Reply with only JSON: {\"html\": \"the whole new HTML of the page\", \"note\": \"one short sentence on what you changed\"}"
     ].filter(Boolean).join("\n\n");
     var ref = pg._ref ? (fileType(pg._ref) === "application/pdf" ? openPdf(pg._ref).then(function (pdf) { return pdf.getPage(1); }).then(function (p1) { return renderPdfCanvas(p1, 1600); }).then(canvasBlob) : Promise.resolve(pg._ref)) : Promise.resolve(null);
-    ref.then(function (im) { return S.sample.json(prompt, { images: im ? [im] : undefined, modelTier: "default" }); }).then(function (r) {
+    Promise.all([ref, aiRefPictures(pg._ai || { refs: {} }, ask, "", pg._ref ? 3 : 4)]).then(function (rr) {
+      var ims = rr[0] ? [rr[0]] : [], lab = rr[1].map(function (x) { ims.push(x[1]); return "Picture " + ims.length + " is a reference: " + x[0] + " (one of the group's own documents); follow its look where asked."; }).join(" ");
+      return S.sample.json(prompt.replace("{REFS}", lab), { images: ims.length ? ims : undefined, modelTier: "default" });
+    }).then(function (r) {
       var html = r && typeof r.html === "string" ? cleanHtml(r.html).trim() : "";
       if (!html) throw { kind: "empty" };
       pg._hist = pg._hist || []; pg._hist.push(pg.html || ""); if (pg._hist.length > 20) pg._hist.shift();
@@ -13890,6 +14155,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function wireAcct() {
     $("lgmSideD").addEventListener("click", function () { LGM.side = "Direct Expenses"; renderLedgers(); });
     $("lgmSideI").addEventListener("click", function () { LGM.side = "Indirect Expenses"; renderLedgers(); });
+    $("lgmSideT").addEventListener("click", function () { LGM.side = TAX_MAIN; renderLedgers(); });
+    $("lgmSideG").addEventListener("click", function () { LGM.side = "gst"; renderLedgers(); });
+    $("lgmSideS").addEventListener("click", function () { LGM.side = "tds"; renderLedgers(); });
     $("lgmCo").addEventListener("change", renderLedgers); $("lgmQ").addEventListener("input", renderLedgers); $("lgmAdd").addEventListener("click", function () { ledForm(null); });
     $("acSideB").addEventListener("click", function () { AC.side = "bills"; renderAcct(); }); $("acSideV").addEventListener("click", function () { AC.side = "vouchers"; renderAcct(); });
     ["acSt", "acCo", "acPrep", "acDept"].forEach(function (id) { $(id).addEventListener("change", renderAcct); }); $("acQ").addEventListener("input", renderAcct);
@@ -14106,7 +14374,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* ---- Demo and Live: admins can switch; everyone else always works in Live. The set-up (people, admins, access requests,
      companies, locations, departments, ledgers, preferences) is shared; entries are kept apart. ---- */
-  var NS_SHARED = { users: 1, admins: 1, requests: 1, companies: 1, locations: 1, departments: 1, ledgers: 1, prefs: 1, chqtpl: 1, regions: 1, banknames: 1 };
+  var NS_SHARED = { users: 1, admins: 1, requests: 1, companies: 1, locations: 1, departments: 1, ledgers: 1, taxes: 1, prefs: 1, chqtpl: 1, regions: 1, banknames: 1 };
   function nsPath(p) { if (S.mode !== "demo") return p; var top = String(p).split("/")[0]; return NS_SHARED[top] ? p : "demo__" + p; }
   function nsDb(db) { return { doc: function (p) { return db.doc(nsPath(p)); }, collection: function (p) { return db.collection(nsPath(p)); } }; }
   /* A person whose Demo switch is on (Settings › Users) may choose Demo or Live, like an admin. */

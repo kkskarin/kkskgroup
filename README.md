@@ -106,6 +106,18 @@
   `tpls/<doc>__<division>` (or `useDefault`). Without a template a document prints as standard. Vouchers keep their fixed
   format; cheques, NEFT / RTGS forms and Renewable Energy letterpads have their own templates. Hooks are in `pdfLook`
   (`doc.__tpl`, set by `newPdf(jsPDF, key, div)`).
+- **Ask Claude on every template** (`aiTalk`): Settings › Templates, cheque templates and NEFT / RTGS forms have a box to
+  say (type or speak) what to change; Claude sees the template as it prints and, when ticked or named in the request
+  (“like the voucher”), the latest voucher or any internal print as a reference picture, or an attached sample. Its answer
+  is checked (`ptClean`, `chqTalk`, `neftTalk`) and put in the editor to check and save; Undo steps back. The letterpad
+  pages' own Claude box takes the same references.
+- **GST and TDS (Masters › Ledgers › GST, TDS)**, kept by the accountant (or an admin) in `taxes/<id>`: TDS sections
+  (`sec`, `nature`, `rate`, `rate2`, `ledName`) and GST rates (`rate`, `type` Input / Output / RCM). Each makes its ledgers
+  under Duties & Taxes (`ledgers/tax_<id>`, and `_cgst`, `_sgst`, `_igst`), `allCos` (every company, also any added
+  later) and every division, `locked`: shown in the Ledgers list but changed or removed only from GST or TDS. Tax ledgers
+  are not offered as expense ledgers. The TDS sections are the ones offered when accounting; the GST rates the ones
+  offered for reverse charge. Started (migration `20261028150000`) with the sections the app offered and GST 5 / 18 / 40
+  Input and 5 / 18 RCM.
 - **Signatures.** Admins, purchasers, Expenses Operators, accountants, approvers and approval recorders sign once, with a
   finger, stylus or mouse in a 3 : 1 box (or a photo of a paper signature, whitened), before they can carry on; they can
   change it in Settings › Personalise. Kept in `sigs/<person id>` (`png`, trimmed to the ink on white; the same in Demo and

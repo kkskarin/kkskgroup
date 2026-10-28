@@ -407,6 +407,16 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .insthead .lb{margin-right:6px}
 .costgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:6px}
 .modal.wide{max-width:520px;max-height:calc(100vh - 32px);overflow:auto}
+.modal.sigm{max-width:640px}
+.sigpad{position:relative;margin:12px 0 8px;border:1.5px dashed var(--line,#cbd5e1);border-radius:12px;background:#fff;overflow:hidden}
+.sigpad canvas{display:block;width:100%;aspect-ratio:3/1;touch-action:none;cursor:crosshair;-webkit-user-select:none;user-select:none}
+.sigpad .sigline{position:absolute;left:6%;right:6%;bottom:24%;border-bottom:1px solid #cbd5e1;pointer-events:none}
+.sigpad .sighint{position:absolute;left:7%;bottom:27%;font-size:13px;color:#94a3b8;pointer-events:none}
+.sigbar{flex-wrap:wrap;gap:6px}
+.sigink i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.sigink[aria-pressed="true"]{outline:2px solid var(--accent,#0f766e);outline-offset:1px}
+.sigprev{display:block;max-width:240px;max-height:80px;margin:8px 0;background:#fff;border:1px solid var(--line,#e2e8f0);border-radius:8px;padding:6px}
+@media (max-width:560px){.sigpad canvas{aspect-ratio:12/5}}
 .mform{display:grid;gap:2px}
 .mbar{margin:18px 0 -4px}.mbar .seg{margin:0;flex-wrap:wrap}
 .nflist{display:grid;gap:8px;margin-top:8px;max-height:620px;overflow:auto;padding-right:4px}.nfcard{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface,#fff)}.nfcard.on{border-color:#0a7d4f;box-shadow:0 0 0 2px rgba(10,125,79,.15)}.nfhead{display:flex;gap:10px;align-items:center;margin-bottom:8px}.nfhead select{flex:1;min-width:0}.nfgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px 8px}.nfnum{display:flex;flex-direction:column;gap:2px;font-size:.72rem;color:var(--muted);font-weight:600}.nfnum .field{height:34px;padding:4px 8px;width:100%;min-width:0}.nfsub{font-size:.7rem;color:var(--muted);font-weight:600;margin:8px 0 4px;text-transform:uppercase;letter-spacing:.04em}.nfcard .nfsub:first-of-type{margin-top:0}@media (max-width:480px){.nfgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -1565,6 +1575,19 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var ab = el("div", { class: "acts", style: "margin-top:8px" }); ab.appendChild(up); ab.appendChild(fi);
     if (p.avatar) { var rm = el("button", { type: "button", class: "btn sm" }, "Remove"); rm.addEventListener("click", function () { pickPref({ avatar: "" }); }); ab.appendChild(rm); }
     who.appendChild(ab); pr.appendChild(who); c1.appendChild(pr); box.appendChild(c1);
+    /* signature: printed on the vouchers this person prepares, accounts or approves */
+    if (sigNeeded()) {
+      var cs = el("div", { class: "card pcard" }); cs.appendChild(el("h3", null, "Signature")); var sp = el("div"); cs.appendChild(sp); box.appendChild(cs);
+      var showSig = function () {
+        sp.textContent = ""; sp.appendChild(el("span", { class: "tsub" }, "Loading"));
+        sigLoad(meId()).then(function (png) {
+          sp.textContent = ""; if (png) sp.appendChild(el("img", { class: "sigprev", alt: "Your signature", src: png })); else sp.appendChild(el("p", { class: "sub" }, "No signature yet."));
+          sp.appendChild(el("p", { class: "sub", style: "margin:0" }, "Printed on the vouchers you prepare, account or approve."));
+          var cb = el("button", { type: "button", class: "btn sm", style: "margin-top:8px" }, png ? "Change Signature" : "Add Signature"); cb.addEventListener("click", function () { sigPad(false, showSig); }); sp.appendChild(cb);
+        });
+      };
+      showSig();
+    }
     /* WhatsApp: admins and approvers get a message when something waits for their approval (sent by the approval-alert function). */
     if (S.isAdmin || ((S.myUser && S.myUser.jobRoles) || []).indexOf("approver") >= 0) {
       var cw = el("div", { class: "card pcard" }); cw.appendChild(el("h3", null, "WhatsApp Alerts"));
@@ -2414,6 +2437,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (state === "in") {
       $("navbar").hidden = false; startData();
       if (S.memberState !== "in") { S.memberState = "in"; renderMe(); setTab(homeTab()); } else onData();
+      sigGate();
       return;
     }
     $("navbar").hidden = true;
@@ -9479,8 +9503,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var label = btn.textContent; btn.disabled = true; btn.textContent = "Preparing";
     loadScript(JSPDF).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
-      var doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a5", compress: true }); pdfFonts(doc);
-      vs.forEach(function (v, i) { if (i) doc.addPage("a5", "landscape"); drawVoucher(doc, v); });
+      return Promise.all(vs.map(sigsFor)).then(function (sgs) {
+        var doc = new jsPDF({ orientation: "landscape", unit: "mm", format: VCH_PAGE, compress: true }); pdfFonts(doc);
+        vs.forEach(function (v, i) { if (i) doc.addPage(VCH_PAGE, "landscape"); drawVoucher(doc, v, sgs[i]); }); return doc;
+      });
+    }).then(function (doc) {
       return S.downloads.save({ filename: "Vouchers " + safeName(r.no) + ".pdf", data: doc.output("blob") });
     }).then(function () { toast(plural(vs.length, "voucher") + " ready to print and sign."); }, function (e) { var k = e && (e.code || e.kind); toast(k === "declined" ? "Download cancelled." : "The vouchers couldn't be printed (" + (k || "error") + ")."); })
       .then(function () { btn.disabled = false; btn.textContent = label; });
@@ -11952,7 +11979,117 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
   }
 
+  /* ================= Signatures ================= */
+  /* Admins, purchasers, Expenses Operators, accountants, approvers and approval recorders sign once, with a finger, a stylus
+     or the mouse (or a photo of their signature on paper), before they can carry on. Kept per person in sigs/<id>, the same in
+     Demo and Live, as a PNG on white trimmed to the ink. It prints in the voucher's Prepared by, Accounted by and Approved by
+     boxes; entries made before signatures existed print with whatever signatures their people have since added. */
+  var SIG_JOBS = ["purchaser", "vmaker", "accountant", "chiefacct", "approver", "recorder"];
+  function sigNeeded() { return S.canWrite !== false && (S.isAdmin || myJobs().some(function (j) { return SIG_JOBS.indexOf(j) >= 0; })); }
+  /* "" when the person has none, null when it couldn't be read (then nobody is stopped). Only signatures found are kept. */
+  function sigLoad(id) {
+    S.sigs = S.sigs || {}; if (!id || !S.rawDb) return Promise.resolve(null);
+    if (S.sigs[id]) return Promise.resolve(S.sigs[id]);
+    return S.rawDb.doc("sigs/" + id).get().then(function (d) { var png = d && d.exists ? (d.data() || {}).png || "" : ""; if (png) S.sigs[id] = png; return png; }, function () { return null; });
+  }
+  function sigSave(png) {
+    var id = meId(), nm = S.isAdmin ? (S.me && S.me.name) || "Admin" : pnm(preparedByText());
+    return retry(function () { return S.rawDb.doc("sigs/" + id).set({ png: png, at: Date.now(), name: nm }); }).then(function () { S.sigs = S.sigs || {}; S.sigs[id] = png; });
+  }
+  /* Who signs which box of a voucher. The approver is the one who approved (or signed the report on paper, when an approval
+     recorder entered it, or the admin a financier approved for); if they have no signature, the person who entered it signs. */
+  function sigsFor(v) {
+    var rep = v.approvedIn ? S.reports[v.approvedIn] : null, done = !!(v.approvedAt || v.approvedIn), rec = done ? v.approvedBy || (rep && rep.approvedBy) || "" : "";
+    var ap = done ? (rep && rep.onBehalf && rep.paperById) || rec : "", ac = v.acct === "approved" ? v.acctBy || "" : "";
+    return Promise.all([sigLoad(prepOf(v)), sigLoad(ac), sigLoad(ap), sigLoad(rec)]).then(function (a) { return { prep: a[0] || "", acct: a[1] || "", appr: a[2] || (rec !== ap ? a[3] || "" : "") }; });
+  }
+  /* On entering the app: someone who must sign and hasn't yet gets the signature box, and can't close it until it is saved. */
+  function sigGate() {
+    if (S._sigAsk || !sigNeeded()) return; var id = meId(); if (!id) return;
+    sigLoad(id).then(function (png) { if (png !== "" || S._sigAsk || id !== meId() || !sigNeeded()) return; S._sigAsk = true; sigPad(true, function () { S._sigAsk = false; }); });
+  }
+  /* The signature box: a 3 : 1 area (the shape of the voucher's sign-off boxes) drawn with pointer events, so a finger, a
+     stylus and the mouse all work; the page doesn't scroll while drawing. Saved trimmed to the ink, on white. */
+  function sigPad(required, done) {
+    var INKS = { blue: "#1a2a9c", black: "#111827" }, ink = "blue", strokes = [], cur = null, photo = null;
+    var bg = el("div", { class: "modal-bg" }), m = el("div", { class: "modal wide sigm", role: "dialog", "aria-modal": "true", "aria-label": "Your signature" });
+    m.appendChild(el("h3", null, required ? "Add Your Signature" : "Change Your Signature"));
+    m.appendChild(el("p", { class: "sub" }, (required ? "Before you carry on, sign once in the box with your finger, a stylus or the mouse. " : "Sign in the box with your finger, a stylus or the mouse. ") + "It prints on the vouchers you prepare, account or approve."));
+    var wrap = el("div", { class: "sigpad" }), cv = el("canvas", { role: "img", "aria-label": "Signature box: draw your signature here" }), hint = el("span", { class: "sighint", "aria-hidden": "true" }, "Sign here");
+    wrap.appendChild(cv); wrap.appendChild(el("i", { class: "sigline", "aria-hidden": "true" })); wrap.appendChild(hint); m.appendChild(wrap);
+    var bar = el("div", { class: "acts sigbar" }), clr = el("button", { type: "button", class: "btn sm" }, "Clear"), und = el("button", { type: "button", class: "btn sm" }, "Undo");
+    var inkB = {}; ["blue", "black"].forEach(function (k) { var b = el("button", { type: "button", class: "btn sm sigink", "aria-pressed": k === ink ? "true" : "false" }); b.appendChild(el("i", { style: "background:" + INKS[k] })); b.appendChild(document.createTextNode(k === "blue" ? "Blue" : "Black")); b.addEventListener("click", function () { ink = k; Object.keys(inkB).forEach(function (x) { inkB[x].setAttribute("aria-pressed", x === k ? "true" : "false"); }); if (photo) photo = recolour(photo.src0); paint(); }); inkB[k] = b; bar.appendChild(b); });
+    var fi = el("input", { type: "file", accept: "image/*", hidden: "" }), upl = el("button", { type: "button", class: "btn sm" }, "Use a Photo Instead");
+    bar.appendChild(und); bar.appendChild(clr); bar.appendChild(upl); bar.appendChild(fi); m.appendChild(bar);
+    var err = el("p", { class: "err", hidden: "" }); m.appendChild(err);
+    var foot = el("div", { class: "form-foot" }), ok = el("button", { type: "button", class: "btn primary" }, "Save Signature"); foot.appendChild(ok);
+    var no = null; if (!required) { no = el("button", { type: "button", class: "btn" }, "Back"); foot.appendChild(no); }
+    m.appendChild(foot); bg.appendChild(m); document.body.appendChild(bg);
+    var prev = document.activeElement, ctx = cv.getContext("2d"), W0 = 0, H0 = 0;
+    function lw() { return Math.max(2, W0 / 170); }
+    function size() { var r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1; W0 = r.width; H0 = r.height; cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d); ctx.setTransform(d, 0, 0, d, 0, 0); paint(); }
+    function path(c, st, k, ox, oy) {
+      var p = st.pts; if (!p.length) return; c.beginPath(); c.moveTo((p[0][0] - ox) * k, (p[0][1] - oy) * k);
+      if (p.length === 1) c.lineTo((p[0][0] - ox) * k + 0.1, (p[0][1] - oy) * k);
+      for (var i = 1; i < p.length - 1; i++) c.quadraticCurveTo((p[i][0] - ox) * k, (p[i][1] - oy) * k, ((p[i][0] + p[i + 1][0]) / 2 - ox) * k, ((p[i][1] + p[i + 1][1]) / 2 - oy) * k);
+      if (p.length > 1) c.lineTo((p[p.length - 1][0] - ox) * k, (p[p.length - 1][1] - oy) * k); c.stroke();
+    }
+    function paint() {
+      ctx.clearRect(0, 0, W0, H0); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = INKS[ink]; ctx.lineWidth = lw();
+      if (photo) { var s0 = Math.min((W0 - 16) / photo.w, (H0 - 16) / photo.h); ctx.drawImage(photo.cv, (W0 - photo.w * s0) / 2, (H0 - photo.h * s0) / 2, photo.w * s0, photo.h * s0); }
+      strokes.forEach(function (st) { path(ctx, st, 1, 0, 0); });
+      var has = !!photo || strokes.length > 0; hint.hidden = has; und.disabled = !strokes.length; clr.disabled = !has;
+    }
+    function at(e) { var r = cv.getBoundingClientRect(); return [Math.max(0, Math.min(W0, e.clientX - r.left)), Math.max(0, Math.min(H0, e.clientY - r.top))]; }
+    cv.addEventListener("pointerdown", function (e) { if (e.button > 0) return; e.preventDefault(); err.hidden = true; try { cv.setPointerCapture(e.pointerId); } catch (x) {} cur = { pts: [at(e)] }; strokes.push(cur); paint(); });
+    cv.addEventListener("pointermove", function (e) { if (!cur) return; e.preventDefault(); (e.getCoalescedEvents ? e.getCoalescedEvents() : [e]).forEach(function (c) { cur.pts.push(at(c)); }); paint(); });
+    function up() { cur = null; } cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+    und.addEventListener("click", function () { strokes.pop(); paint(); });
+    clr.addEventListener("click", function () { strokes = []; photo = null; paint(); });
+    /* a photo of a signature on paper: the paper is whitened away and the ink kept, in the chosen colour */
+    function recolour(src) {
+      var w = src.width, h = src.height, d = src.getContext("2d").getImageData(0, 0, w, h).data, x0 = w, y0 = h, x1 = -1, y1 = -1, al = new Uint8ClampedArray(w * h);
+      for (var i = 0; i < w * h; i++) { var l = (d[i * 4] + d[i * 4 + 1] + d[i * 4 + 2]) / 3, a = d[i * 4 + 3] < 128 ? 0 : Math.max(0, Math.min(1, (200 - l) / 90)); al[i] = a * 255; if (a > 0.15) { var x = i % w, y = (i / w) | 0; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } }
+      if (x1 < 0) return null; x0 = Math.max(0, x0 - 4); y0 = Math.max(0, y0 - 4); x1 = Math.min(w - 1, x1 + 4); y1 = Math.min(h - 1, y1 + 4);
+      var ow = x1 - x0 + 1, oh = y1 - y0 + 1, o = document.createElement("canvas"); o.width = ow; o.height = oh; var oc = o.getContext("2d"), id = oc.createImageData(ow, oh), hx = INKS[ink], r = parseInt(hx.slice(1, 3), 16), g = parseInt(hx.slice(3, 5), 16), b = parseInt(hx.slice(5, 7), 16);
+      for (var yy = 0; yy < oh; yy++) for (var xx = 0; xx < ow; xx++) { var k = (yy * ow + xx) * 4; id.data[k] = r; id.data[k + 1] = g; id.data[k + 2] = b; id.data[k + 3] = al[(yy + y0) * w + xx + x0]; }
+      oc.putImageData(id, 0, 0); return { cv: o, w: ow, h: oh, src0: src };
+    }
+    upl.addEventListener("click", function () { fi.click(); });
+    fi.addEventListener("change", function () {
+      var f = fi.files && fi.files[0]; fi.value = ""; if (!f) return; var u = URL.createObjectURL(f), im = new Image();
+      im.onload = function () { var s0 = Math.min(1, 1600 / Math.max(im.width, im.height)), c = document.createElement("canvas"); c.width = Math.round(im.width * s0); c.height = Math.round(im.height * s0); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+        var p = recolour(c); if (!p) { err.textContent = "No signature could be found in that photo. Sign on white paper in dark ink, or draw it in the box."; err.hidden = false; return; } photo = p; strokes = []; err.hidden = true; paint(); };
+      im.onerror = function () { URL.revokeObjectURL(u); err.textContent = "Choose a photo (JPG, PNG or WebP)."; err.hidden = false; };
+      im.src = u;
+    });
+    /* The saved image: the ink only, on white, at most 900 pixels wide. */
+    function exportPng() {
+      var c = document.createElement("canvas"), x;
+      if (photo && !strokes.length) { var k0 = Math.min(1, 900 / photo.w); c.width = Math.round(photo.w * k0); c.height = Math.round(photo.h * k0); x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(photo.cv, 0, 0, c.width, c.height); return c.toDataURL("image/png"); }
+      var d = window.devicePixelRatio || 1, src = document.createElement("canvas"); src.width = cv.width; src.height = cv.height; var sx = src.getContext("2d"); sx.fillStyle = "#fff"; sx.fillRect(0, 0, src.width, src.height); sx.drawImage(cv, 0, 0);
+      var px = sx.getImageData(0, 0, src.width, src.height).data, x0 = src.width, y0 = src.height, x1 = -1, y1 = -1;
+      for (var i = 0; i < px.length; i += 4) if (px[i] + px[i + 1] + px[i + 2] < 700) { var q = i / 4, xx = q % src.width, yy = (q / src.width) | 0; if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
+      var pad = Math.round(4 * d); x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(src.width - 1, x1 + pad); y1 = Math.min(src.height - 1, y1 + pad);
+      var w = x1 - x0 + 1, h = y1 - y0 + 1, k = Math.min(1, 900 / w); c.width = Math.round(w * k); c.height = Math.round(h * k); x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(src, x0, y0, w, h, 0, 0, c.width, c.height);
+      return c.toDataURL("image/png");
+    }
+    function inkLength() { return strokes.reduce(function (s0, st) { for (var i = 1; i < st.pts.length; i++) s0 += Math.hypot(st.pts[i][0] - st.pts[i - 1][0], st.pts[i][1] - st.pts[i - 1][1]); return s0; }, 0); }
+    function close() { bg.remove(); window.removeEventListener("resize", size); document.removeEventListener("keydown", onKey, true); if (prev && prev.focus) prev.focus(); }
+    function onKey(e) { if (e.key === "Escape") { e.preventDefault(); if (!required) close(); } }
+    ok.addEventListener("click", function () {
+      if (!photo && inkLength() < W0 * 0.25) { err.textContent = strokes.length ? "That's too small to be a signature. Sign across the box." : "Sign in the box first."; err.hidden = false; return; }
+      ok.disabled = true; ok.textContent = "Saving";
+      sigSave(exportPng()).then(function () { close(); toast("Signature saved."); if (done) done(true); }, function (e) { ok.disabled = false; ok.textContent = "Save Signature"; err.textContent = explain(e); err.hidden = false; });
+    });
+    if (no) { no.addEventListener("click", close); bg.addEventListener("click", function (e) { if (e.target === bg) close(); }); }
+    document.addEventListener("keydown", onKey, true); window.addEventListener("resize", size);
+    requestAnimationFrame(size);
+  }
+
   /* ================= one voucher on A5 landscape ================= */
+  /* The voucher format's page: A5 landscape as the format was made (594.96 × 420 pt). */
+  var VCH_PAGE = [148.17, 209.89];
   var ONES = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"], TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
   function words2(n) { return n < 20 ? ONES[n] : TENS[Math.floor(n / 10)] + (n % 10 ? " " + ONES[n % 10] : ""); }
   function words3(n) { return (n >= 100 ? ONES[Math.floor(n / 100)] + " Hundred" + (n % 100 ? " " : "") : "") + (n % 100 ? words2(n % 100) : ""); }
@@ -11967,101 +12104,153 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var label = btn.textContent; btn.disabled = true; btn.textContent = "Preparing";
     loadScript(JSPDF).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
-      var doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a5", compress: true }); pdfFonts(doc);
-      drawVoucher(doc, v);
+      return sigsFor(v).then(function (sg) {
+        var doc = new jsPDF({ orientation: "landscape", unit: "mm", format: VCH_PAGE, compress: true }); pdfFonts(doc);
+        drawVoucher(doc, v, sg); return doc;
+      });
+    }).then(function (doc) {
       return S.downloads.save({ filename: "Voucher " + safeName(v.voucherNo) + " " + safeName(coLabel(v.companyId)) + ".pdf", data: doc.output("blob") });
     }).then(function () { toast("Voucher printed to PDF."); }, function (e) { var k = e && (e.code || e.kind); toast(k === "declined" ? "Download cancelled." : k === "lib" ? "The PDF maker didn't load. Check the connection and try again." : "The voucher couldn't be printed (" + (k || "error") + ")."); })
       .then(function () { btn.disabled = false; btn.textContent = label; });
   }
-  function drawVoucher(doc, v) {
-    /* A5 landscape. The header keeps its colour per voucher type (white, yellow for Freight, deep blue for Self Invoice);
-       everything else is a clean grid: who was paid, the lines with their ledgers, the net payable, then empty sign-off boxes. */
-    var c = S.companies[v.companyId] || {}, type = v.vtype || "Cash Voucher", rcm = v.gstApp === "RCM", taxTable = type === "Freight & Transport" || (type === "Self Invoice" && rcm), cash = type === "Cash Voucher";
-    var INK = [16, 40, 31], SL = [0, 112, 74], BODY = [40, 56, 48], MUTE = [94, 110, 102], FILL = [236, 245, 240], RULE = [190, 208, 198];
-    var X = 6, W = 198, R = X + W, Y = 6;
-    function F(st, size, col) { doc.setFont("Lato", st); doc.setFontSize(size); doc.setTextColor(col[0], col[1], col[2]); }
-    function T(s0, x, y, o) { doc.text(String(s0 == null ? "" : s0), x, y, o || {}); }
-    function fitT(s0, w) { s0 = String(s0 || ""); if (doc.getTextWidth(s0) <= w) return s0; while (s0.length > 1 && doc.getTextWidth(s0 + "…") > w) s0 = s0.slice(0, -1); return s0 + "…"; }
-    function hl(x1, x2, y, w, col) { col = col || RULE; doc.setDrawColor(col[0], col[1], col[2]); doc.setLineWidth(w || 0.25); doc.line(x1, y, x2, y); }
-    function vl(x, y1, y2, w, col) { col = col || RULE; doc.setDrawColor(col[0], col[1], col[2]); doc.setLineWidth(w || 0.25); doc.line(x, y1, x, y2); }
-    /* letter spacing only on left-aligned labels: the PDF maker doesn't count it when aligning right or centre */
-    function lab(s0, x, y, o) { F("bold", 5.4, SL); T(String(s0).toUpperCase(), x, y, o && o.align ? o : { charSpace: 0.45 }); }
-    /* ---- header ---- */
-    var hH = 27, split = X + 112;
-    var hdrBg = type === "Freight & Transport" ? [254, 240, 138] : type === "Self Invoice" ? [30, 58, 138] : [255, 255, 255], dark = type === "Self Invoice";
-    doc.setFillColor(hdrBg[0], hdrBg[1], hdrBg[2]); doc.rect(split, Y, R - split, hH, "F");
-    var lx = X + 4;
-    if (c.logo) { try { var pp = doc.getImageProperties(c.logo), lh = 17, lw = Math.min(pp.width * lh / pp.height, 22); doc.addImage(c.logo, pp.fileType || "PNG", lx, Y + (hH - lh) / 2, lw, lh); lx += lw + 4; } catch (e) {} }
-    var tw = split - lx - 4;
-    F("bold", 10.5, INK); T(fitT(c.name || "", tw), lx, Y + 8.5);
-    F("normal", 6.6, MUTE); T("GSTIN", lx, Y + 13.4); var gx = lx + doc.getTextWidth("GSTIN") + 1.5; F("bold", 7, INK); T(c.gstin || "-", gx, Y + 13.4);
-    gx += doc.getTextWidth(c.gstin || "-") + 5; F("normal", 6.6, MUTE); T("State", gx, Y + 13.4); F("bold", 7, INK); T(c.stateCode || "-", gx + doc.getTextWidth("State") + 1.5, Y + 13.4);
-    F("normal", 6.8, BODY); doc.splitTextToSize(String(c.address || "").replace(/\n/g, ", "), tw).slice(0, 2).forEach(function (s0, i) { T(s0, lx, Y + 18.4 + i * 3.3); });
-    var mid = (split + R) / 2, sub = dark ? [203, 213, 225] : [71, 85, 105];
-    F("bold", 7, sub); T("PAYMENT VOUCHER", mid, Y + 7.5, { align: "center", charSpace: 1.2 });
-    F("bold", 15, dark ? [255, 255, 255] : INK); T(fitT(v.voucherNo || "", R - split - 8), mid, Y + 15.5, { align: "center" });
-    F("bold", 7, sub); T((fmtDate(v.voucherDate) + "  ·  " + type).toUpperCase(), mid, Y + 22, { align: "center", charSpace: 0.5 });
-    var y = Y + hH;
-    /* ---- paid to, supply of, payment ---- */
-    var iH = 15, c1 = cash ? 128 : 98, c2 = cash ? 0 : 34, c3 = W - c1 - c2;
-    lab("Paid to", X + 3, y + 4.2);
-    F("bold", 10.5, INK); T(fitT(v.payee || "", c1 - 6), X + 3, y + 9);
-    var sub2 = [v.payeeIdNo ? idText(v.payeeIdNo, true) : "", !cash && v.payeeAddr ? String(v.payeeAddr).replace(/\n/g, ", ") : ""].filter(Boolean).join("  ·  ");
-    if (sub2) { F("normal", 6.4, BODY); T(fitT(sub2, c1 - 6), X + 3, y + 12.6); }
-    if (!cash) { vl(X + c1, y, y + iH); lab("Supply of", X + c1 + 3, y + 4.2); F("bold", 9, INK); T(fitT(v.supplyOf || "-", c2 - 6), X + c1 + 3, y + 9.5); }
-    vl(X + c1 + c2, y, y + iH); lab("Payment", X + c1 + c2 + 3, y + 4.2); F("bold", 9, INK); T(v.settle ? "From cash advance" : "By the financier", X + c1 + c2 + 3, y + 9.5);
-    F("normal", 6.2, MUTE); T(v.settle ? "Settled against the holder's advance" : "Cash or cheque", X + c1 + c2 + 3, y + 12.6);
-    hl(X, R, y, 0.35, INK); y += iH; hl(X, R, y, 0.35, INK);
-    /* ---- lines ---- */
-    var cN = 9, cA = 32, cL = 58, cD = W - cN - cL - cA, xD = X + cN, xL = xD + cD, xA = xL + cL;
-    doc.setFillColor(FILL[0], FILL[1], FILL[2]); doc.rect(X, y, W, 6.5, "F");
-    lab("#", X + cN / 2, y + 4.3, { align: "center" }); lab("Description", xD + 3, y + 4.3); lab("Ledger", xL + 3, y + 4.3); lab("Amount (₹)", R - 3, y + 4.3, { align: "right" });
-    y += 6.5; hl(X, R, y);
-    var lines = (v.lines && v.lines.length ? v.lines : [{ d: v.narration || "", amt: v.total }]).slice(0, 5), tds = 0;
-    var area = taxTable ? 22 : 30, rH = Math.min(11, area / Math.max(lines.length, 2)), y0 = y;
-    lines.forEach(function (ln, i) {
-      var ly = y + i * rH, base = ly + rH / 2 + 1.2, lgName = (ln.lg && ledName(ln.lg)) || (i === 0 ? ledText(v.ledgers) : "") || "-";
-      F("normal", 8, MUTE); T(String(i + 1), X + cN / 2, base, { align: "center" });
-      var dl = doc.splitTextToSize(String(ln.d || ""), cD - 6).slice(0, rH >= 9 ? 2 : 1); F("normal", 8.6, BODY);
-      dl.forEach(function (s0, k) { T(s0, xD + 3, base + (k - (dl.length - 1) / 2) * 3.6); });
-      F("bold", 7.4, INK); doc.splitTextToSize(lgName, cL - 6).slice(0, 2).forEach(function (s0, k, arr) { T(s0, xL + 3, base + (k - (arr.length - 1) / 2) * 3.2); });
-      F("bold", 8.6, INK); T(amt2(ln.amt), R - 3, base, { align: "right" });
-      if (i < lines.length - 1) hl(X, R, ly + rH, 0.15);
-    });
-    y = y0 + area; vl(xD, y0 - 6.5, y); vl(xL, y0 - 6.5, y); vl(xA, y0 - 6.5, y + (tds ? 6 : 0) + 9);
-    if (tds) { hl(X, R, y); F("italic", 7.4, MUTE); T("Less: TDS" + (v.tdsSection ? " under section " + v.tdsSection : ""), xA - 3, y + 4.1, { align: "right" }); F("italic", 8.2, INK); T("(" + amt2(tds) + ")", R - 3, y + 4.1, { align: "right" }); y += 6; }
-    var net = round2((Number(v.total) || 0) - tds);
-    hl(X, R, y, 0.35, INK); doc.setFillColor(FILL[0], FILL[1], FILL[2]); doc.rect(xA, y, cA, 9, "F");
-    lab("Amount in words", X + 3, y + 3.6); F("italic", 7.4, INK); T(fitT(inWords(net), xA - X - 34), X + 3, y + 7.4);
-    F("bold", 7, SL); T("NET PAYABLE", xA - 3, y + 5.8, { align: "right" }); F("bold", 10.5, INK); T("₹ " + amt2(net), R - 3, y + 6.2, { align: "right" });
-    y += 9; hl(X, R, y, 0.35, INK);
-    /* ---- tax (Freight & Transport, or a Self Invoice under RCM) ---- */
-    if (taxTable) {
-      var taxable = Number(v.taxable != null ? v.taxable : v.total) || 0, rate = Number(v.gstRate) || 0, tax = round2(taxable * rate / 100), half = round2(tax / 2);
-      var tc = rcm ? [["Tax payable on reverse charge", "Yes"], ["Taxable value", "₹ " + amt2(taxable)], ["Total tax (" + rate + "%)", "₹ " + amt2(tax)]]
-        : [["Taxable value", "₹ " + amt2(taxable)], ["CGST (" + rate / 2 + "%)", "₹ " + amt2(half)], ["SGST (" + rate / 2 + "%)", "₹ " + amt2(tax - half)], ["Total tax (" + rate + "%)", "₹ " + amt2(tax)]];
-      var tw0 = W / tc.length;
-      tc.forEach(function (k, i) { var tx = X + tw0 * i; if (i) vl(tx, y, y + 10); lab(k[0], tx + 3, y + 3.8); F("bold", 8.6, INK); T(k[1], tx + 3, y + 8.3); });
-      y += 10; hl(X, R, y, 0.35, INK);
+  function drawVoucher(doc, v, sig) {
+    sig = sig || {};
+    /* A5 landscape, laid out to the KKSK payment voucher format (sizes in mm, type in pt, as measured from it).
+       Two shapes: with the tax table (Freight & Transport, or a Self Invoice under RCM) the voucher sits at the top with the
+       tax box below; without it the header is taller and the voucher sits in the middle of the page.
+       Without the tax box the voucher fills the page with the same margin all round, the description area taking the extra height.
+       sig: signatures as images, { prep, acct, appr }, printed in the Prepared by, Accounted by and Approved by boxes. */
+    var c = S.companies[v.companyId] || {}, type = v.vtype || "Cash Voucher", rcm = v.gstApp === "RCM";
+    var taxT = type === "Freight & Transport" || (type === "Self Invoice" && rcm), P = !taxT, wide = type === "Cash Voucher";
+    var INK = [15, 23, 42], HEAD = [30, 41, 59], BODY = [51, 65, 85], MUTE = [100, 116, 139], SUB = [71, 85, 105], FILL = [241, 245, 249];
+    var PT = 25.4 / 72, TH = 0.265, FR = 0.79, X0 = 3.97, XI = 4.76, XR = 205.85, PH = doc.internal.pageSize.getHeight();
+    function F(font, st, size, col) { doc.setFont(font, st); doc.setFontSize(size); doc.setTextColor(col[0], col[1], col[2]); }
+    function W(s0, em) { return doc.getTextWidth(s0) + (em ? em * doc.getFontSize() * PT * s0.length : 0); }
+    /* text with CSS-style letter spacing (em), aligned left, centre or right */
+    function T(s0, x, y, al, em) {
+      s0 = String(s0 == null ? "" : s0); var w = W(s0, em), x1 = al === "center" ? x - w / 2 : al === "right" ? x - w : x;
+      doc.text(s0, x1, y, em ? { charSpace: em * doc.getFontSize() * PT } : {});
     }
-    /* ---- payment details ---- */
-    var pH = 9, pw = [50, 44, 50, W - 144];
-    [["Mode of payment", "Cash  /  Cheque"], ["Payment date", ""], ["Reference", ""], ["Comments", ""]].forEach(function (k, i) {
-      var px = X + pw.slice(0, i).reduce(function (a, b) { return a + b; }, 0); if (i) vl(px, y, y + pH); lab(k[0], px + 3, y + 3.6); if (k[1]) { F("bold", 7.6, INK); T(k[1], px + 3, y + 7.6); }
+    /* slanted text (the format's bold italic): a skew about the baseline */
+    function TI(s0, x, y, al) {
+      var k = doc.internal.scaleFactor, py = (PH - y) * k, sk = 0.2, w = W(s0), x1 = al === "center" ? x - w / 2 : al === "right" ? x - w : x;
+      doc.internal.write("q 1 0 " + sk + " 1 " + (-sk * py).toFixed(3) + " 0 cm"); doc.text(s0, x1, y); doc.internal.write("Q");
+    }
+    /* a signature, as large as fits its box, standing on the line just above the box's label */
+    function sigAt(img, cx, bottom, mw, mh) {
+      if (!img) return; try { var ip = doc.getImageProperties(img), h = mh, w = ip.width * h / ip.height; if (w > mw) { w = mw; h = ip.height * w / ip.width; } doc.addImage(img, ip.fileType || "PNG", cx - w / 2, bottom - h, w, h); } catch (e) {}
+    }
+    function fit(s0, w) { s0 = String(s0 || ""); if (W(s0) <= w) return s0; while (s0.length > 1 && W(s0 + "…") > w) s0 = s0.slice(0, -1); return s0 + "…"; }
+    function box(x1, y1, x2, y2, col) { doc.setFillColor(col[0], col[1], col[2]); doc.rect(x1, y1, x2 - x1, y2 - y1, "F"); }
+    function hl(y, x1, x2, w) { box(x1 == null ? XI : x1, y, x2 == null ? XR : x2, y + (w || TH), INK); }
+    function vl(x, y1, y2, w) { box(x, y1, x + (w || TH), y2, INK); }
+    function lab(s0, x, y, al, em) { F("Lato", "bold", 5.25, MUTE); T(s0, x, y, al, em == null ? 0.063 : em); }
+    function money(n) { n = Number(n) || 0; var r = Math.round(n * 100) / 100; return "₹ " + r.toLocaleString("en-IN", r % 1 ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : {}); }
+    var MO = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"], d0 = String(v.voucherDate || "");
+    var dTxt = /^\d{4}-\d\d-\d\d/.test(d0) ? d0.slice(8, 10) + "-" + MO[Number(d0.slice(5, 7)) - 1] + "-" + d0.slice(0, 4) : "";
+    /* ---- rows ---- */
+    var top = X0, yH = top + FR, hH = P ? 31.48 : 25.4, yB = yH + hH + TH, yD = yB + 14.81 + TH, hD = P ? 6.61 : 6.88;
+    var yY = yD + hD + TH, hY = P ? 136.52 - FR - 14.55 - 7.67 - 3 * TH - yY : 38.9, yW = yY + hY + TH, yO = yW + 7.67 + TH, yE = yO + 14.55;
+    /* ---- header ---- */
+    var hdrBg = type === "Freight & Transport" ? [254, 240, 138] : type === "Self Invoice" ? [30, 58, 138] : [255, 255, 255], dark = type === "Self Invoice";
+    box(85.2, yH, XR, yH + hH, hdrBg);
+    var lx = P ? 9.52 : 7.94, lS = P ? 19.05 : 17.19, tx = P ? 33.01 : 28.47;
+    if (c.logo) { try { var pp = doc.getImageProperties(c.logo), lw = Math.min(pp.width * lS / pp.height, lS * 1.2); doc.addImage(c.logo, pp.fileType || "PNG", lx, yH + (hH - lS) / 2, lw, lS); tx = lx + lw + (P ? 4.17 : 3.07); } catch (e) {} }
+    var tw = 85.2 - tx - 3, nS = P ? 10.5 : 9.75, nLH = P ? 4.5 : 4.0;
+    F("Lato", "bold", nS, INK); var nm = doc.splitTextToSize(String(c.name || ""), tw).slice(0, 2);
+    F("Lato", "normal", 7.5, BODY); var ad = []; String(c.address || "").split(/\n/).forEach(function (s0) { if (s0.trim()) ad = ad.concat(doc.splitTextToSize(s0.trim(), tw)); }); ad = ad.slice(0, 3);
+    var g1 = P ? 5.55 : 5.03, g2 = P ? 4.5 : 3.96, aLH = 3.71;
+    var blockH = nS * PT * 0.72 + (nm.length - 1) * nLH + g1 + (ad.length ? g2 + (ad.length - 1) * aLH : 0) + 7.5 * PT * 0.22;
+    var by = yH + (hH - blockH) / 2 + nS * PT * 0.72;
+    F("Lato", "bold", nS, INK); nm.forEach(function (s0, i) { T(s0, tx, by + i * nLH); }); by += (nm.length - 1) * nLH + g1;
+    var gx = tx; F("Lato", "normal", 6.75, MUTE); T("GSTIN: ", gx, by); gx += W("GSTIN: ");
+    F("Lato", "bold", 7.5, INK); T(c.gstin || "-", gx, by); gx += W(c.gstin || "-") + 1.83;
+    F("Lato", "normal", 6.75, MUTE); T("State: ", gx, by); gx += W("State: "); F("Lato", "bold", 7.5, INK); T(c.stateCode || "-", gx, by);
+    F("Lato", "normal", 7.5, BODY); ad.forEach(function (s0, i) { T(s0, tx, by + g2 + i * aLH); });
+    var mid = (85.2 + XR) / 2, sub = dark ? [203, 213, 225] : SUB;
+    F("LatoSemi", "normal", 7.5, sub); T("PAYMENT VOUCHER", mid, yH + (P ? 7.67 : 6.09), "center", P ? 0.225 : 0.16);
+    var vS = P ? 18 : 15.75; F("Lato", "bold", vS, dark ? [255, 255, 255] : INK); T(fit(v.voucherNo || "", XR - 85.2 - 8), mid, yH + (P ? 17.46 : 14.29), "center", 0.025);
+    F("LatoSemi", "normal", 8.25, sub); T(dTxt, mid, yH + (P ? 25.13 : 20.9), "center", P ? 0.135 : 0.093);
+    if (!P) vl(84.93, yH, yH + hH);
+    hl(yB - TH);
+    /* ---- bill to · vendor signature · prepared by · supply of · ledger ---- */
+    var hB = 14.81;
+    F("Lato", "bold", 6.75, HEAD); T("BILL", 9.5, yB + 6.61, "center", 0.067); T("TO", 9.5, yB + 9.26, "center", 0.067);
+    var pS = P ? 13.5 : 10.5; F("Lato", "bold", pS, INK); T(fit(v.payee || "", 85.2 - 4 - (P ? 18.2 : 17.11)), P ? 18.2 : 17.11, yB + (P ? 8.46 : 8.2));
+    if (v.payeeIdNo) { F("Lato", "normal", 6, MUTE); T(idText(v.payeeIdNo, true), P ? 18.2 : 17.11, yB + 12.6); }
+    lab("VENDOR SIGNATURE", 100.07, yB + 12.96, "center", 0.04); vl(115.36, yB, yB + hB);
+    lab("PREPARED BY", 130.44, yB + 12.96, "center"); sigAt(sig.prep, 130.44, yB + 10.6, 27, 9.8); vl(145.52, yB, yB + hB);
+    var lgN = ledText(v.ledgers) || "-", lgX0 = 145.79;
+    if (!wide) {
+      F("Lato", "bold", 8.25, INK); T("Supply Of", 160.87, yB + 6.61, "center"); T(v.supplyOf || "-", 160.87, yB + 10.05, "center");
+      vl(175.95, yB, yB + hB); lgX0 = 176.21;
+    }
+    var lgS = wide ? 9.75 : 8.25, lgLH = wide ? 3.97 : 3.44, lgC = (lgX0 + XR) / 2; F("Lato", "bold", lgS, INK);
+    var lgL = doc.splitTextToSize(lgN, XR - lgX0 - 4).slice(0, 2), lgY = yB + (wide ? 5.42 : 5.82) - (lgL.length - 1) * (wide ? 1.98 : 1.6);
+    lab("LEDGER NAME", lgC, lgY, "center", 0.065); F("Lato", "bold", lgS, INK); lgL.forEach(function (s0, i) { T(s0, lgC, lgY + (wide ? 4.76 : 4.23) + i * lgLH, "center"); });
+    hl(yD - TH);
+    /* ---- description head ---- */
+    box(XI, yD, XR, yD + hD, FILL);
+    F("Lato", "bold", 6.75, HEAD); T("S.NO", 9.5, yD + 3.7, "center", 0.066); T("AMOUNT (₹)", 191.03, yD + 3.7, "center", 0.097);
+    F("Lato", "bold", 7.5, HEAD); T("DESCRIPTION", 95.25, yD + 4.23, "center", 0.137);
+    vl(14.29, yD, yW - TH); vl(175.95, yD, yO - TH); hl(yY - TH);
+    /* ---- lines (and Less: TDS) ---- */
+    var lines = (v.lines && v.lines.length ? v.lines : [{ d: v.narration || "", amt: v.total }]).slice(0, 5), tds = Number(v.tds) || 0;
+    var tH = tds ? 5.83 : 0, rH = (hY - (tds ? tH + TH : 0) - (lines.length - 1) * TH) / lines.length;
+    lines.forEach(function (ln, i) {
+      var ry = yY + i * (rH + TH), cy = ry + rH / 2;
+      F("Lato", "normal", 8.25, BODY); T(String(i + 1), 9.5, cy + 0.7, "center");
+      var dl = doc.splitTextToSize(String(ln.d || ""), 155).slice(0, rH > 12 ? 3 : rH > 8 ? 2 : 1); dl.forEach(function (s0, k) { T(s0, 95.25, cy + 0.7 + (k - (dl.length - 1) / 2) * 3.44, "center"); });
+      F("LatoSemi", "normal", 8.25, INK); T(money(ln.amt), 191.03, cy + 0.7, "center");
+      if (i < lines.length - 1) hl(ry + rH);
     });
-    y += pH; hl(X, R, y, 0.35, INK);
-    /* ---- sign-off: left empty for signatures ---- */
-    var sH = Math.max(14, Math.min(20, 142 - y)), sw = W / 5;
-    ["Receiver's signature", "Prepared by", "Accounted by", "Approved by", "Cashier seal"].forEach(function (k, i) { var sx = X + sw * i; if (i) vl(sx, y, y + sH); lab(k, sx + sw / 2, y + sH - 2.2, { align: "center" }); });
-    y += sH;
-    /* frame */
-    doc.setDrawColor(INK[0], INK[1], INK[2]); doc.setLineWidth(0.6); doc.rect(X, Y, W, y - Y); vl(split, Y, Y + hH, 0.35, INK);
-    /* footer */
-    var taxInv = type === "Freight & Transport" || (type === "Self Invoice" && rcm);
-    var left = String(c.name || "").toUpperCase(), right = taxInv ? "TAX INVOICE" : "NOT A TAX INVOICE", fy = Math.min(y + 4.5, 145.5);
-    F("bold", 6.6, INK); var lw0 = doc.getTextWidth(left), rw0 = doc.getTextWidth(right), gap = 9, sx0 = X + W / 2 - (lw0 + gap + rw0) / 2;
-    T(left, sx0, fy); T(right, sx0 + lw0 + gap, fy); var dx = sx0 + lw0 + gap / 2, dy = fy - 1.05;
-    doc.setFillColor(SL[0], SL[1], SL[2]); doc.triangle(dx - 1.2, dy, dx, dy - 1.2, dx + 1.2, dy, "F"); doc.triangle(dx - 1.2, dy, dx, dy + 1.2, dx + 1.2, dy, "F");
+    if (tds) {
+      var ty = yY + hY - tH; hl(ty - TH);
+      F("Lato", "normal", 8.25, BODY); T(String(lines.length + 1), 9.5, ty + tH / 2 + 0.8, "center");
+      F("Lato", "normal", 6, MUTE); T("LESS: TDS" + (v.tdsSection ? " (" + v.tdsSection + ")" : ""), 173.64, ty + tH / 2 + 0.27, "right", 0.085);
+      F("LatoSemi", "normal", 7.5, INK); TI(money(tds), 191.03, ty + tH / 2 + 0.8, "center");
+    }
+    hl(yW - TH);
+    /* ---- amount in words · net payable ---- */
+    var net = Math.round(((Number(v.total) || 0) - tds) * 100) / 100, px = P ? 7.97 : 7.41;
+    F("Lato", "normal", 5.25, MUTE); T("AMOUNT IN WORDS", px, yW + 2.38, null, 0.103);
+    F("Lato", "bold", 7.5, INK); TI(fit(inWords(net).replace(/^Rupees /, "INR "), 140), px - 0.13, yW + 5.82);
+    F("Lato", "bold", 6.75, SUB); T("NET PAYABLE:", P ? 172.47 : 172.96, yW + 4.76, "right", 0.109);
+    F("Lato", "bold", 9.38, INK); T(money(net), 191.03, yW + 4.76, "center");
+    hl(yO - TH);
+    /* ---- comments · mode · payment date · cashier seal · approved by ---- */
+    lab("COMMENTS & PAYABLE ADJUSTMENTS", px - 0.53 + (P ? 0.53 : 0), yO + (P ? 2.91 : 2.64), null, 0.135);
+    lab("PAYMENT REFERENCE (IF ANY):", px - 0.53 + (P ? 0.53 : 0), yO + (P ? 12.7 : 12.96), null, 0.135);
+    vl(84.93, yO, yE); lab("MODE OF PAYMENT", 100.07, yO + 5.55, "center"); F("Lato", "bold", 8.25, INK); T("Cash / Cheque", 100.07, yO + (P ? 10.05 : 9.79), "center");
+    vl(115.36, yO, yE); lab("PAYMENT DATE", 130.44, yO + 12.7, "center");
+    vl(145.52, yO, yE); lab("CASHIER SEAL", 160.73, yO + 12.7, "center");
+    vl(175.95, yO, yE); lab("APPROVED BY", 191.03, yO + 12.7, "center");
+    sigAt(sig.appr, 191.03, yO + 10.6, 27, 9.6);
+    /* ---- frame ---- */
+    box(X0, top, 206.64, yH, INK); box(X0, yE, 206.64, yE + FR, INK); box(X0, top, XI, yE + FR, INK); box(XR, top, 206.64, yE + FR, INK);
+    /* ---- tax box ---- */
+    var fy = 142.81, fS = P ? 7.5 : 6.75;
+    if (taxT) {
+      var tY = 120.12, tB = 2 * TH, cols = [4.5, 70.11, 98.16, 121.97, 146.05, 178.06, 205.85];
+      var taxable = Number(v.taxable != null ? v.taxable : v.total) || 0, rate = rcm ? Number(v.gstRate) || 0 : 0, tax = Math.round(taxable * rate) / 100, half = Math.round(tax * 50) / 100;
+      var hd = ["TAX PAYABLE ON REVERSE CHARGE BASIS", "TAXABLE VALUE", "CGST (" + (rate / 2).toFixed(1) + "%)", "SGST (" + (rate / 2).toFixed(1) + "%)", "TOTAL TAX (" + rate + "%)", "ACCOUNTED BY"];
+      var vals = [rcm ? "YES" : "NO", money(Math.round(taxable)), money(Math.round(half)), money(Math.round(tax - half)), money(Math.round(tax)), ""];
+      box(cols[0], tY + tB, XR, 128.06, FILL);
+      box(X0, tY, 206.37, tY + tB, INK); box(X0, 136.0, 206.37, 136.52, INK); box(X0, tY, cols[0], 136.52, INK); box(XR, tY, 206.37, 136.52, INK);
+      hl(128.06, cols[0], XR);
+      hd.forEach(function (h, i) {
+        var cx = (cols[i] + cols[i + 1]) / 2 + (i ? TH / 2 : 0); if (i) vl(cols[i], tY + tB, 136.0);
+        F("Lato", "bold", 6, HEAD); T(h, cx, 124.62, "center", 0.025);
+        if (i === 5) sigAt(sig.acct, cx, 135.6, 25, 6.8);
+        if (i === 0) { F("Lato", "bold", 9, INK); T(vals[0], cx, 133.09, "center", 0.07); } else if (vals[i]) { F("Lato", "bold", 8.25, INK); T(vals[i], cx, 133.09, "center"); }
+      });
+    }
+    /* ---- footer ---- */
+    F("Lato", "bold", fS, INK);
+    var left = String(c.name || "").toUpperCase(), right = taxT ? "TAX INVOICE" : "NOT A TAX INVOICE", lw0 = W(left, 0.2), rw0 = W(right, 0.2), gap = 3.6, dw = 2.5;
+    var sx0 = 104.94 - (lw0 + gap * 2 + dw + rw0) / 2; T(left, sx0, fy, null, 0.2); T(right, sx0 + lw0 + gap * 2 + dw, fy, null, 0.2);
+    var dx = sx0 + lw0 + gap + dw / 2, dy = fy - fS * PT * 0.36, dr = dw / 2;
+    doc.setFillColor(INK[0], INK[1], INK[2]); doc.triangle(dx - dr, dy, dx, dy - dr, dx + dr, dy, "F"); doc.triangle(dx - dr, dy, dx, dy + dr, dx + dr, dy, "F");
   }
   /* ================= Renewable Energy › Sales (energy billing, solar and windmills) =================
      The same flow serves solar plants and windmills (each generator is marked as one or the other). Each month a generator bills every consumer it supplies: energy charges on the units credited in the consumer's HT bill,
@@ -13628,7 +13817,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function goAdmin() {
         S.isAdmin = true; S.mode = modeSaved(); renderModeSw();
-        $("navbar").hidden = false; startData(); setTab(HOME_TAB); renderAdminMe();
+        $("navbar").hidden = false; startData(); setTab(HOME_TAB); renderAdminMe(); sigGate();
         function adminRefresh() {
           /* carry on viewing as the person chosen before moving between apps, once their companies and the people are in */
           if (vaResume()) return;

@@ -94,6 +94,15 @@
   shown, disabled, when picked again, and asked for when none is on file. A Cash Voucher has no address; a Self Invoice
   or Freight & Transport voucher still asks for it. The printed voucher shows the PAN, or the Aadhaar masked to its last
   four digits.
+- **Vouchers print in the KKSK payment voucher format** (A5 landscape, 594.96 × 420 pt, `drawVoucher`). With the tax box
+  (Freight & Transport, or a Self Invoice under RCM) the voucher sits at the top and the tax box, with Accounted by, below it;
+  without it the voucher fills the page with the same margin all round and the description area takes the extra height.
+- **Signatures.** Admins, purchasers, Expenses Operators, accountants, approvers and approval recorders sign once, with a
+  finger, stylus or mouse in a 3 : 1 box (or a photo of a paper signature, whitened), before they can carry on; they can
+  change it in Settings › Personalise. Kept in `sigs/<person id>` (`png`, trimmed to the ink on white; the same in Demo and
+  Live). The voucher prints the preparer's in Prepared by, the accountant's in Accounted by and the approver's in Approved by
+  (the one who signed on paper when an approval recorder entered it; the recorder's if the approver has none). Older entries
+  print with whatever signatures their people have since added.
 - **Vendors and ledgers are kept by the Accountant** (or an admin, also when viewing as them), in any app. A vendor is added from
   its first bill or proforma, as read; after that only the accountant changes its details. A bill can't be accounted until its
   vendor's details are complete (type, terms, address, valid GSTIN); its opening balance, entered by the accountant, approves the

@@ -622,7 +622,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15p
 .fv-stage.drag{cursor:grabbing}.fv-stage:focus-visible{box-shadow:inset 0 0 0 2px var(--kk,#009256)}
 .fv-sheet{margin:0 auto;position:relative;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.35);min-width:40px;min-height:40px}
 .fv-sheet canvas{display:block}
-.gsttab td.bad,.gsttab td.num.bad{color:var(--bad,#b3261e);font-weight:600}.gsttab tfoot td{font-weight:700}
+.gsttab td.bad,.gsttab td.num.bad{color:var(--bad,#b3261e);font-weight:600}.gsttab tfoot td{font-weight:700}.gstsup{font-weight:600;margin:2px 0 4px}
 .fv-native{flex:1;width:100%;border:0;background:#5f6b66;min-height:400px}
 .fv-img{position:absolute;left:50%;top:50%;max-width:none;pointer-events:none}
 .fv-note{padding:24px;color:var(--muted);font-size:13.5px;background:#fff}
@@ -11882,10 +11882,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function billGst(b) { return Number(b.fcGst != null ? b.fcGst : b.gstAmt) || 0; }
   function coState(cid) { var c = S.companies[cid] || {}; return String(c.stateCode || String(c.gstin || "").slice(0, 2) || ""); }
-  /* from another state: the vendor's GSTIN starts with another state code than the company's; an overseas vendor too */
+  /* Interstate when the vendor's GSTIN starts with another state code than the company's (an overseas vendor too); intrastate
+     when they are the same. Decided from the codes, never chosen; null when a code is missing. */
   function billInter(b) {
-    if (b.gstSupply) return b.gstSupply === "inter"; var v = S.vendors[b.vendorId] || {}; if (v.type === "overseas" || (b.currency && b.currency !== "INR")) return true;
-    var vs = String(v.gstin || b.vendorGstin || "").slice(0, 2), cs = coState(b.companyId); return !!(vs && cs && vs !== cs);
+    var v = S.vendors[b.vendorId] || {}; if (v.type === "overseas" || (b.currency && b.currency !== "INR")) return true;
+    var vs = String(v.gstin || b.vendorGstin || "").slice(0, 2), cs = coState(b.companyId); if (!/^\d\d$/.test(vs) || !/^\d\d$/.test(cs)) return null; return vs !== cs;
   }
   /* The GST table: one row per ticked credit type (Input ticked to start). Within the state a row is CGST and SGST, always
      equal, and only CGST is typed; from another state a row is IGST. The last row takes what is left, so the total is the
@@ -11916,6 +11917,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function gstCheck(b, D) {
     var G = round2(billGst(b)); if (!(G > 0)) return "";
+    if (D.gstInter == null) return "The supply can't be told: " + (/^\d\d$/.test(coState(b.companyId)) ? "the vendor's GSTIN" : "the company's GSTIN or state code") + " is missing. Fill it in first.";
     if (!D.gstTypes.length) return "Tick at least one: Input, Input (RCM) or Input - Ineligible.";
     var rows = gstRows(b, D), name = function (k) { return GST_TYPES.filter(function (t) { return t[0] === k; })[0][1]; };
     for (var i = 0; i < rows.length; i++) {
@@ -11991,7 +11993,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var lw = el("div", { class: "form", style: "margin-top:12px" }); lw.appendChild(lf);
     if (isB && billGst(x) > 0) {
       var gf0 = el("div", { class: "f wide" }); gf0.appendChild(el("span", { class: "lb" }, "GST Ledgers"));
-      var sup = el("select", { class: "field", id: "aoGstSup", "aria-label": "Supply", style: "max-width:340px" }); fillSelect(sup, [["intra", "Within the state: CGST + SGST"], ["inter", "From another state: IGST"]], D.gstInter ? "inter" : "intra"); sup.disabled = locked; gf0.appendChild(sup);
+      var vg0 = S.vendors[x.vendorId] || {}, vsc = String(vg0.gstin || x.vendorGstin || "").slice(0, 2), csc = coState(x.companyId);
+      gf0.appendChild(el("div", { class: "gstsup", id: "aoGstSup" }, D.gstInter == null ? "Supply: not known yet (a state code is missing)" : (D.gstInter ? "Interstate: IGST" : "Intrastate: CGST + SGST") + (vg0.type === "overseas" || (x.currency && x.currency !== "INR") ? " (vendor overseas)" : " (vendor's state code " + vsc + ", company's " + csc + ")")));
       var tk = el("div", { class: "checks", id: "aoGstTypes", role: "group", "aria-label": "Credit type", style: "margin:8px 0" });
       GST_TYPES.forEach(function (t) { var lb0 = el("label", { class: "check" }), cb = el("input", { type: "checkbox", value: t[0] }); cb.checked = D.gstTypes.indexOf(t[0]) >= 0; cb.disabled = locked;
         cb.addEventListener("change", function () { if (cb.checked) { if (D.gstTypes.indexOf(t[0]) < 0) D.gstTypes.push(t[0]); } else D.gstTypes = D.gstTypes.filter(function (k) { return k !== t[0]; }); drawG(); });
@@ -12006,7 +12009,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       };
       var drawG = function () {
         gt.textContent = ""; var rows = gstRows(x, D), G = round2(billGst(x)), tb = el("table", { class: "t gsttab" }), th = el("tr");
-        var hs = D.gstInter ? [["Credit type", ""], ["IGST ledger", ""], ["IGST", "r num"], ["Total", "r num"]] : [["Credit type", ""], ["CGST ledger", ""], ["CGST", "r num"], ["SGST ledger", ""], ["SGST", "r num"], ["Total", "r num"]];
+        var hs = D.gstInter ? [["Credit type", ""], ["IGST", "r num"], ["Total", "r num"]] : [["Credit type", ""], ["CGST", "r num"], ["SGST", "r num"], ["Total", "r num"]];
         hs.forEach(function (h) { th.appendChild(el("th", { class: h[1] }, h[0])); });
         var thd = el("thead"); thd.appendChild(th); tb.appendChild(thd); var tbd = el("tbody"); tb.appendChild(tbd);
         if (!rows.length) { var er = el("tr"); er.appendChild(el("td", { colspan: String(hs.length), class: "hint" }, "Tick at least one credit type.")); tbd.appendChild(er); }
@@ -12019,18 +12022,15 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
             ip.addEventListener("input", function () { D.gstA[r.t] = ip.value; refresh(); }); ip.addEventListener("blur", function () { if (num(ip.value) != null) { ip.value = fmtInput(ip.value); D.gstA[r.t] = ip.value; } });
             td.appendChild(ip); return td;
           };
-          var ledCell = function (h) { var l = gstLedFor(D.gstInter, r.t, h); return el("td", { class: l ? "" : "bad" }, l ? l.name : "No " + h.toUpperCase() + " " + nm + " ledger"); };
-          if (D.gstInter) { tr.appendChild(ledCell("igst")); tr.appendChild(amtCell(r.i)); }
-          else { tr.appendChild(ledCell("cgst")); tr.appendChild(amtCell(r.c)); tr.appendChild(ledCell("sgst")); tr.appendChild(el("td", { class: "r num", "data-sg": r.t }, r.s == null ? "" : amt2(r.s))); }
+          if (D.gstInter) tr.appendChild(amtCell(r.i));
+          else { tr.appendChild(amtCell(r.c)); tr.appendChild(el("td", { class: "r num", "data-sg": r.t }, r.s == null ? "" : amt2(r.s))); }
           tr.appendChild(el("td", { class: "r num", "data-tot": r.t }, r.tot == null ? "" : amt2(r.tot))); tbd.appendChild(tr);
         });
         var tf = el("tfoot"), fr = el("tr"); fr.appendChild(el("td", { colspan: String(hs.length - 1), class: "r" }, "Total GST (the bill's GST is " + amt2(G) + ")")); fr.appendChild(el("td", { class: "r num", id: "aoGstTot" }, "")); tf.appendChild(fr); tb.appendChild(tf);
         gt.appendChild(tb); refresh();
       };
-      sup.addEventListener("change", function () { D.gstInter = sup.value === "inter"; drawG(); });
       drawG();
-      var vg = S.vendors[x.vendorId] || {}, cs0 = coState(x.companyId);
-      gf0.appendChild(el("span", { class: "hint" }, "The bill's GST, " + amt2(billGst(x)) + ", goes to these ledgers. " + (vg.gstin && cs0 ? "Vendor's state code " + String(vg.gstin).slice(0, 2) + ", company's " + cs0 + ": " + (String(vg.gstin).slice(0, 2) === cs0 ? "within the state." : "another state.") : "Choose within the state or from another state.")));
+      gf0.appendChild(el("span", { class: "hint" }, "The bill's GST, " + amt2(billGst(x)) + ", goes to the GST ledgers of the credit types ticked."));
       gf0.appendChild(el("span", { class: "err", id: "aoGstLedE", hidden: "" })); lw.appendChild(gf0);
     }
     if (itCard) f.insertBefore(itCard, det); f.insertBefore(lw, det); if (eo.info) eo.info(); /* the running totals, now that they are on the page */

@@ -118,8 +118,9 @@
   sections are the ones offered when accounting; reverse charge offers 5, 12, 18, 28 and 40%. GST ledgers: CGST, SGST and
   IGST Input, Input (RCM) and Input - Ineligible (migration `20261028170000`); TDS started with the sections the app offered.
 - **GST on a bill is spread over the GST ledgers when it is accounted**: tick one or more credit types (Input, ticked to start;
-  Input (RCM); Input - Ineligible). Within the state each type is a row of CGST and SGST, always equal, with only CGST typed;
-  from another state (or abroad) a row is IGST. The last row takes the balance, no row may be nil, and the rows add up to the
+  Input (RCM); Input - Ineligible). Intrastate or interstate is decided from the vendor's and company's GSTIN state codes (not
+  chosen; accounting waits if a code is missing). Intrastate each type is a row of CGST and SGST, always equal, with only CGST
+  typed; interstate (or abroad) a row is IGST. The last row takes the balance, no row may be nil, and the rows add up to the
   bill's GST exactly (`gstLedgers` [{id, amt}], `gstSupply` intra / inter, `gstTypes`). The expense ledgers must also add up
   to the purchaser's taxable amount to the paisa; anything else is sent back. Union Territory tax (UTGST) is not offered:
   every company is registered in Tamil Nadu, and supplies from a UT are inter-state (IGST). GST posts to its ledgers in

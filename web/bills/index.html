@@ -618,7 +618,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15p
 .fv-btn:disabled{opacity:.35;cursor:default}.fv-btn[aria-pressed="true"]{background:var(--surface);border-color:var(--kk,#009256);color:var(--forest,#10281F)}
 .fv-pg,.fv-zm{font-size:12.5px;color:var(--muted);padding:0 4px;min-width:56px;text-align:center}
 .fv-sep{width:1px;height:20px;background:var(--line);margin:0 4px}
-.fv-stage{flex:1;overflow:auto;background:#5f6b66;cursor:grab;position:relative;padding:12px;outline:none;touch-action:none;user-select:none}
+.fv-stage{flex:1;overflow:auto;overflow-y:scroll;scrollbar-gutter:stable;background:#5f6b66;cursor:grab;position:relative;padding:12px;outline:none;touch-action:none;user-select:none}
 .fv-stage.drag{cursor:grabbing}.fv-stage:focus-visible{box-shadow:inset 0 0 0 2px var(--kk,#009256)}
 .fv-sheet{margin:0 auto;position:relative;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.35);min-width:40px;min-height:40px}
 .fv-sheet canvas{display:block}
@@ -3492,7 +3492,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       else if (e.key === "PageDown" || (e.key === "ArrowRight" && !V.fit && stage.scrollWidth <= stage.clientWidth + 1) || (e.key === "ArrowRight" && V.fit)) { go(V.page + 1); e.preventDefault(); }
       else if (e.key === "PageUp" || (e.key === "ArrowLeft" && (V.fit || stage.scrollWidth <= stage.clientWidth + 1))) { go(V.page - 1); e.preventDefault(); }
     });
-    var ro = window.ResizeObserver ? new ResizeObserver(function () { if (V.fit && (V.pdf || V.img)) draw(); }) : null; if (ro) ro.observe(stage);
+    /* redraw on a real change of size only, once it settles: a scroll bar coming and going must not set off redraw after redraw */
+    var lastW = 0, lastH = 0, rt = 0;
+    var ro = window.ResizeObserver ? new ResizeObserver(function () { var w = stage.clientWidth, h = stage.clientHeight; if (Math.abs(w - lastW) < 24 && Math.abs(h - lastH) < 24) return; clearTimeout(rt); rt = setTimeout(function () { lastW = stage.clientWidth; lastH = stage.clientHeight; if (V.fit && (V.pdf || V.img) && !stage.hidden) draw(); }, 150); }) : null; if (ro) ro.observe(stage);
     window.bvFiles.get(meta.path).then(function (blob) {
       if (meta.type === "application/pdf") return blob.arrayBuffer().then(function (buf) { return pdfLib().then(function (L) { return L.getDocument({ data: new Uint8Array(buf), isEvalSupported: false }).promise; }); }).then(function (pdf) { V.pdf = pdf; V.pages = pdf.numPages; V.url = URL.createObjectURL(blob.type === "application/pdf" ? blob : new Blob([blob], { type: "application/pdf" })); nb.hidden = false; if (natOn()) natShow(true); });
       V.url = URL.createObjectURL(blob);
@@ -11930,10 +11932,18 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     det.appendChild(el("p", { style: "margin:0 0 6px" }, (isB ? "Narration: " : "Description: ") + (vl ? "" : x.narration || "None")));
     if (vl) vl.forEach(function (ln, i) { det.appendChild(el("div", null, (i + 1) + ". " + ln.d)); });
     if (!isB && x.supplyOf) det.appendChild(el("div", { class: "hint" }, "Supply of: " + x.supplyOf));
+    /* the items read from the bill, always shown, above the ledgers */
+    var itCard = null;
     if (isB && x.ex && (x.ex.items || []).length) {
-      var it = el("details"); it.appendChild(el("summary", { style: "cursor:pointer;font-weight:600" }, "Items read from the bill (" + x.ex.items.length + ")"));
-      var tw = el("div", { class: "list scroll" }); it.appendChild(tw); det.appendChild(it);
-      sortTable(tw, "aoItems", [{ label: "Item", cls: "desc", cell: function (r, td) { txt(td, r.description || ""); } }, { label: "Qty", cls: "r num", cell: function (r, td) { txt(td, r.qty == null ? "" : String(r.qty) + (r.unit ? " " + r.unit : "")); } }, { label: "Amount", cls: "r num", cell: function (r, td) { txt(td, r.taxable != null ? amt2(r.taxable) : r.amount != null ? amt2(r.amount) : ""); } }, { label: "Claude's ledger", cell: function (r, td) { txt(td, ledName(r.lg) || ""); } }], x.ex.items, { sortIndex: -1 });
+      var its = x.ex.items, hasH = its.some(function (r) { return r.hsn; }), hasR = its.some(function (r) { return r.rate != null; });
+      itCard = el("div", { class: "card", style: "padding:14px 18px;margin:12px 0" }); itCard.appendChild(el("h3", { style: "margin:0 0 8px" }, "Items Read From the Bill (" + its.length + ")"));
+      var tw = el("div", { class: "list scroll" }); itCard.appendChild(tw);
+      var ic = [{ label: "#", cls: "r num", cell: function (r, td) { txt(td, String(its.indexOf(r) + 1)); } }, { label: "Item", cls: "desc", cell: function (r, td) { txt(td, r.description || ""); } }];
+      if (hasH) ic.push({ label: "HSN / SAC", cell: function (r, td) { txt(td, r.hsn || ""); } });
+      ic.push({ label: "Qty", cls: "r num", cell: function (r, td) { txt(td, r.qty == null ? "" : String(r.qty) + (r.unit ? " " + r.unit : "")); } });
+      if (hasR) ic.push({ label: "Rate", cls: "r num", cell: function (r, td) { txt(td, r.rate != null ? amt2(r.rate) : ""); } });
+      ic.push({ label: "Amount", cls: "r num", cell: function (r, td) { txt(td, r.taxable != null ? amt2(r.taxable) : r.amount != null ? amt2(r.amount) : ""); } });
+      sortTable(tw, "aoItems", ic, its, { sortIndex: -1 });
     }
     if (x.acctNote) det.appendChild(el("div", { class: "flag w", style: "margin-top:8px" }, "Accountant's note: " + x.acctNote));
     f.appendChild(det);
@@ -11968,10 +11978,11 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       gf0.appendChild(el("span", { class: "hint" }, "The bill's GST, " + amt2(billGst(x)) + ", goes to these ledgers. " + (vg.gstin && cs0 ? "Vendor's state code " + String(vg.gstin).slice(0, 2) + ", company's " + cs0 + ": " + (String(vg.gstin).slice(0, 2) === cs0 ? "within the state." : "another state.") : "Choose within the state or from another state.")));
       gf0.appendChild(el("span", { class: "err", id: "aoGstLedE", hidden: "" })); lw.appendChild(gf0);
     }
-    f.insertBefore(lw, det); if (eo.info) eo.info(); if (go0 && go0.info) go0.info(); /* the running totals, now that they are on the page */
+    if (itCard) f.insertBefore(itCard, det); f.insertBefore(lw, det); if (eo.info) eo.info(); if (go0 && go0.info) go0.info(); /* the running totals, now that they are on the page */
     f.appendChild(form);
     if (locked) Array.prototype.forEach.call($("aoBody").querySelectorAll("#aoLed select, #aoLed input, #aoLed button, #aoGstLed select, #aoGstLed input, #aoGstLed button"), function (b0) { b0.disabled = true; });
     var acts = $("aoActs"); acts.textContent = "";
+    var cn = el("button", { class: "btn", type: "button" }, "Cancel"); cn.title = "Back to Accounting, without saving"; cn.addEventListener("click", backToAcct);
     if (vNeed && !locked) {
       var vf = el("div", { class: "flag e", style: "margin:0 0 12px" }); vf.innerHTML = WARN_SVG; vf.appendChild(el("span", null, "This bill can't be accounted yet: its vendor still needs " + vNeed.join("; ") + ". "));
       var vb = el("button", { class: "link-btn", type: "button" }, "Fill in the vendor"); vb.addEventListener("click", function () { var id = x.vendorId; setTab("Vendors"); openVendor(id); }); vf.appendChild(vb);
@@ -11983,6 +11994,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var sb = el("button", { class: "btn danger" }, "Send back"); sb.addEventListener("click", acctSendBack); acts.appendChild(sb);
     }
     if (!isB && S.downloads && acctOk(x)) { var pv = el("button", { class: "btn" }, "Print voucher"); pv.addEventListener("click", function () { printVoucher(x.id, pv); }); acts.appendChild(pv); }
+    acts.appendChild(cn);
   }
   function acctCheck() {
     var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, errs = [];

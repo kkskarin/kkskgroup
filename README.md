@@ -117,6 +117,8 @@
   the Ledgers list but changed or removed only from GST or TDS. Tax ledgers are not offered as expense ledgers. The TDS
   sections are the ones offered when accounting; reverse charge offers 5, 12, 18, 28 and 40%. GST ledgers: CGST, SGST and
   IGST Input, Input (RCM) and Input - Ineligible (migration `20261028170000`); TDS started with the sections the app offered.
+- **Cash limits (Payment Entry):** cash to one person stays under ₹10,000 a day; Freight & Transport vouchers can be paid up
+  to ₹30,000 in cash a day (`CASH_FREIGHT`, `payFreight`). Cheques and NEFT / RTGS have no limit.
 - **Signatures.** Admins, purchasers, Expenses Operators, accountants, approvers and approval recorders sign once, with a
   finger, stylus or mouse in a 3 : 1 box (or a photo of a paper signature, whitened), before they can carry on; they can
   change it in Settings › Personalise. Kept in `sigs/<person id>` (`png`, trimmed to the ink on white; the same in Demo and

@@ -1144,7 +1144,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secMark" hidden>
     <div class="head">
-      <div><h2>Payment Entry</h2><p class="sub">Everything approved and not yet paid. <b>Plan for Payment</b>: tick bills by vendor (earliest due first), set what to pay now, choose Cheque, NEFT / RTGS or Cash and A/c Payee, then print every cheque in one go with running numbers. <b>Already Paid</b>: record a payment made outside the app (cheque, NEFT / RTGS, net banking, credit card or cash) with its cheque number or transaction ID. Cash stays under ₹10,000 a payee a day.</p></div>
+      <div><h2>Payment Entry</h2><p class="sub">Everything approved and not yet paid. <b>Plan for Payment</b>: tick bills by vendor (earliest due first), set what to pay now, choose Cheque, NEFT / RTGS or Cash and A/c Payee, then print every cheque in one go with running numbers. <b>Already Paid</b>: record a payment made outside the app (cheque, NEFT / RTGS, net banking, credit card or cash) with its cheque number or transaction ID. Cash stays under ₹10,000 a payee a day (Freight &amp; Transport vouchers: up to ₹30,000; cheques have no limit).</p></div>
       <span class="grow"></span>
       <select class="field" id="mkCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
@@ -6986,9 +6986,15 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* ================= Payment Entry ================= */
   /* Two views: Vendors (bills, opening balances, proforma and import instalments) and Vouchers (cash vouchers paid back).
      Everything the admin approved and not yet paid, by when it falls due. A payment that differs from the approved amount needs a reason.
-     Every payment needs its mode and reference; cash is only for vouchers, and under ₹10,000 to one person in a day. */
+     Every payment needs its mode and reference; cash is only for vouchers, and under ₹10,000 to one person in a day
+     (Freight & Transport vouchers: up to ₹30,000 a day; cheques have no limit). */
   var MK = { amts: {}, dates: {}, refs: {}, modes: {}, view: "pay", side: "vendors", busy: false, stale: false, doneLimit: 100, how: "plan", pl: { sel: {}, amt: {}, mode: {}, acp: {}, bank: {}, book: {} } };
-  var TX_DAYS = 3, CASH_LIMIT = 10000;
+  var TX_DAYS = 3, CASH_LIMIT = 10000, CASH_FREIGHT = 30000;
+  /* the voucher(s) a payment row or plan item pays: Freight & Transport ones may go up to CASH_FREIGHT in cash a day */
+  function payFreight(x) {
+    var ids = x ? (x.v ? [x.v.id] : x.voucherId ? [x.voucherId] : x.voucherIds || []) : [], R = (S.raw && S.raw.vouchers) || S.vouchers || {};
+    return ids.length > 0 && ids.every(function (id) { var v = R[id] || S.vouchers[id]; return v && v.vtype === "Freight & Transport"; });
+  }
   /* Modes. Plan for payment: cheque, NEFT/RTGS, cash. Already paid: cheque, NEFT/RTGS, net banking, credit card, cash
      (SWIFT for foreign currency). Cheque and NEFT/RTGS need the cheque number; net banking its transaction ID. UPI is kept for older entries. */
   var PAYMODES = [["advance", "From cash advance", ""], ["neft", "NEFT / RTGS", "Cheque number"], ["cheque", "Cheque", "Cheque number"], ["netbank", "Net banking", "Transaction ID"], ["card", "Credit card", ""], ["upi", "UPI", "UPI reference"], ["swift", "SWIFT / wire", "SWIFT reference"], ["cash", "Cash", ""]];
@@ -7239,10 +7245,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     sortTable(tw, "plIssue", cols, lines, {});
     var tl = null; if (mode === "cheque") { tl = el("label", { class: "check", style: "margin-top:10px" }); var tc = el("input", { type: "checkbox", id: "plTest" }); tl.appendChild(tc); tl.appendChild(document.createTextNode(" Test print: put the scan behind the text (plain paper)")); body.appendChild(tl); }
     var title = mode === "cheque" ? "Print " + plural(lines.length, "cheque") : mode === "neft" ? "NEFT / RTGS for " + plural(lines.length, "payee") : "Record " + plural(lines.length, "cash payment");
-    var intro = mode === "cheque" ? "One cheque per payee, numbered from each cheque book. Change a number and the ones after it follow. One PDF holds every cheque, a page each; print at 100%." : mode === "neft" ? "Each takes the cheque number given with the NEFT / RTGS request. The payments are recorded now; the bank's form is printed from Paid." : "Recorded as paid in cash today. Cash stays under ₹10,000 a payee a day.";
+    var intro = mode === "cheque" ? "One cheque per payee, numbered from each cheque book. Change a number and the ones after it follow. One PDF holds every cheque, a page each; print at 100%." : mode === "neft" ? "Each takes the cheque number given with the NEFT / RTGS request. The payments are recorded now; the bank's form is printed from Paid." : "Recorded as paid in cash today. Cash stays under ₹10,000 a payee a day (Freight & Transport: up to ₹30,000).";
     popForm(title, intro, body, mode === "cheque" ? "Print and Record" : "Record", function () {
       var d = parseDate($("plDate").value); if (!d) { errOn("plDate", "Choose the date."); return false; }
-      if (mode === "cash") { var bad = ""; lines.forEach(function (l) { var x = { type: l.g.vid ? "vendor" : "vch", vid: l.g.vid, payee: l.g.name }; bad = bad || payCheck(x, l.amt, d, "cash", ""); }); if (bad) { toast(bad); return false; } }
+      if (mode === "cash") { var bad = ""; lines.forEach(function (l) { var vids = l.g.items.filter(function (it) { return MK.pl.sel[it.key]; }).map(function (it) { return it.v ? it.v.id : it.voucherId || ""; }), x = { type: l.g.vid ? "vendor" : "vch", vid: l.g.vid, payee: l.g.name, voucherIds: vids.indexOf("") < 0 ? vids : [] }; bad = bad || payCheck(x, l.amt, d, "cash", ""); }); if (bad) { toast(bad); return false; } }
       var test = mode === "cheque" && $("plTest") && $("plTest").checked;
       return planRecord(lines, mode, d).then(function (made) {
         if (!made) return false;
@@ -7336,7 +7342,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!REF_FREE[mode] && !String(ref || "").trim()) return "Enter the " + modeInfo(mode)[2].toLowerCase() + ".";
     if (mode === "cash") {
       var key = x && (x.type === "vcr" || x.type === "vch") ? x.payeeId || normName(x.payee || "") : "v:" + ((x && x.vid) || ""), before = cashToPayeeOn(key, date, skipId);
-      if (before + n >= CASH_LIMIT) return "Cash to " + (x.payee || "this person") + " on " + fmtDate(date) + " would come to " + money(before + n) + (before ? " (" + money(before) + " already paid in cash that day)" : "") + ". Cash must stay under " + money(CASH_LIMIT) + " a person a day; pay by cheque.";
+      if (payFreight(x)) { if (before + n > CASH_FREIGHT + 0.004) return "Cash to " + (x.payee || "this transporter") + " on " + fmtDate(date) + " would come to " + money(before + n) + (before ? " (" + money(before) + " already paid in cash that day)" : "") + ". Freight & Transport can be paid up to " + money(CASH_FREIGHT) + " in cash a day; pay the rest by cheque."; }
+      else if (before + n >= CASH_LIMIT) return "Cash to " + (x.payee || "this person") + " on " + fmtDate(date) + " would come to " + money(before + n) + (before ? " (" + money(before) + " already paid in cash that day)" : "") + ". Cash must stay under " + money(CASH_LIMIT) + " a person a day; pay by cheque.";
     }
     return "";
   }
@@ -7395,7 +7402,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* The pop-up for a payment or discount: new (x given) or an existing one (t given). */
   function txForm(x, t, amountTyped, kindDefault) {
     var isVcr = t ? !!(t.vcrId || t.voucherId) : x.type === "vcr" || x.type === "vch", cur = t ? t.currency || "INR" : x.cur, isInst = isVcr || (t ? !!t.advanceId : x.type === "inst"), cid = t ? t.companyId : x.cid, vid = t ? t.vendorId : x.vid, v = isVcr ? { name: t ? t.payee : x.name } : S.vendors[vid] || {};
-    var px = x || (t ? { type: t.voucherId ? "vch" : isVcr ? "vcr" : isInst ? "inst" : "vendor", cur: cur, payee: t.payee, payeeId: t.payeeId } : null);
+    var px = x || (t ? { type: t.voucherId ? "vch" : isVcr ? "vcr" : isInst ? "inst" : "vendor", cur: cur, payee: t.payee, payeeId: t.payeeId, voucherId: t.voucherId || "" } : null);
     var body = el("div", { class: "mform" });
     var ty = el("select", { class: "field", id: "txKind" }); fillSelect(ty, isInst ? [["payment", "Payment"]] : [["payment", "Payment"], ["discount", "Discount received"]], t ? t.kind : kindDefault || "payment");
     body.appendChild(fld("Type", ty, isVcr ? "Pays back the cash in this Voucher Checking Report." : isInst ? "Instalments are paid in full or in part; discounts go against the vendor's bills." : ""));

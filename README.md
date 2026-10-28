@@ -97,6 +97,15 @@
 - **Vouchers print in the KKSK payment voucher format** (A5 landscape, 594.96 × 420 pt, `drawVoucher`). With the tax box
   (Freight & Transport, or a Self Invoice under RCM) the voucher sits at the top and the tax box, with Accounted by, below it;
   without it the voucher fills the page with the same margin all round and the description area takes the extra height.
+- **Templates (Settings › Templates, Bills & Vouchers app, admins only)** set how the internal prints look: the checking
+  reports (Bill, Advance, Voucher), the vendor statement and Ledger Statement (now also as a PDF), and the payment reports
+  (Payables, Vendor Payables, Payment Plan, Transactions, the weekly / monthly / yearly report, Payments in a Period). A form
+  with a live preview of the latest real document (all divisions; nothing is downloaded or marked printed): colours, table
+  text size, logo and key facts on or off, every fixed label renamed or hidden (columns, totals, sign-off boxes, title
+  words), signatures on checking reports, a footer note. Kept in `tpls/<doc>`; a checking report can also have
+  `tpls/<doc>__<division>` (or `useDefault`). Without a template a document prints as standard. Vouchers keep their fixed
+  format; cheques, NEFT / RTGS forms and Renewable Energy letterpads have their own templates. Hooks are in `pdfLook`
+  (`doc.__tpl`, set by `newPdf(jsPDF, key, div)`).
 - **Signatures.** Admins, purchasers, Expenses Operators, accountants, approvers and approval recorders sign once, with a
   finger, stylus or mouse in a 3 : 1 box (or a photo of a paper signature, whitened), before they can carry on; they can
   change it in Settings › Personalise. Kept in `sigs/<person id>` (`png`, trimmed to the ink on white; the same in Demo and

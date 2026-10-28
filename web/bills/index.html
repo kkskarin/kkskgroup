@@ -408,6 +408,15 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .costgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:6px}
 .modal.wide{max-width:520px;max-height:calc(100vh - 32px);overflow:auto}
 .modal.sigm{max-width:640px}
+.tpgrid{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:16px;align-items:start}
+.tpform .card{margin-bottom:12px}
+.tprow{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+.tpcol{display:flex;align-items:center;gap:8px;font-size:13px}.tpcol input{width:40px;height:32px;padding:0;border:1px solid var(--line,#cbd5e1);border-radius:8px;background:none}
+.tpkind{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted,#64748b);margin:12px 0 4px}
+.tpw{display:flex;align-items:center;gap:8px;margin:4px 0}.tpw .field{flex:1;min-width:0}.tpw input[type=checkbox]{width:18px;height:18px;flex:none}
+.tpprev{position:sticky;top:12px}.tphead{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted,#64748b);margin-bottom:6px}
+.tppages canvas{display:block;width:100%;height:auto;background:#fff;border:1px solid var(--line,#e2e8f0);border-radius:8px;box-shadow:0 4px 14px rgba(15,23,42,.08);margin-bottom:12px}
+@media (max-width:900px){.tpgrid{grid-template-columns:1fr}.tpprev{position:static}}
 .sigpad{position:relative;margin:12px 0 8px;border:1.5px dashed var(--line,#cbd5e1);border-radius:12px;background:#fff;overflow:hidden}
 .sigpad canvas{display:block;width:100%;aspect-ratio:3/1;touch-action:none;cursor:crosshair;-webkit-user-select:none;user-select:none}
 .sigpad .sigline{position:absolute;left:6%;right:6%;bottom:24%;border-bottom:1px solid #cbd5e1;pointer-events:none}
@@ -835,7 +844,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <div class="form-foot" id="aoActs"></div>
   </section>
   <section id="secBooks" hidden>
-    <div class="head"><div class="grow"><h2>Ledger Statements</h2><p class="sub">Approved bills, proforma and import tax bills, and vouchers, posted to their ledgers. Choose a ledger to see its entries.</p></div><div class="acts2"><button class="btn" id="bkXls" type="button">Download Excel</button></div></div>
+    <div class="head"><div class="grow"><h2>Ledger Statements</h2><p class="sub">Approved bills, proforma and import tax bills, and vouchers, posted to their ledgers. Choose a ledger to see its entries.</p></div><div class="acts2"><button class="btn" id="bkPdf" type="button">Download PDF</button><button class="btn" id="bkXls" type="button">Download Excel</button></div></div>
     <div class="filters">
       <div class="seg" role="tablist" aria-label="Book"><button type="button" role="tab" id="bkSide_bills" aria-selected="true">Bills</button><button type="button" role="tab" id="bkSide_proformas" aria-selected="false">Proformas</button><button type="button" role="tab" id="bkSide_vouchers" aria-selected="false">Vouchers</button></div>
       <select class="field" id="bkCo" aria-label="Company"></select>
@@ -1310,6 +1319,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     <h3 style="margin-top:4px">Changes <span id="auN"></span></h3>
     <div class="card list scroll" id="auList"></div>
   </section>
+  <section id="secTpl" hidden>
+    <div class="head"><div><h2>Templates</h2><p class="sub">How the internal prints look: colours, what shows and what it is called. Checking reports can have a version per division; everything else is the same everywhere. Vouchers keep the KKSK voucher format, and cheques, bank forms and letterpads have their own templates.</p></div></div>
+    <div id="tpBody"></div>
+  </section>
   <section id="secActivity" hidden>
     <div class="head"><div><h2>Show Activity</h2><p class="sub" id="actSub">Each person's own work: what they did, how long it took, and what is still waiting on them. Tap a person for the full detail. Only admins and Chief Accountants can see this.</p></div></div>
     <div class="filters">
@@ -1472,7 +1485,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var S = { staff: {}, salruns: {}, regions: {}, ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secApr", "secArch"];
+  var VIEWS = ["secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1657,7 +1670,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var DIV = DIVS[APP] ? APP : null;
   function divOf(x) { return (x && x.div) || "mnt"; }
   function divName(x) { return (DIVS[typeof x === "string" ? x : divOf(x)] || DIVS.mnt).name; }
-  function inDiv(x) { if (DIV) return divOf(x) === DIV; return (APP !== "acc" && APP !== "fin") || myDivAll() || myDivs().indexOf(divOf(x)) >= 0; }
+  function inDiv(x) { if (PV_ALL) return true; if (DIV) return divOf(x) === DIV; return (APP !== "acc" && APP !== "fin") || myDivAll() || myDivs().indexOf(divOf(x)) >= 0; }
   /* In Accounts and Finance a person sees their divisions' entries; admins and a Chief Accountant every division. */
   function myDivAll() { return S.isAdmin || meChief() || !S.myUser; }
   function myDivs() { return divsOf(S.myUser); }
@@ -1683,7 +1696,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var NAV_BY_APP = {
     mnt: [REP_TABS, EXP_TABS, MAS_TABS, SET_ALL],
     re: [REP_TABS, SALES_TABS, EXP_TABS, MAS_TABS, SET_ALL],
-    bnv: [REP_TABS, EXP_TABS, MAS_TABS, SET_ALL],
+    bnv: [REP_TABS, EXP_TABS, MAS_TABS, { h: "Settings", tabs: SET_ALL.tabs.slice(0, 3).concat([["Templates", "Templates", true]], SET_ALL.tabs.slice(3)) }],
     acc: [REP_TABS, ACC_TABS, MAS_TABS, SET_ALL],
     fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS]
@@ -1808,6 +1821,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (t === "All Entries") { if (dataReady()) { renderAllEnt(); show("secAllEnt"); } else show("vLoading"); return; }
     if (t === "Users" && S.isAdmin) { renderUsers(); renderSupers(); show("secUsers"); }
     else if (t === "Change Log" && S.isAdmin) { auditSub(); renderAudit(); show("secAudit"); }
+    else if (t === "Templates" && S.isAdmin) { if (dataReady()) { TP.t = null; TP.seen = null; TP.dirty = false; renderTpl(); show("secTpl"); } else show("vLoading"); }
     else if (t === "Activity" && (S.isAdmin || meChief())) { if (dataReady()) { acLoad(); renderActivity(); show("secActivity"); } else show("vLoading"); }
     else if (t === "Archive" && S.isAdmin) { if (dataReady()) { renderArchive(); show("secArch"); } else show("vLoading"); }
     else if (t === "Companies") { if (S.loaded || Object.keys(S.companies || {}).length) { renderList(); show("secList"); } else show("vLoading"); }
@@ -1915,7 +1929,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* One company list for the group. Each company is used by one or more divisions (apps; none means Maintenance & Civil, where
      companies began). A division app lists only its companies; Accounts and Finance see them all. Each app keeps its own order. */
   function coApps(c) { return c && c.apps && c.apps.length ? c.apps : ["mnt"]; }
-  function coInApp(c) { return !DIV || coApps(c).indexOf(DIV) >= 0; }
+  function coInApp(c) { if (PV_ALL) return !!c; return !DIV || coApps(c).indexOf(DIV) >= 0; }
   function coRank(c) { if (!c) return 1e6; if (c.orders && typeof c.orders[APP] === "number") return c.orders[APP]; return typeof c.order === "number" ? c.order : 1e6; }
   function coCmp(a, b) { return coRank(a) - coRank(b) || natCmp(a && a.name, b && b.name); }
   function coCmpId(x, y) { if (x === y) return 0; if (!x) return 1; if (!y) return -1; return coCmp(S.companies[x], S.companies[y]); }
@@ -4345,7 +4359,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   /* Vendors and ledgers are kept apart by division: a division app shows only its own (none named means Maintenance & Civil).
      Accounts and Finance see them all. A vendor found by GSTIN from another division joins this one too. */
-  function vendorInApp(v) { return !DIV || ((v && v.apps && v.apps.length) ? v.apps : ["mnt"]).indexOf(DIV) >= 0; }
+  function vendorInApp(v) { if (PV_ALL) return true; return !DIV || ((v && v.apps && v.apps.length) ? v.apps : ["mnt"]).indexOf(DIV) >= 0; }
   function vendorJoin(v) { if (!v || !DIV || vendorInApp(v)) return; var a = ((v.apps && v.apps.length) ? v.apps : ["mnt"]).concat([DIV]); v.apps = a; retry(function () { return S.db.doc("vendors/" + v.id).update({ apps: a, updatedAt: Date.now(), updatedBy: meId() }); }).catch(function () {}); }
   function vendorOpts(D) {
     var nm = D.vNew.name.trim(), o = [["", "Choose a vendor"], ["new", nm ? "New vendor: " + nm : "New vendor"]];
@@ -5067,14 +5081,20 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
      tables that take only the room they need with totals in the footer, a worked-out payable, real signature lines,
      and "Page x of y" with the report number at the foot of every page. ---- */
   function pdfLook(doc) {
-    var K = PDFK, L = K.L, R = K.R, W = R - L, LINE = [210, 224, 216];
+    /* The document's template (Settings › Templates), if any: colours, text size, logo and key facts on or off, labels renamed
+       or hidden, signatures, a footer note. Every label used is noted in doc.__seen, for the Templates form. */
+    var T = doc.__tpl || {}, LB = T.lab || {}, seen = doc.__seen = { subs: [], facts: [], sections: [], cols: [], net: [], signs: [] };
+    var K = Object.assign({}, PDFK), L = K.L, R = K.R, W = R - L, LINE = [210, 224, 216], TS = (Number(T.text) || 100) / 100;
+    if (T.accent) K.navy = hexRgb(T.accent); if (T.fill) K.fill = hexRgb(T.fill);
+    /* a fixed label as the template has it: renamed, or null when hidden. Labels with figures in them are left as they are. */
+    function lb(s0, kind) { s0 = String(s0 == null ? "" : s0); if (!s0 || /\d/.test(s0)) return s0; if (seen[kind].indexOf(s0) < 0) seen[kind].push(s0); var v = LB[kind + ":" + s0]; return v === false ? null : v || s0; }
     function font(f, st, size, col) { doc.setFont(f, st); doc.setFontSize(size); doc.setTextColor(col[0], col[1], col[2]); }
     function hline(x1, x2, y, w, col) { doc.setDrawColor(col[0], col[1], col[2]); doc.setLineWidth(w); doc.line(x1, y, x2, y); }
     function fit(s, w) { s = String(s == null ? "" : s); if (doc.getTextWidth(s) <= w) return s; while (s.length > 1 && doc.getTextWidth(s + "…") > w) s = s.slice(0, -1); return s + "…"; }
     /* o: logo, name, sub, big, bigSub, facts: [[label, value], ...] up to 4. Returns where content starts. */
     function head(o) {
       var x = L, top = 40;
-      if (o.logo) {
+      if (o.logo && T.logo !== false) {
         try { var p = doc.getImageProperties(o.logo), h = 30, w = Math.min(p.width * h / p.height, 90); doc.addImage(o.logo, p.fileType || "PNG", L, top, w, h); x = L + w + 10; } catch (e) { x = L; }
       }
       font("Lato", "normal", 15.5, K.navy); doc.setFont("Lato", "bold");
@@ -5082,9 +5102,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       doc.text(String(o.big || ""), R, top + 15, { align: "right" });
       font("Lato", "normal", 7.4, K.muted); doc.text(fit(o.bigSub || "", 260), R, top + 27, { align: "right" });
       font("Lato", "bold", 11.2, K.navy); doc.text(fit(o.name || "", Math.max(120, nameW)), x, top + 14);
-      font("Lato", "normal", 7.4, K.muted); doc.text(fit(o.sub || "", Math.max(120, nameW)), x, top + 26);
+      var sub0 = String(o.sub || "").split(" · ").map(function (g) { return lb(g, "subs"); }).filter(function (g) { return g; }).join(" · ");
+      font("Lato", "normal", 7.4, K.muted); doc.text(fit(sub0, Math.max(120, nameW)), x, top + 26);
       hline(L, R, top + 37, 1.6, K.navy);
-      var facts = (o.facts || []).slice(0, 4), y = top + 45;
+      var facts = T.facts === false ? [] : (o.facts || []).map(function (f) { var n = lb(f[0], "facts"); return n === null ? null : [n, f[1]]; }).filter(Boolean).slice(0, 4), y = top + 45;
       if (facts.length) {
         var bwid = W / facts.length, hgt = 30;
         doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.6); doc.rect(L, y, W, hgt);
@@ -5098,6 +5119,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       return y + 12;
     }
     function section(title, y, note) {
+      title = lb(title, "sections"); if (title === null) title = "";
       font("Lato", "bold", 6.6, K.navy); doc.text(String(title).toUpperCase(), L, y, { charSpace: 1 });
       if (note) { font("Lato", "normal", 6.6, K.muted); doc.text(String(note), R, y, { align: "right" }); }
       return y + 6;
@@ -5105,20 +5127,30 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     function table(y, headRow, body, opts) {
       opts = opts || {};
       var foot = opts.foot; delete opts.foot;
+      /* columns renamed or hidden by the template (never all of them); spans and widths follow */
+      var hid = {}, heads = headRow.map(function (h, i) { var raw = typeof h === "string" ? h : h.content, n = lb(raw, "cols"); if (n === null) { hid[i] = 1; return null; } return typeof h === "string" ? n : Object.assign({}, h, { content: n }); });
+      var nh = Object.keys(hid).length;
+      if (nh && nh < headRow.length) {
+        var cut = function (row) { if (!Array.isArray(row)) return row; var out = [], c = 0; row.forEach(function (cell) { var sp = (cell && typeof cell === "object" && cell.colSpan) || 1, h = 0; for (var j = c; j < c + sp; j++) if (hid[j]) h++; c += sp; if (h === sp) return; out.push(h ? Object.assign({}, cell, { colSpan: sp - h }) : cell); }); return out; };
+        body = body.map(cut); if (foot) foot = cut(foot);
+        if (opts.columnStyles) { var cs = {}, k0 = 0; heads.forEach(function (h, i) { if (hid[i]) return; if (opts.columnStyles[i]) cs[k0] = opts.columnStyles[i]; k0++; }); opts.columnStyles = cs; }
+        headRow = heads.filter(function (h) { return h !== null; });
+      } else headRow = heads.map(function (h, i) { return h === null ? headRow[i] : h; });
       doc.autoTable(Object.assign({
         startY: y, margin: { left: L, right: 595.28 - R, top: 48, bottom: 60 }, theme: "grid",
-        styles: { font: "Lato", fontSize: 7.6, textColor: K.navy, lineColor: LINE, lineWidth: 0.5, cellPadding: { top: 4.6, bottom: 4.6, left: 4.5, right: 4.5 }, valign: "top", overflow: "linebreak" },
-        headStyles: { fillColor: K.fill, textColor: K.navy, fontStyle: "bold", fontSize: 5.9, halign: "left", lineColor: LINE, lineWidth: 0.5 },
-        footStyles: { fillColor: K.fill, textColor: K.navy, fontStyle: "bold", fontSize: 7.6, lineColor: LINE, lineWidth: 0.5 },
+        styles: { font: "Lato", fontSize: 7.6 * TS, textColor: K.navy, lineColor: LINE, lineWidth: 0.5, cellPadding: { top: 4.6, bottom: 4.6, left: 4.5, right: 4.5 }, valign: "top", overflow: "linebreak" },
+        headStyles: { fillColor: K.fill, textColor: K.navy, fontStyle: "bold", fontSize: 5.9 * TS, halign: "left", lineColor: LINE, lineWidth: 0.5 },
+        footStyles: { fillColor: K.fill, textColor: K.navy, fontStyle: "bold", fontSize: 7.6 * TS, lineColor: LINE, lineWidth: 0.5 },
         tableLineColor: LINE, tableLineWidth: 0.5, showFoot: "lastPage",
         head: [headRow.map(function (h) { return typeof h === "string" ? h.toUpperCase() : Object.assign({}, h, { content: String(h.content).toUpperCase() }); })], body: body,
         foot: foot ? [foot] : undefined,
-        didParseCell: function (d) { if (d.section === "head") d.cell.styles.charSpace = 0.5; if (opts.rowFill && d.section === "body" && opts.rowFill(d.row.index)) d.cell.styles.fillColor = opts.rowFill(d.row.index); }
+        didParseCell: function (d) { if (d.section === "head") d.cell.styles.charSpace = 0.5; if (d.cell.styles.fillColor === PDFK.fill) d.cell.styles.fillColor = K.fill; if (opts.rowFill && d.section === "body" && opts.rowFill(d.row.index)) d.cell.styles.fillColor = opts.rowFill(d.row.index); }
       }, opts));
       return doc.lastAutoTable.finalY;
     }
     /* The worked-out payable: right half of the page, the last row in bold above a navy rule. */
     function net(y, rows) {
+      rows = rows.map(function (r) { var n = lb(r[0], "net"); return n === null ? null : [n].concat(r.slice(1)); }).filter(Boolean);
       var x0 = L + W * 0.5, rh = 14.5;
       if (y + rows.length * rh + 8 > 800 - 70) { doc.addPage(); y = 56; }
       y += 6;
@@ -5133,7 +5165,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     }
     /* Signature lines on the last page, then the footer on every page. sigs: [[label, name], ...] */
     function finish(sigs, footLeft) { sign(sigs); footer(footLeft); }
+    /* sigs: [[label, name, person id], ...]; the person's signature is printed above the line when the template allows */
     function sign(sigs) {
+      sigs = (sigs || []).map(function (s) { var n = lb(s[0], "signs"); return n === null ? null : [n].concat(s.slice(1)); }).filter(Boolean);
       if (sigs && sigs.length) {
         var y = (doc.lastAutoTable && doc.lastAutoTable.finalY) || 0;
         if (doc.__lastY && doc.__lastY > y) y = doc.__lastY;
@@ -5143,6 +5177,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         sigs.forEach(function (s, i) {
           var cx = L + step * (i + 0.5), half = Math.min(68, step / 2 - 12);
           hline(cx - half, cx + half, ly, 0.7, K.navy);
+          var sg = T.sigImg !== false && s[2] && S.sigs && S.sigs[s[2]];
+          if (sg) { try { var ip = doc.getImageProperties(sg), sh = 26, sw = ip.width * sh / ip.height; if (sw > half * 2) { sw = half * 2; sh = ip.height * sw / ip.width; } doc.addImage(sg, ip.fileType || "PNG", cx - sw / 2, ly - 2 - sh, sw, sh); } catch (e) {} }
           font("Lato", "bold", 5.9, K.slate); spaced(doc, String(s[0]).toUpperCase(), cx, ly + 10, 0.7);
           if (s[1]) { font("Lato", "normal", 6.8, K.muted); doc.text(fit(s[1], step - 10), cx, ly + 19, { align: "center" }); }
         });
@@ -5152,7 +5188,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var pages = doc.getNumberOfPages();
       for (var i = 1; i <= pages; i++) {
         doc.setPage(i); hline(L, R, 800, 0.5, LINE);
-        font("Lato", "normal", 6.2, K.muted); if (footLeft) doc.text(fit(footLeft, W - 80), L, 810); doc.text("Page " + i + " of " + pages, R, 810, { align: "right" });
+        font("Lato", "normal", 6.2, K.muted); if (footLeft) doc.text(fit(footLeft, T.foot ? W / 2 - 60 : W - 80), L, 810); doc.text("Page " + i + " of " + pages, R, 810, { align: "right" });
+        if (T.foot) doc.text(fit(T.foot, W / 2 - 20), L + W * 0.62, 810, { align: "center" });
       }
     }
     function mark(y) { doc.__lastY = y; return y; }
@@ -5164,12 +5201,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function cTot(x, span, align) { return { content: x, colSpan: span || 1, styles: { fontStyle: "bold", fillColor: PDFK.fill, halign: align || "left" } }; }
   function cFoot(x, span, align) { return { content: x, colSpan: span || 1, styles: { halign: align || "left" } }; }
   function groupLogo() { var im = document.querySelector(".top .mark img"); return im ? im.src : ""; }
-  function newPdf(jsPDF) { var doc = new jsPDF({ unit: "pt", format: "a4", compress: true }); pdfFonts(doc); return doc; }
+  /* key and div pick the document's template (Settings › Templates); without them the standard look. */
+  function newPdf(jsPDF, key, div) { var doc = new jsPDF({ unit: "pt", format: "a4", compress: true }); pdfFonts(doc); if (key) doc.__tpl = ptOf(key, div); if (TPL_CAP) TPL_CAP.doc = doc; return doc; }
+  function hexRgb(h) { h = String(h || "").replace("#", ""); return [0, 2, 4].map(function (i) { return parseInt(h.slice(i, i + 2), 16) || 0; }); }
   function cellDesc(main, rest) { return (main || "") + (rest ? "\n" + rest : ""); }
 
   /* ---- Bill Checking Report and Advance Checking Report ---- */
   function buildReportPdf(r, jsPDF) {
-    var doc = newPdf(jsPDF), P = pdfLook(doc), v = S.vendors[r.vendorId] || { name: "" }, c = S.companies[r.companyId] || { name: "" }, cur = r.currency || "INR";
+    var doc = newPdf(jsPDF, r.kind === "inst" ? "acr" : "bcr", repDiv(r)), P = pdfLook(doc), v = S.vendors[r.vendorId] || { name: "" }, c = S.companies[r.companyId] || { name: "" }, cur = r.currency || "INR";
     var M = function (n) { return amt(n); }, CM = function (n) { return curMoney(cur, n); };
     var made = fmtDate(r.checkDate || ymdOfMs(r.createdAt || Date.now()));
     if (r.kind === "inst") {
@@ -5191,7 +5230,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         y = P.table(y, ["Cost", { content: "Amount", styles: { halign: "right" } }], cb, { columnStyles: { 1: { cellWidth: 120 } } });
       }
       y = P.mark(P.net(y + 4, [["This instalment", CM(r.total)], ["GST and TDS", "Not applicable"], ["Total payable", CM(r.total)]]));
-      P.finish([["Prepared by", pnm(r.preparedBy)], ["Cashier receipt date", ""], ["Approver sign", crApprovers(r)]], (r.no || "") + " · " + (a ? (a.piNo || "") + " instalment " + (r.inst + 1) + " of " + insts.length : ""));
+      P.finish(repSigns(r), (r.no || "") + " · " + (a ? (a.piNo || "") + " instalment " + (r.inst + 1) + " of " + insts.length : ""));
       return doc;
     }
     var bills = reportBills(r), hasTds = r.billTds || tdsSet(r), adv = advAdjOf(r);
@@ -5211,13 +5250,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (adv) rows.push(["Less advance already paid", "(" + CM(adv) + ")"]);
     rows.push(["Total payable", CM(payableOf(r))]);
     P.mark(P.net(y2 + 4, rows));
-    P.finish([["Prepared by", pnm(r.preparedBy)], ["Cashier receipt date", ""], ["Approver sign", crApprovers(r)]], (r.no || "") + " · " + v.name);
+    P.finish(repSigns(r), (r.no || "") + " · " + v.name);
     return doc;
   }
 
   /* ---- Voucher Checking Report ---- */
   function buildVcrPdf(r, jsPDF) {
-    var doc = newPdf(jsPDF), P = pdfLook(doc), cos = r.companyIds || [], one = cos.length === 1 ? S.companies[cos[0]] : null;
+    var doc = newPdf(jsPDF, "vcr", repDiv(r)), P = pdfLook(doc), cos = r.companyIds || [], one = cos.length === 1 ? S.companies[cos[0]] : null;
     var y = P.head({ logo: one ? one.logo : groupLogo(), name: one ? one.name : "KKSK Group", sub: "Voucher checking report · Internal", big: r.no || "", bigSub: "Checked " + fmtDate(r.checkDate || ymdOfMs(r.createdAt)) + " · Prepared by " + pnm(r.preparedBy),
       facts: [["Raised by", pnm(r.preparedBy)], ["Companies", cos.map(coLabel).join(", ")], ["Vouchers", String((r.voucherIds || []).length)], ["Voucher period", periodText(r.periodFrom, r.periodTo)]] });
     cos.forEach(function (cid) {
@@ -5229,7 +5268,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         { foot: [cFoot((c.shortName || c.name) + " total", 5), cFoot(amt(bc.total || 0), 1, "right")], columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 54 }, 2: { cellWidth: 50 }, 4: { cellWidth: 62 }, 5: { cellWidth: 60 } } }) + 4;
     });
     P.mark(P.net(y, [["Total amount, " + plural((r.voucherIds || []).length, "voucher"), money(r.total)], ["Total payable", money(r.total || 0)], ["Settled from cash advance", r.settled ? "(" + money(r.settled) + ")" : money(0)], ["Payment \u2013 By Financier", money(r.toPay)]]));
-    P.finish([["Prepared by", pnm(r.preparedBy)], ["Cashier receipt date", ""], ["Approver sign", crApprovers(r)]], (r.no || "") + " · " + pnm(r.preparedBy));
+    P.finish(repSigns(r), (r.no || "") + " · " + pnm(r.preparedBy));
     return doc;
   }
 
@@ -5241,7 +5280,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     btn.disabled = true; btn.textContent = "Preparing";
     loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
-      var doc = newPdf(jsPDF), P = pdfLook(doc), one = D.cos.length === 1 ? D.cos[0].c : null, R = D.R, kind = perKindLabel();
+      var doc = newPdf(jsPDF, "per"), P = pdfLook(doc), one = D.cos.length === 1 ? D.cos[0].c : null, R = D.R, kind = perKindLabel();
       var all = { t: {}, d: {}, nb: 0, nv: 0, vt: 0 };
       D.cos.forEach(function (x) { Object.keys(x.t.total).forEach(function (k) { curAdd(all.t, k, x.t.total[k]); }); Object.keys(x.t.tds).forEach(function (k) { curAdd(all.d, k, x.t.tds[k]); }); all.nb += x.bills.length; all.nv += x.vchs.length; all.vt += x.t.vTotal; });
       var y = P.head({ logo: one ? one.logo : groupLogo(), name: one ? one.name : "KKSK Group", sub: kind + " bills report · Internal", big: yr ? R.label : mon ? R.long : fmtDate(R.from) + " to " + fmtDate(R.to), bigSub: fmtDate(R.from) + " to " + fmtDate(R.to) + (yr ? "" : " · " + msText("tx", true)) + " · Generated " + fmtDate(todayYmd()) + " by " + preparedByText(),
@@ -5302,7 +5341,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var label = btn.textContent; btn.disabled = true; btn.textContent = "Preparing";
     loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
-      var doc = newPdf(jsPDF), P = pdfLook(doc), t = todayYmd(), grand = {}, grandOd = {}, typeTot = [];
+      var doc = newPdf(jsPDF, "vpay"), P = pdfLook(doc), t = todayYmd(), grand = {}, grandOd = {}, typeTot = [];
       var many = cos.length > 6, fs = many ? 6.4 : 7.2, ofs = many ? 5.6 : 6.2, RED = [201, 86, 74];
       function cell(pay, od) {
         if (!Object.keys(pay).some(function (k) { return Math.abs(pay[k]) > 0.5; })) return { content: "-", styles: { halign: "center", textColor: PDFK.muted } };
@@ -5484,7 +5523,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var label = btn.textContent; btn.disabled = true; btn.textContent = "Preparing";
     loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
-      var r = ledger(cid, vid), cur = r.cur, t = todayYmd(), doc = newPdf(jsPDF), P = pdfLook(doc), red = [179, 38, 30];
+      var r = ledger(cid, vid), cur = r.cur, t = todayYmd(), doc = newPdf(jsPDF, "stmt"), P = pdfLook(doc), red = [179, 38, 30];
       var D = stmtData(vid, cid, from), opBal = D.open, bal = D.close;
       var y = P.head({ logo: c.logo, name: c.name, sub: "Vendor statement", big: v.name, bigSub: (from ? fmtDate(from) + " to " + fmtDate(t) : "As on " + fmtDate(t)) + (v.gstin ? " · GSTIN " + v.gstin : v.country ? " · " + v.country : ""),
         facts: [[from ? "Opening, " + fmtDate(from) : "Opening balance", from || r.opening ? curMoney(cur, opBal) : "Not captured"], ["Payable", curMoney(cur, D.payable)], ["Paid", curMoney(cur, D.paid)], ["Closing balance", curMoney(cur, bal)]] });
@@ -6187,7 +6226,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var r = S.reports[id]; if (!r || !S.downloads) return;
     var v = S.vendors[r.vendorId] || { name: "" }, label = btn.textContent;
     btn.disabled = true; btn.textContent = "Preparing";
-    loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }).then(function () {
+    repPre(r).then(function () { return loadScript(JSPDF); }).then(function () { return loadScript(JSPDF_AT); }).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
       var doc = buildReportPdf(r, jsPDF);
       return S.downloads.save({ filename: String(r.no || "Checking report").replace(/\//g, "-") + " " + safeName(v.name) + ".pdf", data: doc.output("blob") });
@@ -7702,7 +7741,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     btn.disabled = true; btn.textContent = "Preparing";
     loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
-      var doc = newPdf(jsPDF), P = pdfLook(doc), co = msOneCo("tx"), one = co ? S.companies[co] : null, tot = {}, bal = {};
+      var doc = newPdf(jsPDF, "tx"), P = pdfLook(doc), co = msOneCo("tx"), one = co ? S.companies[co] : null, tot = {}, bal = {};
       rows.forEach(function (r) { curAdd(tot, r.cur, r.amount); if (r.open) curAdd(bal, r.cur, r.bal); });
       var y = P.head({ logo: one ? one.logo : groupLogo(), name: one ? one.name : "KKSK Group", sub: "Transactions · " + txTitle() + " · Internal", big: txTitle(), bigSub: txFilterText() + " · Generated " + fmtDate(todayYmd()),
         facts: pay ? [["Payments", String(rows.length)], ["Total", curSum(tot)]] : [["Items", String(rows.length)], ["Total amount", curSum(tot)], ["Still to pay", curSum(bal)], ["Open", String(rows.filter(function (r) { return r.open; }).length)]] });
@@ -7942,7 +7981,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     btn.disabled = true; btn.textContent = "Preparing";
     loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
-      var doc = newPdf(jsPDF), P = pdfLook(doc), co = msOneCo("py"), one = co ? S.companies[co] : null, st = payablesStats(rows), ag = payablesAgeing(rows), bills = rows.filter(function (r) { return r.kind === "bill"; });
+      var doc = newPdf(jsPDF, "payables"), P = pdfLook(doc), co = msOneCo("py"), one = co ? S.companies[co] : null, st = payablesStats(rows), ag = payablesAgeing(rows), bills = rows.filter(function (r) { return r.kind === "bill"; });
       var y = P.head({ logo: one ? one.logo : groupLogo(), name: one ? one.name : "KKSK Group", sub: "Payables · AP ageing · Internal", big: curSum(st.out), bigSub: pyShowText() + " · " + msText("py") + " · As on " + fmtDate(todayYmd()),
         facts: [["Outstanding", curSum(st.out)], ["Overdue", curSum(st.od)], ["Due in 7 days", curSum(st.wk)], ["Sent for payment", curSum(st.sent)]] });
       y = P.section("AP ageing by vendor", y + 2, plural(ag.length, "vendor"));
@@ -8074,7 +8113,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     btn.disabled = true; btn.textContent = "Preparing";
     loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
-      var doc = newPdf(jsPDF), P = pdfLook(doc), one = D.cos.length === 1 ? D.cos[0].c : null, all = { paid: {}, disc: {}, adv: 0 };
+      var doc = newPdf(jsPDF, "perpay"), P = pdfLook(doc), one = D.cos.length === 1 ? D.cos[0].c : null, all = { paid: {}, disc: {}, adv: 0 };
       D.cos.forEach(function (x) { Object.keys(x.t.paid).forEach(function (k) { curAdd(all.paid, k, x.t.paid[k]); }); Object.keys(x.t.disc).forEach(function (k) { curAdd(all.disc, k, x.t.disc[k]); }); all.adv = round2(all.adv + x.t.adv); });
       var y = P.head({ logo: one ? one.logo : groupLogo(), name: one ? one.name : "KKSK Group", sub: perKindLabel() + " payments report · Internal", big: R.long, bigSub: msText("tx", true) + " · Generated " + fmtDate(todayYmd()),
         facts: [["Paid", curSum(all.paid)], ["Discounts", curSum(all.disc)], ["Cash advances", money(all.adv)], ["Companies", String(D.cos.length)]] });
@@ -8602,7 +8641,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var label = btn.textContent; btn.disabled = true; btn.textContent = "Preparing";
     loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
-      var doc = newPdf(jsPDF), P = pdfLook(doc), title = meta.no ? "Payment plan " + meta.no : "Payment plan (not locked yet)", first = true;
+      var doc = newPdf(jsPDF, "plan"), P = pdfLook(doc), title = meta.no ? "Payment plan " + meta.no : "Payment plan (not locked yet)", first = true;
       function startPage(heading, big, n, label2) {
         if (!first) doc.addPage(); first = false;
         var y = P.head({ logo: groupLogo(), name: "KKSK Group", sub: appName() + " · " + heading, big: big, bigSub: title + " · " + fmtDate(meta.date || todayYmd()),
@@ -9678,7 +9717,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function downloadVcr(id, btn) {
     var r = S.reports[id]; if (!r || !S.downloads) return;
     var label = btn.textContent; btn.disabled = true; btn.textContent = "Preparing";
-    loadScript(JSPDF).then(function () { return loadScript(JSPDF_AT); }).then(function () {
+    repPre(r).then(function () { return loadScript(JSPDF); }).then(function () { return loadScript(JSPDF_AT); }).then(function () {
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
       var doc = buildVcrPdf(r, jsPDF);
       return S.downloads.save({ filename: String(r.no || "Voucher checking report").replace(/\//g, "-") + " " + safeName(pnm(r.preparedBy)) + ".pdf", data: doc.output("blob") });
@@ -10551,6 +10590,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (R.txns) S.txns = only(R.txns); if (R.cashadv) S.cashadv = only(R.cashadv); if (R.notes) S.notes = only(R.notes);
   }
   function startData() {
+    tplLoad();
     if (S.dataStarted) return; S.dataStarted = true;
     S.raw = { bills: {}, vouchers: {}, advances: {}, reports: {}, txns: {}, cashadv: {}, notes: {} };
     if (APP === "re") solStart();
@@ -10639,7 +10679,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function ledCmp(a, b) { return LED_MAINS.indexOf(a.main) - LED_MAINS.indexOf(b.main) || natCmp(a.sub, b.sub) || natCmp(a.name, b.name); }
   function ledFor(cid) { return ledAll().filter(function (l) { return l.active !== false && ledInApp(l) && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
   /* Accounts decides which divisions may use a ledger; a ledger with none ticked is open to every division. */
-  function ledInApp(l) { return !DIV || ((l.apps && l.apps.length) ? l.apps : ["mnt"]).indexOf(DIV) >= 0; }
+  function ledInApp(l) { if (PV_ALL) return true; return !DIV || ((l.apps && l.apps.length) ? l.apps : ["mnt"]).indexOf(DIV) >= 0; }
   function ledAppsText(l) { return ((l.apps && l.apps.length) ? l.apps : ["mnt"]).map(function (k) { return divName(k); }).join(", "); }
   /* A name used by more than one ledger (e.g. Travelling Expenses under two sub groups) carries its sub group. */
   function ledName(id) {
@@ -11977,6 +12017,204 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         ], subs[sb], { sortIndex: 2 });
       });
     });
+  }
+
+  /* ================= Settings › Templates: the look and wording of the internal prints =================
+     Prints whose layout someone else fixes (company letterpads, cheques, bank NEFT / RTGS forms) have their own templates
+     elsewhere; these are the ones decided here. Each document has one template, set by an admin in the Bills & Vouchers
+     app; a checking report can also have its own version per division, else the division uses the default. Kept in
+     tpls/<doc> and tpls/<doc>__<division> (the same in Demo and Live). Fields: accent, fill (colours), text (size, %),
+     logo and facts (false to leave out), lab ({ "<kind>:<label>": new text, or false to hide }), sigImg (false: no
+     signatures), foot (a note at the foot of each page). A document without a template prints as standard. */
+  var TPL_DOCS = [
+    ["bcr", "Bill Checking Report", "Checking reports", true], ["acr", "Advance Checking Report", "Checking reports", true], ["vcr", "Voucher Checking Report", "Checking reports", true],
+    ["stmt", "Vendor Statement", "Ledger & vendor prints"], ["books", "Ledger Statement", "Ledger & vendor prints"],
+    ["payables", "Payables (AP ageing)", "Payment reports"], ["vpay", "Vendor Payables", "Payment reports"], ["plan", "Payment Plan", "Payment reports"],
+    ["tx", "Transactions", "Payment reports"], ["per", "Weekly, Monthly & Yearly Report", "Payment reports"], ["perpay", "Payments in a Period", "Payment reports"]
+  ];
+  var TPL_KINDS = [["subs", "Title words"], ["facts", "Key facts strip"], ["sections", "Section headings"], ["cols", "Table columns"], ["net", "Totals"], ["signs", "Sign-off boxes"]];
+  function tplLoad(force) {
+    if (S.tplsP && !force) return S.tplsP; if (!S.rawDb) return Promise.resolve({});
+    S.tplsP = S.rawDb.collection("tpls").get().then(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data() || {}; }); S.tpls = m; return m; }, function () { S.tpls = S.tpls || {}; return S.tpls; });
+    return S.tplsP;
+  }
+  function ptOf(key, div) { var t = S.tpls || {}, d = div && t[key + "__" + div]; return d && !d.useDefault ? d : t[key] || {}; }
+  /* The division a checking report belongs to: its own, else its first bill's, voucher's or advance's. */
+  function repDiv(r) {
+    if (r.div) return r.div; var R = S.raw || {}, x = r.kind === "vcr" ? (R.vouchers || S.vouchers || {})[(r.voucherIds || [])[0]] : r.kind === "inst" ? (R.advances || S.advances || {})[r.advanceId] : (R.bills || S.bills || {})[(r.billIds || [])[0]];
+    return divOf(x);
+  }
+  /* Sign-off on a checking report, with whose signature goes where: the preparer, and once approved the approver (or the one
+     who signed it on paper, or the admin approved for). */
+  function repSignIds(r) { var ap = r.approvedAt ? (r.onBehalf && r.paperById) || r.approvedBy || "" : ""; return { prep: r.preparedById || r.createdBy || "", appr: ap }; }
+  function repSigns(r) { var id = repSignIds(r); return [["Prepared by", pnm(r.preparedBy), id.prep], ["Cashier receipt date", ""], ["Approver sign", crApprovers(r), id.appr]]; }
+  function repPre(r) { var id = repSignIds(r); return Promise.all([tplLoad(), sigLoad(id.prep), sigLoad(id.appr)]); }
+
+  /* ---- Ledger Statement as a PDF: one ledger's entries, or every ledger's totals by group ---- */
+  function downloadBooksPdf(btn) {
+    var co = $("bkCo").value, lg = $("bkLed").value, fr = parseDate($("bkFrom").value) || "", to = parseDate($("bkTo").value) || "";
+    var es = bookEntries(BK.side, co, fr, to).filter(function (e) { return !lg || e.lg === lg; });
+    if (!es.length) { toast("Nothing is posted in this period."); return; }
+    if (!S.downloads) return; var label = btn.textContent; btn.disabled = true; btn.textContent = "Preparing";
+    var book = { bills: "Bills", proformas: "Proforma and import tax bills", vouchers: "Vouchers" }[BK.side], c1 = co ? S.companies[co] : null, per = (fr ? fmtDate(fr) : "Start") + " to " + (to ? fmtDate(to) : fmtDate(todayYmd()));
+    tplLoad().then(function () { return loadScript(JSPDF); }).then(function () { return loadScript(JSPDF_AT); }).then(function () {
+      var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
+      var doc = newPdf(jsPDF, "books"), P = pdfLook(doc), tot = es.reduce(function (s0, e) { return s0 + e.amt; }, 0), td = es.reduce(function (s0, e) { return s0 + e.tds; }, 0);
+      var y = P.head({ logo: c1 ? c1.logo : groupLogo(), name: c1 ? c1.name : "KKSK Group", sub: "Ledger statement · " + book, big: lg ? ledName(lg) : "All ledgers", bigSub: per,
+        facts: [["Book", book], ["Companies", c1 ? c1.shortName || c1.name : "All"], ["Entries", String(es.length)], ["Amount", money(tot)]] });
+      if (lg) {
+        es.sort(function (a, b) { return natCmp(a.d, b.d); });
+        y = P.table(y, ["Date", "Company", "No.", BK.side === "vouchers" ? "Paid to" : "Vendor", "Description", "Prepared by", { content: "Amount", styles: { halign: "right" } }, { content: "TDS", styles: { halign: "right" } }],
+          es.map(function (e) { return [fmtDate(e.d), coLabel(e.cid), cB(e.no || ""), e.who || "", e.what || "", e.prep || "", cR(amt2(e.amt), true), cR(e.tds ? amt2(e.tds) : "-")]; }),
+          { foot: [cFoot("Total", 6), cFoot(amt2(tot), 1, "right"), cFoot(td ? amt2(td) : "-", 1, "right")], columnStyles: { 0: { cellWidth: 48 }, 1: { cellWidth: 38 }, 2: { cellWidth: 62 }, 6: { cellWidth: 58 }, 7: { cellWidth: 44 } } });
+      } else {
+        var per0 = {}; es.forEach(function (e) { var q = per0[e.lg] || (per0[e.lg] = { n: 0, amt: 0, tds: 0 }); q.n++; q.amt += e.amt; q.tds += e.tds; });
+        LED_MAINS.forEach(function (m) {
+          var ls = Object.keys(per0).map(function (k) { return S.ledgers[k] || { id: k, name: "Unknown ledger", main: m, sub: "Other" }; }).filter(function (l) { return l.main === m; }).sort(ledCmp); if (!ls.length) return;
+          if (y > 720) { doc.addPage(); y = 56; }
+          y = P.section(m, y + 8, money(ls.reduce(function (s0, l) { return s0 + per0[l.id].amt; }, 0)));
+          y = P.table(y, ["Sub group", "Ledger", { content: "Entries", styles: { halign: "right" } }, { content: "Amount", styles: { halign: "right" } }, { content: "TDS", styles: { halign: "right" } }],
+            ls.map(function (l) { var q = per0[l.id]; return [l.sub || "", cB(l.name || ""), cR(String(q.n)), cR(amt2(q.amt), true), cR(q.tds ? amt2(q.tds) : "-")]; }),
+            { columnStyles: { 2: { cellWidth: 46 }, 3: { cellWidth: 70 }, 4: { cellWidth: 54 } } }) + 4;
+        });
+      }
+      P.finish([], "Ledger statement · " + book + " · " + per);
+      return S.downloads.save({ filename: "Ledger statement - " + book + (lg ? " - " + safeName(ledName(lg)) : "") + " " + per.replace(/\//g, "-") + ".pdf", data: doc.output("blob") });
+    }).then(function () { toast("PDF ready."); }, function (e) { if (!(e && e.code === "declined")) toast(e && e.kind === "lib" ? "The PDF maker didn't load. Check the connection and try again." : "The PDF couldn't be made."); })
+      .then(function () { btn.disabled = false; btn.textContent = label; });
+  }
+
+  /* ---- the Templates screen: pick a document (and, for a checking report, a division), change it, see it ---- */
+  var TPL_CAP = null, PV_ALL = false;
+  var TP = { key: "bcr", div: "", t: null, seen: null, timer: 0, run: 0 };
+  function tplDocName(k) { var d = TPL_DOCS.filter(function (x) { return x[0] === k; })[0]; return d ? d[1] : k; }
+  function tplId() { return TP.key + (TP.div ? "__" + TP.div : ""); }
+  function renderTpl() {
+    var box = $("tpBody"); box.textContent = "";
+    tplLoad(!TP.t).then(function () {
+      var meta = TPL_DOCS.filter(function (x) { return x[0] === TP.key; })[0], perDiv = !!meta[3]; if (!perDiv) TP.div = "";
+      var saved = (S.tpls || {})[tplId()];
+      if (!TP.t) TP.t = JSON.parse(JSON.stringify(saved || (TP.div ? Object.assign({ useDefault: true }, (S.tpls || {})[TP.key] || {}) : {})));
+      var T = TP.t; T.lab = T.lab || {};
+      var grid = el("div", { class: "tpgrid" }), left = el("div", { class: "tpform" }), right = el("div", { class: "tpprev" }); grid.appendChild(left); grid.appendChild(right); box.appendChild(grid);
+      /* which document */
+      var pick = el("div", { class: "card pcard" }), ds = el("select", { class: "field", id: "tpDoc", "aria-label": "Document" }), last = "";
+      TPL_DOCS.forEach(function (d) { if (d[2] !== last) { last = d[2]; ds.appendChild(el("optgroup", { label: d[2] })); } ds.lastChild.appendChild(el("option", { value: d[0] }, d[1])); }); ds.value = TP.key;
+      ds.addEventListener("change", function () { if (!tplLeave()) { ds.value = TP.key; return; } TP.key = ds.value; TP.div = ""; TP.t = null; TP.seen = null; renderTpl(); });
+      pick.appendChild(fld("Document", ds));
+      if (perDiv) {
+        var dv = el("select", { class: "field", id: "tpDiv", "aria-label": "Version" }); fillSelect(dv, [["", "Default (every division)"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), TP.div);
+        dv.addEventListener("change", function () { if (!tplLeave()) { dv.value = TP.div; return; } TP.div = dv.value; TP.t = null; TP.seen = null; renderTpl(); });
+        pick.appendChild(fld("Version", dv, "A division uses the default unless it has its own version."));
+        if (TP.div) { var ud = el("label", { class: "check", style: "margin-top:8px" }), uc = el("input", { type: "checkbox", id: "tpUseDef" }); uc.checked = !!T.useDefault; ud.appendChild(uc); ud.appendChild(document.createTextNode(" Same as the default")); pick.appendChild(ud);
+          uc.addEventListener("change", function () { if (!uc.checked) { var base = JSON.parse(JSON.stringify((S.tpls || {})[TP.key] || {})); TP.t = Object.assign(base, { useDefault: false }); } else TP.t.useDefault = true; TP.dirty = true; renderTpl(); }); }
+      }
+      left.appendChild(pick);
+      var locked = !!(TP.div && T.useDefault);
+      if (locked) left.appendChild(el("p", { class: "sub" }, DIVS[TP.div].name + " prints the default " + tplDocName(TP.key) + ". Untick “Same as the default” to give it its own version."));
+      else {
+        /* look */
+        var lk = el("div", { class: "card pcard" }); lk.appendChild(el("h3", null, "Look"));
+        var colour = function (id, lab0, key, def) { var w = el("div", { class: "tpcol" }), i = el("input", { type: "color", id: id, value: T[key] || def, "aria-label": lab0 }); i.addEventListener("input", function () { T[key] = i.value; tplChanged(); }); w.appendChild(i); w.appendChild(el("span", null, lab0)); return w; };
+        var rgbHex = function (c) { return "#" + c.map(function (n) { return ("0" + n.toString(16)).slice(-2); }).join(""); };
+        var cr = el("div", { class: "tprow" }); cr.appendChild(colour("tpAccent", "Headings, rules and text", "accent", rgbHex(PDFK.navy))); cr.appendChild(colour("tpFill", "Table heads and totals", "fill", rgbHex(PDFK.fill))); lk.appendChild(cr);
+        var ts = el("select", { class: "field", id: "tpText", "aria-label": "Text size in tables" }); fillSelect(ts, [["90", "Smaller"], ["100", "Standard"], ["110", "Larger"], ["120", "Largest"]], String(T.text || 100)); ts.addEventListener("change", function () { T.text = Number(ts.value); tplChanged(); }); lk.appendChild(fld("Text size in tables", ts));
+        [["logo", "Show the company logo"], ["facts", "Show the key facts strip under the title"]].concat(meta[2] === "Checking reports" ? [["sigImg", "Print signatures in the sign-off boxes"]] : []).forEach(function (o) {
+          var w = el("label", { class: "check", style: "display:flex;margin-top:6px" }), c = el("input", { type: "checkbox", id: "tp_" + o[0] }); c.checked = T[o[0]] !== false; c.addEventListener("change", function () { T[o[0]] = c.checked ? true : false; tplChanged(); }); w.appendChild(c); w.appendChild(document.createTextNode(" " + o[1])); lk.appendChild(w);
+        });
+        var fo = inp("tpFoot", T.foot || "", { maxlength: "80", placeholder: "Optional, e.g. For internal use only" }); fo.addEventListener("input", function () { T.foot = fo.value.trim(); tplChanged(); }); lk.appendChild(fld("Note at the foot of each page", fo));
+        left.appendChild(lk);
+        /* wording: every fixed label the document prints, from the preview, plus any already changed */
+        var wd = el("div", { class: "card pcard", id: "tpWords" }); wd.appendChild(el("h3", null, "Wording & What Shows")); left.appendChild(wd); tplWords();
+      }
+      var acts = el("div", { class: "acts", style: "margin-top:12px" }), sv = el("button", { type: "button", class: "btn primary", id: "tpSave" }, "Save Template"), rs = el("button", { type: "button", class: "btn", id: "tpReset" }, TP.div ? "Remove This Version" : "Back to Standard");
+      sv.addEventListener("click", function () { tplSave(sv); }); rs.addEventListener("click", function () { tplReset(rs); }); acts.appendChild(sv); if (saved) acts.appendChild(rs); left.appendChild(acts);
+      right.appendChild(el("div", { class: "tphead" }, "Preview")); right.appendChild(el("div", { id: "tpPrev", class: "tppages" }));
+      ptPreview();
+    });
+  }
+  function tplWords() {
+    var wd = $("tpWords"); if (!wd) return; while (wd.childNodes.length > 1) wd.removeChild(wd.lastChild);
+    var T = TP.t, seen = TP.seen || {}, n = 0;
+    wd.appendChild(el("p", { class: "sub", style: "margin:0 0 6px" }, "Untick to leave something out; type to print it differently. Labels with figures in them can't be changed."));
+    TPL_KINDS.forEach(function (k) {
+      var list = (seen[k[0]] || []).slice(); Object.keys(T.lab).forEach(function (key) { var m = key.split(":"); if (m[0] === k[0] && list.indexOf(m.slice(1).join(":")) < 0) list.push(m.slice(1).join(":")); });
+      if (!list.length) return; n++;
+      wd.appendChild(el("div", { class: "tpkind" }, k[1]));
+      list.forEach(function (lab0) {
+        var key = k[0] + ":" + lab0, v = T.lab[key], row = el("div", { class: "tpw" }), c = el("input", { type: "checkbox", "aria-label": "Show " + lab0 }), t = el("input", { class: "field", value: typeof v === "string" ? v : "", placeholder: lab0, maxlength: "60", "aria-label": "Print " + lab0 + " as" });
+        c.checked = v !== false; t.disabled = v === false;
+        c.addEventListener("change", function () { if (!c.checked) T.lab[key] = false; else if (t.value.trim()) T.lab[key] = t.value.trim(); else delete T.lab[key]; t.disabled = !c.checked; tplChanged(); });
+        t.addEventListener("input", function () { var x = t.value.trim(); if (x && x !== lab0) T.lab[key] = x; else delete T.lab[key]; tplChanged(); });
+        row.appendChild(c); row.appendChild(t); wd.appendChild(row);
+      });
+    });
+    if (!n) wd.appendChild(el("p", { class: "sub" }, "The labels show here once there is something of this kind to preview."));
+  }
+  function tplChanged() { TP.dirty = true; clearTimeout(TP.timer); TP.timer = setTimeout(ptPreview, 450); }
+  function tplLeave() { if (!TP.dirty) return true; if (!confirm("Leave without saving the changes to this template?")) return false; TP.dirty = false; return true; }
+  function tplClean(t) { var o = JSON.parse(JSON.stringify(t || {})); if (o.lab && !Object.keys(o.lab).length) delete o.lab; ["foot"].forEach(function (k) { if (!o[k]) delete o[k]; }); return o; }
+  function tplSave(btn) {
+    var doc = tplClean(TP.t); doc.at = Date.now(); doc.by = meId(); doc.byName = (S.me && S.me.name) || "Admin";
+    btn.disabled = true;
+    retry(function () { return S.rawDb.doc("tpls/" + tplId()).set(doc); }).then(function () { S.tpls = S.tpls || {}; S.tpls[tplId()] = doc; TP.dirty = false; toast(tplDocName(TP.key) + (TP.div ? " for " + DIVS[TP.div].name : "") + " saved. It is used from the next print."); renderTpl(); }, function (e) { toast(explain(e)); })
+      .then(function () { btn.disabled = false; });
+  }
+  function tplReset(btn) {
+    if (btn.getAttribute("data-arm") !== "1") { btn.setAttribute("data-arm", "1"); var lb0 = btn.textContent; btn.textContent = "Click again to confirm"; setTimeout(function () { if (btn.isConnected) { btn.removeAttribute("data-arm"); btn.textContent = lb0; } }, 4000); return; }
+    retry(function () { return S.rawDb.doc("tpls/" + tplId()).delete(); }).then(function () { if (S.tpls) delete S.tpls[tplId()]; TP.t = null; TP.dirty = false; toast(TP.div ? DIVS[TP.div].name + " now uses the default." : tplDocName(TP.key) + " is back to the standard look."); renderTpl(); }, function (e) { toast(explain(e)); });
+  }
+  /* The preview prints the latest real document of that kind, from every division, with the template being edited, and
+     shows its first pages. Nothing is downloaded or marked as printed. */
+  /* one preview at a time (each lends the page's data and downloads to the print for a moment); a newer one replaces a waiting one */
+  function ptPreview() { var run = ++TP.run; TP.chain = (TP.chain || Promise.resolve()).then(function () { if (run === TP.run) return ptPreview1(run); }); }
+  function ptPreview1(run) {
+    var out = $("tpPrev"); if (!out) return; var key = TP.key, div = TP.div, T = TP.t && !TP.t.useDefault ? TP.t : ptOf(key, "");
+    out.textContent = ""; out.appendChild(el("p", { class: "sub" }, "Preparing the preview…"));
+    var keep = { tpls: S.tpls, dl: S.downloads, bills: S.bills, vouchers: S.vouchers, advances: S.advances, reports: S.reports, txns: S.txns, cashadv: S.cashadv, notes: S.notes, toast: toast };
+    var R = S.raw || {}, said = "";
+    function restore() { TPL_CAP = null; PV_ALL = false; S.tpls = keep.tpls; S.downloads = keep.dl; ["bills", "vouchers", "advances", "reports", "txns", "cashadv", "notes"].forEach(function (k) { S[k] = keep[k]; }); toast = keep.toast; invalidate(); }
+    var got = new Promise(function (res) {
+      Promise.all([loadScript(JSPDF), loadScript(JSPDF_AT), tplLoad()]).then(function () {
+        var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) { res(null); return; }
+        PV_ALL = true; ["bills", "vouchers", "advances", "reports", "txns", "cashadv", "notes"].forEach(function (k) { if (R[k]) S[k] = R[k]; }); invalidate();
+        var tp = {}; Object.keys(keep.tpls || {}).forEach(function (k) { tp[k] = keep.tpls[k]; }); tp[key] = T; Object.keys(DIVS).forEach(function (d) { delete tp[key + "__" + d]; }); S.tpls = tp;
+        toast = function (m) { said = m; }; TPL_CAP = {}; S.downloads = { save: function (o) { res(o.data); return new Promise(function () {}); } }; /* never settles: the print's own "ready" message stays unsaid */
+        var fake = el("button"), reps = Object.keys(S.reports || {}).map(function (k) { return Object.assign({ id: k }, S.reports[k]); }).filter(function (r) { return key === "vcr" ? r.kind === "vcr" : key === "acr" ? r.kind === "inst" : r.kind !== "vcr" && r.kind !== "inst"; })
+          .sort(function (a, b) { return (div && repDiv(b) === div) - (div && repDiv(a) === div) || (b.createdAt || 0) - (a.createdAt || 0); });
+        try {
+          if (key === "bcr" || key === "acr" || key === "vcr") { if (!reps.length) { res(null); return; } var r0 = reps[0]; repPre(r0).then(function () { var d0 = key === "vcr" ? buildVcrPdf(r0, jsPDF) : buildReportPdf(r0, jsPDF); res(d0.output("blob")); }, function () { res(null); }); return; }
+          if (key === "stmt") { var best = null, cnt = {}; Object.keys(S.bills || {}).forEach(function (k) { var b = S.bills[k], q = b.companyId + "|" + b.vendorId; if (!b.vendorId || !S.vendors[b.vendorId] || !S.companies[b.companyId]) return; cnt[q] = (cnt[q] || 0) + 1; if (!best || cnt[q] > cnt[best]) best = q; }); if (!best) { res(null); return; } makeStatement(best.split("|")[1], best.split("|")[0], fake, ""); }
+          else if (key === "books") downloadBooksPdf(fake);
+          else if (key === "payables") downloadPayablesPdf(fake);
+          else if (key === "vpay") downloadVendorPayables(fake);
+          else if (key === "plan") downloadPlan(fake);
+          else if (key === "tx") downloadTxPdf(fake);
+          else if (key === "per") downloadYearPdf(fake);
+          else if (key === "perpay") downloadPerPayPdf(fake);
+        } catch (e) { res(null); return; }
+        /* each print turns its button to "Preparing" when it has something to print; else it has already stopped */
+        if (said || !fake.disabled) { res(null); return; }
+        setTimeout(function () { res(null); }, 8000);
+      }, function () { res(null); });
+    });
+    /* the document is built synchronously once its scripts are in, so the stand-ins can go as soon as it has been saved */
+    return got.then(function (blob) {
+      var cap = TPL_CAP; restore(); if (run !== TP.run) return;
+      if (blob && cap && cap.doc && cap.doc.__seen) { var fresh = !TP.seen; TP.seen = cap.doc.__seen; if (fresh) tplWords(); }
+      if (!blob) { out.textContent = ""; out.appendChild(el("p", { class: "sub" }, (said ? said + " " : "") + "There is nothing of this kind to preview yet. Changes still apply to the next one printed.")); return; }
+      return tplShow(blob, out, run);
+    });
+  }
+  function tplShow(blob, out, run) {
+    return blob.arrayBuffer().then(function (ab) {
+      return pdfLib().then(function (L) { return L.getDocument({ data: new Uint8Array(ab) }).promise; }).then(function (pdf) {
+        if (run !== TP.run) return; out.textContent = ""; var n = Math.min(pdf.numPages, 2), job = Promise.resolve();
+        for (var i = 1; i <= n; i++) (function (i) { job = job.then(function () { return pdf.getPage(i).then(function (pg) { var vp0 = pg.getViewport({ scale: 1 }), w = Math.max(320, out.clientWidth || 520), sc = w / vp0.width * (window.devicePixelRatio || 1), vp = pg.getViewport({ scale: sc }), cv = el("canvas", { class: "tppage", role: "img", "aria-label": "Preview, page " + i }); cv.width = vp.width; cv.height = vp.height; out.appendChild(cv); return pg.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise; }); }); })(i);
+        if (pdf.numPages > n) job = job.then(function () { out.appendChild(el("p", { class: "sub" }, "First " + n + " of " + pdf.numPages + " pages.")); });
+        return job;
+      });
+    }).catch(function () { out.textContent = ""; out.appendChild(el("p", { class: "sub" }, "The preview couldn't be shown.")); });
   }
 
   /* ================= Signatures ================= */
@@ -13715,7 +13953,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("txSt").addEventListener("change", function () { TX.status = this.value; TX.limit = 200; renderTxn(); }); $("txQ").addEventListener("input", function () { TX.limit = 200; renderTxn(); });
     $("txPdf").addEventListener("click", function () { downloadTxPdf(this); });
     $("ntAdd").addEventListener("click", noteForm); $("ntCo").addEventListener("change", renderNotes); $("ntQ").addEventListener("input", renderNotes);
-    $("bkXls").addEventListener("click", function () { downloadBooksXls(this); }); $("vXls").addEventListener("click", function () { downloadVendorsXls(this); }); $("txXls").addEventListener("click", function () { downloadTxXls(this); });
+    $("bkXls").addEventListener("click", function () { downloadBooksXls(this); }); $("bkPdf").addEventListener("click", function () { downloadBooksPdf(this); }); $("vXls").addEventListener("click", function () { downloadVendorsXls(this); }); $("txXls").addEventListener("click", function () { downloadTxXls(this); });
     $("vhNew").addEventListener("click", function () { openVchForm(null); });
     $("vhCo").addEventListener("change", renderVch); $("vhQ").addEventListener("input", renderVch);
     $("vfBack").addEventListener("click", backToVch); $("vfCancel").addEventListener("click", backToVch); $("vfSave").addEventListener("click", saveVch);

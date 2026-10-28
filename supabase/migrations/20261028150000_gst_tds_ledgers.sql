@@ -34,6 +34,6 @@ insert into public.app_docs (path, data, updated_at)
 select path, data, now() from taxdocs
 union all
 select path, jsonb_build_object('main', 'Duties & Taxes', 'sub', sub, 'name', name, 'tax', kind, 'taxId', id, 'locked', true, 'allCos', true,
-       'companyIds', '[]'::jsonb, 'apps', '["mnt","re","bnv"]'::jsonb, 'active', true, 'createdAt', (select t from now_ms), 'updatedAt', (select t from now_ms))
+       'companyIds', '[]'::jsonb, 'apps', '["mnt","re","bnv"]'::jsonb, 'active', true, 'createdAt', (select t from now_ms), 'updatedAt', (select t from now_ms)), now()
   from leds
 on conflict (path) do nothing;

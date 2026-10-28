@@ -226,6 +226,8 @@ table.asr tr.tot td{background:var(--blue-soft);font-weight:700;border-bottom:0;
 .plist{display:flex;flex-wrap:wrap;gap:5px;max-height:220px;overflow:auto;padding:2px}
 .pc{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:6px;padding:2px 2px 2px 9px;font-size:.9rem;font-weight:600;background:#fff}
 .pc.new{border-color:var(--blue);background:var(--blue-soft)}
+.pc.side{border-color:#c07a1a;background:#fff6e8}.pc .sd{font-style:normal;font-size:.7rem;font-weight:700;color:#9a5b00;margin-left:3px}
+.sidesw{display:flex;align-items:center;gap:6px;margin:8px 0 2px;font-size:.85rem;font-weight:600}.sidesw span{margin-right:4px}.sidesw button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 14px;font:inherit;cursor:pointer}.sidesw button.on{background:var(--blue);border-color:var(--blue);color:#fff}
 
 /* ============ Origins master & report filters ============ */
 .org-add{flex-wrap:nowrap;max-width:780px}
@@ -623,7 +625,6 @@ input:hover,select:hover{border-color:#a9bbc1}
 @media (max-width:760px){.ab-in{padding:7px 16px}.adminbar select{flex:1 1 100%;min-width:0}.who .btn.small{padding:4px 9px}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="locked">
 <div id="authScreen" class="auth" aria-live="polite">
@@ -736,6 +737,7 @@ input:hover,select:hover{border-color:#a9bbc1}
               <div class="sub" id="entryCtx">Entering into</div>
               <div class="grade" id="activeGrade">–</div>
               <div class="pin-row"><input id="pieceIn" inputmode="decimal" enterkeyhint="enter" autocomplete="off" placeholder="sq ft" aria-label="Piece size in sq ft"><button class="btn primary pin-add" id="pieceAdd" type="button">Add</button></div>
+              <div class="sidesw" role="group" aria-label="Is this a side?"><span>Is this a side?</span><button type="button" class="on" id="sideNo" aria-pressed="true">No</button><button type="button" id="sideYes" aria-pressed="false">Yes</button></div>
               <div class="preview" id="piecePreview">&nbsp;</div>
               <div class="keys"><kbd>Enter</kbd> add &nbsp; <kbd>↑</kbd><kbd>↓</kbd> grade &nbsp; <kbd>Shift</kbd>+<kbd>↑</kbd><kbd>↓</kbd> row &nbsp; <kbd>/</kbd> Chrome ⇄ Chrome Free &nbsp; <kbd>Esc</kbd> undo</div>
             </div>
@@ -780,7 +782,7 @@ input:hover,select:hover{border-color:#a9bbc1}
     </aside>
     <div class="maincol">
       <div class="step" id="report-step">
-        <header><h2 id="rfTitle">Origin report</h2><span class="aside no-print"><span class="muted" id="rfPages"></span><button class="btn" id="pdfBtn">Download PDF</button><button class="btn primary" id="printBtn">Print Report</button></span></header>
+        <header><h2 id="rfTitle">Origin report</h2><span class="aside no-print"><span class="muted" id="rfPages"></span><button class="btn primary" id="printBtn">Print Report</button></span></header>
         <div class="body">
           <div id="checks" class="no-print"></div>
           <p class="note no-print" id="outMsg" hidden></p>
@@ -1012,9 +1014,9 @@ let draft=loadDraft()||newDraft();
 let undoStack=[];
 let lastAdded=null;
 
-function newDraft(){return{lotNo:"",assortDate:"",peltTotal:"",loads:[],rows:[],sheetId:"",override:null,cf:false,gradesC:[],gradesF:[],pieces:{},
-  cur:{row:"",type:"C",grade:""},rep:{origin:"",type:"C"},reportId:null,dirty:false}}
-function fixDraft(d){d.cur=Object.assign({row:"",type:"C",grade:""},d.cur||{});d.rep=Object.assign({origin:"",type:"C"},d.rep||{});
+function newDraft(){return{lotNo:"",assortDate:"",peltTotal:"",loads:[],rows:[],sheetId:"",override:null,cf:false,gradesC:[],gradesF:[],pieces:{},sides:{},
+  cur:{row:"",type:"C",grade:"",side:false},rep:{origin:"",type:"C"},reportId:null,dirty:false}}
+function fixDraft(d){d.cur=Object.assign({row:"",type:"C",grade:"",side:false},d.cur||{});if(!d.sides||typeof d.sides!=="object")d.sides={};d.rep=Object.assign({origin:"",type:"C"},d.rep||{});
   ["loads","rows","gradesC","gradesF"].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[]});if(!d.pieces||typeof d.pieces!=="object")d.pieces={};return d}
 function loadDraft(){try{const s=localStorage.getItem(DKEY);return s?fixDraft(Object.assign(newDraft(),JSON.parse(s))):null}catch(e){return null}}
 let saveT=null;
@@ -1026,6 +1028,8 @@ function rangeLabel(b,i){if(!b.length)return"All sizes";if(i===0)return"≤ "+b[
 
 /* ---------- pieces & rows helpers ---------- */
 // pieces[rowKey][type][grade] = [hundredths of sq ft, ...]
+/* Each piece can be marked as a side; the marks sit at the same positions as the pieces (missing = not a side). */
+function sideArr(row,type,grade){const r=draft.sides[row]||(draft.sides[row]={});const t=r[type]||(r[type]={});const a=t[grade]||(t[grade]=[]);const n=pieceArr(row,type,grade).length;while(a.length<n)a.push(false);if(a.length>n)a.length=n;return a}
 function pieceArr(row,type,grade){const r=draft.pieces[row]||(draft.pieces[row]={});const t=r[type]||(r[type]={});return t[grade]||(t[grade]=[])}
 function cntRT(row,type){const t=(draft.pieces[row]||{})[type]||{};let n=0;for(const g in t)n+=(t[g]||[]).length;return n}
 function cntRow(row){return cntRT(row,"C")+cntRT(row,"F")}
@@ -1344,24 +1348,26 @@ function addPiece(){
   const p=parsePiece(pin.value); if(p.empty)return;
   if(p.err){fail(p.err);pin.select();return}
   if(cntRow(r.key)>=P)return fail(rowLabel(r)+" is full: "+P+" of "+P+" pieces graded. Check the pieces in step 1.");
-  pieceArr(r.key,c.type,c.grade).push(p.h);
+  const sa=sideArr(r.key,c.type,c.grade);pieceArr(r.key,c.type,c.grade).push(p.h);sa.push(!!c.side);
   undoStack.push({row:r.key,type:c.type,grade:c.grade});lastAdded=r.key+"|"+c.type+"|"+c.grade;
-  pin.value="";pv.classList.remove("bad");pv.textContent="Added "+f2(p.h/100)+" to "+c.grade+" ("+TYPES[c.type]+")";
+  pin.value="";pv.classList.remove("bad");pv.textContent="Added "+f2(p.h/100)+(c.side?" (side)":"")+" to "+c.grade+" ("+TYPES[c.type]+")";
   saveDraft();renderEntry();refreshRowCalcs();scheduleReport();
 }
 function undo(){
   while(undoStack.length){const u=undoStack.pop();const a=(((draft.pieces[u.row]||{})[u.type]||{})[u.grade]);
-    if(a&&a.length){const h=a.pop();draft.cur={row:u.row,type:u.type,grade:u.grade};lastAdded=null;$("#piecePreview").textContent="Removed "+f2(h/100)+" from "+u.grade;saveDraft();renderEntry();refreshRowCalcs();scheduleReport();return}}
+    if(a&&a.length){const sa=sideArr(u.row,u.type,u.grade);const h=a.pop();sa.pop();draft.cur={row:u.row,type:u.type,grade:u.grade};lastAdded=null;$("#piecePreview").textContent="Removed "+f2(h/100)+" from "+u.grade;saveDraft();renderEntry();refreshRowCalcs();scheduleReport();return}}
   $("#piecePreview").textContent="Nothing to undo";
 }
 $("#undoBtn").onclick=()=>{undo();pin.focus()};
+/* Is this a side? Stays as set for every piece added after it, until changed. */
+["#sideNo","#sideYes"].forEach(id=>{$(id).addEventListener("pointerdown",e=>e.preventDefault());$(id).onclick=()=>{draft.cur.side=id==="#sideYes";saveDraft(false);renderEntry();pin.focus()}});
 $("#entryRow").onchange=e=>{draft.cur.row=e.target.value;lastAdded=null;saveDraft(false);renderEntry();pin.focus()};
 $("#entryType").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b||b.disabled)return;draft.cur.type=b.dataset.t;lastAdded=null;saveDraft(false);renderEntry();pin.focus()});
 $("#gradeChips").addEventListener("click",e=>{const b=e.target.closest("[data-chip]");if(!b)return;draft.cur.grade=b.dataset.chip;lastAdded=null;saveDraft(false);renderEntry();pin.focus()});
 $("#plist").addEventListener("click",e=>{
   const b=e.target.closest("[data-rm]"); if(!b)return;const c=draft.cur;
   const a=(((draft.pieces[c.row]||{})[c.type]||{})[c.grade]); const i=+b.dataset.rm; if(!a||i>=a.length)return;
-  a.splice(i,1);lastAdded=null;saveDraft();renderEntry();refreshRowCalcs();scheduleReport();pin.focus();
+  const sa=sideArr(c.row,c.type,c.grade);a.splice(i,1);sa.splice(i,1);lastAdded=null;saveDraft();renderEntry();refreshRowCalcs();scheduleReport();pin.focus();
 });
 function renderEntryRows(){
   const sel=$("#entryRow");
@@ -1383,7 +1389,9 @@ function renderEntry(){
   const a=(t[c.grade])||[];
   $("#plistLabel").textContent=c.grade&&r?a.length+" piece"+(a.length===1?"":"s")+" in "+c.grade+", newest first":"";
   const key=c.row+"|"+c.type+"|"+c.grade;
-  let h="";for(let i=a.length-1;i>=0;i--){h+='<span class="pc'+(i===a.length-1&&lastAdded===key?" new":"")+'">'+f2(a[i]/100)+'<button class="x" data-rm="'+i+'" aria-label="Remove '+f2(a[i]/100)+'">×</button></span>'}
+  const sd=c.grade&&r?sideArr(c.row,c.type,c.grade):[];
+  $("#sideNo").classList.toggle("on",!c.side);$("#sideYes").classList.toggle("on",!!c.side);$("#sideNo").setAttribute("aria-pressed",String(!c.side));$("#sideYes").setAttribute("aria-pressed",String(!!c.side));
+  let h="";for(let i=a.length-1;i>=0;i--){h+='<span class="pc'+(i===a.length-1&&lastAdded===key?" new":"")+(sd[i]?" side":"")+'"'+(sd[i]?' title="Side"':"")+'>'+f2(a[i]/100)+(sd[i]?'<em class="sd">S</em>':"")+'<button class="x" data-rm="'+i+'" aria-label="Remove '+f2(a[i]/100)+'">×</button></span>'}
   $("#plist").innerHTML=h;
 }
 
@@ -1630,37 +1638,12 @@ async function doPrint(){
   showOut("");window.print();
 }
 $("#printBtn").onclick=doPrint;
-/* PDF: same page images as the print, one A4 page each. Phones and tablets print far more reliably from a PDF
-   (open it, then Print or Share), because their browsers don't print pages shown inside another app. */
-const isTouch=()=>matchMedia("(pointer:coarse)").matches&&!matchMedia("(pointer:fine)").matches;
-function pdfName(){const clean=x=>String(x||"").replace(/[^A-Za-z0-9 &._-]+/g," ").trim();return"Origin report - "+(clean(rp.origin)||"Report")+" - "+clean(TYPES[rp.type])+" - "+dmy(new Date()).replace(/\//g,"-")+".pdf"}
-async function savePdf(btn){
-  btn.disabled=true;showOut("Making the PDF…");
-  try{
-    const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
-    if(!dl){showOut("Downloading files isn't available in this view. Sign in to KKSK Group and reload.","err");return}
-    const J=window.jspdf&&window.jspdf.jsPDF;if(!J)throw new Error("The PDF maker didn't load. Check your connection and reload.");
-    const cs=await pageCanvases();
-    if(!cs.length)throw new Error("There's no report to save yet.");
-    const pdf=new J({orientation:"portrait",unit:"mm",format:"a4",compress:true});
-    const MX=12,MY=10,W=210-2*MX,H=297-2*MY;
-    cs.forEach((c,i)=>{if(i)pdf.addPage("a4","portrait");const r=Math.min(W/c.width,H/c.height),w=c.width*r,h=c.height*r;pdf.addImage(c.toDataURL("image/jpeg",0.92),"JPEG",MX+(W-w)/2,MY,w,h,undefined,"FAST")});
-    await dl.save({filename:pdfName(),data:pdf.output("blob")});
-    showOut(isTouch()?"PDF ready. Open it, then use Print or Share to send it to your printer.":"");
-  }catch(e){
-    const c=e&&e.code;
-    if(c==="declined")showOut("");else if(c==="rate_limited")showOut("A save window is already open. Finish that one first.","warn");
-    else showOut(e&&e.message&&!c?e.message:"Couldn't make the PDF here.","err");
-  }finally{btn.disabled=false}
-}
-$("#pdfBtn").onclick=e=>savePdf(e.currentTarget);
-if(isTouch()){$("#printBtn").textContent="Print (via PDF)";$("#printBtn").onclick=e=>savePdf(e.currentTarget)}
 // Ctrl+P / Cmd+P inside the app uses the same exact two-page print.
 window.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&e.key.toLowerCase()==="p"){e.preventDefault();e.stopPropagation();doPrint()}},true);
 
 /* ---------- saved assortments ---------- */
 let reports={}, repState="loading";
-const SAVE_KEYS=["lotNo","assortDate","peltTotal","loads","rows","sheetId","override","cf","gradesC","gradesF","pieces"];
+const SAVE_KEYS=["lotNo","assortDate","peltTotal","loads","rows","sheetId","override","cf","gradesC","gradesF","pieces","sides"];
 function fmtStamp(iso){if(!iso)return"";const d=new Date(iso),h=d.getHours();return dmy(d)+", "+pad2(h%12||12)+":"+pad2(d.getMinutes())+" "+(h<12?"am":"pm")}
 function renderSaveState(){
   const r=draft.reportId&&reports[draft.reportId];

@@ -12040,22 +12040,21 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   /* ================= GST and TDS: the tax ledgers, the same in every company =================
      Kept in taxes/<id> (shared by Demo and Live): TDS sections ({ kind: "tds", sec, nature, rate, rate2, ledName }) and GST
-     rates ({ kind: "gst", rate, type: Input | Output | RCM }). Each makes its ledgers under Duties & Taxes (ledgers/tax_<id>,
-     and _cgst, _sgst, _igst for GST), open to every company, today's and any added later (allCos), and every division.
+     ledgers ({ kind: "gst", name, order }: CGST / SGST / IGST Input, Input (RCM) and Input - Ineligible, no rates). Each makes
+     its ledger under Duties & Taxes (ledgers/tax_<id>), open to every company, today's and any added later (allCos), and every division.
      Those ledgers are locked in the Ledgers list: they are made, changed and removed only here. The TDS sections are the
-     ones offered when a bill or voucher is accounted, the GST rates the ones offered for reverse charge. */
+     ones offered when a bill or voucher is accounted. */
   var TAX_MAIN = "Duties & Taxes";
   function taxAll(kind) {
     return Object.keys(S.taxes || {}).map(function (k) { return Object.assign({ id: k }, S.taxes[k]); }).filter(function (t) { return t.kind === kind; })
-      .sort(function (a, b) { return kind === "gst" ? (Number(a.rate) || 0) - (Number(b.rate) || 0) || natCmp(a.type, b.type) : natCmp(a.sec, b.sec); });
+      .sort(function (a, b) { return kind === "gst" ? (a.order == null ? 1e6 : a.order) - (b.order == null ? 1e6 : b.order) || natCmp(a.name, b.name) : natCmp(a.sec, b.sec); });
   }
   function pct(n) { return (Math.round((Number(n) || 0) * 1000) / 1000) + "%"; }
   function tdsLedName(t) { return t.ledName || "TDS Payable u/s " + t.sec; }
   /* The ledgers a tax makes: [[ledger id, name], ...] */
   function taxLedgers(t) {
     if (t.kind === "tds") return [["tax_" + t.id, tdsLedName(t)]];
-    var r = Number(t.rate) || 0, h = r / 2, pre = t.type === "Output" ? "Output " : t.type === "RCM" ? "RCM " : "Input ", post = t.type === "RCM" ? " Payable" : "";
-    return [["tax_" + t.id + "_cgst", pre + "CGST" + post + " @ " + pct(h)], ["tax_" + t.id + "_sgst", pre + "SGST" + post + " @ " + pct(h)], ["tax_" + t.id + "_igst", pre + "IGST" + post + " @ " + pct(r)]];
+    return [["tax_" + t.id, t.name || "GST ledger"]];
   }
   function taxSave(t, id) {
     var doc = Object.assign({}, t); delete doc.id; doc.updatedAt = Date.now(); doc.by = meId(); if (!id) doc.createdAt = doc.updatedAt;
@@ -12079,20 +12078,19 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var l = taxAll("tds").filter(function (t) { return t.active !== false; }).map(function (t) { return [t.sec, t.sec + ", " + (t.nature || "") + (t.rate != null && t.rate !== "" ? " (" + pct(t.rate) + (t.rate2 != null && t.rate2 !== "" ? " / " + pct(t.rate2) : "") + ")" : "")]; });
     if (!l.length) l = TDS_SECTIONS.slice(); if (cur && !l.some(function (o) { return o[0] === cur; })) l.push([cur, cur]); return l;
   }
+  /* GST rates offered for reverse charge on vouchers */
   function gstRateOptions(cur) {
-    var m = {}; taxAll("gst").forEach(function (t) { if (t.active !== false && Number(t.rate) > 0) m[Number(t.rate)] = 1; });
-    var l = Object.keys(m).map(Number).sort(function (a, b) { return a - b; }); if (!l.length) l = [5, 12, 18, 28];
-    if (cur && l.indexOf(Number(cur)) < 0) l.push(Number(cur)); return l.map(function (r) { return [String(r), pct(r)]; });
+    var l = [5, 12, 18, 28, 40]; if (cur && l.indexOf(Number(cur)) < 0) l.push(Number(cur)); return l.map(function (r) { return [String(r), pct(r)]; });
   }
   /* Ledgers › GST and TDS: the list, with add, change and remove for the accountant (or an admin). */
   function renderTaxes(kind, box) {
     var can = canLedgers(), list = taxAll(kind), use = {};
     if (kind === "tds") [S.raw && S.raw.bills, S.raw && S.raw.vouchers].forEach(function (src) { Object.keys(src || {}).forEach(function (k) { var s0 = src[k].tdsSection; if (s0) use[s0] = (use[s0] || 0) + 1; }); });
     var hd = el("div", { class: "card pcard", style: "margin-bottom:12px" });
-    hd.appendChild(el("p", { class: "sub", style: "margin:0" }, kind === "tds" ? "Each TDS section makes its own ledger under Duties & Taxes, in every company (also any company added later). The sections listed here are the ones offered when a bill or voucher is accounted." : "Each GST rate makes its CGST, SGST and IGST ledgers under Duties & Taxes, in every company (also any company added later). The rates listed here are the ones offered for reverse charge."));
-    if (can) { var ab = el("button", { type: "button", class: "btn primary sm", id: kind === "tds" ? "tdsAdd" : "gstAdd", style: "margin-top:10px" }, kind === "tds" ? "Add TDS Section" : "Add GST Rate"); ab.addEventListener("click", function () { taxForm(kind, null); }); hd.appendChild(ab); }
+    hd.appendChild(el("p", { class: "sub", style: "margin:0" }, kind === "tds" ? "Each TDS section makes its own ledger under Duties & Taxes, in every company (also any company added later). The sections listed here are the ones offered when a bill or voucher is accounted." : "Each GST ledger is made under Duties & Taxes, in every company (also any company added later)."));
+    if (can) { var ab = el("button", { type: "button", class: "btn primary sm", id: kind === "tds" ? "tdsAdd" : "gstAdd", style: "margin-top:10px" }, kind === "tds" ? "Add TDS Section" : "Add GST Ledger"); ab.addEventListener("click", function () { taxForm(kind, null); }); hd.appendChild(ab); }
     box.appendChild(hd);
-    if (!list.length) { box.appendChild(el("div", { class: "card empty" }, kind === "tds" ? "No TDS sections yet." : "No GST rates yet.")); return; }
+    if (!list.length) { box.appendChild(el("div", { class: "card empty" }, kind === "tds" ? "No TDS sections yet." : "No GST ledgers yet.")); return; }
     var w = el("div", { class: "card list scroll" }); box.appendChild(w);
     var cols = kind === "tds" ? [
       { label: "Section", cell: function (t, td) { td.appendChild(el("b", null, t.sec)); if (t.active === false) sub(td, "Turned off"); } },
@@ -12101,15 +12099,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       { label: "Ledger", cell: function (t, td) { txt(td, tdsLedName(t)); sub(td, "All companies"); } },
       { label: "Used", cls: "r num", cell: function (t, td) { txt(td, String(use[t.sec] || 0)); } }
     ] : [
-      { label: "Rate", cell: function (t, td) { td.appendChild(el("b", null, pct(t.rate))); if (t.active === false) sub(td, "Turned off"); } },
-      { label: "Type", cell: function (t, td) { txt(td, t.type === "Output" ? "Output (sales)" : t.type === "RCM" ? "Reverse charge payable" : "Input (purchases)"); } },
-      { label: "Ledgers", cls: "desc", cell: function (t, td) { txt(td, taxLedgers(t).map(function (x) { return x[1]; }).join(" · ")); sub(td, "All companies"); } }
+      { label: "GST ledger", cls: "desc", cell: function (t, td) { td.appendChild(el("b", null, t.name || "")); if (t.active === false) sub(td, "Turned off"); } },
+      { label: "Companies", cell: function (t, td) { txt(td, "All companies"); } }
     ];
     if (can) cols.push({ label: "", kind: "act", cls: "r", cell: function (t, td) { var e = el("button", { class: "btn sm" }, "Edit"); e.addEventListener("click", function () { taxForm(kind, t); }); td.appendChild(e); } });
     sortTable(w, "tax_" + kind, cols, list, { sortIndex: 0 });
   }
   function taxForm(kind, t) {
-    if (!canLedgers()) return; var isNew = !t; t = t || (kind === "tds" ? { kind: "tds", sec: "", nature: "", rate: "", rate2: "", active: true } : { kind: "gst", rate: "", type: "Input", active: true });
+    if (!canLedgers()) return; var isNew = !t; t = t || (kind === "tds" ? { kind: "tds", sec: "", nature: "", rate: "", rate2: "", active: true } : { kind: "gst", name: "", active: true });
     var body = el("div", { class: "mform" });
     if (kind === "tds") {
       body.appendChild(fld("Section", inp("txSec", t.sec, { maxlength: "12", placeholder: "e.g. 194C" })));
@@ -12118,13 +12115,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       body.appendChild(fld("Rate % for others", inp("txRate2", t.rate2 == null ? "" : String(t.rate2), { inputmode: "decimal", class: "field num", placeholder: "Leave empty if the same" }), "Companies, firms and others, where it differs."));
       body.appendChild(fld("Ledger name", inp("txLed", t.ledName || "", { maxlength: "80", placeholder: "TDS Payable u/s " + (t.sec || "194C") }), "Leave empty for “TDS Payable u/s <section>”."));
     } else {
-      body.appendChild(fld("GST rate %", inp("txRate", t.rate == null ? "" : String(t.rate), { inputmode: "decimal", class: "field num", placeholder: "e.g. 18" }), "The full rate: CGST and SGST are half each, IGST the whole."));
-      var ty = el("select", { class: "field", id: "txType" }); fillSelect(ty, [["Input", "Input (purchases)"], ["Output", "Output (sales)"], ["RCM", "Reverse charge payable"]], t.type || "Input"); body.appendChild(fld("Type", ty));
+      body.appendChild(fld("Ledger name", inp("txName", t.name || "", { maxlength: "60", placeholder: "e.g. CGST Input (RCM)" })));
     }
     var on = el("label", { class: "check", style: "margin-top:6px" }), oc = el("input", { type: "checkbox", id: "txOn" }); oc.checked = t.active !== false; on.appendChild(oc); on.appendChild(document.createTextNode(" In use")); body.appendChild(on);
     var del = null;
-    if (!isNew) { del = el("button", { type: "button", class: "btn sm", style: "margin-top:12px;color:var(--bad)" }, kind === "tds" ? "Remove This Section" : "Remove This Rate"); body.appendChild(del); }
-    var close = popForm(isNew ? (kind === "tds" ? "Add TDS Section" : "Add GST Rate") : "Change " + (kind === "tds" ? "TDS Section " + t.sec : "GST " + pct(t.rate) + " " + (t.type || "Input")), "Its ledgers are made in every company, now and later, and are changed only here.", body, "Save", function () {
+    if (!isNew) { del = el("button", { type: "button", class: "btn sm", style: "margin-top:12px;color:var(--bad)" }, kind === "tds" ? "Remove This Section" : "Remove This Ledger"); body.appendChild(del); }
+    var close = popForm(isNew ? (kind === "tds" ? "Add TDS Section" : "Add GST Ledger") : "Change " + (kind === "tds" ? "TDS Section " + t.sec : t.name), "Its ledger is made in every company, now and later, and are changed only here.", body, "Save", function () {
       errClear(body); var n = function (id) { var v = $(id).value.trim(); if (v === "") return ""; var x = Number(v.replace(/[%\s]/g, "")); return isFinite(x) && x >= 0 && x <= 100 ? x : null; };
       var d0 = { kind: kind, active: $("txOn").checked };
       if (kind === "tds") {
@@ -12134,15 +12130,15 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         if (!d0.nature) { errOn("txNat", "Enter what it is for."); return false; }
         if (d0.rate === null || d0.rate2 === null) { errOn(d0.rate === null ? "txRate" : "txRate2", "Enter a rate between 0 and 100."); return false; }
       } else {
-        d0.rate = n("txRate"); d0.type = $("txType").value;
-        if (d0.rate === null || d0.rate === "" || !(d0.rate > 0)) { errOn("txRate", "Enter the GST rate, e.g. 18."); return false; }
-        if (taxAll("gst").some(function (x) { return Number(x.rate) === d0.rate && (x.type || "Input") === d0.type && x.id !== t.id; })) { errOn("txRate", "GST " + pct(d0.rate) + " " + d0.type + " is already listed."); return false; }
+        d0.name = $("txName").value.trim().replace(/\s+/g, " ");
+        if (!d0.name) { errOn("txName", "Enter the ledger name."); return false; }
+        if (ledAll().some(function (x) { return normName(x.name) === normName(d0.name) && x.id !== "tax_" + t.id; })) { errOn("txName", "A ledger called " + d0.name + " already exists."); return false; }
       }
-      return taxSave(Object.assign({}, isNew ? {} : S.taxes[t.id], d0), isNew ? null : t.id).then(function () { toast(isNew ? "Added. Its ledgers are in every company." : "Saved. Its ledgers are updated in every company."); renderLedgers(); return true; }, function (e) { toast(explain(e)); return false; });
+      return taxSave(Object.assign({}, isNew ? {} : S.taxes[t.id], d0), isNew ? null : t.id).then(function () { toast(isNew ? "Added. Its ledger is in every company." : "Saved. Its ledger is updated in every company."); renderLedgers(); return true; }, function (e) { toast(explain(e)); return false; });
     });
     if (del) del.addEventListener("click", function () {
-      if (del.getAttribute("data-arm") !== "1") { del.setAttribute("data-arm", "1"); del.textContent = "Click again to remove it and its ledgers"; return; }
-      del.disabled = true; taxDelete(t).then(function () { close(); toast("Removed, with its ledgers. Entries already accounted keep what they say."); renderLedgers(); }, function (e) { del.disabled = false; toast(explain(e)); });
+      if (del.getAttribute("data-arm") !== "1") { del.setAttribute("data-arm", "1"); del.textContent = "Click again to remove it and its ledger"; return; }
+      del.disabled = true; taxDelete(t).then(function () { close(); toast("Removed, with its ledger. Entries already accounted keep what they say."); renderLedgers(); }, function (e) { del.disabled = false; toast(explain(e)); });
     });
   }
 

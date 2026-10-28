@@ -112,12 +112,11 @@
   is checked (`ptClean`, `chqTalk`, `neftTalk`) and put in the editor to check and save; Undo steps back. The letterpad
   pages' own Claude box takes the same references.
 - **GST and TDS (Masters › Ledgers › GST, TDS)**, kept by the accountant (or an admin) in `taxes/<id>`: TDS sections
-  (`sec`, `nature`, `rate`, `rate2`, `ledName`) and GST rates (`rate`, `type` Input / Output / RCM). Each makes its ledgers
-  under Duties & Taxes (`ledgers/tax_<id>`, and `_cgst`, `_sgst`, `_igst`), `allCos` (every company, also any added
-  later) and every division, `locked`: shown in the Ledgers list but changed or removed only from GST or TDS. Tax ledgers
-  are not offered as expense ledgers. The TDS sections are the ones offered when accounting; the GST rates the ones
-  offered for reverse charge. Started (migration `20261028150000`) with the sections the app offered and GST 5 / 18 / 40
-  Input and 5 / 18 RCM.
+  (`sec`, `nature`, `rate`, `rate2`, `ledName`) and GST ledgers (`name`, `order`; no rates). Each makes one ledger under
+  Duties & Taxes (`ledgers/tax_<id>`), `allCos` (every company, also any added later) and every division, `locked`: shown in
+  the Ledgers list but changed or removed only from GST or TDS. Tax ledgers are not offered as expense ledgers. The TDS
+  sections are the ones offered when accounting; reverse charge offers 5, 12, 18, 28 and 40%. GST ledgers: CGST, SGST and
+  IGST Input, Input (RCM) and Input - Ineligible (migration `20261028170000`); TDS started with the sections the app offered.
 - **Signatures.** Admins, purchasers, Expenses Operators, accountants, approvers and approval recorders sign once, with a
   finger, stylus or mouse in a 3 : 1 box (or a photo of a paper signature, whitened), before they can carry on; they can
   change it in Settings › Personalise. Kept in `sigs/<person id>` (`png`, trimmed to the ink on white; the same in Demo and

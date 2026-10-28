@@ -4913,10 +4913,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("veGstin").value = v.gstin || ""; $("vePan").value = v.gstin && gstinCheck(v.gstin) !== "format" ? panFromGstin(v.gstin) : ""; $("veTerm").value = v.termDays == null ? "" : String(v.termDays);
     var bk0 = v.bank || {}; $("veBenName").value = bk0.name || ""; $("veBenAcct").value = bk0.acct || ""; $("veBenIfsc").value = bk0.ifsc || ""; $("veBenBank").value = bk0.bank || ""; $("veBenBranch").value = bk0.branch || ""; $("veBenType").value = bk0.type || ""; $("veBenPhone").value = bk0.phone || "";
     renderOpenings(v); renderVendorHead(v); renderVendorStatements();
-    var ed = canEditVendors();
-    Array.prototype.forEach.call(document.querySelectorAll("#secVendor .form .field, #veOb input"), function (i) { if (i.id !== "vePan") i.disabled = !ed || i.disabled; });
-    $("veSave").hidden = !ed; $("veCancel").textContent = ed ? "Cancel" : "Back";
-    if (!ed) { var nt = el("div", { class: "flag", style: "margin-top:8px" }, "Vendor details and opening balances are filled in by the accountant."); $("vFlags").appendChild(nt); }
+    var ed = canEditVendors(), eb = canEditVendorBank();
+    Array.prototype.forEach.call(document.querySelectorAll("#secVendor .form .field, #veOb input"), function (i) { if (i.id === "vePan") return; var bank = /^veBen/.test(i.id); i.disabled = bank ? !eb : !ed; });
+    $("veSave").hidden = !ed && !eb; $("veCancel").textContent = ed || eb ? "Cancel" : "Back";
+    if (!ed || !eb) { var nt = el("div", { class: "flag", style: "margin-top:8px" }, ed ? "The bank details for cheques and NEFT / RTGS are filled in by the financier." : eb ? "The vendor's accounting details and opening balances are kept by the accountant. You fill in the bank details for cheques and NEFT / RTGS." : "Vendor details and opening balances are filled in by the accountant; bank details by the financier."); $("vFlags").appendChild(nt); }
     var tg = $("veToggle"); tg.hidden = !S.isAdmin || !ed;
     if (S.isAdmin) { var off = v.active === false; tg.textContent = off ? "Reactivate vendor" : "Deactivate vendor"; tg.className = "btn" + (off ? "" : " danger"); }
     show("secVendor");
@@ -4978,7 +4978,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   function saveVendor() {
     var v = S.vendors[VE.id]; if (!v || VE.busy) return;
     veClear();
+    var ed = canEditVendors(), eb = canEditVendorBank();
     var name = $("veName").value.trim().replace(/\s+/g, " "), type = $("veType").value, g = normId($("veGstin").value), term = $("veTerm").value.trim(), ok = true;
+    if (!ed && eb) return saveVendorBank(v);
     var pan = g && gstinCheck(g) !== "format" ? panFromGstin(g) : "";
     $("veGstin").value = g; $("vePan").value = pan;
     if (!name) { veErr("veName", "Enter the vendor's name."); ok = false; }
@@ -5007,10 +5009,20 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var bkd = { name: smartCase($("veBenName").value.trim()), acct: $("veBenAcct").value.replace(/\s+/g, ""), ifsc: $("veBenIfsc").value.trim().toUpperCase(), bank: smartCase($("veBenBank").value.trim()), branch: smartCase($("veBenBranch").value.trim()), type: $("veBenType").value, phone: $("veBenPhone").value.trim() };
     if (bkd.acct && !/^[0-9A-Za-z]{6,24}$/.test(bkd.acct)) { veErr("veBenAcct", "Letters and digits only, 6 to 24."); $("veBenAcct").focus(); return; }
     if (bkd.ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bkd.ifsc)) { veErr("veBenIfsc", "An IFSC looks like SBIN0001234."); $("veBenIfsc").focus(); return; }
-    data.bank = bkd;
+    if (eb) data.bank = bkd;
     if (changed) data.openings = openings;
     VE.busy = true; $("veSave").disabled = true;
     retry(function () { return S.db.doc("vendors/" + v.id).update(data); }).then(function () { toast("Vendor saved."); backToVendors(); }, function (e) { toast(explain(e)); })
+      .then(function () { VE.busy = false; $("veSave").disabled = false; });
+  }
+  /* The financier saves only the bank details. */
+  function readVendorBank() { return { name: smartCase($("veBenName").value.trim()), acct: $("veBenAcct").value.replace(/\s+/g, ""), ifsc: $("veBenIfsc").value.trim().toUpperCase(), bank: smartCase($("veBenBank").value.trim()), branch: smartCase($("veBenBranch").value.trim()), type: $("veBenType").value, phone: $("veBenPhone").value.trim() }; }
+  function saveVendorBank(v) {
+    var bkd = readVendorBank();
+    if (bkd.acct && !/^[0-9A-Za-z]{6,24}$/.test(bkd.acct)) { veErr("veBenAcct", "Letters and digits only, 6 to 24."); $("veBenAcct").focus(); return; }
+    if (bkd.ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bkd.ifsc)) { veErr("veBenIfsc", "An IFSC looks like SBIN0001234."); $("veBenIfsc").focus(); return; }
+    VE.busy = true; $("veSave").disabled = true;
+    retry(function () { return S.db.doc("vendors/" + v.id).update({ bank: bkd, bankAt: Date.now(), bankBy: meId() }); }).then(function () { toast("Bank details saved."); backToVendors(); }, function (e) { toast(explain(e)); })
       .then(function () { VE.busy = false; $("veSave").disabled = false; });
   }
   function toggleVendor() {
@@ -8085,6 +8097,10 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* Vendor details and opening balances, and ledgers, are kept by the accountant (or an admin, also when viewing as them). */
   function canImport() { return S.isAdmin || canDo("acct"); }
   function canEditVendors() { return S.isAdmin || canDo("acct"); }
+  /* A vendor's details are in two parts with separate keepers: the accounting details (type, GSTIN, address, terms, opening
+     balances) are the accountant's; the payment details for cheques and NEFT / RTGS (bank account) are the financier's.
+     Neither can change the other's. */
+  function canEditVendorBank() { return S.isAdmin || canDo("txn"); }
   var IMP_SPECS = {
     ledgers: {
       title: "Ledgers", key: "ledger name",
@@ -8848,8 +8864,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var lg0 = ((v && v.ledgers) || [])[0] || {};
     var lines = v ? (v.lines && v.lines.length ? v.lines.map(function (x) { return { d: x.d || "", amt: fmtInput(x.amt), lg: x.lg || ((v.ledgers || []).length === 1 ? lg0.id : ""), touched: true }; }) : [{ d: v.narration || "", amt: fmtInput(v.total), lg: lg0.id || "", touched: true }]) : [{ d: "", amt: "", lg: "", touched: false }];
     VH.D = v ? { companyId: v.companyId, prepBy: v.preparedBy || "", forId: v.preparedBy || "", forNew: "", approverId: v.approverId || "", voucherNo: v.voucherNo || "", voucherDate: v.voucherDate || "", payee: v.payee || "", payeeChoice: v.payee || "", payeeNew: "", settle: v.settle ? "yes" : "no", lines: lines, X: Object.assign({}, extOf(v, DIV)),
-        vtype: v.vtype || "", supplyOf: v.supplyOf || "", payeeAddr: v.payeeAddr || "" }
-      : { companyId: cos.length === 1 ? cos[0].id : "", prepBy: "", approverId: S.isAdmin ? "" : defaultApprover(), voucherNo: "", voucherDate: "", payee: "", payeeChoice: "", payeeNew: "", settle: "", lines: lines, vtype: "", supplyOf: "", payeeAddr: "" };
+        vtype: v.vtype || "", supplyOf: v.supplyOf || "", payeeAddr: v.payeeAddr || "", payeeIdNo: v.payeeIdNo || "" }
+      : { companyId: cos.length === 1 ? cos[0].id : "", prepBy: "", approverId: S.isAdmin ? "" : defaultApprover(), voucherNo: "", voucherDate: "", payee: "", payeeChoice: "", payeeNew: "", settle: "", lines: lines, vtype: "", supplyOf: "", payeeAddr: "", payeeIdNo: "" };
     $("vfTitle").textContent = v ? "Voucher " + v.voucherNo : "New voucher";
     $("vfSub").textContent = v && v.acct === "back" && v.acctNote ? "Sent back by the accountant: " + v.acctNote : "Paid in full: by cash, or by the financier in cash or cheque. GST and TDS are entered by the accountant.";
     $("vfSave").textContent = v ? "Save changes" : "Submit voucher"; $("vfDelete").hidden = !v;
@@ -8874,7 +8890,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     pb.appendChild(el("div", { class: "ttl" }, "New person or shop. The name and address are offered next time."));
     pb.appendChild(fld("Name", inp("vfPayee", D.payeeNew, { maxlength: "120", autocomplete: "off", "data-fmt": "name" })));
     f.appendChild(pb);
-    var ad = el("textarea", { class: "field", id: "vfAddr", rows: "2", maxlength: "240" }); ad.value = D.payeeAddr; var adf = fld("Address", ad, "Saved with the name and filled in next time. Printed on the voucher.", true); adf.id = "vfAddrF"; f.appendChild(adf);
+    var idi = inp("vfIdNo", D.payeeIdNo || "", { maxlength: "14", autocomplete: "off", class: "field mono", spellcheck: "false" }); var idf = fld("Aadhaar / PAN No.", idi, "Required. Aadhaar (12 digits) or PAN (e.g. ABCDE1234F). Saved with the name; shown here next time."); idf.id = "vfIdF"; f.appendChild(idf);
+    var ad = el("textarea", { class: "field", id: "vfAddr", rows: "2", maxlength: "240" }); ad.value = D.payeeAddr; var adf = fld("Address", ad, "For a Self Invoice or Freight & Transport voucher. Saved with the name and filled in next time.", true); adf.id = "vfAddrF"; f.appendChild(adf);
     var sup = el("select", { class: "field", id: "vfSupply" }), sopts = [["", "Choose"]].concat(SUPPLY_OF.map(function (x) { return [x, x]; }));
     if (D.supplyOf && SUPPLY_OF.indexOf(D.supplyOf) < 0) sopts.push([D.supplyOf, D.supplyOf]);
     fillSelect(sup, sopts, D.supplyOf); var so = fld("Supply Of", sup, "Goods, Services, or Composite (goods and services together)."); so.id = "vfSupplyF"; f.appendChild(so);
@@ -8909,6 +8926,15 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var SUPPLY_OF = ["Goods", "Services", "Composite"];
   /* People and shops paid by voucher, with their address: payees/<key>. Picking a saved one fills the address back in. */
   function payeeKey(n) { return "p_" + normId(n).slice(0, 60); }
+  /* A cash voucher's payee is identified by Aadhaar or PAN, kept with the name (payees/*) and on each voucher. */
+  function idNorm(v) { return String(v || "").replace(/[\s-]+/g, "").toUpperCase(); }
+  function idKind(v) { v = idNorm(v); return /^[2-9][0-9]{11}$/.test(v) ? "aadhaar" : /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(v) ? "pan" : ""; }
+  function idText(v, mask) { v = idNorm(v); var k = idKind(v); return k === "aadhaar" ? "Aadhaar " + (mask ? "XXXX XXXX " + v.slice(8) : v.slice(0, 4) + " " + v.slice(4, 8) + " " + v.slice(8)) : k === "pan" ? "PAN " + v : v; }
+  function payeeIdOf(n) {
+    var p = S.payees && S.payees[payeeKey(n)]; if (p && p.idNo) return p.idNo;
+    var last = vchList().filter(function (v) { return normName(v.payee) === normName(n) && v.payeeIdNo; }).sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); })[0];
+    return last ? last.payeeIdNo : "";
+  }
   function payeeAddrOf(n) {
     var p = S.payees && S.payees[payeeKey(n)]; if (p && p.address) return p.address;
     var last = vchList().filter(function (v) { return normName(v.payee) === normName(n) && v.payeeAddr; }).sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); })[0];
@@ -8918,8 +8944,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var D = VH.D; if (!D || !$("vfCo")) return;
     D.companyId = $("vfCo").value; D.X = extRead("vf", D.X || {}); if ($("vfPrep")) D.prepBy = $("vfPrep").value; if ($("vfFor")) { D.forId = $("vfFor").value; D.forNew = $("vfForNew").value; } if ($("vfAppr")) D.approverId = $("vfAppr").value;
     var pc0 = D.payeeChoice; D.payeeChoice = $("vfPayeeSel").value; D.payeeNew = $("vfPayee").value;
-    if (D.payeeChoice !== pc0) { $("vfAddr").value = D.payeeChoice && D.payeeChoice !== "new" ? payeeAddrOf(D.payeeChoice) : ""; }
-    D.payee = D.payeeChoice === "new" ? D.payeeNew : D.payeeChoice; D.vtype = $("vfType").value; D.payeeAddr = $("vfAddr").value; D.supplyOf = $("vfSupply").value;
+    if (D.payeeChoice !== pc0) { $("vfAddr").value = D.payeeChoice && D.payeeChoice !== "new" ? payeeAddrOf(D.payeeChoice) : ""; $("vfIdNo").value = D.payeeChoice && D.payeeChoice !== "new" ? payeeIdOf(D.payeeChoice) : ""; }
+    D.payee = D.payeeChoice === "new" ? D.payeeNew : D.payeeChoice; D.vtype = $("vfType").value; D.payeeAddr = $("vfAddr").value; D.payeeIdNo = idNorm($("vfIdNo").value); D.supplyOf = $("vfSupply").value;
     D.lines.forEach(function (x, i) { if ($("vfLd" + i)) { x.d = $("vfLd" + i).value; x.amt = $("vfLa" + i).value; x.lg = $("vfLg" + i).value; } });
     var r = document.querySelector('input[name="vfSettle"]:checked'); D.settle = r ? r.value : "";
   }
@@ -8964,7 +8990,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (!D.payeeChoice) E("vfPayeeSel", "Choose who was paid, or choose New person or shop.");
     else if (D.payeeChoice === "new" && !D.payeeNew.trim()) E("vfPayee", "Type the name of the person or shop paid.");
     var other = D.vtype && D.vtype !== "Cash Voucher";
-    if (D.payeeChoice && !String(D.payeeAddr || "").trim()) E("vfAddr", "Enter the address of the person or shop.");
+    if (D.payeeChoice && !idKind(D.payeeIdNo)) E("vfIdNo", D.payeeIdNo ? "That isn't a valid Aadhaar (12 digits) or PAN (like ABCDE1234F)." : "Enter their Aadhaar or PAN number.");
+    if (D.payeeChoice && other && !String(D.payeeAddr || "").trim()) E("vfAddr", "Enter the address of the person or shop.");
     if (other && !D.supplyOf.trim()) E("vfSupply", "Choose Goods, Services or Composite.");
     var bad = "";
     D.lines.forEach(function (x, i) { if (bad) return; var n = num(x.amt); if (!String(x.d).trim()) bad = "Describe line " + (i + 1) + "."; else if (n == null || n <= 0) bad = "Enter the amount on line " + (i + 1) + ", more than zero."; });
@@ -8984,7 +9011,9 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("vfPayeeBox").hidden = D.payeeChoice !== "new";
     var po = $("vfPayeeSel").options[1]; if (po) po.textContent = D.payeeNew.trim() ? "New person or shop: " + D.payeeNew.trim() : "New person or shop";
     var other = D.vtype && D.vtype !== "Cash Voucher";
-    $("vfAddrF").hidden = !D.payeeChoice; $("vfSupplyF").hidden = !other;
+    $("vfAddrF").hidden = !D.payeeChoice || !other; $("vfSupplyF").hidden = !other;
+    /* a saved payee's number is shown, not typed again; asked for when none is on file */
+    var known = D.payeeChoice && D.payeeChoice !== "new" ? payeeIdOf(D.payeeChoice) : ""; $("vfIdF").hidden = !D.payeeChoice; $("vfIdNo").disabled = !!known && idNorm($("vfIdNo").value) === idNorm(known);
     var t = vchTotal(D); $("vfTotV").textContent = t == null ? "" : money(t);
     if ($("vfLg0") && ($("vfLg0").getAttribute("data-co") || "") !== (D.companyId || "")) { drawVchLines(); }
     if (D.companyId) D.lines.forEach(function (x, i) { if (x.touched || !$("vfLg" + i)) return; var sg = suggestVch(D.companyId, D.payee, x.d + " " + D.supplyOf); if (sg && sg !== x.lg) { x.lg = sg; $("vfLg" + i).value = sg; } });
@@ -9023,7 +9052,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var vn = !old || old.companyId !== D.companyId || !old.voucherNo ? nextVoucherNo(D.companyId, D.voucherDate) : { no: old.voucherNo, seq: old.voucherSeq || null, fy: old.voucherFy || fyOf(D.voucherDate) };
     var doc = Object.assign({ companyId: D.companyId, voucherNo: vn.no, voucherSeq: vn.seq, voucherFy: vn.fy, voucherDate: D.voucherDate, payee: D.payee.trim(), total: total, tds: tds, lines: lines,
       narration: lines.map(function (x) { return x.d; }).join(" "), vtype: D.vtype, gstApp: old && other ? old.gstApp || "N/A" : "N/A", gstRate: old && other && old.gstApp === "RCM" ? old.gstRate : null, taxable: total,
-      supplyOf: other ? D.supplyOf.trim() : "", payeeAddr: D.payeeAddr.trim(), ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
+      supplyOf: other ? D.supplyOf.trim() : "", payeeAddr: other ? D.payeeAddr.trim() : "", payeeIdNo: idNorm(D.payeeIdNo), payeeIdKind: idKind(D.payeeIdNo), ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
       settle: D.settle === "yes", acct: "pending", acctNote: "", updatedAt: now, updatedBy: meId() }, prepFields(D.prepBy), approverFields(D.approverId), extDoc(D.companyId, D.X));
     var newName = null;
     if (vMaker()) {
@@ -9036,7 +9065,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     VH.busy = true; $("vfSave").disabled = true;
     var pk = payeeKey(doc.payee), pOld = S.payees && S.payees[pk];
     (newName ? retry(function () { return S.db.doc("vpeople/" + newName.id).set({ name: newName.name, active: true, createdAt: now, createdBy: meId() }); }).then(function () { S.vpeople = S.vpeople || {}; S.vpeople[newName.id] = { id: newName.id, name: newName.name, active: true }; }) : Promise.resolve()).then(function () { return retry(function () { return old ? S.db.doc("vouchers/" + id).update(doc) : S.db.doc("vouchers/" + id).set(doc); }); }).then(function () {
-      if (doc.payee && (!pOld || pOld.address !== doc.payeeAddr || pOld.name !== doc.payee)) S.db.doc("payees/" + pk).set({ name: doc.payee, address: doc.payeeAddr, updatedAt: now, by: meId() }).catch(function () {});
+      if (doc.payee && (!pOld || (doc.payeeAddr && pOld.address !== doc.payeeAddr) || pOld.name !== doc.payee || pOld.idNo !== doc.payeeIdNo)) S.db.doc("payees/" + pk).set({ name: doc.payee, address: doc.payeeAddr || (pOld && pOld.address) || "", idNo: doc.payeeIdNo, idKind: doc.payeeIdKind, updatedAt: now, by: meId() }).catch(function () {});
       S.vouchers[id] = Object.assign({ id: id }, old || {}, doc); toast("Voucher " + (old ? "updated" : "submitted") + ". It now goes to the accountant.");
       backToVch(); renderNav();
     }, function (e) { toast(explain(e)); }).then(function () { VH.busy = false; $("vfSave").disabled = false; });
@@ -11977,7 +12006,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var iH = 15, c1 = cash ? 128 : 98, c2 = cash ? 0 : 34, c3 = W - c1 - c2;
     lab("Paid to", X + 3, y + 4.2);
     F("bold", 10.5, INK); T(fitT(v.payee || "", c1 - 6), X + 3, y + 9);
-    if (v.payeeAddr) { F("normal", 6.4, BODY); T(fitT(String(v.payeeAddr).replace(/\n/g, ", "), c1 - 6), X + 3, y + 12.6); }
+    var sub2 = [v.payeeIdNo ? idText(v.payeeIdNo, true) : "", !cash && v.payeeAddr ? String(v.payeeAddr).replace(/\n/g, ", ") : ""].filter(Boolean).join("  ·  ");
+    if (sub2) { F("normal", 6.4, BODY); T(fitT(sub2, c1 - 6), X + 3, y + 12.6); }
     if (!cash) { vl(X + c1, y, y + iH); lab("Supply of", X + c1 + 3, y + 4.2); F("bold", 9, INK); T(fitT(v.supplyOf || "-", c2 - 6), X + c1 + 3, y + 9.5); }
     vl(X + c1 + c2, y, y + iH); lab("Payment", X + c1 + c2 + 3, y + 4.2); F("bold", 9, INK); T(v.settle ? "From cash advance" : "By the financier", X + c1 + c2 + 3, y + 9.5);
     F("normal", 6.2, MUTE); T(v.settle ? "Settled against the holder's advance" : "Cash or cheque", X + c1 + c2 + 3, y + 12.6);

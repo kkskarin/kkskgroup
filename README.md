@@ -85,6 +85,15 @@
   same way (none named means Maintenance & Civil); a vendor found by GSTIN from another division joins that division too.
 - **Admins** do the same work as the Super Admin and can view as a Purchaser, Accountant or Financier. The Super Admin alone adds
   admins and edits the app. Admins can delete a person for good (Settings › Users › Delete): their login goes, their entries stay.
+- **Vendor details have two keepers.** The accounting details (type, GSTIN, address, terms, opening balances) are the
+  Accountant's; the payment details for cheques and NEFT / RTGS (bank, account number, IFSC, branch, account type,
+  mobile) are the Financier's (Masters › Vendors in Finance). Each sees the other's part read-only, and a save writes
+  only its own part (`vendors.bank` with `bankAt` / `bankBy` for the financier).
+- **Voucher payees are identified by Aadhaar or PAN** (required; Aadhaar 12 digits, PAN like ABCDE1234F). It is kept
+  with the name (`payees/*.idNo`, `idKind`) and on the voucher (`payeeIdNo`, `payeeIdKind`); a saved payee's number is
+  shown, disabled, when picked again, and asked for when none is on file. A Cash Voucher has no address; a Self Invoice
+  or Freight & Transport voucher still asks for it. The printed voucher shows the PAN, or the Aadhaar masked to its last
+  four digits.
 - **Vendors and ledgers are kept by the Accountant** (or an admin, also when viewing as them), in any app. A vendor is added from
   its first bill or proforma, as read; after that only the accountant changes its details. A bill can't be accounted until its
   vendor's details are complete (type, terms, address, valid GSTIN); its opening balance, entered by the accountant, approves the

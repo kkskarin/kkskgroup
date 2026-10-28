@@ -200,6 +200,7 @@ table.t{border-collapse:collapse;width:100%}
 .bc-body{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
 .bc-body.noprev{grid-template-columns:1fr}
 .bc-prev{border-right:1px solid var(--line);padding:16px;background:var(--soft);max-height:84vh;overflow:auto}
+.bc-fv{padding:8px;display:flex;height:84vh}.bc-fv .fv{flex:1}
 .bc-prev img{width:100%;display:block;border:1px solid var(--line);border-radius:6px;margin-bottom:10px;background:#fff;cursor:zoom-in}
 .bc-prev.zoom img{width:auto;max-width:none;cursor:zoom-out}
 .bc-prev .hint{font-size:12.5px;color:var(--muted);margin:0 0 10px}
@@ -236,6 +237,7 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .ob .err{display:block;font-size:12px;color:var(--bad);font-weight:600;margin-top:4px}
 .more{padding:12px 16px;border-top:1px solid var(--line)}
 @media (max-width:900px){.bc-body{grid-template-columns:1fr}.bc-prev{border-right:0;border-bottom:1px solid var(--line);max-height:55vh}}
+@media (max-width:900px){.bc-fv{height:62vh;max-height:none}}
 @media (max-width:760px){.vbox{grid-template-columns:1fr}.bc-head{padding:12px 16px}.filters .field{flex:1 1 100%}}
 .microw{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 2px}
 .microw .field{width:auto;min-height:40px;padding:7px 10px}
@@ -620,6 +622,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15p
 .fv-stage.drag{cursor:grabbing}.fv-stage:focus-visible{box-shadow:inset 0 0 0 2px var(--kk,#009256)}
 .fv-sheet{margin:0 auto;position:relative;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.35);min-width:40px;min-height:40px}
 .fv-sheet canvas{display:block}
+.fv-native{flex:1;width:100%;border:0;background:#5f6b66;min-height:400px}
 .fv-img{position:absolute;left:50%;top:50%;max-width:none;pointer-events:none}
 .fv-note{padding:24px;color:var(--muted);font-size:13.5px;background:#fff}
 .ao-split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
@@ -3441,6 +3444,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var fw = b("Fit width", "Fit to width", function () { V.fit = "width"; draw(); }), fp = b("Fit page", "Fit the whole page", function () { V.fit = "page"; draw(); });
     b("↻", "Rotate", function () { V.rot = (V.rot + 90) % 360; draw(); });
     bar.appendChild(el("span", { class: "grow" }));
+    /* Some scanners' PDFs (layered "compact" scans) come out doubled or blurred in the app's own drawing; the browser's PDF viewer
+       shows them as they are. The choice is remembered on this device. */
+    var nat = el("iframe", { class: "fv-native", title: "Bill file, in the browser's PDF viewer", hidden: "" }); box.appendChild(nat);
+    function natOn() { try { return localStorage.getItem("bv_fv_native") === "1"; } catch (e) { return false; } }
+    function natShow(on) { if (!V.pdf || !V.url) on = false; stage.hidden = !!on; nat.hidden = !on; if (on && nat.src !== V.url) nat.src = V.url; nb.textContent = on ? "App view" : "Browser view"; nb.setAttribute("aria-pressed", on ? "true" : "false"); [prevB, nextB, fw, fp].forEach(function (x) { x.disabled = !!on; }); if (!on) paint(); }
+    var nb = b("Browser view", "Show the PDF in the browser's own viewer (if it looks doubled or blurred here)", function () { var on = stage.hidden ? false : true; try { localStorage.setItem("bv_fv_native", on ? "1" : "0"); } catch (e) {} natShow(on); if (!on) draw(); }); nb.hidden = true;
     var nt = b("Open in new tab", "Open the file in a new tab", function () { window.bvFiles.link(meta.path).then(function (u) { window.open(u, "_blank", "noopener"); }, function () { if (V.url) window.open(V.url, "_blank", "noopener"); }); });
     var note = el("div", { class: "fv-note" }, "Loading the bill file…"); sheet.appendChild(note);
     function baseSize() { if (V.img) return { w: V.img.naturalWidth || 800, h: V.img.naturalHeight || 1100 }; return V.vp ? { w: V.vp.width, h: V.vp.height } : { w: 800, h: 1100 }; }
@@ -3485,7 +3494,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     });
     var ro = window.ResizeObserver ? new ResizeObserver(function () { if (V.fit && (V.pdf || V.img)) draw(); }) : null; if (ro) ro.observe(stage);
     window.bvFiles.get(meta.path).then(function (blob) {
-      if (meta.type === "application/pdf") return blob.arrayBuffer().then(function (buf) { return pdfLib().then(function (L) { return L.getDocument({ data: new Uint8Array(buf), isEvalSupported: false }).promise; }); }).then(function (pdf) { V.pdf = pdf; V.pages = pdf.numPages; V.url = URL.createObjectURL(blob); });
+      if (meta.type === "application/pdf") return blob.arrayBuffer().then(function (buf) { return pdfLib().then(function (L) { return L.getDocument({ data: new Uint8Array(buf), isEvalSupported: false }).promise; }); }).then(function (pdf) { V.pdf = pdf; V.pages = pdf.numPages; V.url = URL.createObjectURL(blob.type === "application/pdf" ? blob : new Blob([blob], { type: "application/pdf" })); nb.hidden = false; if (natOn()) natShow(true); });
       V.url = URL.createObjectURL(blob);
       return new Promise(function (res, rej) { var im = el("img", { alt: "Bill", class: "fv-img", draggable: "false" }); im.onload = function () { V.img = im; sheet.textContent = ""; sheet.appendChild(im); res(); }; im.onerror = rej; im.src = V.url; });
     }).then(function () { return draw(); }, function () { note.textContent = "The bill file couldn't be opened. Check the connection and reopen the bill."; nt.disabled = false; });
@@ -4386,6 +4395,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var prev = S.previews[b.id], body = el("div", { class: "bc-body" + (prev && prev.length ? "" : " noprev") });
     if (prev && prev.length) body.appendChild(previewEl(prev));
     else if (b.previewPages) setTimeout(function () { loadPreviews(b.id); }, 0);
+    /* a bill back for editing has no page pictures any more: its kept file opens in their place */
+    else if (b.file && b.file.path && window.bvFiles) { body.classList.remove("noprev"); var fw0 = el("div", { class: "bc-prev bc-fv" }); fw0.appendChild(fileViewer(b.file)); body.appendChild(fw0); }
     var f = el("div", { class: "form" });
     var co = el("select", { class: "field", id: "bcCo" }); fillSelect(co, companyOpts(D.companyId, billStep(b)), D.companyId);
     f.appendChild(fld("Company", co, b.ex && b.ex.companyName ? "On the bill: " + b.ex.companyName : ""));
@@ -10799,7 +10810,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (!lines.length) lines.push({ id: "", amt: o.sumMode ? "" : base != null && base > 0 ? fmtInput(base) : "" });
       lines.forEach(function (x, i) {
         var row = el("div", { class: "ledrow" });
-        var s = ledSelect(o.cid(), x.id, { "aria-label": "Ledger, line " + (i + 1) });
+        var s = o.pick ? o.pick(x.id, { "aria-label": "Ledger, line " + (i + 1) }) : ledSelect(o.cid(), x.id, { "aria-label": "Ledger, line " + (i + 1) });
         s.addEventListener("change", function () { x.id = s.value; o.touched && o.touched(); info(); });
         var a = inp(o.id + "_a" + i, x.amt, { inputmode: "decimal", class: "field num", "aria-label": "Amount, line " + (i + 1), placeholder: "Amount" });
         if (o.max === 1) { a.disabled = true; x.amt = base == null ? "" : fmtInput(base); a.value = x.amt; }
@@ -11858,6 +11869,36 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     ], rows, { sortIndex: 0, limit: AC.limit });
   }
   function acctLocked(kind, x) { return kind === "bill" ? !!checkOf(x) : !!vcrOf(x.id); }
+  /* ---- GST on a bill: its GST spread over the GST ledgers. Within the state it is CGST and SGST (equal halves); from another
+     state (or from abroad) IGST. The input can be eligible, under reverse charge (RCM) or ineligible, as the ledgers are named. ---- */
+  function gstHead(l) { var n = String((l && l.name) || ""); return /IGST/i.test(n) ? "igst" : /CGST/i.test(n) ? "cgst" : /SGST/i.test(n) ? "sgst" : ""; }
+  function gstFlavour(l) { var n = String((l && l.name) || ""); return /ineligible/i.test(n) ? "inel" : /\bRCM\b/i.test(n) ? "rcm" : "in"; }
+  function gstLeds(inter) {
+    var ord = function (l) { var t = (S.taxes || {})[l.taxId]; return t && t.order != null ? t.order : 1e6; };
+    return ledAll().filter(function (l) { var h = gstHead(l); return l.tax === "gst" && l.active !== false && (inter ? h === "igst" : h === "cgst" || h === "sgst"); }).sort(function (a, b) { return ord(a) - ord(b) || natCmp(a.name, b.name); });
+  }
+  function billGst(b) { return Number(b.fcGst != null ? b.fcGst : b.gstAmt) || 0; }
+  function coState(cid) { var c = S.companies[cid] || {}; return String(c.stateCode || String(c.gstin || "").slice(0, 2) || ""); }
+  /* from another state: the vendor's GSTIN starts with another state code than the company's; an overseas vendor too */
+  function billInter(b) {
+    if (b.gstSupply) return b.gstSupply === "inter"; var v = S.vendors[b.vendorId] || {}; if (v.type === "overseas" || (b.currency && b.currency !== "INR")) return true;
+    var vs = String(v.gstin || b.vendorGstin || "").slice(0, 2), cs = coState(b.companyId); return !!(vs && cs && vs !== cs);
+  }
+  function gstSuggest(b, inter, flav) {
+    var g = round2(billGst(b)), ls = gstLeds(inter).filter(function (l) { return gstFlavour(l) === (flav || "in"); });
+    var pick = function (h) { return (ls.filter(function (l) { return gstHead(l) === h; })[0] || {}).id || ""; };
+    if (inter) return [{ id: pick("igst"), amt: fmtInput(g) }];
+    var half = round2(g / 2); return [{ id: pick("cgst"), amt: fmtInput(half) }, { id: pick("sgst"), amt: fmtInput(round2(g - half)) }];
+  }
+  function gstCheck(b, D) {
+    var g = round2(billGst(b)); if (!(g > 0)) return "";
+    if (!gstLeds(D.gstInter).length) return "There are no " + (D.gstInter ? "IGST" : "CGST and SGST") + " ledgers. Add them in Masters › Ledgers › GST.";
+    var sum = 0, c = 0, s0 = 0, ok = {}; gstLeds(D.gstInter).forEach(function (l) { ok[l.id] = l; });
+    for (var i = 0; i < D.gst.length; i++) { var x = D.gst[i], n = num(x.amt); if (!x.id) return "Choose the GST ledger on line " + (i + 1) + "."; if (!ok[x.id]) return (D.gstInter ? "From another state only IGST ledgers are used." : "Within the state only CGST and SGST ledgers are used.") ; if (n == null || n < 0) return "Enter the amount on GST line " + (i + 1) + "."; sum += n; if (gstHead(ok[x.id]) === "cgst") c += n; if (gstHead(ok[x.id]) === "sgst") s0 += n; }
+    if (Math.abs(round2(sum) - g) > 0.5) return "The GST ledgers add up to " + amt2(sum) + "; the bill's GST is " + amt2(g) + ".";
+    if (!D.gstInter && Math.abs(c - s0) > 1) return "CGST (" + amt2(c) + ") and SGST (" + amt2(s0) + ") should be equal.";
+    return "";
+  }
   function openAcct(kind, id) {
     var x = kind === "bill" ? S.bills[id] : S.vouchers[id]; if (!x) return;
     AC.kind = kind; AC.id = id;
@@ -11865,6 +11906,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var lines = ledLinesIn(x.ledgers);
     if (!lines.length) { if (kind === "bill") lines = suggestBill(x, x.companyId, x.vendorId, Number(base)); else { var sv = suggestVch(x.companyId, x.payee, x.narration); if (sv) lines = [{ id: sv, amt: fmtInput(base) }]; } }
     AC.D = { lines: lines, tds: x.tds == null ? "" : fmtInput(x.tds), sec: x.tdsSection || "", vtype: x.vtype || "", gstApp: x.gstApp || "N/A", gstRate: x.gstRate != null ? String(x.gstRate) : "", base: Number(base) || 0 };
+    if (kind === "bill") { AC.D.gstInter = billInter(x); AC.D.gstFl = x.gstFlavour || "in"; AC.D.gst = (x.gstLedgers || []).length ? ledLinesIn(x.gstLedgers) : billGst(x) > 0 ? gstSuggest(x, AC.D.gstInter, AC.D.gstFl) : []; }
     renderAcctOne(); show("secAcctOne");
   }
   function renderAcctOne() {
@@ -11909,9 +11951,26 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var lf = el("div", { class: "f wide" }); lf.appendChild(el("span", { class: "lb" }, isB ? "Ledgers" : "Ledger"));
     var eo = { id: "aoLed", lines: D.lines, max: isB ? MAX_LED.bill : MAX_LED.voucher, cid: function () { return x.companyId; }, base: function () { return D.base; }, baseLabel: isB ? "taxable amount" : "total", suggest: isB ? function () { return suggestBill(x, x.companyId, x.vendorId, D.base); } : null };
     lf.appendChild(ledEditor(eo)); lf.appendChild(el("span", { class: "hint" }, isB ? "Up to 4 ledgers. The amounts must add up to the taxable amount, " + amt2(D.base) + "." : "Up to 2 ledgers. The amounts must add up to the total, " + amt2(D.base) + ".")); lf.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" }));
-    var lw = el("div", { class: "form", style: "margin-top:12px" }); lw.appendChild(lf); f.insertBefore(lw, det);
+    var lw = el("div", { class: "form", style: "margin-top:12px" }); lw.appendChild(lf);
+    var go0 = null;
+    if (isB && billGst(x) > 0) {
+      var gf0 = el("div", { class: "f wide" }); gf0.appendChild(el("span", { class: "lb" }, "GST Ledgers"));
+      var gr = el("div", { class: "acts", style: "gap:8px;margin-bottom:6px" }), sup = el("select", { class: "field", id: "aoGstSup", "aria-label": "Supply" }), fl = el("select", { class: "field", id: "aoGstFl", "aria-label": "Input tax credit" });
+      fillSelect(sup, [["intra", "Within the state: CGST + SGST"], ["inter", "From another state: IGST"]], D.gstInter ? "inter" : "intra");
+      fillSelect(fl, [["in", "Input (eligible)"], ["rcm", "Input under RCM"], ["inel", "Input, ineligible"]], D.gstFl); sup.disabled = fl.disabled = locked;
+      gr.appendChild(sup); gr.appendChild(fl); gf0.appendChild(gr);
+      go0 = { id: "aoGstLed", lines: D.gst, max: 6, cid: function () { return x.companyId; }, base: function () { return billGst(x); }, baseLabel: "GST",
+        pick: function (cur, at) { var sl = el("select", Object.assign({ class: "field" }, at)); fillSelect(sl, [["", "Choose the GST ledger"]].concat(gstLeds(D.gstInter).map(function (l) { return [l.id, l.name]; })), cur); return sl; } };
+      var refill = function () { D.gst.length = 0; gstSuggest(x, D.gstInter, D.gstFl).forEach(function (r) { D.gst.push(r); }); go0.redraw(); };
+      sup.addEventListener("change", function () { D.gstInter = sup.value === "inter"; refill(); }); fl.addEventListener("change", function () { D.gstFl = fl.value; refill(); });
+      gf0.appendChild(ledEditor(go0));
+      var vg = S.vendors[x.vendorId] || {}, cs0 = coState(x.companyId);
+      gf0.appendChild(el("span", { class: "hint" }, "The bill's GST, " + amt2(billGst(x)) + ", goes to these ledgers. " + (vg.gstin && cs0 ? "Vendor's state code " + String(vg.gstin).slice(0, 2) + ", company's " + cs0 + ": " + (String(vg.gstin).slice(0, 2) === cs0 ? "within the state." : "another state.") : "Choose within the state or from another state.")));
+      gf0.appendChild(el("span", { class: "err", id: "aoGstLedE", hidden: "" })); lw.appendChild(gf0);
+    }
+    f.insertBefore(lw, det); if (eo.info) eo.info(); if (go0 && go0.info) go0.info(); /* the running totals, now that they are on the page */
     f.appendChild(form);
-    if (locked) Array.prototype.forEach.call(f.querySelectorAll("#aoLed select, #aoLed input, #aoLed button"), function (b0) { b0.disabled = true; });
+    if (locked) Array.prototype.forEach.call($("aoBody").querySelectorAll("#aoLed select, #aoLed input, #aoLed button, #aoGstLed select, #aoGstLed input, #aoGstLed button"), function (b0) { b0.disabled = true; });
     var acts = $("aoActs"); acts.textContent = "";
     if (vNeed && !locked) {
       var vf = el("div", { class: "flag e", style: "margin:0 0 12px" }); vf.innerHTML = WARN_SVG; vf.appendChild(el("span", null, "This bill can't be accounted yet: its vendor still needs " + vNeed.join("; ") + ". "));
@@ -11930,6 +11989,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var le = ledCheck(D.lines, D.base, x.companyId, AC.kind === "bill" ? MAX_LED.bill : MAX_LED.voucher); if (le) errs.push(["aoLed", le]);
     var t = num(D.tds); if (!String(D.tds).trim()) errs.push(["aoTds", "Enter the TDS. Enter 0 if none is deducted."]); else if (t == null || t < 0) errs.push(["aoTds", "Enter the TDS as a number, 0 or more."]); else if (t > (Number(AC.kind === "bill" ? (x.fcTaxable != null ? x.fcTaxable + (x.fcGst || 0) : x.total) : x.total) || 0)) errs.push(["aoTds", "TDS can't be more than the total."]);
     if (t > 0 && !D.sec) errs.push(["aoSec", "Choose the TDS section."]);
+    if (AC.kind === "bill") { var ge = gstCheck(x, D); if (ge) errs.push(["aoGstLed", ge]); }
     if (AC.kind === "voucher" && !D.vtype) errs.push(["aoType", "Choose the type of voucher."]);
     if (AC.kind === "voucher" && D.vtype && D.vtype !== "Cash Voucher" && D.gstApp === "RCM" && !D.gstRate) errs.push(["aoRate", "Choose the GST rate."]);
     return errs;
@@ -11950,6 +12010,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     errClear($("aoBody")); var errs = acctCheck();
     if (errs.length) { errs.forEach(function (e) { errOn(e[0], e[1]); }); var f0 = $(errs[0][0]); if (f0 && f0.scrollIntoView) f0.scrollIntoView({ block: "center" }); return; }
     var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, tds = round2(num(D.tds) || 0), up = Object.assign({ acct: "approved", acctNote: "", ledgers: ledLinesOut(D.lines), tds: tds, tdsSection: tds > 0 ? D.sec : "" }, acctWho());
+    if (AC.kind === "bill") { up.gstLedgers = billGst(x) > 0 ? ledLinesOut(D.gst) : []; up.gstSupply = billGst(x) > 0 ? (D.gstInter ? "inter" : "intra") : null; up.gstFlavour = billGst(x) > 0 ? D.gstFl : null; }
     if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher"; up.vtype = D.vtype; up.gstApp = oth ? D.gstApp : "N/A"; up.gstRate = oth && D.gstApp === "RCM" ? Number(D.gstRate) : null; up.taxable = Number(x.total) || 0; up.payable = round2((Number(x.total) || 0) - tds); }
     var col = AC.kind === "bill" ? "bills" : "vouchers", was = x.acct === "approved";
     AC.busy = true; btn.disabled = true;
@@ -11964,6 +12025,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var tp = tidyPending("aoHoldWhy");
       return (tp || Promise.resolve()).then(function () {
         var up = Object.assign({ acct: "held", acctNote: sentenceFix($("aoHoldWhy").value.trim()), ledgers: ledLinesOut(D.lines) }, acctWho()); var t = num(D.tds); if (t != null) up.tds = round2(t); if (D.sec) up.tdsSection = D.sec; if (AC.kind === "voucher" && D.vtype) up.vtype = D.vtype;
+        if (AC.kind === "bill" && D.gst && D.gst.length) { up.gstLedgers = ledLinesOut(D.gst); up.gstSupply = D.gstInter ? "inter" : "intra"; up.gstFlavour = D.gstFl; }
         return retry(function () { return S.db.doc((AC.kind === "bill" ? "bills/" : "vouchers/") + x.id).update(up); }).then(function () { Object.assign(x, up); toast("Postponed."); backToAcct(); renderNav(); return true; }, function (e) { toast(explain(e)); return false; });
       });
     });
@@ -11998,13 +12060,16 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       var pf = !!b.advanceId; if ((side === "proformas") !== pf || !acctOk(b) || (cid && b.companyId !== cid) || !canSee(b.companyId) || !inRange(b.billDate)) return;
       var base = Number(b.fcTaxable != null ? b.fcTaxable : b.taxable) || 0, inr = Number(b.taxable) || 0, ls = b.ledgers || [];
       ls.forEach(function (x, i) { var share = base ? inr * (Number(x.amt) || 0) / base : 0; out.push({ lg: x.id, cid: b.companyId, d: b.billDate, no: b.billNo, who: vendorLabelOfBill(b), what: b.narration || "", amt: round2(share), tds: i === 0 ? Number(b.tds) || 0 : 0, sec: b.tdsSection || "", prep: pnm(b.preparedByName), type: (S.advances[b.advanceId] || {}).kind === "import" ? "Import" : pf ? "Proforma" : "" }); });
+      /* the bill's GST, as the accountant spread it over the GST ledgers (in rupees) */
+      var gb = Number(b.fcGst != null ? b.fcGst : b.gstAmt) || 0, gi = Number(b.gstAmt) || 0;
+      (b.gstLedgers || []).forEach(function (x) { out.push({ lg: x.id, cid: b.companyId, d: b.billDate, no: b.billNo, who: vendorLabelOfBill(b), what: b.narration || "", amt: round2(gb ? gi * (Number(x.amt) || 0) / gb : Number(x.amt) || 0), tds: 0, sec: "", prep: pnm(b.preparedByName), type: "GST" }); });
     });
     return out;
   }
   function renderBooks() {
     var co = $("bkCo"), lg = $("bkLed"), fr = parseDate($("bkFrom").value) || "", to = parseDate($("bkTo").value) || "";
     fillSelect(co, [["", "All your companies"]].concat(acctCos().map(function (c) { return [c.id, c.shortName || c.name]; })), co.value);
-    var ledgers = co.value ? ledFor(co.value) : ledAll().filter(function (l) { return l.active !== false; }).sort(ledCmp);
+    var ledgers = co.value ? ledFor(co.value).concat(ledAll().filter(function (l) { return l.tax && l.active !== false; })) : ledAll().filter(function (l) { return l.active !== false; }).sort(ledCmp);
     if (lg.value && !ledgers.some(function (l) { return l.id === lg.value; })) lg.value = "";
     ["bills", "proformas", "vouchers"].forEach(function (k) { $("bkSide_" + k).setAttribute("aria-selected", BK.side === k ? "true" : "false"); });
     var es = bookEntries(BK.side, co.value, fr, to), box = $("bkList"); box.textContent = "";
@@ -12027,7 +12092,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var all = es.reduce(function (s0, e) { return s0 + e.amt; }, 0);
     statBoxes($("bkStats"), [["Ledgers used", String(Object.keys(per).length), ""], ["Amount", money(all), ""], ["Entries", String(es.length), ""]]);
     if (!es.length) { box.appendChild(el("div", { class: "card empty" }, "No approved " + (BK.side === "vouchers" ? "vouchers" : BK.side === "proformas" ? "proforma or import tax bills" : "bills") + " in this period.")); return; }
-    LED_MAINS.forEach(function (m) {
+    LED_MAINS.concat([TAX_MAIN]).forEach(function (m) {
       var ls = Object.keys(per).map(function (k) { return S.ledgers[k] || { id: k, name: "Unknown ledger", main: m, sub: "Other" }; }).filter(function (l) { return l.main === m; }).sort(ledCmp); if (!ls.length) return;
       box.appendChild(el("h3", null, m));
       var subs = {}, order = []; ls.forEach(function (l) { if (!subs[l.sub]) { subs[l.sub] = []; order.push(l.sub); } subs[l.sub].push(l); });
@@ -12199,7 +12264,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
           { foot: [cFoot("Total", 6), cFoot(amt2(tot), 1, "right"), cFoot(td ? amt2(td) : "-", 1, "right")], columnStyles: { 0: { cellWidth: 48 }, 1: { cellWidth: 38 }, 2: { cellWidth: 62 }, 6: { cellWidth: 58 }, 7: { cellWidth: 44 } } });
       } else {
         var per0 = {}; es.forEach(function (e) { var q = per0[e.lg] || (per0[e.lg] = { n: 0, amt: 0, tds: 0 }); q.n++; q.amt += e.amt; q.tds += e.tds; });
-        LED_MAINS.forEach(function (m) {
+        LED_MAINS.concat([TAX_MAIN]).forEach(function (m) {
           var ls = Object.keys(per0).map(function (k) { return S.ledgers[k] || { id: k, name: "Unknown ledger", main: m, sub: "Other" }; }).filter(function (l) { return l.main === m; }).sort(ledCmp); if (!ls.length) return;
           if (y > 720) { doc.addPage(); y = 56; }
           y = P.section(m, y + 8, money(ls.reduce(function (s0, l) { return s0 + per0[l.id].amt; }, 0)));
@@ -14166,7 +14231,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     ["acSt", "acCo", "acPrep", "acDept"].forEach(function (id) { $(id).addEventListener("change", renderAcct); }); $("acQ").addEventListener("input", renderAcct);
     $("aoBack").addEventListener("click", backToAcct);
     ["bills", "proformas", "vouchers"].forEach(function (k) { $("bkSide_" + k).addEventListener("click", function () { BK.side = k; renderBooks(); }); });
-    $("bkLedW").appendChild(ledCombo({ attrs: { id: "bkLed", "aria-label": "Ledger" }, placeholder: "All ledgers (totals). Type to pick one", list: function () { var c = $("bkCo").value; return c ? ledFor(c) : ledAll().filter(function (l) { return l.active !== false; }).sort(ledCmp); } }));
+    $("bkLedW").appendChild(ledCombo({ attrs: { id: "bkLed", "aria-label": "Ledger" }, placeholder: "All ledgers (totals). Type to pick one", list: function () { var c = $("bkCo").value; return c ? ledFor(c).concat(ledAll().filter(function (l) { return l.tax && l.active !== false; })) : ledAll().filter(function (l) { return l.active !== false; }).sort(ledCmp); } }));
     $("bkCo").addEventListener("change", renderBooks); $("bkLed").addEventListener("change", renderBooks);
     var fy0 = "20" + fyOf(todayYmd()).slice(0, 2) + "-04-01";
     $("bkFromW").appendChild(dateBox("bkFrom", fy0, { max: todayYmd(), label: "From" })); $("bkToW").appendChild(dateBox("bkTo", todayYmd(), { label: "To" }));

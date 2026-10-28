@@ -117,6 +117,12 @@
   the Ledgers list but changed or removed only from GST or TDS. Tax ledgers are not offered as expense ledgers. The TDS
   sections are the ones offered when accounting; reverse charge offers 5, 12, 18, 28 and 40%. GST ledgers: CGST, SGST and
   IGST Input, Input (RCM) and Input - Ineligible (migration `20261028170000`); TDS started with the sections the app offered.
+- **GST on a bill is spread over the GST ledgers when it is accounted** (`gstLedgers` [{id, amt}], `gstSupply` intra / inter,
+  `gstFlavour` in / rcm / inel). Within the state CGST and SGST (equal halves), from another state or abroad IGST, judged from
+  the vendor's and company's GSTIN state codes and changeable; the amounts must add up to the bill's GST. They post to those
+  ledgers in Ledger Statements (Duties & Taxes).
+- **Bill files:** a bill back for editing (postponed or sent back) shows its kept file beside the form, as the accountant
+  sees it. The viewer has a Browser view switch (remembered per device) for scans the app draws doubled or blurred.
 - **Cash limits (Payment Entry):** cash to one person stays under ₹10,000 a day; Freight & Transport vouchers can be paid up
   to ₹30,000 in cash a day (`CASH_FREIGHT`, `payFreight`). Cheques and NEFT / RTGS have no limit.
 - **Signatures.** Admins, purchasers, Expenses Operators, accountants, approvers and approval recorders sign once, with a

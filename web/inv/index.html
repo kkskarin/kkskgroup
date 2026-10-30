@@ -6,30 +6,62 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Trial App</title>
 <script src="../textsize.js"></script><link rel="icon" type="image/png" href="../favicon.png"><link rel="apple-touch-icon" href="../apple-touch-icon.png">
-<!-- Public: anyone with the address can open it, no sign-in. Not on the All Apps page. -->
+<!-- Public: anyone with the address can open it, no sign-in. Not on the All Apps page. Its data is in trial_docs (open to all). -->
+<script src="../config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&family=Marcellus&display=swap" rel="stylesheet">
 <style>
-:root{--bar:#10281F;--hl:#2DBE7E;--brand:#007A4D;--bg:#F4F7F5;--surface:#FFFFFF;--ink:#14231C;--muted:#5E6E66;--line:#DCE5E0;--navtext:#B9CCC2;
+:root{--bar:#10281F;--hl:#2DBE7E;--brand:#007A4D;--brand-soft:#E3F2EA;--bg:#F4F7F5;--surface:#FFFFFF;--ink:#14231C;--muted:#5E6E66;--line:#DCE5E0;--soft:#F1F6F3;--navtext:#B9CCC2;--bad:#B42318;--bad-bg:#FDECEA;
 --font:"Jost",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--serif:"Marcellus",Georgia,"Times New Roman",serif;color-scheme:light}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:calc(15px*var(--ts,1))/1.5 var(--font)}
 header{background:var(--surface);border-bottom:1px solid var(--line);padding:14px 16px}
-header .in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:12px}
+header .in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px}
 header img{width:40px;height:40px}
 header b{font:calc(22px*var(--ts,1)) var(--serif)}
 nav{background:var(--bar)}
-nav .in,.sub .in{max-width:1080px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding:0 8px}
+nav .in,.sub .in{max-width:1180px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding:0 8px}
 nav button,.sub button{border:0;background:none;font:inherit;cursor:pointer;white-space:nowrap;padding:14px 14px 12px;border-bottom:3px solid transparent}
 nav button{color:var(--navtext);font-weight:600}
 nav button[aria-selected="true"]{color:#fff;border-bottom-color:var(--hl)}
 .sub{background:var(--surface);border-bottom:1px solid var(--line)}
 .sub button{color:var(--muted);font-weight:500}
 .sub button[aria-selected="true"]{color:var(--brand);font-weight:600;border-bottom-color:var(--brand)}
-main{max-width:1080px;margin:0 auto;padding:28px 16px}
-main h1{margin:0 0 16px;font:calc(28px*var(--ts,1)) var(--serif)}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;color:var(--muted)}
+.sub button.sep{margin-left:auto}
+main{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+main h1{margin:0 0 4px;font:calc(28px*var(--ts,1)) var(--serif)}
+.subt{margin:0 0 18px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.card h3{margin:0 0 10px;font-size:calc(13px*var(--ts,1));letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+label.f{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:calc(13px*var(--ts,1))}
+.field{font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:inherit;min-width:0}
+.field:focus{outline:2px solid var(--brand);outline-offset:1px}
+.btn{font:inherit;font-weight:600;padding:9px 16px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.sm{padding:5px 10px;font-size:calc(13px*var(--ts,1))}
+.btn:disabled{opacity:.5;cursor:default}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-size:calc(12px*var(--ts,1));letter-spacing:.06em;text-transform:uppercase;color:var(--brand);background:var(--soft)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.tot td,td.tot{font-weight:700;background:var(--soft)}
+td input.field{width:110px;text-align:right}
+.hint{color:var(--muted);font-size:calc(13px*var(--ts,1))}
+.msg{margin-top:10px;font-weight:600}
+.msg.bad{color:var(--bad)}
+.days{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.day{border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:calc(13px*var(--ts,1));cursor:pointer;background:#fff}
+.day.done{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+.day.on{outline:2px solid var(--brand)}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:6px;align-items:center;font-weight:500}
+.mlist .mrow{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.mlist .mrow .field{flex:1}
+.empty{color:var(--muted);padding:6px 0}
 @media print{html{--ts:1!important}}
 </style>
 </head>
@@ -37,33 +69,191 @@ main h1{margin:0 0 16px;font:calc(28px*var(--ts,1)) var(--serif)}
 <header><div class="in"><img src="../favicon.png" alt=""><b>Trial App</b></div></header>
 <nav aria-label="Sections"><div class="in" id="tabs" role="tablist"></div></nav>
 <div class="sub"><div class="in" id="subs" role="tablist"></div></div>
-<main><h1 id="title"></h1><div class="card" id="body">Nothing here yet.</div></main>
+<main><h1 id="title"></h1><p class="subt" id="subtitle"></p><div id="body"></div></main>
 <script>
 (function () {
   "use strict";
-  /* Tabs and their sub-tabs. The open one is kept in the address (#tab/sub), so a link opens the same place. */
+  /* Tabs, each with its places (where pieces are counted), then Reports and Masters. The open one is kept in the address
+     (#tab/sub). Data is in Supabase table trial_docs, open to anyone with the link:
+       masters/<tab>/<place>          { items: [{ id, name }] }   the stages counted at that place, in order
+       entry/<tab>/<place>/<date>     { date, cells: { <stageId>: { dom, imp } }, updatedAt }
+     An entry is the stock position: pieces at each stage that day, domestic and imports. */
   var TABS = [
-    { key: "raw", name: "Raw to WB", subs: [["erode", "Erode"], ["ambur", "Ambur"], ["ranipet", "Ranipet"]] },
-    { key: "tanned", name: "Tanned & Assorted", subs: [["grain", "Grain"], ["split", "Split"]] },
-    { key: "wbsplit", name: "WB Split - Ambur", subs: [["input", "Input"], ["output", "Output"]] }
+    { key: "raw", name: "Raw to WB", places: [["erode", "Erode"], ["ambur", "Ambur"], ["ranipet", "Ranipet"]] },
+    { key: "tanned", name: "Tanned & Assorted", places: [["grain", "Grain"], ["split", "Split"]] },
+    { key: "wbsplit", name: "WB Split - Ambur", places: [["input", "Input"], ["output", "Output"]] }
   ];
-  var cur = { tab: TABS[0], sub: TABS[0].subs[0] };
+  var ORIGINS = [["dom", "Domestic"], ["imp", "Imports"]];
+  var CFG = window.BV_CONFIG || {}, sb = window.supabase && CFG.supabaseUrl ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, { auth: { persistSession: false, autoRefreshToken: false } }) : null;
+  var D = { docs: {}, loaded: false, err: "" }, cur = {}, ENT = {}, REP = {};
+
   function $(id) { return document.getElementById(id); }
-  function btn(label, on, go) { var b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", on ? "true" : "false"); b.textContent = label; b.addEventListener("click", go); return b; }
+  function el(tag, attrs, text) { var e = document.createElement(tag); Object.keys(attrs || {}).forEach(function (k) { if (k === "class") e.className = attrs[k]; else e.setAttribute(k, attrs[k]); }); if (text != null) e.textContent = text; return e; }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function today() { return ymd(new Date()); }
+  function addDays(s, n) { var d = new Date(s + "T00:00:00"); d.setDate(d.getDate() + n); return ymd(d); }
+  function fmtDate(s) { if (!s) return ""; var d = new Date(s + "T00:00:00"); return pad(d.getDate()) + "-" + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()] + "-" + String(d.getFullYear()).slice(2); }
+  function pcs(n) { return (Number(n) || 0).toLocaleString("en-IN"); }
+  function int(v) { v = String(v == null ? "" : v).replace(/[,\s]/g, ""); if (v === "") return null; return /^\d+$/.test(v) ? Number(v) : NaN; }
+  function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  /* ---- data ---- */
+  function loadAll() {
+    if (!sb) { D.err = "The app couldn't connect. Reload the page."; render(); return Promise.resolve(); }
+    var all = [], step = 1000;
+    function page(from) { return sb.from("trial_docs").select("path,data").order("path").range(from, from + step - 1).then(function (r) { if (r.error) throw r.error; all = all.concat(r.data || []); if ((r.data || []).length === step) return page(from + step); }); }
+    return page(0).then(function () { D.docs = {}; all.forEach(function (x) { D.docs[x.path] = x.data; }); D.loaded = true; D.err = ""; render(); },
+      function (e) { D.err = "The data couldn't be loaded (" + ((e && e.message) || "error") + "). Reload the page."; render(); });
+  }
+  function put(path, data) {
+    return sb.from("trial_docs").upsert({ path: path, data: data, updated_at: new Date().toISOString() }, { onConflict: "path" }).then(function (r) { if (r.error) throw r.error; D.docs[path] = data; });
+  }
+  function masters(tab, place) { var m = D.docs["masters/" + tab + "/" + place]; return (m && m.items) || []; }
+  function entry(tab, place, date) { return D.docs["entry/" + tab + "/" + place + "/" + date] || null; }
+  function entryDates(tab, place) { var p = "entry/" + tab + "/" + place + "/"; return Object.keys(D.docs).filter(function (k) { return k.indexOf(p) === 0; }).map(function (k) { return k.slice(p.length); }).sort(); }
+
+  /* ---- navigation ---- */
+  function subsOf(t) { return t.places.concat([["reports", "Reports"], ["masters", "Masters"]]); }
   function fromHash() {
-    var p = location.hash.replace(/^#/, "").split("/"), t = TABS.filter(function (x) { return x.key === p[0]; })[0] || TABS[0];
-    cur = { tab: t, sub: t.subs.filter(function (s) { return s[0] === p[1]; })[0] || t.subs[0] };
+    var p = location.hash.replace(/^#/, "").split("/"), t = TABS.filter(function (x) { return x.key === p[0]; })[0] || TABS[0], subs = subsOf(t);
+    cur = { tab: t, sub: subs.filter(function (s) { return s[0] === p[1]; })[0] || subs[0] };
   }
   function go(t, s) { location.hash = t.key + "/" + s[0]; }
+  function tabBtn(label, on, fn, cls) { var b = el("button", { type: "button", role: "tab", "aria-selected": on ? "true" : "false" }, label); if (cls) b.className = cls; b.addEventListener("click", fn); return b; }
   function render() {
-    var tb = $("tabs"), sb = $("subs"); tb.textContent = ""; sb.textContent = "";
-    TABS.forEach(function (t) { tb.appendChild(btn(t.name, t === cur.tab, function () { go(t, t.subs[0]); })); });
-    cur.tab.subs.forEach(function (s) { sb.appendChild(btn(s[1], s === cur.sub, function () { go(cur.tab, s); })); });
-    $("title").textContent = cur.tab.name + " · " + cur.sub[1];
-    document.title = cur.sub[1] + " · " + cur.tab.name + " · Trial App";
+    var tb = $("tabs"), sbx = $("subs"); tb.textContent = ""; sbx.textContent = "";
+    TABS.forEach(function (t) { tb.appendChild(tabBtn(t.name, t === cur.tab, function () { go(t, subsOf(t)[0]); })); });
+    subsOf(cur.tab).forEach(function (s) { sbx.appendChild(tabBtn(s[1], s === cur.sub, function () { go(cur.tab, s); }, s[0] === "reports" ? "sep" : "")); });
+    $("title").textContent = cur.tab.name + " · " + cur.sub[1]; document.title = cur.sub[1] + " · " + cur.tab.name + " · Trial App";
+    var body = $("body"); body.textContent = ""; $("subtitle").textContent = "";
+    if (D.err) { body.appendChild(el("div", { class: "card msg bad" }, D.err)); return; }
+    if (!D.loaded) { body.appendChild(el("div", { class: "card hint" }, "Loading…")); return; }
+    if (cur.sub[0] === "masters") return renderMasters(body);
+    if (cur.sub[0] === "reports") return renderReports(body);
+    renderEntry(body);
   }
+
+  /* ---- a place: the day's pieces at each stage, domestic and imports ---- */
+  function renderEntry(body) {
+    var t = cur.tab, place = cur.sub, key = t.key + "/" + place[0], ms = masters(t.key, place[0]), lo = addDays(today(), -6), hi = today();
+    $("subtitle").textContent = "Pieces at each stage on the chosen day. A day can be entered or corrected from " + fmtDate(lo) + " to today.";
+    if (!ms.length) { body.appendChild(el("div", { class: "card hint" }, "No stages for " + place[1] + " yet. Add them under Masters.")); return; }
+    var st = ENT[key] = ENT[key] || { date: hi };
+    if (st.date < lo || st.date > hi) st.date = hi;
+    var c1 = el("div", { class: "card" }), row = el("div", { class: "row" }), lf = el("label", { class: "f" }, "Date");
+    var di = el("input", { type: "date", class: "field", min: lo, max: hi }); di.value = st.date; lf.appendChild(di); row.appendChild(lf); c1.appendChild(row);
+    var days = el("div", { class: "days" }), have = entryDates(t.key, place[0]);
+    for (var i = 6; i >= 0; i--) (function (d) { var b = el("button", { type: "button", class: "day" + (have.indexOf(d) >= 0 ? " done" : "") + (d === st.date ? " on" : "") }, fmtDate(d) + (have.indexOf(d) >= 0 ? " ✓" : "")); b.addEventListener("click", function () { st.date = d; render(); }); days.appendChild(b); })(addDays(hi, -i));
+    c1.appendChild(days); c1.appendChild(el("div", { class: "hint", style: "margin-top:6px" }, "✓ entered already."));
+    body.appendChild(c1);
+    di.addEventListener("change", function () { var v = di.value; if (!v || v < lo || v > hi) { di.value = st.date; msg.textContent = "Choose a day from " + fmtDate(lo) + " to today."; msg.className = "msg bad"; return; } st.date = v; render(); });
+    var e = entry(t.key, place[0], st.date), cells = (e && e.cells) || {};
+    var c2 = el("div", { class: "card" }); c2.appendChild(el("h3", null, place[1] + " · " + fmtDate(st.date) + (e ? " · saved" : " · not entered yet")));
+    var sc = el("div", { class: "scroll" }), tbl = el("table"), thead = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, "Particulars"));
+    ms.forEach(function (m) { hr.appendChild(el("th", { class: "n" }, m.name)); }); hr.appendChild(el("th", { class: "n" }, "Total")); thead.appendChild(hr); tbl.appendChild(thead);
+    var tbody = el("tbody"), inputs = {};
+    ORIGINS.forEach(function (o) {
+      var tr = el("tr"); tr.appendChild(el("td", null, o[1]));
+      ms.forEach(function (m) { var td = el("td", { class: "n" }), v = cells[m.id] && cells[m.id][o[0]]; var ip = el("input", { class: "field", inputmode: "numeric", "aria-label": o[1] + " " + m.name, placeholder: "0" }); ip.value = v == null ? "" : String(v); ip.addEventListener("input", sums); inputs[o[0] + "|" + m.id] = ip; td.appendChild(ip); tr.appendChild(td); });
+      tr.appendChild(el("td", { class: "n tot", "data-row": o[0] })); tbody.appendChild(tr);
+    });
+    var trt = el("tr", { class: "tot" }); trt.appendChild(el("td", null, "Total")); ms.forEach(function (m) { trt.appendChild(el("td", { class: "n", "data-col": m.id })); }); trt.appendChild(el("td", { class: "n", "data-all": "1" })); tbody.appendChild(trt);
+    tbl.appendChild(tbody); sc.appendChild(tbl); c2.appendChild(sc);
+    var acts = el("div", { class: "row", style: "margin-top:12px" }), save = el("button", { type: "button", class: "btn primary" }, e ? "Save Changes" : "Save"), msg = el("div", { class: "msg" });
+    acts.appendChild(save); c2.appendChild(acts); c2.appendChild(msg); body.appendChild(c2);
+    function sums() {
+      var all = 0, bad = false;
+      ORIGINS.forEach(function (o) { var s = 0; ms.forEach(function (m) { var n = int(inputs[o[0] + "|" + m.id].value); if (isNaN(n)) bad = true; else s += n || 0; }); tbody.querySelector('[data-row="' + o[0] + '"]').textContent = pcs(s); all += s; });
+      ms.forEach(function (m) { var s = 0; ORIGINS.forEach(function (o) { var n = int(inputs[o[0] + "|" + m.id].value); if (!isNaN(n)) s += n || 0; }); tbody.querySelector('[data-col="' + m.id + '"]').textContent = pcs(s); });
+      tbody.querySelector('[data-all="1"]').textContent = pcs(all); return !bad;
+    }
+    sums();
+    save.addEventListener("click", function () {
+      msg.textContent = ""; msg.className = "msg";
+      if (st.date < addDays(today(), -6) || st.date > today()) { msg.textContent = "Only today and the 6 days before can be entered."; msg.className = "msg bad"; return; }
+      var out = {}, bad = "";
+      ms.forEach(function (m) { var c = {}; ORIGINS.forEach(function (o) { var n = int(inputs[o[0] + "|" + m.id].value); if (isNaN(n)) bad = bad || o[1] + " · " + m.name; else c[o[0]] = n || 0; }); out[m.id] = c; });
+      if (bad) { msg.textContent = "Pieces are whole numbers. Check " + bad + "."; msg.className = "msg bad"; return; }
+      save.disabled = true;
+      put("entry/" + t.key + "/" + place[0] + "/" + st.date, { date: st.date, cells: out, updatedAt: Date.now() }).then(function () { render(); var m2 = document.querySelector("#body .msg"); if (m2) m2.textContent = "Saved for " + fmtDate(st.date) + "."; },
+        function (er) { save.disabled = false; msg.textContent = "Not saved: " + ((er && er.message) || "error") + ". Try again."; msg.className = "msg bad"; });
+    });
+  }
+
+  /* ---- Masters: each place's stages, in order ---- */
+  function renderMasters(body) {
+    var t = cur.tab; $("subtitle").textContent = "The stages counted at each place, in the order they show. A stage renamed here keeps its figures; one removed is left out of new entries and reports.";
+    t.places.forEach(function (pl) {
+      var c = el("div", { class: "card" }), list = el("div", { class: "mlist" }), path = "masters/" + t.key + "/" + pl[0];
+      c.appendChild(el("h3", null, pl[1])); c.appendChild(list); body.appendChild(c);
+      var items = masters(t.key, pl[0]).slice(), msg = el("div", { class: "msg" });
+      function save(next, note) { return put(path, { items: next }).then(function () { items = next.slice(); draw(); msg.className = "msg"; msg.textContent = note || "Saved."; }, function (er) { msg.className = "msg bad"; msg.textContent = "Not saved: " + ((er && er.message) || "error") + "."; }); }
+      function draw() {
+        list.textContent = "";
+        if (!items.length) list.appendChild(el("div", { class: "empty" }, "No stages yet."));
+        items.forEach(function (m, i) {
+          var r = el("div", { class: "mrow" }), nm = el("input", { class: "field", "aria-label": "Stage name" }); nm.value = m.name;
+          nm.addEventListener("change", function () { var v = nm.value.trim().replace(/\s+/g, " "); if (!v) { nm.value = m.name; return; } var nx = items.map(function (x) { return x.id === m.id ? { id: x.id, name: v } : x; }); save(nx, "Renamed."); });
+          var up = el("button", { type: "button", class: "btn sm", "aria-label": "Move up" }, "↑"); up.disabled = i === 0; up.addEventListener("click", function () { var nx = items.slice(); nx.splice(i - 1, 0, nx.splice(i, 1)[0]); save(nx, "Moved."); });
+          var dn = el("button", { type: "button", class: "btn sm", "aria-label": "Move down" }, "↓"); dn.disabled = i === items.length - 1; dn.addEventListener("click", function () { var nx = items.slice(); nx.splice(i + 1, 0, nx.splice(i, 1)[0]); save(nx, "Moved."); });
+          var rm = el("button", { type: "button", class: "btn sm" }, "Remove"); rm.addEventListener("click", function () { if (rm.getAttribute("data-arm") !== "1") { rm.setAttribute("data-arm", "1"); rm.textContent = "Click again"; return; } save(items.filter(function (x) { return x.id !== m.id; }), "Removed."); });
+          r.appendChild(nm); r.appendChild(up); r.appendChild(dn); r.appendChild(rm); list.appendChild(r);
+        });
+      }
+      var add = el("div", { class: "row", style: "margin-top:10px" }), ni = el("input", { class: "field", placeholder: "New stage", "aria-label": "New stage for " + pl[1] }), ab = el("button", { type: "button", class: "btn primary" }, "Add");
+      ab.addEventListener("click", function () { var v = ni.value.trim().replace(/\s+/g, " "); if (!v) { ni.focus(); return; } if (items.some(function (x) { return x.name.toLowerCase() === v.toLowerCase(); })) { msg.className = "msg bad"; msg.textContent = v + " is already there."; return; } save(items.concat([{ id: newId(), name: v }]), v + " added.").then(function () { ni.value = ""; }); });
+      ni.addEventListener("keydown", function (e) { if (e.key === "Enter") ab.click(); });
+      add.appendChild(ni); add.appendChild(ab); c.appendChild(add); c.appendChild(msg); draw();
+    });
+  }
+
+  /* ---- Reports: an interactive pivot of the stock position on a day ---- */
+  var DIMS = [["place", "Place"], ["stage", "Stage"], ["origin", "Domestic / Imports"]];
+  function renderReports(body) {
+    var t = cur.tab, st = REP[t.key] = REP[t.key] || { date: today(), places: null, origins: null, stages: null, rows: "stage", cols: "place" };
+    $("subtitle").textContent = "Where everything is on the chosen day: each place's latest entry on or before that day. Filter, then pick what goes down and across.";
+    /* stages in master order (by name, so the same stage at several places lines up) */
+    var stageNames = []; t.places.forEach(function (pl) { masters(t.key, pl[0]).forEach(function (m) { if (stageNames.indexOf(m.name) < 0) stageNames.push(m.name); }); });
+    if (!st.places) st.places = t.places.map(function (p) { return p[0]; }); if (!st.origins) st.origins = ORIGINS.map(function (o) { return o[0]; });
+    if (!st.stages) st.stages = stageNames.slice(); stageNames.forEach(function (n) { if (st.stages.indexOf(n) < 0 && !st._seen) st.stages.push(n); }); st._seen = true;
+    var c = el("div", { class: "card" }), r1 = el("div", { class: "row" });
+    var lf = el("label", { class: "f" }, "As on"), di = el("input", { type: "date", class: "field", max: today() }); di.value = st.date; lf.appendChild(di); r1.appendChild(lf);
+    di.addEventListener("change", function () { if (di.value) { st.date = di.value; render(); } });
+    function dimSel(label, k) { var f = el("label", { class: "f" }, label), s = el("select", { class: "field" }); DIMS.concat([["", "Nothing"]]).forEach(function (d) { var o = el("option", { value: d[0] }, d[1]); if (d[0] === st[k]) o.selected = true; s.appendChild(o); }); s.addEventListener("change", function () { st[k] = s.value; render(); }); f.appendChild(s); r1.appendChild(f); }
+    dimSel("Down (rows)", "rows"); dimSel("Across (columns)", "cols"); c.appendChild(r1);
+    function checks(title, opts, k) {
+      var w = el("div", { style: "margin-top:12px" }); w.appendChild(el("div", { class: "hint", style: "font-weight:600;margin-bottom:4px" }, title)); var g = el("div", { class: "checks" });
+      opts.forEach(function (o) { var lb = el("label"), cb = el("input", { type: "checkbox" }); cb.checked = st[k].indexOf(o[0]) >= 0; cb.addEventListener("change", function () { st[k] = cb.checked ? st[k].concat([o[0]]) : st[k].filter(function (x) { return x !== o[0]; }); render(); }); lb.appendChild(cb); lb.appendChild(document.createTextNode(o[1])); g.appendChild(lb); });
+      w.appendChild(g); c.appendChild(w);
+    }
+    checks("Places", t.places, "places"); checks("Domestic / Imports", ORIGINS, "origins"); checks("Stages", stageNames.map(function (n) { return [n, n]; }), "stages");
+    body.appendChild(c);
+    /* the facts: each place's latest entry on or before the day */
+    var facts = [], asOf = [];
+    t.places.forEach(function (pl) {
+      if (st.places.indexOf(pl[0]) < 0) return;
+      var ds = entryDates(t.key, pl[0]).filter(function (d) { return d <= st.date; }), d = ds[ds.length - 1];
+      asOf.push(pl[1] + ": " + (d ? fmtDate(d) : "no entry yet")); if (!d) return;
+      var e = entry(t.key, pl[0], d), cells = (e && e.cells) || {};
+      masters(t.key, pl[0]).forEach(function (m) { if (st.stages.indexOf(m.name) < 0) return; ORIGINS.forEach(function (o) { if (st.origins.indexOf(o[0]) < 0) return; var n = Number(cells[m.id] && cells[m.id][o[0]]) || 0; facts.push({ place: pl[1], stage: m.name, origin: o[1], n: n }); }); });
+    });
+    var c2 = el("div", { class: "card" }); c2.appendChild(el("h3", null, "Pieces as on " + fmtDate(st.date))); c2.appendChild(el("div", { class: "hint", style: "margin-bottom:10px" }, "Using each place's latest entry: " + (asOf.join(" · ") || "no place chosen") + "."));
+    var order = { place: t.places.map(function (p) { return p[1]; }), stage: stageNames, origin: ORIGINS.map(function (o) { return o[1]; }) };
+    function keys(dim) { if (!dim) return ["Total"]; var seen = {}; facts.forEach(function (f) { seen[f[dim]] = 1; }); return order[dim].filter(function (k) { return seen[k]; }); }
+    var rk = keys(st.rows), ck = keys(st.cols), cell = {}, rt = {}, ct = {}, all = 0;
+    facts.forEach(function (f) { var r = st.rows ? f[st.rows] : "Total", k = st.cols ? f[st.cols] : "Total"; cell[r + "|" + k] = (cell[r + "|" + k] || 0) + f.n; rt[r] = (rt[r] || 0) + f.n; ct[k] = (ct[k] || 0) + f.n; all += f.n; });
+    if (!facts.length) { c2.appendChild(el("div", { class: "empty" }, "Nothing to show for these filters.")); body.appendChild(c2); return; }
+    var sc = el("div", { class: "scroll" }), tbl = el("table"), th = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, st.rows ? (DIMS.filter(function (d) { return d[0] === st.rows; })[0] || [0, ""])[1] : ""));
+    ck.forEach(function (k) { hr.appendChild(el("th", { class: "n" }, k)); }); if (st.cols) hr.appendChild(el("th", { class: "n" }, "Total")); th.appendChild(hr); tbl.appendChild(th);
+    var tb = el("tbody");
+    rk.forEach(function (r) { var tr = el("tr"); tr.appendChild(el("td", null, r)); ck.forEach(function (k) { tr.appendChild(el("td", { class: "n" }, pcs(cell[r + "|" + k]))); }); if (st.cols) tr.appendChild(el("td", { class: "n tot" }, pcs(rt[r]))); tb.appendChild(tr); });
+    if (st.rows) { var trt = el("tr", { class: "tot" }); trt.appendChild(el("td", null, "Total")); ck.forEach(function (k) { trt.appendChild(el("td", { class: "n" }, pcs(ct[k]))); }); if (st.cols) trt.appendChild(el("td", { class: "n" }, pcs(all))); tb.appendChild(trt); }
+    tbl.appendChild(tb); sc.appendChild(tbl); c2.appendChild(sc); body.appendChild(c2);
+  }
+
   window.addEventListener("hashchange", function () { fromHash(); render(); });
-  fromHash(); render();
+  fromHash(); render(); loadAll();
 })();
 </script>
 </body>

@@ -1700,7 +1700,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   /* Masters: its own heading. Companies first, then (Renewable Energy) Consumers and PPA Rates, then Vendors and Ledgers. */
   /* Cheque Templates: where the financier pays (Renewable Energy pays its own; Finance pays the other divisions). */
   var CHQ_TAB = ["Cheques", "Cheque Templates", 0, "m"], BANK_TAB = ["Banks", "Bank Accounts", 0, "m"];
-  var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], MASTERS[2]] : APP === "fin" ? MASTERS.concat([BANK_TAB, CHQ_TAB]) : MASTERS };
+  var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], MASTERS[2]] : APP === "fin" ? [MASTERS[0], MASTERS[1], BANK_TAB, CHQ_TAB] : MASTERS }; /* Finance: no expense ledgers, only what payments need */
   var SET_ALL = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Activity", "Show Activity", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] };
   var NAV_BY_APP = {
     mnt: [REP_TABS, EXP_TABS, MAS_TABS, SET_ALL],
@@ -1719,7 +1719,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   var ADMIN_HIDE = { "Bills": 1, "Plan Advance": 1, "Imports": 1, "Cash Voucher": 1, "Accounts": 1, "Mark Transaction": 1 };
   /* A financier who only pays out sees Reports (Transactions, Payables) and Payments, nothing else. */
   var CHIEF_TABS = { "Activity": 1, "Transactions": 1, "Payables": 1, "Advance Summary": 1, "Accounts": 1, "Notes": 1, "Ledger Books": 1, "Companies": 1, "Vendors": 1, "Ledgers": 1 };
-  var FIN_TABS = { "Salary": 1, "Cheques": 1, "Banks": 1, "Companies": 1, "Vendors": 1, "Ledgers": 1, "Cash Approvals": 1, "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1, "Advance Requests": 1 };
+  var FIN_TABS = { "Salary": 1, "Cheques": 1, "Banks": 1, "Companies": 1, "Vendors": 1, "Cash Approvals": 1, "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1, "Advance Requests": 1 };
   function finOnly() { return !S.isAdmin && canDo("txn") && STEPS.every(function (st) { return st[0] === "txn" || !canDo(st[0]); }); }
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {

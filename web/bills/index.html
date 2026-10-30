@@ -1360,7 +1360,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   </section>
   <section id="secAdvReq" hidden>
     <div class="head">
-      <div><h2>Advance Requests</h2><p class="sub">Cash advances the approver has passed, company by company: withdraw the cash once for the company, then hand each person their share; or pay a person straight to their account. Also the cash people are returning.</p></div>
+      <div><h2>Advance Requests</h2><p class="sub">Cash advances the approver has passed, company by company. Withdraw cash for the company (any amount; it is held by you), then hand each person the total of their advances in one go; or pay a person straight to their account. Also the cash people are returning.</p></div>
       <span class="grow"></span>
       <select class="field" id="arCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
@@ -9007,7 +9007,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var u = (S.users || {})[uid] || (uid === meId() ? S.myUser : null) || (S.profiles || {})[uid];
     return (!!u && userHas(u, "cash", cid)) || Math.abs(cashBalance(uid, cid).balance) > 0.004;
   }
-  function caList() { return Object.keys(S.cashadv || {}).map(function (k) { return S.cashadv[k]; }); }
+  function caList() { return Object.keys(S.cashadv || {}).map(function (k) { return S.cashadv[k]; }).filter(function (a) { return a.kind !== "wd"; }); }
+  /* Cash the financier withdrew for a company (cashadv docs of kind "wd"), held by them until handed over. */
+  function wdList() { return Object.keys(S.cashadv || {}).map(function (k) { return S.cashadv[k]; }).filter(function (a) { return a.kind === "wd"; }); }
   function vcrList() { return Object.keys(S.reports).map(function (k) { return S.reports[k]; }).filter(function (r) { return r.kind === "vcr"; }); }
   /* Which voucher checking report a voucher is in. */
   function vcrOf(vid) { var rs = vcrList(); for (var i = 0; i < rs.length; i++) if ((rs[i].voucherIds || []).indexOf(vid) >= 0) return rs[i]; return null; }
@@ -9528,37 +9530,55 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function arRows(cid) { return caList().filter(function (a) { return a.status === "approved" && arSees(a) && (!cid || a.companyId === cid); }); }
   function arRets(cid) { return caList().filter(function (a) { return a.status === "returning" && arSees(a) && (!cid || a.companyId === cid); }); }
   function arBadge() { return arRows("").length + arRets("").length; }
+  /* The cash a financier holds for a company: what they withdrew, less what they handed over from it. Not tied to any one
+     advance. (Advances withdrawn the old way, one withdrawal per set of advances, still count until handed over.) */
+  function wdHeld(cid, uid) {
+    var w = 0, h = 0;
+    wdList().forEach(function (x) { if (x.companyId === cid && x.uid === uid) w += Number(x.amount) || 0; });
+    caList().forEach(function (a) { if (a.companyId !== cid) return;
+      if (a.fromWd && a.handBy === uid && a.status === "received") h += Number(a.approvedAmount) || 0;
+      if (a.wdId && a.wdBy === uid && (a.status === "approved" || a.fromWd)) w += Number(a.approvedAmount) || 0; });
+    return round2(w - h);
+  }
+  function arPeople(rs) {
+    var m = {}, out = [];
+    rs.forEach(function (a) { var k = a.uid || "n:" + caName(a); if (!m[k]) { m[k] = { uid: a.uid, name: caName(a), cid: a.companyId, xs: [], total: 0 }; out.push(m[k]); } m[k].xs.push(a); m[k].total = round2(m[k].total + (Number(a.approvedAmount) || 0)); });
+    out.forEach(function (g) { g.xs.sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); }); g.first = g.xs[0]; });
+    return out.sort(function (a, b) { return (a.first.approvedAt || 0) - (b.first.approvedAt || 0); });
+  }
   function renderAdvReq() {
     var sel = $("arCo"), cur = sel.value; fillSelect(sel, [["", "All your companies"]].concat(roleCos("txn").map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
-    var cid = sel.value, rows = arRows(cid), rets = arRets(cid), amt = function (a) { return Number(a.approvedAmount) || 0; };
-    var toWd = rows.filter(function (a) { return !a.wdId; }), held = rows.filter(function (a) { return a.wdId; });
-    var sum = function (xs, f) { return round2(xs.reduce(function (s0, a) { return s0 + f(a); }, 0)); };
-    statBoxes($("arStats"), [["To withdraw", money(sum(toWd, amt)), plural(toWd.length, "advance")], ["Withdrawn, to hand over", money(sum(held, amt)), plural(held.length, "advance")], ["Being returned", money(sum(rets, function (a) { return Number(a.amount) || 0; })), plural(rets.length, "person")]]);
+    var cid = sel.value, rows = arRows(cid), rets = arRets(cid), me = meId();
+    var sum = function (xs, f) { return round2(xs.reduce(function (s0, a) { return s0 + f(a); }, 0)); }, amt = function (a) { return Number(a.approvedAmount) || 0; };
+    var cosAll = sorted().filter(function (c) { return (!cid || c.id === cid) && (S.isAdmin || canStep("txn", c.id)); }), heldAll = round2(cosAll.reduce(function (s0, c) { return s0 + wdHeld(c.id, me); }, 0));
+    statBoxes($("arStats"), [["To hand over", money(sum(rows, amt)), plural(arPeople(rows).length, "person") + ", " + plural(rows.length, "advance")], ["Cash with you", money(heldAll), "Withdrawn, not handed over yet"], ["Being returned", money(sum(rets, function (a) { return Number(a.amount) || 0; })), plural(rets.length, "person")]]);
     var box = $("arList"); box.textContent = "";
-    if (!rows.length) box.appendChild(el("div", { class: "card empty" }, "No approved cash advances are waiting. An advance appears here once the approver passes it."));
-    sorted().forEach(function (c) {
-      var rs = rows.filter(function (a) { return a.companyId === c.id; }).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); }); if (!rs.length) return;
-      var wd = rs.filter(function (a) { return !a.wdId; });
+    var any = false;
+    cosAll.forEach(function (c) {
+      var rs = rows.filter(function (a) { return a.companyId === c.id; }), held = wdHeld(c.id, me); if (!rs.length && !(held > 0.004)) return; any = true;
+      var ppl = arPeople(rs), need = sum(rs, amt), short = round2(need - held);
       var card = el("div", { class: "card mkco" }), hd = el("div", { class: "cohead" });
-      hd.appendChild(el("b", null, c.name)); hd.appendChild(el("span", null, (wd.length ? "Withdraw " + money(sum(wd, amt)) + " for " + plural(wd.length, "advance") : "Nothing more to withdraw") + (rs.length > wd.length ? " · " + money(sum(rs.filter(function (a) { return a.wdId; }), amt)) + " withdrawn, to hand over" : ""))); card.appendChild(hd);
-      var tb = el("div", { class: "list scroll" }); card.appendChild(tb); box.appendChild(card);
-      sortTable(tb, "ar_" + c.id, [
-        { label: "Person", kind: "co", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, "Approved " + fmtDay(a.approvedAt) + (Number(a.approvedAmount) !== Number(a.amount) ? ", asked " + money(a.amount) : "")); } },
-        { label: "Purpose", cls: "desc", cell: function (a, td) { txt(td, a.purpose || ""); if (a.note) sub(td, "Approver: " + a.note); } },
-        { label: "Amount", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.approvedAmount))); } }].concat(caCashCols()).concat([
-        { label: "Status", cell: function (a, td) { td.appendChild(el("span", { class: "tag stg " + (a.wdId ? "s-printed" : "s-generated") }, a.wdId ? "Withdrawn" : "To withdraw")); if (a.wdId) sub(td, fmtDate(a.wdDate) + (a.wdRef ? " · " + a.wdRef : "")); } },
-        { label: "", kind: "act", cls: "r", cell: function (a, td) {
-            if (!arCan(a.companyId)) return; var w = el("div", { class: "acts" });
-            if (a.wdId) { var h = el("button", { class: "btn sm primary" }, "Hand Over"); h.addEventListener("click", function () { caReceive(a, "cash"); }); w.appendChild(h); var u = el("button", { class: "btn sm" }, "Undo Withdrawal"); u.addEventListener("click", function () { if (armed(u)) caUpdate(a, { wdId: null, wdDate: null, wdMode: null, wdRef: null, wdAt: null, wdBy: null }, "Withdrawal undone for " + caName(a) + "."); }); w.appendChild(u); }
-            else { var d = el("button", { class: "btn sm" }, "Pay Directly"); d.addEventListener("click", function () { caReceive(a, "neft"); }); w.appendChild(d); }
-            td.appendChild(w); } }]), rs, { sortIndex: -1 });
-      /* one withdrawal for the company: everything waiting to be withdrawn */
-      if (wd.length && arCan(c.id)) {
-        var ft = el("div", { class: "form-foot", style: "padding:10px 16px" }), go = el("button", { class: "btn primary", type: "button" }, "Withdraw " + money(sum(wd, amt)) + " for " + (c.shortName || c.name));
-        go.addEventListener("click", function () { arWithdraw(c.id, wd); });
-        ft.appendChild(go); ft.appendChild(el("span", { class: "hint" }, "One withdrawal for the company, covering " + plural(wd.length, "advance") + ". A person can instead be paid directly to their account.")); card.appendChild(ft);
+      hd.appendChild(el("b", null, c.name)); hd.appendChild(el("span", null, (rs.length ? money(need) + " to hand over to " + plural(ppl.length, "person") : "Nothing waiting") + " · cash with you " + money(held))); card.appendChild(hd);
+      if (rs.length) {
+        var tb = el("div", { class: "list scroll" }); card.appendChild(tb);
+        sortTable(tb, "ar_" + c.id, [
+          { label: "Person", kind: "co", cell: function (g, td) { td.appendChild(el("b", null, g.name)); sub(td, plural(g.xs.length, "advance") + ", approved " + fmtDay(g.first.approvedAt) + (g.xs.length > 1 ? " to " + fmtDay(g.xs[g.xs.length - 1].approvedAt) : "")); } },
+          { label: "Advances", cls: "desc", cell: function (g, td) { g.xs.forEach(function (a) { var d = el("div", { style: "margin-bottom:4px" }); d.appendChild(el("b", null, money(a.approvedAmount) + " ")); d.appendChild(document.createTextNode(a.purpose || "")); td.appendChild(d); if (a.note) sub(td, "Approver: " + a.note); }); } },
+          { label: "Total", cls: "r num", cell: function (g, td) { td.appendChild(el("b", null, money(g.total))); } }].concat(caCashCols().map(function (cc) { return { label: cc.label, cls: cc.cls, cell: function (g, td) { cc.cell(g.first, td); } }; })).concat([
+          { label: "", kind: "act", cls: "r", cell: function (g, td) {
+              if (!arCan(c.id)) return; var w = el("div", { class: "acts" }), ok = wdHeld(c.id, me) + 0.004 >= g.total;
+              var h = el("button", { class: "btn sm" + (ok ? " primary" : "") }, "Hand Over " + money(g.total)); h.addEventListener("click", function () { if (!(wdHeld(c.id, me) + 0.004 >= g.total)) { toast("You hold " + money(wdHeld(c.id, me)) + " for " + (c.shortName || c.name) + ". Withdraw at least " + money(round2(g.total - wdHeld(c.id, me))) + " more first."); return; } arHand(g, "cash"); }); w.appendChild(h);
+              var d = el("button", { class: "btn sm" }, "Pay Directly"); d.addEventListener("click", function () { arHand(g, "neft"); }); w.appendChild(d);
+              td.appendChild(w); } }]), ppl, { sortIndex: -1 });
       }
+      if (arCan(c.id)) {
+        var ft = el("div", { class: "form-foot", style: "padding:10px 16px" }), go = el("button", { class: "btn" + (short > 0.004 ? " primary" : ""), type: "button" }, "Withdraw Cash for " + (c.shortName || c.name));
+        go.addEventListener("click", function () { arWithdraw(c.id, Math.max(0, short)); });
+        ft.appendChild(go); ft.appendChild(el("span", { class: "hint" }, short > 0.004 ? "Withdraw " + money(short) + " more to hand everyone over (you hold " + money(held) + "). Any amount can be withdrawn." : rs.length ? "You hold enough cash to hand everyone over." : "You hold " + money(held) + " from earlier withdrawals.")); card.appendChild(ft);
+      }
+      box.appendChild(card);
     });
+    if (!any) box.appendChild(el("div", { class: "card empty" }, "No approved cash advances are waiting. An advance appears here once the approver passes it."));
     $("arRetN").textContent = rets.length ? "(" + rets.length + ")" : ""; box = $("arRet");
     if (!rets.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nobody is returning cash.")); }
     else sortTable(box, "arRet", [
@@ -9568,36 +9588,79 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       { label: "Note", cls: "desc", cell: function (a, td) { txt(td, a.purpose || ""); } },
       { label: "", kind: "act", cls: "r", cell: function (a, td) { if (!arCan(a.companyId)) return; var y = el("button", { class: "btn sm primary" }, "Mark Received"); y.addEventListener("click", function () { caTakeBack(a); }); td.appendChild(y); } }
     ], rets, { sortIndex: -1 });
-    var since = Date.now() - 14 * 864e5, done = caList().filter(function (a) { return arSees(a) && (!cid || a.companyId === cid) && ((a.status === "received" && (a.receivedAt || 0) >= since) || (a.status === "returned" && (a.returnedAt || 0) >= since)); })
-      .sort(function (a, b) { return (b.receivedAt || b.returnedAt || 0) - (a.receivedAt || a.returnedAt || 0); });
+    /* done in the last 14 days: withdrawals, handovers (one row per person and day), direct payments and returns */
+    var since = Date.now() - 14 * 864e5, seen = {}, done = [];
+    wdList().forEach(function (x) { if ((x.requestedAt || 0) >= since && canSee(x.companyId) && (S.isAdmin || canStep("txn", x.companyId)) && (!cid || x.companyId === cid)) done.push({ k: "wd", x: x, at: x.requestedAt, amt: Number(x.amount) || 0, cid: x.companyId }); });
+    caList().forEach(function (a) {
+      if (!arSees(a) || (cid && a.companyId !== cid)) return;
+      if (a.status === "returned" && (a.returnedAt || 0) >= since) done.push({ k: "ret", x: a, xs: [a], at: a.returnedAt, amt: Number(a.returnedAmount) || 0, cid: a.companyId });
+      else if (a.status === "received" && (a.receivedAt || 0) >= since) { var key = a.handId || a.id; if (seen[key]) { seen[key].xs.push(a); seen[key].amt = round2(seen[key].amt + (Number(a.approvedAmount) || 0)); return; }
+        seen[key] = { k: "paid", x: a, xs: [a], at: a.receivedAt, amt: Number(a.approvedAmount) || 0, cid: a.companyId }; done.push(seen[key]); }
+    });
+    done.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
     $("arDoneN").textContent = done.length ? "(" + done.length + ")" : ""; box = $("arDone");
-    if (!done.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nothing paid out or received back in the last 14 days.")); }
+    if (!done.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nothing withdrawn, paid out or received back in the last 14 days.")); }
     else sortTable(box, "arDone", [
-      { label: "Person", kind: "co", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, coLabel(a.companyId)); } },
-      { label: "What", cell: function (a, td) { var rt = a.status === "returned"; td.appendChild(el("span", { class: "tag stg s-payment" }, rt ? "Cash returned" : a.wdId ? "Handed over" : "Paid")); txt(td, ""); var m = modeInfo(a.payMode); sub(td, fmtDate(rt ? a.returnedDate : a.receivedDate) + (m ? " · " + m[1] : "") + (a.payRef ? " · " + a.payRef : "")); } },
-      { label: "Amount", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, a.status === "returned" ? "(" + money(a.returnedAmount) + ")" : money(a.approvedAmount))); } },
-      { label: "", kind: "act", cls: "r", cell: function (a, td) {
-          var rt = a.status === "returned", mine = (rt ? a.returnedBy : a.receivedBy) === meId() && Date.now() - ((rt ? a.returnedAt : a.receivedAt) || 0) < TX_DAYS * 864e5;
-          if (!(S.isAdmin || mine)) return; var u = el("button", { class: "btn sm" }, "Undo");
-          u.addEventListener("click", function () { if (rt) { if (armed(u)) caUpdate(a, { status: "returning", returnedAmount: null, returnedDate: null, returnedAt: null, returnedBy: null, returnedByName: null, payMode: null, payRef: null }, "Marked as not received yet."); } else caUndo(a, u, "approved"); });
+      { label: "Person", kind: "co", cell: function (r, td) { td.appendChild(el("b", null, r.k === "wd" ? (r.x.name || "Financier") : caName(r.x))); sub(td, coLabel(r.cid)); } },
+      { label: "What", cell: function (r, td) { var a = r.x, rt = r.k === "ret";
+          td.appendChild(el("span", { class: "tag stg s-payment" }, r.k === "wd" ? "Cash withdrawn" : rt ? "Cash returned" : a.fromWd || a.wdId ? "Handed over" : "Paid")); txt(td, "");
+          var m = modeInfo(a.payMode), wm = { cheque: "Self cheque", atm: "ATM / card", counter: "Bank counter" }[a.wdMode];
+          sub(td, r.k === "wd" ? fmtDate(a.wdDate) + (wm ? " · " + wm : "") + (a.wdRef ? " · " + a.wdRef : "") : fmtDate(rt ? a.returnedDate : a.receivedDate) + (m ? " · " + m[1] : "") + (a.payRef ? " · " + a.payRef : "") + (r.xs.length > 1 ? " · " + plural(r.xs.length, "advance") : "")); } },
+      { label: "Amount", cls: "r num", cell: function (r, td) { td.appendChild(el("b", null, r.k === "ret" ? "(" + money(r.amt) + ")" : money(r.amt))); } },
+      { label: "", kind: "act", cls: "r", cell: function (r, td) {
+          var a = r.x, by = r.k === "wd" ? a.uid : r.k === "ret" ? a.returnedBy : a.receivedBy, at = r.k === "wd" ? a.requestedAt : r.k === "ret" ? a.returnedAt : a.receivedAt;
+          if (!(S.isAdmin || (by === meId() && Date.now() - (at || 0) < TX_DAYS * 864e5))) return; var u = el("button", { class: "btn sm" }, "Undo");
+          u.addEventListener("click", function () { if (!armed(u)) return;
+            if (r.k === "wd") { if (wdHeld(a.companyId, a.uid) - (Number(a.amount) || 0) < -0.004) { toast("Part of this cash is already handed over. Undo those handovers first."); return; }
+              AQ.busy = true; retry(function () { return S.db.doc("cashadv/" + a.id).delete(); }).then(function () { delete S.cashadv[a.id]; AQ.busy = false; toast("Withdrawal removed."); renderAdvReq(); renderNav(); }, function (e) { AQ.busy = false; toast(explain(e)); }); }
+            else if (r.k === "ret") caUpdate(a, { status: "returning", returnedAmount: null, returnedDate: null, returnedAt: null, returnedBy: null, returnedByName: null, payMode: null, payRef: null }, "Marked as not received yet.");
+            else arUnhand(r.xs); });
           td.appendChild(u); } }
     ], done, { sortIndex: -1 });
   }
-  /* One withdrawal from the bank for the company's advances waiting; each is then handed over from that cash. */
-  function arWithdraw(cid, xs) {
-    if (!xs.length || AQ.busy) return;
-    var tot = round2(xs.reduce(function (s0, a) { return s0 + (Number(a.approvedAmount) || 0); }, 0)), body = el("div", { class: "mform" });
+  /* Cash withdrawn from the bank for a company: any amount, held by the financier until handed over. */
+  function arWithdraw(cid, suggest) {
+    if (AQ.busy) return; var body = el("div", { class: "mform" }), held = wdHeld(cid, meId());
+    body.appendChild(fld("Amount withdrawn (₹)", inp("arWdAmt", suggest > 0 ? fmtInput(suggest) : "", { inputmode: "decimal", class: "field num" }), suggest > 0 ? money(suggest) + " more covers everyone waiting (you hold " + money(held) + ")." : "You hold " + money(held) + " for this company."));
     body.appendChild(fld("Date withdrawn", dateBox("arWdDate", todayYmd(), { max: todayYmd(), label: "Choose the date withdrawn" }), "Up to today."));
     var md = el("select", { class: "field", id: "arWdMode" }); fillSelect(md, [["cheque", "Self cheque"], ["atm", "ATM / card"], ["counter", "At the bank counter"]], "cheque"); body.appendChild(fld("How", md));
     body.appendChild(fld("Reference", inp("arWdRef", "", { maxlength: "60", placeholder: "Cheque number, if any" })));
-    popForm("Withdraw cash for " + coLabel(cid), money(tot) + " for the company, covering " + plural(xs.length, "approved advance") + ". Then hand each person their share from it.", body, "Withdrawn", function () {
-      errClear(body); var d = parseDate($("arWdDate").value), m = md.value, r = $("arWdRef").value.trim();
+    popForm("Withdraw cash for " + coLabel(cid), "The cash is held by you, for " + coLabel(cid) + ", until you hand it over. It isn't tied to any one advance.", body, "Withdrawn", function () {
+      errClear(body); var n = num($("arWdAmt").value), d = parseDate($("arWdDate").value), m = md.value, r = $("arWdRef").value.trim();
+      if (n == null || n <= 0) { errOn("arWdAmt", "Enter the amount withdrawn."); return false; }
       if (!d) { errOn("arWdDate", "Choose the date."); return false; }
       if (m === "cheque" && !r) { errOn("arWdRef", "Enter the cheque number."); return false; }
-      var wid = newId("wd"), now = Date.now(), patch = { wdId: wid, wdDate: d, wdMode: m, wdRef: r, wdTotal: tot, wdAt: now, wdBy: meId(), updatedAt: now, updatedBy: meId() };
+      var id = newId("ca"), now = Date.now(), doc = { kind: "wd", uid: meId(), name: preparedByText(), companyId: cid, amount: round2(n), wdDate: d, wdMode: m, wdRef: r, status: "withdrawn", requestedAt: now, requestedBy: meId(), updatedAt: now, updatedBy: meId() };
       AQ.busy = true;
-      return Promise.all(xs.map(function (a) { return retry(function () { return S.db.doc("cashadv/" + a.id).update(patch); }).then(function () { S.cashadv[a.id] = Object.assign({}, a, patch); }); }))
-        .then(function () { AQ.busy = false; toast(money(tot) + " withdrawn for " + coLabel(cid) + ". Hand each person their share."); renderAdvReq(); renderNav(); return true; }, function (e) { AQ.busy = false; toast(explain(e)); renderAdvReq(); return false; });
+      return retry(function () { return S.db.doc("cashadv/" + id).set(doc); }).then(function () { S.cashadv[id] = Object.assign({ id: id }, doc); AQ.busy = false; toast(money(doc.amount) + " withdrawn for " + coLabel(cid) + ". You now hold " + money(wdHeld(cid, meId())) + "."); renderAdvReq(); renderNav(); return true; },
+        function (e) { AQ.busy = false; toast(explain(e)); return false; });
+    });
+  }
+  /* One handover to a person: the total of all their approved advances for the company, from the cash held, or paid to their account. */
+  function arHand(g, mode0) {
+    if (AQ.busy) return; var cash = mode0 === "cash", body = el("div", { class: "mform" }), minD = g.xs.reduce(function (m0, a) { var d = ymdOfMs(a.approvedAt || Date.now()); return d > m0 ? d : m0; }, "");
+    body.appendChild(fld("Date " + (cash ? "handed over" : "paid"), dateBox("arHdDate", todayYmd(), { min: minD, max: todayYmd(), label: "Choose the date" }), "Up to today."));
+    var md = el("select", { class: "field", id: "arHdMode" }); fillSelect(md, cash ? [["cash", "Cash"]] : [["neft", "NEFT / RTGS"], ["upi", "UPI"], ["cheque", "Cheque"]], cash ? "cash" : "neft"); body.appendChild(fld("Paid by", md, cash ? "From the " + money(wdHeld(g.cid, meId())) + " you hold for " + coLabel(g.cid) + "." : "Straight to their account."));
+    var rf = inp("arHdRef", "", { maxlength: "60", placeholder: cash ? "Not needed for cash" : "" }); if (!cash) body.appendChild(fld("Reference", rf, "Cheque number, UTR or UPI reference."));
+    popForm(cash ? "Hand over" : "Pay directly", money(g.total) + " to " + g.name + " for " + coLabel(g.cid) + ", covering " + plural(g.xs.length, "advance") + ". It is added to their cash balance.", body, cash ? "Handed over" : "Mark paid", function () {
+      errClear(body); var d = parseDate($("arHdDate").value), m = md.value, r = rf.value.trim();
+      if (!d) { errOn("arHdDate", "Choose the date."); return false; }
+      if (!cash && !r) { errOn("arHdRef", "Enter the " + (modeInfo(m) || [0, 0, "reference"])[2] + "."); return false; }
+      if (cash && wdHeld(g.cid, meId()) + 0.004 < g.total) { toast("You hold only " + money(wdHeld(g.cid, meId())) + ". Withdraw more first."); return false; }
+      var hid = newId("hd"), now = Date.now(), patch = { status: "received", receivedDate: d, receivedAt: now, receivedBy: meId(), payMode: m, payRef: cash ? "" : r, paidByName: S.isAdmin ? (S.me && S.me.name) || "Admin" : preparedByText(), handId: hid, handTotal: g.total, updatedAt: now, updatedBy: meId() };
+      if (cash) { patch.fromWd = true; patch.handBy = meId(); }
+      AQ.busy = true;
+      return Promise.all(g.xs.map(function (a) { return retry(function () { return S.db.doc("cashadv/" + a.id).update(patch); }).then(function () { S.cashadv[a.id] = Object.assign({}, a, patch); }); }))
+        .then(function () { AQ.busy = false; toast(money(g.total) + (cash ? " handed over to " : " paid to ") + g.name + " and added to their cash balance."); renderAdvReq(); renderNav(); return true; }, function (e) { AQ.busy = false; toast(explain(e)); renderAdvReq(); return false; });
+    });
+  }
+  function arUnhand(xs) {
+    var a0 = xs[0], bal = cashBalance(a0.uid, a0.companyId), tot = round2(xs.reduce(function (s0, a) { return s0 + (Number(a.approvedAmount) || 0); }, 0));
+    if (bal.balance - tot < -0.004) { toast("Vouchers have already been settled from this cash. Undoing it would make " + caName(a0) + "'s balance negative."); return; }
+    adminGate(a0.receivedAt, "cash advance", function () {
+      AQ.busy = true; var p = { status: "approved", receivedDate: null, receivedAt: null, receivedBy: null, payMode: null, payRef: null, paidByName: null, handId: null, handTotal: null, fromWd: null, handBy: null, updatedAt: Date.now(), updatedBy: meId() };
+      Promise.all(xs.map(function (a) { return retry(function () { return S.db.doc("cashadv/" + a.id).update(p); }).then(function () { S.cashadv[a.id] = Object.assign({}, a, p); }); }))
+        .then(function () { AQ.busy = false; toast("Handover undone. The cash is back with you."); renderAdvReq(); renderNav(); }, function (e) { AQ.busy = false; toast(explain(e)); renderAdvReq(); });
     });
   }
 

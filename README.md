@@ -245,10 +245,12 @@ provides the same calls, so the app code did not need rewriting:
   person with a login can set a new password (only the super admin can for admins).
 - **Purchasers** must have a default approver (Settings › Users); it is filled in on their new work and can be changed.
 - **Voucher numbers** are given automatically per company and financial year: `INTL-VOU001/10/26-27`.
-- **Cash advances** approved go to the financier's **Payments › Advance Requests**, company by company, with what to
-  withdraw. The financier ticks advances and records one withdrawal for them (date, self cheque / ATM / counter, reference),
-  then **Hands Over** each person's share in cash; or **Pays Directly** to a person's account (NEFT, UPI, cheque) without a
-  withdrawal. Each counts in the person's balance once handed over or paid. Withdrawals can be undone before hand-over.
+- **Cash advances** approved go to the financier's **Payments › Advance Requests**, company by company, one row per
+  person with all their approved advances clubbed. **Withdraw Cash** records any amount the financier withdraws for the
+  company (date, self cheque / ATM / counter, reference); it is held by them (cashadv docs of kind `wd`, kept out of
+  `caList`; `wdHeld`) and isn't tied to any advance. **Hand Over** gives a person the total of their advances in one go from
+  that cash (needs enough held); **Pay Directly** pays the total to their account instead. Each handover marks all the
+  person's advances received (`handId`), so it counts once in their balance. Withdrawals and handovers can be undone.
 - **Returning cash**: a person with cash on hand presses **Return Cash** (Expenses › Cash Advance) for all or part of it. The
   amount is held back at once (it can't be settled by vouchers), and only the financier can mark it received (Advance
   Requests › Cash Being Returned; they may take less). It then comes off the person's balance and their oldest cash first.

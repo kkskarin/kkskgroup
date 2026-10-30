@@ -150,22 +150,23 @@ td input.field{width:110px;text-align:right}
     di.addEventListener("change", function () { var v = di.value; if (!v || v < lo || v > hi) { di.value = st.date; msg.textContent = "Choose a day from " + fmtDate(lo) + " to today."; msg.className = "msg bad"; return; } st.date = v; render(); });
     var e = entry(t.key, place[0], st.date), cells = (e && e.cells) || {};
     var c2 = el("div", { class: "card" }); c2.appendChild(el("h3", null, place[1] + " · " + fmtDate(st.date) + (e ? " · saved" : " · not entered yet")));
+    /* one row per stage (in master order); Domestic and Imports across, then the stage's total */
     var sc = el("div", { class: "scroll" }), tbl = el("table"), thead = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, "Particulars"));
-    ms.forEach(function (m) { hr.appendChild(el("th", { class: "n" }, m.name)); }); hr.appendChild(el("th", { class: "n" }, "Total")); thead.appendChild(hr); tbl.appendChild(thead);
+    ORIGINS.forEach(function (o) { hr.appendChild(el("th", { class: "n" }, o[1])); }); hr.appendChild(el("th", { class: "n" }, "Total")); thead.appendChild(hr); tbl.appendChild(thead);
     var tbody = el("tbody"), inputs = {};
-    ORIGINS.forEach(function (o) {
-      var tr = el("tr"); tr.appendChild(el("td", null, o[1]));
-      ms.forEach(function (m) { var td = el("td", { class: "n" }), v = cells[m.id] && cells[m.id][o[0]]; var ip = el("input", { class: "field", inputmode: "numeric", "aria-label": o[1] + " " + m.name, placeholder: "0" }); ip.value = v == null ? "" : String(v); ip.addEventListener("input", sums); inputs[o[0] + "|" + m.id] = ip; td.appendChild(ip); tr.appendChild(td); });
-      tr.appendChild(el("td", { class: "n tot", "data-row": o[0] })); tbody.appendChild(tr);
+    ms.forEach(function (m) {
+      var tr = el("tr"); tr.appendChild(el("td", null, m.name));
+      ORIGINS.forEach(function (o) { var td = el("td", { class: "n" }), v = cells[m.id] && cells[m.id][o[0]]; var ip = el("input", { class: "field", inputmode: "numeric", "aria-label": o[1] + " " + m.name, placeholder: "0" }); ip.value = v == null ? "" : String(v); ip.addEventListener("input", sums); inputs[o[0] + "|" + m.id] = ip; td.appendChild(ip); tr.appendChild(td); });
+      tr.appendChild(el("td", { class: "n tot", "data-row": m.id })); tbody.appendChild(tr);
     });
-    var trt = el("tr", { class: "tot" }); trt.appendChild(el("td", null, "Total")); ms.forEach(function (m) { trt.appendChild(el("td", { class: "n", "data-col": m.id })); }); trt.appendChild(el("td", { class: "n", "data-all": "1" })); tbody.appendChild(trt);
+    var trt = el("tr", { class: "tot" }); trt.appendChild(el("td", null, "Total")); ORIGINS.forEach(function (o) { trt.appendChild(el("td", { class: "n", "data-col": o[0] })); }); trt.appendChild(el("td", { class: "n", "data-all": "1" })); tbody.appendChild(trt);
     tbl.appendChild(tbody); sc.appendChild(tbl); c2.appendChild(sc);
     var acts = el("div", { class: "row", style: "margin-top:12px" }), save = el("button", { type: "button", class: "btn primary" }, e ? "Save Changes" : "Save"), msg = el("div", { class: "msg" });
     acts.appendChild(save); c2.appendChild(acts); c2.appendChild(msg); body.appendChild(c2);
     function sums() {
       var all = 0, bad = false;
-      ORIGINS.forEach(function (o) { var s = 0; ms.forEach(function (m) { var n = int(inputs[o[0] + "|" + m.id].value); if (isNaN(n)) bad = true; else s += n || 0; }); tbody.querySelector('[data-row="' + o[0] + '"]').textContent = pcs(s); all += s; });
-      ms.forEach(function (m) { var s = 0; ORIGINS.forEach(function (o) { var n = int(inputs[o[0] + "|" + m.id].value); if (!isNaN(n)) s += n || 0; }); tbody.querySelector('[data-col="' + m.id + '"]').textContent = pcs(s); });
+      ms.forEach(function (m) { var t0 = 0; ORIGINS.forEach(function (o) { var n = int(inputs[o[0] + "|" + m.id].value); if (isNaN(n)) bad = true; else t0 += n || 0; }); tbody.querySelector('[data-row="' + m.id + '"]').textContent = pcs(t0); all += t0; });
+      ORIGINS.forEach(function (o) { var t1 = 0; ms.forEach(function (m) { var n = int(inputs[o[0] + "|" + m.id].value); if (!isNaN(n)) t1 += n || 0; }); tbody.querySelector('[data-col="' + o[0] + '"]').textContent = pcs(t1); });
       tbody.querySelector('[data-all="1"]').textContent = pcs(all); return !bad;
     }
     sums();

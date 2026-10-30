@@ -141,8 +141,17 @@
   - Bills record the e-invoice's IRN, Ack No and Ack Date (`einv`), read by Claude when printed and editable on the bill form.
   - TDS: choosing a section fills the amount from its rate, rounded to the rupee; 194C takes 1% for a proprietorship,
     individual or HUF and 2% for others, from the vendor's constitution (`tdsRateFor`).
-- **Vendor bank details:** the IFSC fills in bank and branch from Razorpay's free IFSC lookup (`ifscLook`); "Read From a
-  Cancelled Cheque" has Claude read a cheque or bank letter into the form and keeps the file as proof (`bank.proof`).
+- **Bank Names** (Finance › Masters › Others, `banknames/*`, shared): one name per bank with its IFSC code (first 4 letters).
+  Renaming one rewrites it on every bank account, cheque template and vendor (`bnForm`). A bank is added by itself
+  (`bnEnsure`) when an IFSC of a new bank is saved on a company bank account or a vendor.
+- **Bank accounts first:** a company bank account starts from its IFSC, which fills bank (from Bank Names), branch, city and
+  branch address (Razorpay's free IFSC lookup, `ifscGet`). A cheque template's bank can only be one a company has an
+  account with (`tplBankSelect`). Vendors' bank details: Bank is a pick from Bank Names; the IFSC fills it with branch and
+  branch address.
+- **New vendors on a bill:** as soon as the bill is read, its GSTIN is looked up on the GST portal (`cardGst`): the legal
+  name and type fill in (editable), and if the portal's address differs from the bill's the purchaser picks one. The
+  portal's details are saved with the vendor. Payment terms are required for every new vendor (bill, proforma, import,
+  Add Vendor and the Excel upload). Check on the GST portal is for the accountant and admins only.
 - **Who sees what in Accounts and Finance** (they span every division): Masters › Companies and Bank Accounts list only the
   person's own companies (admins see all); Vendors lists only vendors of the person's divisions.
 - **Cash limits (Payment Entry):** cash to one person stays under ₹10,000 a day; Freight & Transport vouchers can be paid up

@@ -820,8 +820,14 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     <div id="lgmList"></div>
   </section>
   <section id="secBanks" hidden>
-    <div class="head"><div class="grow"><h2>Bank Accounts</h2><p class="sub">Each company's bank accounts. One is the company's default, and each account has a default cheque book; both fill in when paying and can be changed. The bank's name, city and account number also go on the salary covering letter.</p></div><div class="acts"><button class="btn primary" id="bankAdd" type="button">Add Bank Account</button></div></div>
+    <div class="head"><div class="grow"><h2>Bank Accounts</h2><p class="sub">Each company's bank accounts, added before any cheque template for that bank. The IFSC fills in the bank's name, branch, city and address. One account is the company's default, and each account has a default cheque book; both fill in when paying and can be changed. The bank's name, city and account number also go on the salary covering letter.</p></div><div class="acts"><button class="btn primary" id="bankAdd" type="button">Add Bank Account</button></div></div>
     <div id="bankList"></div>
+  </section>
+  <section id="secOthers" hidden>
+    <div class="head"><div class="grow"><h2>Others</h2><p class="sub">Lists used across the app. A change here updates every place that uses it.</p></div></div>
+    <h3>Bank Names</h3>
+    <div class="head" style="margin-top:0"><p class="sub grow" style="margin:0">One name per bank, with its IFSC code (the first 4 letters of every IFSC of that bank). A bank is added by itself when an IFSC of a new bank is entered for a company bank account or a vendor. Renaming one here renames it on every bank account, cheque template and vendor.</p><div class="acts"><button class="btn primary" id="bnAdd" type="button">Add Bank Name</button></div></div>
+    <div id="bnList"></div>
   </section>
   <section id="secAllEnt" hidden>
     <div class="head"><div class="grow"><h2>All Bills &amp; Vouchers</h2><p class="sub">Every bill, proforma and voucher of your companies, from every division. An entry is changed only in the app it was made in: use Open in &hellip; to go there. Here they are read-only.</p></div></div>
@@ -1029,13 +1035,13 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
         <div class="f"><label for="vePan">PAN</label><input class="field mono ro" id="vePan" disabled><span class="hint">Taken from the GSTIN.</span><span class="err" id="vePanE" hidden></span></div>
         <div class="f wide"><label for="veAddr">Address</label><textarea class="field" id="veAddr" rows="2" maxlength="240"></textarea><span class="hint">Street, town and PIN code (with the country for an overseas vendor).</span><span class="err" id="veAddrE" hidden></span></div>
         <div class="f"><label for="veTerm">Payment terms (days)</label><input class="field num" id="veTerm" inputmode="numeric" maxlength="3" autocomplete="off"><span class="hint">Days from the bill date to the due date.</span><span class="err" id="veTermE" hidden></span></div>
-        <div class="f wide"><b>Bank details (for NEFT / RTGS)</b><span class="hint">Filled into the bank's NEFT / RTGS form. Needed only when paying this vendor by NEFT / RTGS.</span>
-          <div class="acts" style="margin-top:8px"><button type="button" class="btn sm" id="veChq" hidden>Read From a Cancelled Cheque</button><input type="file" id="veChqF" accept="application/pdf,image/jpeg,image/png,image/webp" hidden></div><span class="hint" id="veChqLn"></span></div>
+        <div class="f wide"><b>Bank details (for NEFT / RTGS)</b><span class="hint">Filled into the bank's NEFT / RTGS form. Needed only when paying this vendor by NEFT / RTGS.</span></div>
         <div class="f"><label for="veBenName">Account holder name</label><input class="field" id="veBenName" maxlength="120" autocomplete="off" data-fmt="name"></div>
         <div class="f"><label for="veBenAcct">Account number</label><input class="field mono" id="veBenAcct" maxlength="24" autocomplete="off" spellcheck="false"><span class="err" id="veBenAcctE" hidden></span></div>
-        <div class="f"><label for="veBenIfsc">IFSC</label><input class="field mono" id="veBenIfsc" maxlength="11" autocomplete="off" spellcheck="false"><span class="hint" id="veBenIfscH">Bank and branch fill in from the IFSC.</span><span class="err" id="veBenIfscE" hidden></span></div>
-        <div class="f"><label for="veBenBank">Bank</label><input class="field" id="veBenBank" maxlength="80" autocomplete="off" data-fmt="name"></div>
+        <div class="f"><label for="veBenIfsc">IFSC</label><input class="field mono" id="veBenIfsc" maxlength="11" autocomplete="off" spellcheck="false"><span class="hint" id="veBenIfscH">Bank, branch and address fill in from the IFSC.</span><span class="err" id="veBenIfscE" hidden></span></div>
+        <div class="f"><label for="veBenBank">Bank</label><select class="field" id="veBenBank"></select><span class="hint">From Masters › Others › Bank Names.</span></div>
         <div class="f"><label for="veBenBranch">Branch</label><input class="field" id="veBenBranch" maxlength="80" autocomplete="off" data-fmt="name"></div>
+        <div class="f wide"><label for="veBenAddr">Branch address</label><textarea class="field" id="veBenAddr" rows="2" maxlength="240"></textarea></div>
         <div class="f"><label for="veBenType">Account type</label><select class="field" id="veBenType"><option value="">Choose</option><option>Current</option><option>Savings</option><option>Cash Credit</option><option>Overdraft</option></select></div>
         <div class="f"><label for="veBenPhone">Mobile</label><input class="field" id="veBenPhone" inputmode="tel" maxlength="15" autocomplete="off"></div>
       </div>
@@ -1150,7 +1156,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
 
   <section id="secMark" hidden>
     <div class="head">
-      <div><h2>Payment Entry</h2><p class="sub">Everything approved and not yet paid. <b>Plan for Payment</b>: tick bills by vendor (earliest due first), set what to pay now, choose Cheque, NEFT / RTGS or Cash and A/c Payee, then print every cheque in one go with running numbers. <b>Already Paid</b>: record a payment made outside the app (cheque, NEFT / RTGS, net banking, credit card or cash) with its cheque number or transaction ID. Cash stays under ₹10,000 a payee a day (Freight &amp; Transport vouchers: up to ₹30,000; cheques have no limit).</p></div>
+      <div><h2>Payment Entry</h2><p class="sub">Everything approved and not yet paid. <b>Plan for Payment</b>: tick bills by vendor (earliest due first), set what to pay now, choose Cheque, NEFT / RTGS or Cash and A/C Payee, then print every cheque in one go with running numbers. <b>Already Paid</b>: record a payment made outside the app (cheque, NEFT / RTGS, net banking, credit card or cash) with its cheque number or transaction ID. Cash stays under ₹10,000 a payee a day (Freight &amp; Transport vouchers: up to ₹30,000; cheques have no limit).</p></div>
       <span class="grow"></span>
       <select class="field" id="mkCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
@@ -1707,8 +1713,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Requests", "Advance Requests"], ["Advance Summary", "Advances"], ["Salary", "Salary"]] };
   /* Masters: its own heading. Companies first, then (Renewable Energy) Consumers and PPA Rates, then Vendors and Ledgers. */
   /* Cheque Templates: where the financier pays (Renewable Energy pays its own; Finance pays the other divisions). */
-  var CHQ_TAB = ["Cheques", "Cheque Templates", 0, "m"], BANK_TAB = ["Banks", "Bank Accounts", 0, "m"];
-  var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], MASTERS[2]] : APP === "fin" ? [MASTERS[0], MASTERS[1], BANK_TAB, CHQ_TAB] : MASTERS }; /* Finance: no expense ledgers, only what payments need */
+  var CHQ_TAB = ["Cheques", "Cheque Templates", 0, "m"], BANK_TAB = ["Banks", "Bank Accounts", 0, "m"], OTHERS_TAB = ["Others", "Others", 0, "m"];
+  var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], MASTERS[2]] : APP === "fin" ? [MASTERS[0], MASTERS[1], BANK_TAB, CHQ_TAB, OTHERS_TAB] : MASTERS }; /* Finance: no expense ledgers, only what payments need */
   var SET_ALL = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Activity", "Show Activity", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] };
   var NAV_BY_APP = {
     mnt: [REP_TABS, EXP_TABS, MAS_TABS, SET_ALL],
@@ -1727,12 +1733,12 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   var ADMIN_HIDE = { "Bills": 1, "Plan Advance": 1, "Imports": 1, "Cash Voucher": 1, "Accounts": 1, "Mark Transaction": 1 };
   /* A financier who only pays out sees Reports (Transactions, Payables) and Payments, nothing else. */
   var CHIEF_TABS = { "Activity": 1, "Transactions": 1, "Payables": 1, "Advance Summary": 1, "Accounts": 1, "Notes": 1, "Ledger Books": 1, "Companies": 1, "Vendors": 1, "Ledgers": 1 };
-  var FIN_TABS = { "Salary": 1, "Cheques": 1, "Banks": 1, "Companies": 1, "Vendors": 1, "Cash Approvals": 1, "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1, "Advance Requests": 1 };
+  var FIN_TABS = { "Salary": 1, "Cheques": 1, "Banks": 1, "Others": 1, "Companies": 1, "Vendors": 1, "Cash Approvals": 1, "Approvals": 1, "Transactions": 1, "Payables": 1, "Mark Transaction": 1, "Advance Summary": 1, "Advance Requests": 1 };
   function finOnly() { return !S.isAdmin && canDo("txn") && STEPS.every(function (st) { return st[0] === "txn" || !canDo(st[0]); }); }
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {
       var fo = finOnly();
-      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (meChief() && CHIEF_TABS[t[0]]) return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[0] === "Salary") return APP === "fin" && (S.isAdmin || canDo("txn")); if (t[0] === "Cheques" || t[0] === "Banks") return S.isAdmin || canDo("txn"); if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && st[0] !== "rec" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (TAB_STEP[t[0]] === "appr" && canDo("rec")) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
+      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (meChief() && CHIEF_TABS[t[0]]) return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[0] === "Salary") return APP === "fin" && (S.isAdmin || canDo("txn")); if (t[0] === "Cheques" || t[0] === "Banks" || t[0] === "Others") return S.isAdmin || canDo("txn"); if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && st[0] !== "rec" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (TAB_STEP[t[0]] === "appr" && canDo("rec")) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
         /* The financier's Reports: Payables first, then Payments (Transactions showing payments only). */
         .map(function (t) { return fo && t[0] === "Transactions" ? [t[0], "Payments"] : t; }).sort(function (x, y) { return fo ? (x[0] === "Payables" ? -1 : y[0] === "Payables" ? 1 : 0) : 0; }) };
     }).filter(function (g) { return g.tabs.length; });
@@ -1834,6 +1840,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (t === "Personalise") { renderPrefs(); show("secPrefs"); return; }
     if (t === "Cheques") { CQ.id = null; CQ.D = null; renderCheques(); show("secCheques"); return; }
     if (t === "Banks") { renderBanks(); show("secBanks"); return; }
+    if (t === "Others") { renderOthers(); show("secOthers"); return; }
     if (t === "Salary") { renderSalary(); show("secSalary"); return; }
     if (t === "All Entries") { if (dataReady()) { renderAllEnt(); show("secAllEnt"); } else show("vLoading"); return; }
     if (t === "Users" && S.isAdmin) { renderUsers(); renderSupers(); show("secUsers"); }
@@ -4124,7 +4131,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var vn = b.vendorNew || {};
     return {
       companyId: b.companyId || "", vendorChoice: b.vendorId || (vn.name || vn.gstin ? "new" : ""),
-      vNew: { name: vn.name || "", gstin: vn.gstin || "", pan: vn.pan || "", type: vn.type || "", termDays: vn.termDays == null ? "" : String(vn.termDays), addr: vn.address || "" },
+      vNew: { name: vn.name || "", gstin: vn.gstin || "", pan: vn.pan || "", type: vn.type || "", termDays: vn.termDays == null ? "" : String(vn.termDays), addr: vn.address || "", addrPick: vn.addrPick || "" },
       billNo: b.billNo || "", billDate: fmtDate(b.billDate), currency: curOk(b.currency) ? b.currency : "INR", rate: b.fxRate ? fmtRate(b.fxRate) : "",
       taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt),
       tds: b.entryTds || "", tdsSec: b.entryTdsSection || "",
@@ -4210,7 +4217,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function draftToDoc0(D) {
     return Object.assign({
       companyId: D.companyId || null, vendorId: D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : null,
-      vendorNew: { name: D.vNew.name.trim(), gstin: normId(D.vNew.gstin), pan: panOfNew(D), type: D.vNew.type || "", termDays: intOrNull(D.vNew.termDays), address: String(D.vNew.addr || "").trim() },
+      vendorNew: { name: D.vNew.name.trim(), gstin: normId(D.vNew.gstin), pan: panOfNew(D), type: D.vNew.type || "", termDays: intOrNull(D.vNew.termDays), address: String(D.vNew.addr || "").trim(), addrPick: D.vNew.addrPick || "" },
       billNo: D.billNo.trim(), billDate: parseDate(D.billDate),
       termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: D.narration.trim(), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
       ledgers: ledLinesOut(D.ledgers), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || "",
@@ -4248,6 +4255,40 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     });
     return hit;
   }
+  /* ---- A new vendor on a bill: as soon as the bill is read, its GSTIN is looked up on the GST portal. The legal name and
+     type fill in (still editable); if the portal's address differs from the bill's, the purchaser picks one. ---- */
+  function cardPortal(b, g) { var x = b && b.ex && b.ex.gst; return x && g && x.gstin === g ? x : null; }
+  function addrKey(a) { return String(a || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
+  function cardAddrClash(b, pg) { var ba = (b.ex && b.ex.vendorAddress) || ""; return !!(pg.address && ba && addrKey(pg.address) !== addrKey(ba)); }
+  function cardGst() {
+    var D = B.D, b = S.bills[B.cardId]; if (!D || !b || D.vendorChoice !== "new" || !window.bvGst) return;
+    var g = normId(D.vNew.gstin); if (!g || gstinCheck(g) || cardPortal(b, g) || (b.ex && b.ex.gstMiss === g) || B.gstQ === b.id + g) return;
+    B.gstQ = b.id + g; var id = b.id;
+    window.bvGst.search(g).then(function (r) {
+      var x = S.bills[id]; if (!x) return; var ex = Object.assign({}, x.ex || {});
+      if (!r || !r.found) { ex.gstMiss = g; } else { ex.gst = gstFromHit(r); delete ex.gstMiss; }
+      x.ex = ex; retry(function () { return S.db.doc("bills/" + id).update({ ex: ex }); }).catch(function () {});
+      var D2 = B.cardId === id ? B.D : null; if (!D2 || !ex.gst || normId(D2.vNew.gstin) !== g) { if (D2) updateDynamic(); return; }
+      var pg = ex.gst, nm = smartCase(String(pg.legalName || pg.tradeName || "").toLowerCase());
+      if (nm) { D2.vNew.name = nm; $("bcVName").value = nm; }
+      if (!D2.vNew.type) { D2.vNew.type = "registered"; $("bcVType").value = "registered"; }
+      if (pg.address && !String(D2.vNew.addr || "").trim()) { D2.vNew.addr = pg.address; $("bcVAddr").value = pg.address; }
+      scheduleSave(); updateDynamic(); toast("Filled in from the GST portal: " + (nm || g) + ". Check and change if needed.");
+    }, function () { B.gstQ = ""; });
+  }
+  function paintCardGst() {
+    var box = $("bcGstNew"), D = B.D, b = S.bills[B.cardId]; if (!box || !D || !b) return;
+    var e = $("bcAddrPickE"); Array.prototype.slice.call(box.childNodes).forEach(function (n) { if (n !== e) n.remove(); });
+    var g = normId(D.vNew.gstin), pg = cardPortal(b, g); if (!pg) return;
+    var hd = el("div", { class: "hint", style: "margin-bottom:6px" }); hd.appendChild(el("b", { class: gstIsBad(pg) ? "bad" : "" }, "GST portal: ")); hd.appendChild(document.createTextNode([pg.legalName, pg.status, pg.type, pg.constitution].filter(Boolean).join(" · "))); box.insertBefore(hd, e);
+    if (!cardAddrClash(b, pg)) return;
+    var grp = el("div", { class: "checks", role: "radiogroup", "aria-label": "Which address", style: "flex-direction:column;align-items:flex-start;gap:6px" });
+    [["bill", "From the bill: " + b.ex.vendorAddress], ["portal", "From the GST portal: " + pg.address]].forEach(function (o) {
+      var lb = el("label", { class: "check" }), rb = el("input", { type: "radio", name: "bcAddrPick", value: o[0] }); rb.checked = D.vNew.addrPick === o[0];
+      rb.addEventListener("change", function () { D.vNew.addrPick = o[0]; D.vNew.addr = o[0] === "bill" ? b.ex.vendorAddress : pg.address; $("bcVAddr").value = D.vNew.addr; scheduleSave(); updateDynamic(); });
+      lb.appendChild(rb); lb.appendChild(document.createTextNode(" " + o[1])); grp.appendChild(lb); });
+    box.insertBefore(el("span", { class: "lb" }, "Which address?"), e); box.insertBefore(grp, e);
+  }
   function checkBill(D, b) {
     var errs = [], warns = [], ti = termInfo(D, b), v = null, vt = "";
     function E(f, m) { errs.push([f, m]); }
@@ -4268,6 +4309,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (n.type === "registered" && gp === "missing") E("bcVGstin", GSTIN_MSG.missing);
       else if (g && gp) E("bcVGstin", GSTIN_MSG[gp]);
       if (!termOk(n.termDays)) E("bcVTerm", "Enter the payment terms in days, from 0 to 365.");
+      var pg = cardPortal(b, g); if (pg && cardAddrClash(b, pg) && !n.addrPick) E("bcAddrPick", "The bill's address and the GST portal's differ. Choose which to keep.");
+      if (pg) gstAlerts({ gstin: g, gst: pg }, parseDate(D.billDate), num(D.gstAmt) || 0, { irn: String((D.einv || {}).irn || "").trim() }).forEach(function (w) { warns.push(w); });
+      else if (g && !gp && b.ex && b.ex.gstMiss === g) warns.push("This GSTIN wasn't found on the GST portal. Check it against the bill.");
     } else {
       v = S.vendors[D.vendorChoice];
       if (!v) E("bcVen", "That vendor no longer exists. Choose again.");
@@ -4454,6 +4498,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     vbox.appendChild(fld("PAN", inp("bcVPan", panOfNew(D), { class: "field mono ro", disabled: "" }), "Taken from the GSTIN."));
     var bva = el("textarea", { class: "field", id: "bcVAddr", rows: "2", maxlength: "240" }); bva.value = D.vNew.addr || ""; vbox.appendChild(fld("Address", bva, "Street, town and PIN code.", true));
     vbox.appendChild(fld("Payment terms (days)", inp("bcVTerm", D.vNew.termDays, { inputmode: "numeric", maxlength: "3", class: "field num" }), "Days from the bill date to the due date. Saved as the vendor's terms."));
+    var gp = el("div", { class: "f wide", id: "bcGstNew" }); gp.appendChild(el("span", { class: "err", id: "bcAddrPickE", hidden: "" })); vbox.appendChild(gp);
     f.appendChild(vbox);
     f.appendChild(el("div", { class: "f wide vline", id: "bcVInfo" }));
     f.appendChild(el("div", { class: "f wide", id: "bcAdvBox", hidden: "" }));
@@ -4668,7 +4713,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var D = B.D, b = S.bills[B.cardId]; if (!D || !b || !$("bcDue")) return;
     if ($("bcSetF")) { var rel = billAdvOk(D); $("bcSetF").hidden = !rel; if (!rel && D.settle === "yes") { D.settle = "no"; $("bcSettle").value = "no"; }
       if (rel) { var cbx = cashBalance(billWho(D), D.companyId, b.id); $("bcSettleH").textContent = "Cash on hand for " + coLabel(D.companyId) + ": " + money(cbx.free) + ". Yes: once approved it is settled from this cash, and the financier doesn't pay the vendor."; } }
-    setTimeout(function () { paintAiFlags(billAiSpecs()); }, 0);
+    setTimeout(function () { paintAiFlags(billAiSpecs()); cardGst(); paintCardGst(); }, 0);
     lockCurrency();
     var r = checkBill(D, b), days = r.ti.days;
     var bd = parseDate(D.billDate), A = amountsOf(D), foreign = D.currency !== "INR";
@@ -4737,7 +4782,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (ex) { vid = ex.id; vendorJoin(ex); }
       else {
         vid = newId("v"); madeVendor = D.vNew.name.trim();
-        var vdoc = { apps: [DIV || "mnt"], address: String(D.vNew.addr || "").trim(), name: madeVendor, gstin: g, pan: panOfNew(D), type: D.vNew.type, termDays: intOrNull(D.vNew.termDays), active: true, openings: {},
+        var vdoc = { apps: [DIV || "mnt"], address: String(D.vNew.addr || "").trim(), name: madeVendor, gstin: g, pan: panOfNew(D), type: D.vNew.type, termDays: intOrNull(D.vNew.termDays), active: true, openings: {}, gst: cardPortal(b, g) || null,
           createdAt: now, createdBy: meId(), firstBillId: b.id, updatedAt: now, updatedBy: meId() };
         job = job.then(function () { return retry(function () { return S.db.doc("vendors/" + vid).set(vdoc); }); }).then(function () { S.vendors[vid] = Object.assign({ id: vid }, vdoc); invalidate(); });
       }
@@ -5009,14 +5054,14 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var v = VE.nv || S.vendors[id]; if (!v) return;
     VE.id = id; veClear();
     $("veName").value = v.name || ""; $("veAddr").value = v.address || ""; fillSelect($("veType"), [["", "Choose a type"]].concat(VTYPES), v.type || "");
-    $("veGstin").value = v.gstin || ""; $("veGstChk").hidden = !window.bvGst; $("veGstRes").hidden = true; VE.gstHit = null; VE.proof = null; paintVendorGst(v); $("vePan").value = v.gstin && gstinCheck(v.gstin) !== "format" ? panFromGstin(v.gstin) : ""; $("veTerm").value = v.termDays == null ? "" : String(v.termDays);
-    var bk0 = v.bank || {}; $("veBenName").value = bk0.name || ""; $("veBenAcct").value = bk0.acct || ""; $("veBenIfsc").value = bk0.ifsc || ""; $("veBenBank").value = bk0.bank || ""; $("veBenBranch").value = bk0.branch || ""; $("veBenType").value = bk0.type || ""; $("veBenPhone").value = bk0.phone || "";
+    $("veGstin").value = v.gstin || ""; $("veGstChk").hidden = !window.bvGst || !canEditVendors(); $("veGstRes").hidden = true; VE.gstHit = null; VE.bankNew = null; paintVendorGst(v); $("vePan").value = v.gstin && gstinCheck(v.gstin) !== "format" ? panFromGstin(v.gstin) : ""; $("veTerm").value = v.termDays == null ? "" : String(v.termDays);
+    var bk0 = v.bank || {}; $("veBenName").value = bk0.name || ""; $("veBenAcct").value = bk0.acct || ""; $("veBenIfsc").value = bk0.ifsc || ""; vbFill(bk0.bank || ""); $("veBenAddr").value = bk0.address || ""; $("veBenBranch").value = bk0.branch || ""; $("veBenType").value = bk0.type || ""; $("veBenPhone").value = bk0.phone || "";
     renderOpenings(v); renderVendorHead(v); renderVendorStatements();
     var ed = canEditVendors(), eb = canEditVendorBank();
     Array.prototype.forEach.call(document.querySelectorAll("#secVendor .form .field, #veOb input"), function (i) { if (i.id === "vePan") return; var bank = /^veBen/.test(i.id); i.disabled = bank ? !eb : !ed; });
     $("veSave").hidden = !ed && !eb; $("veCancel").textContent = ed || eb ? "Cancel" : "Back";
     if (!ed || !eb) { var nt = el("div", { class: "flag", style: "margin-top:8px" }, ed ? "The bank details for cheques and NEFT / RTGS are filled in by the financier." : eb ? "The vendor's accounting details and opening balances are kept by the accountant. You fill in the bank details for cheques and NEFT / RTGS." : "Vendor details and opening balances are filled in by the accountant; bank details by the financier."); $("vFlags").appendChild(nt); }
-    $("veChq").hidden = !eb || !S.sample; paintProof(v.bank && v.bank.proof); $("veBenIfscH").textContent = eb ? "Bank and branch fill in from the IFSC." : "";
+    $("veBenIfscH").textContent = eb ? "Bank, branch and address fill in from the IFSC." : "";
     if (!v.isNew) gstRefresh(v, function () { if (VE.id === v.id) paintVendorGst(S.vendors[v.id]); });
     var tg = $("veToggle"); tg.hidden = !S.isAdmin || !ed || !!v.isNew;
     $("veStH").hidden = $("veStSub").hidden = $("veSt").hidden = !!v.isNew; $("veSave").textContent = v.isNew ? "Add vendor" : "Save vendor";
@@ -5116,30 +5161,41 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (bkd.acct && !/^[0-9A-Za-z]{6,24}$/.test(bkd.acct)) { veErr("veBenAcct", "Letters and digits only, 6 to 24."); $("veBenAcct").focus(); return; }
     if (bkd.ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bkd.ifsc)) { veErr("veBenIfsc", "An IFSC looks like SBIN0001234."); $("veBenIfsc").focus(); return; }
     if (eb) data.bank = bkd;
+    var pre = eb ? vbEnsure(bkd) : Promise.resolve();
     if (changed) data.openings = openings;
     VE.busy = true; $("veSave").disabled = true;
     if (v.isNew) {
       var nd = Object.assign({ apps: [DIV || "mnt"], active: true, openings: {}, createdAt: now, createdBy: meId(), source: "manual" }, data);
       if (nd.openings) Object.keys(nd.openings).forEach(function (k) { if (!nd.openings[k]) delete nd.openings[k]; });
       if (!eb) delete nd.bank;
-      retry(function () { return S.db.doc("vendors/" + v.id).set(nd); }).then(function () { S.vendors[v.id] = Object.assign({ id: v.id }, nd); VE.nv = null; invalidate(); toast(name + " added."); backToVendors(); }, function (e) { toast(explain(e)); })
+      pre.then(function () { return retry(function () { return S.db.doc("vendors/" + v.id).set(nd); }); }).then(function () { S.vendors[v.id] = Object.assign({ id: v.id }, nd); VE.nv = null; invalidate(); toast(name + " added."); backToVendors(); }, function (e) { toast(explain(e)); })
         .then(function () { VE.busy = false; $("veSave").disabled = false; });
       return;
     }
-    retry(function () { return S.db.doc("vendors/" + v.id).update(data); }).then(function () { toast("Vendor saved."); backToVendors(); }, function (e) { toast(explain(e)); })
+    pre.then(function () { return retry(function () { return S.db.doc("vendors/" + v.id).update(data); }); }).then(function () { toast("Vendor saved."); backToVendors(); }, function (e) { toast(explain(e)); })
       .then(function () { VE.busy = false; $("veSave").disabled = false; });
   }
   /* The financier saves only the bank details. */
   function readVendorBank(v) {
-    var proof = VE.proof || (v && v.bank && v.bank.proof) || null;
-    return { name: smartCase($("veBenName").value.trim()), acct: $("veBenAcct").value.replace(/\s+/g, ""), ifsc: $("veBenIfsc").value.trim().toUpperCase(), bank: smartCase($("veBenBank").value.trim()), branch: smartCase($("veBenBranch").value.trim()), type: $("veBenType").value, phone: $("veBenPhone").value.trim(), proof: proof };
+    return { name: smartCase($("veBenName").value.trim()), acct: $("veBenAcct").value.replace(/\s+/g, ""), ifsc: $("veBenIfsc").value.trim().toUpperCase(), bank: $("veBenBank").value, branch: smartCase($("veBenBranch").value.trim()), address: $("veBenAddr").value.trim().replace(/\s+/g, " "), type: $("veBenType").value, phone: $("veBenPhone").value.trim() };
+  }
+  /* The vendor's Bank: a pick from Bank Names; a bank found from the IFSC that isn't on the list yet is offered and added on saving. */
+  function vbFill(cur) {
+    var l = bankNames(); if (VE.bankNew && !l.some(function (x) { return sameBank(x, VE.bankNew.name); })) l.push(VE.bankNew.name);
+    if (cur && !l.some(function (x) { return sameBank(x, cur); })) l.push(cur);
+    fillSelect($("veBenBank"), [["", "Choose the bank"]].concat(l.sort(natCmp).map(function (x) { return [x, x]; })), (l.filter(function (x) { return sameBank(x, cur); })[0]) || "");
+  }
+  /* Before the bank details are saved: a bank not on Bank Names yet is added (with its IFSC code). */
+  function vbEnsure(bkd) {
+    if (!bkd.bank || bnByName(bkd.bank)) return Promise.resolve();
+    return bnEnsure(bkd.bank, (bkd.ifsc || "").slice(0, 4)).then(function (n) { bkd.bank = n; });
   }
   function saveVendorBank(v) {
     var bkd = readVendorBank(v);
     if (bkd.acct && !/^[0-9A-Za-z]{6,24}$/.test(bkd.acct)) { veErr("veBenAcct", "Letters and digits only, 6 to 24."); $("veBenAcct").focus(); return; }
     if (bkd.ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bkd.ifsc)) { veErr("veBenIfsc", "An IFSC looks like SBIN0001234."); $("veBenIfsc").focus(); return; }
     VE.busy = true; $("veSave").disabled = true;
-    retry(function () { return S.db.doc("vendors/" + v.id).update({ bank: bkd, bankAt: Date.now(), bankBy: meId() }); }).then(function () { toast("Bank details saved."); backToVendors(); }, function (e) { toast(explain(e)); })
+    vbEnsure(bkd).then(function () { return retry(function () { return S.db.doc("vendors/" + v.id).update({ bank: bkd, bankAt: Date.now(), bankBy: meId() }); }); }).then(function () { toast("Bank details saved."); backToVendors(); }, function (e) { toast(explain(e)); })
       .then(function () { VE.busy = false; $("veSave").disabled = false; });
   }
   function toggleVendor() {
@@ -5217,49 +5273,17 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     b.appendChild(el("b", { class: gstIsBad(g) ? "bad" : "" }, "GST portal, checked " + fmtDay(g.checkedAt) + ": "));
     b.appendChild(document.createTextNode([g.status || "Status not given", g.type, g.constitution, "e-Invoice: " + (g.einv || "not stated")].filter(Boolean).join(" · ")));
   }
-  /* ---- Bank details: the IFSC fills in the bank and branch; a cancelled cheque fills in the rest and is kept as proof. ---- */
-  var IFSCQ = {};
+  /* ---- Vendor bank details: the IFSC fills in the bank (from Bank Names), branch and branch address. ---- */
   function ifscLook() {
     var i = $("veBenIfsc"), c = i.value.trim().toUpperCase(), h = $("veBenIfscH");
     if (i.disabled || !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(c)) return Promise.resolve();
-    if (!IFSCQ[c]) IFSCQ[c] = fetch("https://ifsc.razorpay.com/" + c).then(function (r) { return r.ok ? r.json() : r.status === 404 ? null : Promise.reject(r.status); }).catch(function (e) { delete IFSCQ[c]; throw e; });
-    return IFSCQ[c].then(function (j) {
+    return ifscGet(c).then(function (j) {
       if ($("veBenIfsc").value.trim().toUpperCase() !== c) return;
       if (!j) { h.textContent = "This IFSC isn't on the RBI's list. Check it."; return; }
-      $("veBenBank").value = j.BANK || ""; $("veBenBranch").value = smartCase(String(j.BRANCH || "").toLowerCase());
-      h.textContent = [j.ADDRESS, j.NEFT === false ? "NEFT not offered at this branch" : "", j.RTGS === false ? "RTGS not offered" : ""].filter(Boolean).join(" · ");
-    }, function () { h.textContent = "The bank couldn't be looked up just now. Type the bank and branch."; });
-  }
-  function paintProof(pf) {
-    var ln = $("veChqLn"); ln.textContent = ""; if (!pf || !pf.path) return;
-    ln.appendChild(document.createTextNode("Proof kept: " + (pf.name || "cheque") + " ")); var o = el("button", { type: "button", class: "link-btn" }, "Open");
-    o.addEventListener("click", function () { if (window.bvFiles) window.bvFiles.link(pf.path).then(function (u) { window.open(u, "_blank", "noopener"); }, function () { toast("The file couldn't be opened."); }); }); ln.appendChild(o);
-  }
-  function chequeRead(f) {
-    var v = veCur(), btn = $("veChq"); if (!v || !f || !S.sample) return;
-    var t = fileType(f); if (!t) { toast("Choose a PDF or a photo (JPG, PNG or WebP)."); return; }
-    var lb = btn.textContent; btn.disabled = true; btn.textContent = "Reading…";
-    var path = (S.mode === "demo" ? "demo" : "live") + "/vendors/" + v.id + "/" + Date.now().toString(36) + "-" + fileSafeName(f.name);
-    var keep = window.bvFiles ? window.bvFiles.put(path, f, t).then(function () { VE.proof = { path: path, name: str(f.name || "Cheque", 160), type: t, size: f.size || 0, at: Date.now(), by: meId() }; paintProof(VE.proof); }, function () {}) : Promise.resolve();
-    var read = prepFile(f).then(function (p) {
-      return S.sample.json([
-        "This file is an Indian bank's cancelled cheque, or a bank letter or passbook page showing one bank account. Read the account it shows.",
-        "- account_holder: the account holder's name as printed (on a cheque, usually above the signature line or printed under the account number), in proper case.",
-        "- account_number: the account number, digits exactly as printed, without spaces. Not the cheque number or the MICR line.",
-        "- ifsc: the 11-character IFSC (4 letters, a zero, 6 letters or digits).",
-        "- bank and branch: the bank's name and the branch name as printed.",
-        "- account_type: Current, Savings, Cash Credit or Overdraft if printed, else null.",
-        "Use null for anything not printed or not readable; never guess. Reply with only this JSON:",
-        '{"account_holder":null,"account_number":null,"ifsc":null,"bank":null,"branch":null,"account_type":null,"notes":""}',
-        p.text ? "PDF TEXT:\n" + p.text : ""].join("\n"), { images: p.images.length ? p.images : undefined, modelTier: "default" });
-    }).then(function (r) {
-      r = r || {}; var n = 0, set = function (id, val) { if (val != null && String(val).trim()) { $(id).value = String(val).trim(); n++; } };
-      set("veBenName", r.account_holder && smartCase(String(r.account_holder))); set("veBenAcct", r.account_number && String(r.account_number).replace(/\s+/g, ""));
-      set("veBenIfsc", r.ifsc && String(r.ifsc).replace(/\s+/g, "").toUpperCase()); set("veBenBank", r.bank); set("veBenBranch", r.branch && smartCase(String(r.branch)));
-      if (["Current", "Savings", "Cash Credit", "Overdraft"].indexOf(r.account_type) >= 0) { $("veBenType").value = r.account_type; n++; }
-      toast(n ? "Read from the cheque. Check every figure, then save." : "Nothing could be read from this file."); return ifscLook();
-    }, function () { toast("The cheque couldn't be read. Type the details instead."); });
-    Promise.all([keep, read]).then(function () { btn.disabled = false; btn.textContent = lb; $("veChqF").value = ""; });
+      var nm = ifscBankName(j, c); if (!bnByCode(c)) VE.bankNew = { name: nm, code: c.slice(0, 4) };
+      vbFill(nm); $("veBenBranch").value = ifscBranch(j); $("veBenAddr").value = String(j.ADDRESS || "").trim();
+      h.textContent = (bnByCode(c) ? "" : nm + " is new: it is added to Bank Names on saving. ") + [j.NEFT === false ? "NEFT not offered at this branch" : "", j.RTGS === false ? "RTGS not offered" : ""].filter(Boolean).join(" · ");
+    }, function () { h.textContent = "The bank couldn't be looked up just now. Choose the bank and type the branch."; });
   }
   function backToVendors() { VE.id = null; VE.nv = null; renderVendors(); renderNav(); show("secVendors"); }
 
@@ -6632,7 +6656,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function advToDraft(a) {
     var vn = a.vendorNew || {};
-    return { companyId: a.companyId || "", vendorChoice: a.vendorId || (vn.name ? "new" : ""), vNew: { name: vn.name || "", gstin: vn.gstin || "", type: vn.type || (a.kind === "import" ? "overseas" : ""), country: vn.country || "" },
+    return { companyId: a.companyId || "", vendorChoice: a.vendorId || (vn.name ? "new" : ""), vNew: { name: vn.name || "", gstin: vn.gstin || "", type: vn.type || (a.kind === "import" ? "overseas" : ""), country: vn.country || "", termDays: vn.termDays == null ? "" : String(vn.termDays) },
       piNo: a.piNo || "", piDate: fmtDate(a.piDate), currency: a.currency || "INR", total: fmtInput(a.total), gst: a.gst == null ? "" : fmtInput(a.gst), narration: a.narration || "",
       insts: (a.installments || []).map(function (it) { return { pct: String(it.pct), when: it.when, days: it.days == null ? "" : String(it.days) }; }),
       dispatch: fmtDate(a.dispatchDate), dispConfirmed: !!a.dispatchConfirmed, arrival: fmtDate(a.arrivalDate),
@@ -6696,6 +6720,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     vb.appendChild(el("div", { class: "ttl" }, "New vendor. It is saved with this record."));
     vb.appendChild(fld("Vendor name", inp("adVName", D.vNew.name, { maxlength: "140", "data-fmt": "name" })));
     var ava = el("textarea", { class: "field", id: "adVAddr", rows: "2", maxlength: "240" }); ava.value = D.vNew.addr || ""; vb.appendChild(fld("Address", ava, imp ? "Full address, with the country." : "Street, town and PIN code.", true));
+    vb.appendChild(fld("Payment terms (days)", inp("adVTerm", D.vNew.termDays == null ? "" : D.vNew.termDays, { inputmode: "numeric", maxlength: "3", class: "field num" }), "Days from the bill date to the due date, for this vendor's bills."));
     if (imp) vb.appendChild(fld("Country", inp("adVCountry", D.vNew.country, { maxlength: "60", "data-fmt": "name" }), "No GST details are needed for an overseas vendor."));
     else {
       var vt = el("select", { class: "field", id: "adVType" }); fillSelect(vt, [["", "Choose a type"]].concat(VTYPES.filter(function (x) { return x[0] !== "overseas"; })), D.vNew.type);
@@ -6790,7 +6815,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function readAdvForm() {
     var D = ADV.D, imp = ADV.kind === "import"; if (!$("adCo")) return D;
     function v(id) { var e = $(id); return e ? e.value : ""; }
-    D.companyId = v("adCo"); D.vendorChoice = v("adVen"); D.vNew.name = v("adVName"); D.vNew.addr = v("adVAddr"); D.approverId = v("adAppr");
+    D.companyId = v("adCo"); D.vendorChoice = v("adVen"); D.vNew.name = v("adVName"); D.vNew.addr = v("adVAddr"); D.vNew.termDays = v("adVTerm"); D.approverId = v("adAppr");
     if (imp) D.vNew.country = v("adVCountry"); else { D.vNew.type = v("adVType"); D.vNew.gstin = v("adVGstin"); }
     D.piNo = v("adNo"); D.piDate = v("adDate"); if (imp) D.currency = v("adCur"); D.total = v("adTotal"); if (!imp) D.gst = v("adGst");
     D.insts = D.insts.map(function (it, i) { return { pct: v("adPct" + i), when: i === 0 ? "receipt" : v("adWhen" + i), days: i === 0 ? "" : v("adDays" + i) }; });
@@ -6829,6 +6854,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     else if (D.vendorChoice === "new") {
       if (!D.vNew.name.trim()) E("adVName", "Type the vendor's name.");
       if (!String(D.vNew.addr || "").trim()) E("adVAddr", "Enter the vendor's address.");
+      if (!termOk(D.vNew.termDays)) E("adVTerm", "Enter the payment terms in days, from 0 to 365.");
       if (!imp) {
         g = normId(D.vNew.gstin);
         if (!D.vNew.type) E("adVType", "Choose the vendor type.");
@@ -6861,7 +6887,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (ex) { vid = ex.id; vendorJoin(ex); }
       else {
         vid = newId("v"); madeVendor = smartCase(D.vNew.name);
-        var vdoc = { apps: [DIV || "mnt"], address: String(D.vNew.addr || "").trim(), name: madeVendor, gstin: imp ? "" : g, pan: !imp && g ? panFromGstin(g) : "", type: imp ? "overseas" : D.vNew.type, country: imp ? smartCase(D.vNew.country) : "", termDays: null, active: true, openings: {}, createdAt: now, createdBy: meId(), updatedAt: now, updatedBy: meId() };
+        var vdoc = { apps: [DIV || "mnt"], address: String(D.vNew.addr || "").trim(), name: madeVendor, gstin: imp ? "" : g, pan: !imp && g ? panFromGstin(g) : "", type: imp ? "overseas" : D.vNew.type, country: imp ? smartCase(D.vNew.country) : "", termDays: intOrNull(D.vNew.termDays), active: true, openings: {}, createdAt: now, createdBy: meId(), updatedAt: now, updatedBy: meId() };
         job = retry(function () { return S.db.doc("vendors/" + vid).set(vdoc); }).then(function () { S.vendors[vid] = Object.assign({ id: vid }, vdoc); invalidate(); });
       }
     } else fillVendorAddr(S.vendors[vid], D.ex && D.ex.vendorAddress, Date.now());
@@ -7340,7 +7366,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     renderDoneTx();
   }
   /* ---- Plan for Payment: per company, per payee, every approved item by due date. Tick items and set the amount to pay now
-     (part payments leave the rest on the list), choose Cheque, NEFT/RTGS or Cash and A/c Payee; one cheque per payee.
+     (part payments leave the rest on the list), choose Cheque, NEFT/RTGS or Cash and A/C Payee; one cheque per payee.
      "Print cheques" prints every ticked cheque in one go with running numbers from the cheque book. ---- */
   function planGroups(allRows) {
     var g = {};
@@ -7392,7 +7418,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
         var md = el("select", { class: "field", style: "width:auto", "aria-label": "How to pay " + g.name }); fillSelect(md, g.cur !== "INR" ? [["neft", "NEFT / RTGS"]] : [["cheque", "Cheque"], ["neft", "NEFT / RTGS"], ["cash", "Cash"]], plMode(g));
         md.addEventListener("change", function () { MK.pl.mode[g.key] = md.value; renderMark(); }); top.appendChild(md);
         var m = plMode(g), al = el("label", { class: "check" }), ac = el("input", { type: "checkbox" }); ac.checked = m === "neft" ? true : !!MK.pl.acp[g.key]; ac.disabled = m === "neft"; al.hidden = m === "cash";
-        ac.addEventListener("change", function () { MK.pl.acp[g.key] = ac.checked; }); al.appendChild(ac); al.appendChild(document.createTextNode(" A/c Payee")); top.appendChild(al);
+        ac.addEventListener("change", function () { MK.pl.acp[g.key] = ac.checked; }); al.appendChild(ac); al.appendChild(document.createTextNode(" A/C Payee")); top.appendChild(al);
         var st = plSelTotal(g); top.appendChild(el("b", { class: "num", style: "min-width:110px;text-align:right" }, st > 0 ? curMoney(g.cur, st) : "—"));
         gw.appendChild(top);
         var tw = el("div", { class: "list", style: "margin-top:8px" }); gw.appendChild(tw);
@@ -7427,7 +7453,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (numbered) cols.push({ label: mode === "neft" ? "Cheque No (with NEFT)" : "Cheque No", cell: function (l, td) { var i = lines.indexOf(l), inEl = inp("plNo_" + i, chqNoText(l.no, l.bk), { inputmode: "numeric", class: "field num", style: "max-width:120px" });
         inEl.addEventListener("change", function () { var n0 = Number(inEl.value.replace(/\D/g, "")); if (!n0) { inEl.value = chqNoText(l.no, l.bk); return; } l.no = n0; inEl.value = chqNoText(n0, l.bk); cascade(i); }); td.appendChild(inEl);
         var lf = chqLeft(l.bk, l.no); if (lf != null && lf <= CHQ_WARN) sub(td, chqLeftText(l.bk, l.no), "color:var(--warn);font-weight:600"); } });
-    if (mode === "cheque") cols.push({ label: "A/c Payee", cell: function (l, td) { txt(td, MK.pl.acp[l.g.key] ? "Yes" : "No"); } });
+    if (mode === "cheque") cols.push({ label: "A/C Payee", cell: function (l, td) { txt(td, MK.pl.acp[l.g.key] ? "Yes" : "No"); } });
     sortTable(tw, "plIssue", cols, lines, {});
     var tl = null; if (mode === "cheque") { tl = el("label", { class: "check", style: "margin-top:10px" }); var tc = el("input", { type: "checkbox", id: "plTest" }); tl.appendChild(tc); tl.appendChild(document.createTextNode(" Test print: put the scan behind the text (plain paper)")); body.appendChild(tl); }
     var title = mode === "cheque" ? "Print " + plural(lines.length, "cheque") : mode === "neft" ? "NEFT / RTGS for " + plural(lines.length, "payee") : "Record " + plural(lines.length, "cash payment");
@@ -8506,7 +8532,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (g && gstinCheck(g)) { p.res = "Error"; p.why = GSTIN_MSG[gstinCheck(g)] || "The GSTIN isn't valid."; return; }
       if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) { p.res = "Error"; p.why = "The PAN should look like ABCDE1234F."; return; }
       if (g && pan && panFromGstin(g) !== pan) { p.res = "Error"; p.why = "The PAN doesn't match the GSTIN (characters 3 to 12 should be " + panFromGstin(g) + ")."; return; }
-      var td = null; if (terms) { td = intOrNull(terms); if (td == null || td < 0 || td > 365) { p.res = "Error"; p.why = "Payment terms must be a whole number of days, 0 to 365."; return; } }
+      var td = intOrNull(terms); if (!terms || td == null || td < 0 || td > 365) { p.res = "Error"; p.why = "Payment terms are needed: a whole number of days, 0 to 365."; return; }
       if (act == null) { p.res = "Error"; p.why = "Active? must be Yes or No."; return; }
       var id = newId("v"), doc = { name: nm, gstin: g, pan: pan || (g ? panFromGstin(g) : ""), type: ty, address: addr, country: ty === "overseas" ? smartCase(country) : "", termDays: td, active: act, openings: {}, createdAt: now, createdBy: meId(), updatedAt: now, updatedBy: meId(), source: "upload" };
       p.write = function () { return S.db.doc("vendors/" + id).set(doc).then(function () { S.vendors[id] = Object.assign({ id: id }, doc); invalidate(); }); };
@@ -11171,25 +11197,83 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function chqLeftText(b, next) { var lf = chqLeft(b, next); return lf == null ? "" : lf <= 0 ? "Past the last cheque number: enter the new cheque book's numbers in Masters › Bank Accounts" : lf + (lf === 1 ? " leaf" : " leaves") + " left" + (lf <= CHQ_WARN ? ": enter the next cheque book's numbers in Masters › Bank Accounts" : ""); }
   /* After cheques are printed, the account's last used number moves on. */
   function chqUsed(b, n) { if (!b || !(n > (Number(chqNums(b).last) || 0))) return; var x = chqNums(b), up = { last: n, updatedAt: Date.now() }; if (x !== b) { up.first = Number(x.first) || null; up.end = Number(x.end) || null; b.first = up.first; b.end = up.end; } b.last = n; S.db.doc("bankacct/" + b.id).update(up).catch(function () {}); }
-  /* Bank names: one list for bank accounts and cheque templates (banknames/*, shared, plus every name already used). */
-  function bankNames() { var m = {}; [S.banknames || {}, S.banks || {}, S.chqtpl || {}].forEach(function (src, i) { Object.keys(src).forEach(function (k) { var x = src[k]; if (i === 0 ? x.active === false : !x.bank) return; var nm = String(i === 0 ? x.name : x.bank).trim(); if (nm && !m[nm.toLowerCase()]) m[nm.toLowerCase()] = nm; }); }); return Object.keys(m).map(function (k) { return m[k]; }).sort(natCmp); }
-  function bankNameSelect(id, val, onPick) {
-    var sel = el("select", { class: "field", id: id });
-    function fill(v) { var l = bankNames(); if (v && !l.some(function (x) { return sameBank(x, v); })) l.push(v); fillSelect(sel, [["", "Choose the bank"]].concat(l.map(function (x) { return [x, x]; })).concat([[ADD_LOC, "+ Add new bank"]]), (l.filter(function (x) { return sameBank(x, v); })[0]) || ""); }
-    fill(val);
-    sel.addEventListener("change", function () {
-      if (sel.value !== ADD_LOC) { val = sel.value; onPick(val); return; }
-      sel.value = val || "";
-      var nm = inp("bnNew", "", { maxlength: "60", "data-fmt": "name" }), body = el("div", { class: "mform" }); body.appendChild(fld("Bank Name", nm, "e.g. HDFC Bank, State Bank of India."));
-      popForm("Add bank", "Typed once, then picked from the list for bank accounts and cheque templates.", body, "Add", function () {
-        var name = smartCase(nm.value.trim().replace(/\s+/g, " ")); if (!name) { nm.classList.add("bad"); nm.focus(); return false; }
-        var same = bankNames().filter(function (x) { return sameBank(x, name); })[0]; if (same) { val = same; fill(same); onPick(same); toast(same + " is already in the list, so it has been selected."); return; }
-        var nid = "bn_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), d = { name: name, active: true, createdAt: Date.now(), createdBy: meId() };
-        return retry(function () { return S.db.doc("banknames/" + nid).set(d); }).then(function () { S.banknames = S.banknames || {}; S.banknames[nid] = Object.assign({ id: nid }, d); val = name; fill(name); onPick(name); toast(name + " added."); }, function (e) { toast(explain(e)); return false; });
-      });
+  /* ---- Masters › Others › Bank Names (banknames/*, shared): one name per bank with its IFSC code, the first 4 letters of
+     the IFSC. Company bank accounts, cheque templates and vendors' bank details all take the name from here. ---- */
+  function bnList() { return Object.keys(S.banknames || {}).map(function (k) { return S.banknames[k]; }).filter(function (b) { return b.active !== false && b.name; }).sort(function (a, b) { return natCmp(a.name, b.name); }); }
+  function bnByCode(c) { c = String(c || "").toUpperCase().slice(0, 4); return c.length === 4 ? bnList().filter(function (b) { return b.code === c; })[0] || null : null; }
+  function bnByName(n) { return bnList().filter(function (b) { return sameBank(b.name, n); })[0] || null; }
+  function bankNames() { return bnList().map(function (b) { return b.name; }); }
+  /* The bank on the list for an IFSC code or name, added if it isn't there yet; resolves to the name on the list. */
+  function bnEnsure(name, code) {
+    code = String(code || "").toUpperCase().slice(0, 4); var hit = bnByCode(code) || bnByName(name);
+    if (hit) { if (code.length === 4 && !hit.code) retry(function () { return S.db.doc("banknames/" + hit.id).update({ code: code }); }).catch(function () {}); return Promise.resolve(hit.name); }
+    name = String(name || "").trim().replace(/\s+/g, " "); if (!name) return Promise.reject(new Error("No bank name"));
+    var id = "bn_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), d = { name: name, code: code.length === 4 ? code : "", active: true, createdAt: Date.now(), createdBy: meId() };
+    return retry(function () { return S.db.doc("banknames/" + id).set(d); }).then(function () { S.banknames = S.banknames || {}; S.banknames[id] = Object.assign({ id: id }, d); return name; });
+  }
+  /* RBI's details of an IFSC (Razorpay's free lookup): bank, branch, city, address; null when the IFSC isn't known. */
+  var IFSCQ = {};
+  function ifscGet(c) {
+    c = String(c || "").trim().toUpperCase(); if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(c)) return Promise.resolve(null);
+    if (!IFSCQ[c]) IFSCQ[c] = fetch("https://ifsc.razorpay.com/" + c).then(function (r) { return r.ok ? r.json() : r.status === 404 ? null : Promise.reject(r.status); }).catch(function (e) { delete IFSCQ[c]; throw e; });
+    return IFSCQ[c];
+  }
+  function ifscBranch(j) { return smartCase(String((j && j.BRANCH) || "").toLowerCase()); }
+  function ifscCity(j) { return smartCase(String((j && (j.CITY || j.CENTRE)) || "").toLowerCase()); }
+  /* The bank name an IFSC lookup stands for: the name on the list for its code, else the RBI's name (added on saving). */
+  function ifscBankName(j, c) { var hit = bnByCode(c); return hit ? hit.name : String((j && j.BANK) || "").trim(); }
+  function bnUses(name) {
+    var n = { acct: 0, tpl: 0, ven: 0 };
+    Object.keys(S.banks || {}).forEach(function (k) { if (sameBank(S.banks[k].bank, name)) n.acct++; });
+    Object.keys(S.chqtpl || {}).forEach(function (k) { if (S.chqtpl[k].active !== false && sameBank(S.chqtpl[k].bank, name)) n.tpl++; });
+    Object.keys(S.vendors || {}).forEach(function (k) { var b = S.vendors[k].bank; if (b && sameBank(b.bank, name)) n.ven++; });
+    return n;
+  }
+  function renderOthers() {
+    var box = $("bnList"), can = chqCan(); $("bnAdd").hidden = !can; box.textContent = "";
+    var rows = bnList(); if (!rows.length) { box.appendChild(el("div", { class: "card empty" }, "No bank names yet. They are added as bank accounts are entered, or with Add Bank Name.")); return; }
+    var w = el("div", { class: "card list" }); box.appendChild(w);
+    sortTable(w, "bnList", [
+      { label: "Bank Name", kind: "co", sort: function (b) { return b.name; }, cell: function (b, td) { td.appendChild(el("b", null, b.name)); } },
+      { label: "IFSC Code", sort: function (b) { return b.code || ""; }, cell: function (b, td) { txt(td, b.code || "Not set"); } },
+      { label: "Used By", cell: function (b, td) { var u = bnUses(b.name); txt(td, [u.acct ? plural(u.acct, "bank account") : "", u.tpl ? plural(u.tpl, "cheque template") : "", u.ven ? plural(u.ven, "vendor") : ""].filter(Boolean).join(", ") || "Not used yet"); } },
+      { label: "", kind: "act", cls: "r", cell: function (b, td) { if (!can) return; var e = el("button", { class: "btn sm" }, "Edit"); e.addEventListener("click", function () { bnForm(b); }); td.appendChild(e); } }
+    ], rows, { sortIndex: 0, sortDir: 1 });
+  }
+  /* Adding or renaming a bank name. A rename is written to every bank account, cheque template and vendor using the old name. */
+  function bnForm(b) {
+    var body = el("div", { class: "mform" }), nm = inp("bnName", b ? b.name : "", { maxlength: "60", "data-fmt": "name" }), cd = inp("bnCode", b ? b.code || "" : "", { maxlength: "4", class: "field mono", spellcheck: "false" });
+    body.appendChild(fld("Bank Name", nm, "As it should appear everywhere, e.g. HDFC Bank."));
+    body.appendChild(fld("IFSC Code", cd, "The first 4 letters of the bank's IFSC, e.g. HDFC, UTIB (Axis Bank), SBIN."));
+    var u = b ? bnUses(b.name) : null;
+    if (b && !(u.acct || u.tpl || u.ven)) { var rm = el("button", { class: "link-btn", type: "button", style: "color:var(--bad);margin-top:8px" }, "Remove this bank name"); rm.addEventListener("click", function () { if (!armed(rm)) return; retry(function () { return S.db.doc("banknames/" + b.id).delete(); }).then(function () { delete S.banknames[b.id]; toast(b.name + " removed."); if (closeF) closeF(); renderOthers(); }, function (e) { toast(explain(e)); }); }); body.appendChild(rm); }
+    var closeF = popForm(b ? "Edit Bank Name" : "Add Bank Name", b && (u.acct || u.tpl || u.ven) ? "A new name is written to every bank account, cheque template and vendor using " + b.name + "." : "", body, "Save", function () {
+      errClear(body); var name = smartCase(nm.value.trim().replace(/\s+/g, " ")), code = cd.value.trim().toUpperCase();
+      if (!name) { errOn("bnName", "Enter the bank's name."); return false; }
+      if (code && !/^[A-Z]{4}$/.test(code)) { errOn("bnCode", "4 letters, the start of the bank's IFSC."); return false; }
+      var dn = bnByName(name); if (dn && (!b || dn.id !== b.id)) { errOn("bnName", "That bank is already on the list."); return false; }
+      var dc = code && bnByCode(code); if (dc && (!b || dc.id !== b.id)) { errOn("bnCode", "That code is already used by " + dc.name + "."); return false; }
+      if (!b) { var id = "bn_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), d = { name: name, code: code, active: true, createdAt: Date.now(), createdBy: meId() };
+        return retry(function () { return S.db.doc("banknames/" + id).set(d); }).then(function () { S.banknames[id] = Object.assign({ id: id }, d); toast(name + " added."); renderOthers(); }, function (e) { toast(explain(e)); return false; }); }
+      var old = b.name, jobs = [retry(function () { return S.db.doc("banknames/" + b.id).update({ name: name, code: code, updatedAt: Date.now(), updatedBy: meId() }); })];
+      if (old !== name) {
+        Object.keys(S.banks || {}).forEach(function (k) { if (sameBank(S.banks[k].bank, old)) jobs.push(retry(function () { return S.db.doc("bankacct/" + k).update({ bank: name }); }).then(function () { S.banks[k].bank = name; })); });
+        Object.keys(S.chqtpl || {}).forEach(function (k) { if (sameBank(S.chqtpl[k].bank, old)) jobs.push(retry(function () { return S.db.doc("chqtpl/" + k).update({ bank: name }); }).then(function () { S.chqtpl[k].bank = name; })); });
+        Object.keys(S.vendors || {}).forEach(function (k) { var v = S.vendors[k]; if (v.bank && sameBank(v.bank.bank, old)) { var nb = Object.assign({}, v.bank, { bank: name }); jobs.push(retry(function () { return S.db.doc("vendors/" + k).update({ bank: nb }); }).then(function () { v.bank = nb; })); } });
+      }
+      return Promise.all(jobs).then(function () { Object.assign(S.banknames[b.id], { name: name, code: code }); invalidate(); toast(old !== name ? old + " is now " + name + " everywhere." : "Saved."); renderOthers(); }, function (e) { toast(explain(e)); return false; });
     });
+  }
+  /* A cheque template's bank: only a bank that one of the companies has an account with (bank accounts come first). */
+  function tplBankSelect(id, val, onPick) {
+    var sel = el("select", { class: "field", id: id }), m = {};
+    bankList("").forEach(function (b) { if (b.bank && !m[b.bank.toLowerCase()]) m[b.bank.toLowerCase()] = b.bank; });
+    var l = Object.keys(m).map(function (k) { return m[k]; }).sort(natCmp); if (val && !l.some(function (x) { return sameBank(x, val); })) l.push(val);
+    fillSelect(sel, [["", l.length ? "Choose the bank" : "Add a company bank account first (Bank Accounts)"]].concat(l.map(function (x) { return [x, x]; })), (l.filter(function (x) { return sameBank(x, val); })[0]) || "");
+    sel.addEventListener("change", function () { onPick(sel.value); });
     return sel;
   }
+
   /* ---- Bills & Vouchers › All Bills & Vouchers: the group-wide register, read-only. Entries from another division say where
      they came from and link to that app (?go=b:<id> / v:<id>), where they are changed. ---- */
   var AE = { div: "", q: "", limit: 200 };
@@ -11358,7 +11442,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       doc.addPage(); y = 20 * P; L = 14 * P; R = W - 14 * P;
       doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.text(co.name || "", W / 2, y, { align: "center" }); y += 18;
       doc.setFontSize(11); doc.text("List of Staff \u2013 Salary for the Month of " + monthLabel(run.month), W / 2, y, { align: "center" }); y += 8;
-      doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.text("Cheque No. " + run.chequeNo + " dated " + dmy(run.chequeDate) + " · " + (bank.bank || "") + " A/c No. " + (bank.accountNo || ""), W / 2, y + 12, { align: "center" }); y += 22;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.text("Cheque No. " + run.chequeNo + " dated " + dmy(run.chequeDate) + " · " + (bank.bank || "") + " A/C No. " + (bank.accountNo || ""), W / 2, y + 12, { align: "center" }); y += 22;
       var fmt = function (n) { return (Number(n) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
       doc.autoTable({ startY: y, margin: { left: L, right: W - R }, theme: "grid", styles: { font: "helvetica", fontSize: 9, textColor: 0, lineColor: 0, lineWidth: 0.4, cellPadding: 4 }, headStyles: { fillColor: [235, 235, 235], textColor: 0, fontStyle: "bold" }, footStyles: { fillColor: [235, 235, 235], textColor: 0, fontStyle: "bold" },
         head: [["S.No", "Name", "Bank", "Branch", "IFSC", "Account No", "Salary (Rs.)"]],
@@ -11414,9 +11498,22 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var body = el("div", { class: "mform" }), cos = sorted().filter(function (c) { return coInApp(c); });
     var co = el("select", { class: "field", id: "baCo" }); fillSelect(co, [["", "Choose the company"]].concat(cos.map(function (c) { return [c.id, c.shortName || c.name]; })), b ? b.companyId : cos.length === 1 ? cos[0].id : "");
     body.appendChild(fld("Company", co));
-    var bnk = b ? b.bank : "", bsel = bankNameSelect("bkBank", bnk, function (v) { bnk = v; var bs = Object.keys(S.chqtpl || {}).map(function (k) { return S.chqtpl[k]; }).filter(function (t) { return t.active !== false && t.pad && sameBank(t.bank, v); }); fillSelect(cb, [["", bs.length ? "The first one for this bank" : "No template for this bank yet (Cheque Templates)"]].concat(bs.map(function (t) { return [t.id, t.name]; })), ""); });
-    body.appendChild(fld("Bank Name", bsel, "Pick from the list, or add a new bank."));
-    [["bkName", "Reference Name", b ? b.name : "", "e.g. HDFC current account"], ["bkBranch", "Branch", b ? b.branch : "", ""], ["bkCity", "City", b ? b.city : "", "Goes on the salary covering letter."], ["bkNo", "Account Number", b ? b.accountNo : "", ""], ["bkIfsc", "IFSC", b ? b.ifsc : "", ""]].forEach(function (x) { body.appendChild(fld(x[1], inp(x[0], x[2] || "", { maxlength: "60", "data-fmt": x[0] === "bkIfsc" || x[0] === "bkNo" ? "" : "name" }), x[3])); });
+    /* IFSC first: it fills in the bank (its name on Masters › Others › Bank Names), branch, city and address */
+    var BK = { name: b ? b.bank : "", code: b ? b.bankCode || String(b.ifsc || "").slice(0, 4) : "" };
+    body.appendChild(fld("IFSC", inp("bkIfsc", b ? b.ifsc : "", { maxlength: "11", class: "field mono", spellcheck: "false" }), "The bank's name, branch, city and address fill in from it."));
+    var bshow = el("div", { class: "field ro", id: "bkBank" }, BK.name || "From the IFSC"); body.appendChild(fld("Bank Name", bshow, "From Masters › Others › Bank Names, where it can be renamed."));
+    [["bkBranch", "Branch", b ? b.branch : "", ""], ["bkCity", "City", b ? b.city : "", "Goes on the salary covering letter."], ["bkName", "Reference Name", b ? b.name : "", "e.g. HDFC current account"], ["bkNo", "Account Number", b ? b.accountNo : "", ""]].forEach(function (x) { body.appendChild(fld(x[1], inp(x[0], x[2] || "", { maxlength: "60", "data-fmt": x[0] === "bkNo" ? "" : "name" }), x[3])); });
+    var ba = el("textarea", { class: "field", id: "bkAddr", rows: "2", maxlength: "240" }); ba.value = b ? b.address || "" : ""; body.appendChild(fld("Branch Address", ba, "", true));
+    var fillTpl = function () { var bs = Object.keys(S.chqtpl || {}).map(function (k) { return S.chqtpl[k]; }).filter(function (t) { return t.active !== false && t.pad && sameBank(t.bank, BK.name); }); fillSelect(cb, [["", bs.length ? "The first one for this bank" : "No template for this bank yet (Cheque Templates)"]].concat(bs.map(function (t) { return [t.id, t.name]; })), ""); };
+    body.querySelector("#bkIfsc").addEventListener("input", function () {
+      var c = this.value.trim().toUpperCase(); if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(c)) return;
+      ifscGet(c).then(function (j) {
+        if (body.querySelector("#bkIfsc").value.trim().toUpperCase() !== c) return;
+        if (!j) { errOn("bkIfsc", "This IFSC isn't on the RBI's list. Check it."); return; }
+        BK = { name: ifscBankName(j, c), code: c.slice(0, 4), rbi: j.BANK }; bshow.textContent = BK.name + (bnByCode(c) ? "" : " (new: added to Bank Names on saving)");
+        body.querySelector("#bkBranch").value = ifscBranch(j); body.querySelector("#bkCity").value = ifscCity(j); ba.value = String(j.ADDRESS || "").trim(); fillTpl();
+      }, function () { errOn("bkIfsc", "The bank couldn't be looked up just now. Try again in a moment."); });
+    });
     var dl = el("label", { class: "check" }), dc = el("input", { type: "checkbox", id: "bkDef" }); dc.checked = b ? !!b.isDefault : true; dl.appendChild(dc); dl.appendChild(document.createTextNode(" The company's default account")); body.appendChild(dl);
     var x0 = b ? chqNums(b) : {};
     [["baFirst", "First Cheque No", "first"], ["baEnd", "Last Cheque No", "end"], ["baLast", "Last Used No", "last"]].forEach(function (x) { body.appendChild(fld(x[1], inp(x[0], x0[x[2]] ? String(x0[x[2]]) : "", { inputmode: "numeric", class: "field num", maxlength: "10" }), x[2] === "last" ? "Moves on by itself after each print; the next cheque is this + 1. From " + CHQ_WARN + " leaves left you are asked for the next book's numbers." : x[2] === "first" ? "Of the cheque book in use." : "")); });
@@ -11424,13 +11521,15 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     body.appendChild(fld("Cheque Template", cb, "Templates are made per bank in Cheque Templates."));
     if (b) { var rm = el("button", { class: "link-btn", type: "button", style: "color:var(--bad);margin-top:8px" }, "Remove this account"); rm.addEventListener("click", function () { if (rm.getAttribute("data-arm") !== "1") { rm.setAttribute("data-arm", "1"); rm.textContent = "Click again to remove"; return; } retry(function () { return S.db.doc("bankacct/" + b.id).update({ active: false, isDefault: false, updatedAt: Date.now(), updatedBy: meId() }); }).then(function () { toast("Account removed."); var m = document.querySelector(".modal-bg"); if (m) m.remove(); }, function (e) { toast(explain(e)); }); }); body.appendChild(rm); }
     popForm(b ? "Edit Bank Account" : "Add Bank Account", "", body, "Save", function () {
-      errClear(body); var cid = co.value, d = { companyId: cid, name: smartCase($("bkName").value.trim()), bank: bnk, branch: smartCase($("bkBranch").value.trim()), city: smartCase($("bkCity").value.trim()), accountNo: $("bkNo").value.replace(/\s+/g, ""), ifsc: $("bkIfsc").value.trim().toUpperCase(), chequeTplId: cb.value || null, first: Number($("baFirst").value.replace(/\D/g, "")) || null, end: Number($("baEnd").value.replace(/\D/g, "")) || null, last: Number($("baLast").value.replace(/\D/g, "")) || null, active: true, updatedAt: Date.now(), updatedBy: meId() };
-      var ok = true; if (!cid) { errOn("baCo", "Choose the company."); ok = false; } if (!d.bank) { errOn("bkBank", "Choose the bank."); ok = false; } if (d.first && d.end && d.end < d.first) { errOn("baEnd", "The last cheque number is before the first."); ok = false; } if (!d.accountNo) { errOn("bkNo", "Enter the account number."); ok = false; }
+      errClear(body); var cid = co.value, d = { companyId: cid, name: smartCase($("bkName").value.trim()), bank: BK.name, bankCode: BK.code || "", address: ba.value.trim().replace(/\s+/g, " "), branch: smartCase($("bkBranch").value.trim()), city: smartCase($("bkCity").value.trim()), accountNo: $("bkNo").value.replace(/\s+/g, ""), ifsc: $("bkIfsc").value.trim().toUpperCase(), chequeTplId: cb.value || null, first: Number($("baFirst").value.replace(/\D/g, "")) || null, end: Number($("baEnd").value.replace(/\D/g, "")) || null, last: Number($("baLast").value.replace(/\D/g, "")) || null, active: true, updatedAt: Date.now(), updatedBy: meId() };
+      var ok = true; if (!cid) { errOn("baCo", "Choose the company."); ok = false; } if (!d.ifsc) { errOn("bkIfsc", "Enter the IFSC."); ok = false; } else if (!d.bank) { errOn("bkIfsc", "Wait for the bank to be found from the IFSC, or check it."); ok = false; } if (d.first && d.end && d.end < d.first) { errOn("baEnd", "The last cheque number is before the first."); ok = false; } if (!d.accountNo) { errOn("bkNo", "Enter the account number."); ok = false; }
       if (d.ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(d.ifsc)) { errOn("bkIfsc", "An IFSC looks like HDFC0001234."); ok = false; } if (!ok) return false;
       if (!d.name) d.name = d.bank;
       var others = bankList(cid).filter(function (x) { return !b || x.id !== b.id; }); d.isDefault = dc.checked || !others.length;
+      return bnEnsure(BK.rbi || d.bank, d.bankCode).then(function (nm0) { d.bank = nm0;
       var id = b ? b.id : newId("ba"), job = b ? retry(function () { return S.db.doc("bankacct/" + id).update(d); }) : retry(function () { return S.db.doc("bankacct/" + id).set(Object.assign(d, { createdAt: Date.now(), createdBy: meId() })); });
       return job.then(function () { if (d.isDefault) others.filter(function (x) { return x.isDefault; }).forEach(function (x) { S.db.doc("bankacct/" + x.id).update({ isDefault: false }).catch(function () {}); }); toast("Bank account saved."); }, function (e) { toast(explain(e)); return false; });
+      }, function (e) { toast(explain(e)); return false; });
     });
   }
   /* ================= Cheque Templates (Masters) and cheque printing =================
@@ -11439,7 +11538,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
      those places on an A4 page, for the cheque laid on the printer as in the scan. */
   var CQ = { id: null, D: null, busy: false, img: null, drag: null };
   var CHQ_DEF = { area: { l: 0, t: 0, w: 203, h: 93 }, size: 11, f: { date: { x: 154, y: 8, gap: 5.1 }, payee: { x: 18, y: 21.5, w: 150 }, words: { x: 30, y: 30, w: 133, x2: 8, y2: 38.5 }, figures: { x: 157, y: 38 }, acpayee: { on: true, x: 8, y: 7 } } };
-  var CHQ_FIELDS = [["date", "Date"], ["payee", "Payee"], ["words", "Amount in words"], ["figures", "Amount in figures"], ["acpayee", "A/c Payee"]];
+  var CHQ_FIELDS = [["date", "Date"], ["payee", "Payee"], ["words", "Amount in words"], ["figures", "Amount in figures"], ["acpayee", "A/C Payee"]];
   function chqCopy(t) { var d = JSON.parse(JSON.stringify(CHQ_DEF)); t = t || {}; if (t.area) Object.assign(d.area, t.area); if (t.size) d.size = t.size; Object.keys(d.f).forEach(function (k) { if (t.f && t.f[k]) Object.assign(d.f[k], t.f[k]); }); return { name: t.name || "", bank: t.bank || "", bankAcctId: t.bankAcctId || "", first: t.first || "", end: t.end || "", last: t.last || "", neft: t.neft ? JSON.parse(JSON.stringify(t.neft)) : { pad: null, size: 10, fields: [] }, pad: t.pad || null, clean: t.clean || null, corners: t.corners || null, area: d.area, size: d.size, f: d.f }; }
   function chqCan() { return S.isAdmin || canDo("txn"); }
   /* Cheque templates are shared by Demo and Live, so only admins change them while in Demo. */
@@ -11460,7 +11559,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   /* The text each field shows, for a payment (or the made-up one). */
   function chqTexts(pay) {
     var d = String(pay.date || todayYmd()), dm = d.slice(8, 10) + d.slice(5, 7) + d.slice(0, 4);
-    return { date: dm, payee: pay.payee || "", words: inrWords(pay.amount), figures: (Number(pay.amount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/-", acpayee: "A/c Payee" };
+    return { date: dm, payee: pay.payee || "", words: inrWords(pay.amount), figures: (Number(pay.amount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "/-", acpayee: "A/C Payee" };
   }
   var CHQ_SAMPLE = { payee: "Sri Murugan Transports", amount: 123456.75, date: "" };
   /* Lays the words over one or two lines within their widths; measure gives a string's width in mm. */
@@ -11518,7 +11617,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var grid = el("div", { style: "display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;align-items:start", class: "chqgrid" }), L = el("div", { class: "card pcard" }), R = el("div", { class: "card pcard", style: "position:sticky;top:12px" });
     grid.appendChild(L); grid.appendChild(R); ed.appendChild(grid);
     var f = el("div", { class: "form", style: "padding:0" });
-    var nm = inp("cqName", T.name, { maxlength: "60", "data-fmt": "name" }), bn = bankNameSelect("cqBank", T.bank, function (v) { T.bank = v; });
+    var nm = inp("cqName", T.name, { maxlength: "60", "data-fmt": "name" }), bn = tplBankSelect("cqBank", T.bank, function (v) { T.bank = v; });
     f.appendChild(fld("Reference Name", nm, "How it is picked, e.g. \"HDFC cheque\".")); f.appendChild(fld("Bank Name", bn, "Every account of this bank uses this template unless it picks another. Cheque numbers are kept on each bank account."));
     nm.addEventListener("input", function () { T.name = nm.value; });
     var sw = el("div", { class: "f wide" }); sw.appendChild(el("span", { class: "lb" }, "Cheque scan or photo"));
@@ -11541,9 +11640,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     group("Payee", [numIn("cqPx", function () { return T.f.payee.x; }, function (v) { T.f.payee.x = v; }, "Across"), numIn("cqPy", function () { return T.f.payee.y; }, function (v) { T.f.payee.y = v; }, "Down"), numIn("cqPw", function () { return T.f.payee.w; }, function (v) { T.f.payee.w = v; }, "Width"), numIn("cqPx2", function () { return T.f.payee.x2 || 0; }, function (v) { T.f.payee.x2 = v; }, "Second line across"), numIn("cqPy2", function () { return T.f.payee.y2 || 0; }, function (v) { T.f.payee.y2 = v; }, "Second line down (0 = one line)")]);
     group("Amount in words", [numIn("cqWx", function () { return T.f.words.x; }, function (v) { T.f.words.x = v; }, "Across"), numIn("cqWy", function () { return T.f.words.y; }, function (v) { T.f.words.y = v; }, "Down"), numIn("cqWw", function () { return T.f.words.w; }, function (v) { T.f.words.w = v; }, "First line width"), numIn("cqWx2", function () { return T.f.words.x2; }, function (v) { T.f.words.x2 = v; }, "Second line across"), numIn("cqWy2", function () { return T.f.words.y2; }, function (v) { T.f.words.y2 = v; }, "Second line down")]);
     group("Amount in figures", [numIn("cqFx", function () { return T.f.figures.x; }, function (v) { T.f.figures.x = v; }, "Across"), numIn("cqFy", function () { return T.f.figures.y; }, function (v) { T.f.figures.y = v; }, "Down")]);
-    var ac = el("label", { class: "check", style: "margin-top:14px" }), acb = el("input", { type: "checkbox", id: "cqAc" }); acb.checked = !!T.f.acpayee.on; ac.appendChild(acb); ac.appendChild(document.createTextNode(" Show \"A/c Payee\" in the preview (it is ticked per payment when planning)")); L.appendChild(ac);
+    var ac = el("label", { class: "check", style: "margin-top:14px" }), acb = el("input", { type: "checkbox", id: "cqAc" }); acb.checked = !!T.f.acpayee.on; ac.appendChild(acb); ac.appendChild(document.createTextNode(" Show \"A/C Payee\" in the preview (it is ticked per payment when planning)")); L.appendChild(ac);
     acb.addEventListener("change", function () { T.f.acpayee.on = acb.checked; draw(); });
-    group("A/c Payee", [numIn("cqCx", function () { return T.f.acpayee.x; }, function (v) { T.f.acpayee.x = v; }, "Across"), numIn("cqCy", function () { return T.f.acpayee.y; }, function (v) { T.f.acpayee.y = v; }, "Down")]);
+    group("A/C Payee", [numIn("cqCx", function () { return T.f.acpayee.x; }, function (v) { T.f.acpayee.x = v; }, "Across"), numIn("cqCy", function () { return T.f.acpayee.y; }, function (v) { T.f.acpayee.y = v; }, "Down")]);
     var foot = el("div", { class: "form-foot" }), sv = el("button", { class: "btn primary", type: "button", id: "cqSave" }, "Save Template"), cn = el("button", { class: "btn", type: "button" }, "Cancel");
     sv.addEventListener("click", saveChequeTpl); cn.addEventListener("click", function () { CQ.id = null; CQ.D = null; renderCheques(); }); foot.appendChild(sv); foot.appendChild(cn);
     if (t) { var rm = el("button", { class: "btn danger", type: "button" }, "Remove"); rm.addEventListener("click", function () { if (rm.getAttribute("data-arm") !== "1") { rm.setAttribute("data-arm", "1"); rm.textContent = "Click again to remove"; return; } retry(function () { return S.db.doc("chqtpl/" + t.id).update({ active: false, updatedAt: Date.now(), updatedBy: meId() }); }).then(function () { toast("Template removed."); CQ.id = null; CQ.D = null; renderCheques(); }, function (e) { toast(explain(e)); }); }); foot.appendChild(rm); }
@@ -11823,7 +11922,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function neftEditor(ed, T) {
     var N = T.neft = T.neft || { pad: null, size: 10, fields: [] }, card = el("div", { class: "card pcard", style: "margin-top:16px" }); ed.appendChild(card);
-    card.appendChild(el("h3", null, "NEFT / RTGS Form")); card.appendChild(el("p", { class: "sub", style: "margin:0 0 10px" }, "The bank's own NEFT / RTGS form, scanned at any size (PDF); it is printed on A4, the scan scaled to fit from the top left. Claude finds its fields on upload; drag them on the preview or type. A form is printed for NEFT / RTGS payments once the vendor's bank details are saved (Masters › Vendors). A/c Payee is always on for NEFT / RTGS."));
+    card.appendChild(el("h3", null, "NEFT / RTGS Form")); card.appendChild(el("p", { class: "sub", style: "margin:0 0 10px" }, "The bank's own NEFT / RTGS form, scanned at any size (PDF); it is printed on A4, the scan scaled to fit from the top left. Claude finds its fields on upload; drag them on the preview or type. A form is printed for NEFT / RTGS payments once the vendor's bank details are saved (Masters › Vendors). A/C Payee is always on for NEFT / RTGS."));
     var row = el("div", { class: "acts", style: "align-items:center;margin-bottom:10px" }), fi = el("input", { type: "file", accept: "application/pdf", hidden: "" }), ub = el("button", { type: "button", class: "btn sm" }, N.pad ? "Replace Form Scan" : "Upload Form Scan");
     if (N.pad) { row.appendChild(el("span", null, N.pad.name || "neft.pdf")); row.appendChild(solFileBtn(N.pad)); }
     ub.addEventListener("click", function () { fi.click(); }); fi.addEventListener("change", function () { var f = fi.files && fi.files[0]; fi.value = ""; if (f) neftUpload(f, T, ub); }); row.appendChild(ub); row.appendChild(fi);
@@ -12855,7 +12954,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   /* -- cheques -- */
   function chqTalk(T, cv) {
-    return { key: "chq_" + (CQ.id || "new"), what: "a bank cheque layout (where the date, payee, amount in words and figures and A/c Payee are written on " + (T.bank || "the bank") + "'s blank cheque)", skip: "",
+    return { key: "chq_" + (CQ.id || "new"), what: "a bank cheque layout (where the date, payee, amount in words and figures and A/C Payee are written on " + (T.bank || "the bank") + "'s blank cheque)", skip: "",
       place: "e.g. “Move the payee 2 mm down and make the text a little bigger.”",
       rules: "Sizes are in mm from the cheque's top left corner; the cheque is " + T.area.w + " × " + T.area.h + " mm. size is the text size in points (6 to 20). f.date: x, y and gap (spacing between the date boxes; 0 writes the date normally). f.payee and f.words: x, y, w (width of line 1; longer text goes on to line 2), x2 and y2 (where line 2 starts; y2 0 = one line). f.figures: x, y. f.acpayee: on (true or false), x, y. y is the baseline of the text. Picture 1 shows the scan with a made-up payment written on it.",
       get: function () { return { size: T.size, f: JSON.parse(JSON.stringify(T.f)) }; },
@@ -14680,8 +14779,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     $("bDoneQ").addEventListener("input", function () { B.doneLimit = 100; renderDone(); });
     $("vExport").addEventListener("click", function () { downloadVendorPayables($("vExport")); }); $("vQ").addEventListener("input", renderVendors); $("vCo").addEventListener("change", renderVendors); $("vNeeds").addEventListener("change", renderVendors); $("vOff").addEventListener("change", renderVendors);
     $("vBack").addEventListener("click", backToVendors); $("veCancel").addEventListener("click", backToVendors);
-    $("veSave").addEventListener("click", saveVendor); $("veBenIfsc").addEventListener("input", ifscLook);
-    $("veChq").addEventListener("click", function () { $("veChqF").click(); }); $("veChqF").addEventListener("change", function () { chequeRead(this.files && this.files[0]); }); $("veToggle").addEventListener("click", toggleVendor);
+    $("veSave").addEventListener("click", saveVendor); $("veBenIfsc").addEventListener("input", ifscLook); $("veToggle").addEventListener("click", toggleVendor);
     $("veGstin").addEventListener("input", function () { var g = normId(this.value); $("vePan").value = g && gstinCheck(g) !== "format" ? panFromGstin(g) : ""; $("veGstRes").hidden = true; });
     $("veGstChk").addEventListener("click", function () { gstLookup(this); });
     $("veGstin").addEventListener("blur", function () { this.value = normId(this.value); });

@@ -1684,7 +1684,13 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function inDiv(x) { if (PV_ALL) return true; if (DIV) return divOf(x) === DIV; return (APP !== "acc" && APP !== "fin") || myDivAll() || myDivs().indexOf(divOf(x)) >= 0; }
   /* In Accounts and Finance a person sees their divisions' entries; admins and a Chief Accountant every division. */
   function myDivAll() { return S.isAdmin || meChief() || !S.myUser; }
-  function myDivs() { return divsOf(S.myUser); }
+  /* A person's divisions: those ticked on their user, plus the divisions of the companies they are given (a financier of
+     Maintenance companies works in Maintenance even if the tick was left off). */
+  function myDivs() {
+    var d = divsOf(S.myUser).slice(), ids = (S.myUser && S.myUser.companyIds) || [];
+    ids.forEach(function (id) { var c = S.companies && S.companies[id]; if (c && c.active !== false) coApps(c).forEach(function (k) { if (DIVS[k] && d.indexOf(k) < 0) d.push(k); }); });
+    return d;
+  }
   /* Payments are recorded in Finance only; elsewhere they are shown, not paid. */
   function payHere(x) { return APP === "fin"; }
   /* Headings, each with its own tabs. Tab keys stay the same inside the app; labels are what people see. */

@@ -73,13 +73,14 @@ td input.field{width:110px;text-align:right}
 <script>
 (function () {
   "use strict";
-  /* Tabs, each with its places (where pieces are counted), then Reports and Masters. The open one is kept in the address
+  /* Tabs, each with its places (where pieces are counted), then Reports and Masters. A tab marked oneEntry has a single
+     Entry sub-tab instead, with a table per place. The open one is kept in the address
      (#tab/sub). Data is in Supabase table trial_docs, open to anyone with the link:
        masters/<tab>/<place>          { items: [{ id, name }] }   the stages counted at that place, in order
        entry/<tab>/<place>/<date>     { date, cells: { <stageId>: { dom, imp } }, updatedAt }
      An entry is the stock position: pieces at each stage that day, domestic and imports. */
   var TABS = [
-    { key: "raw", name: "Raw to WB", places: [["erode", "Erode"], ["ambur", "Ambur"], ["ranipet", "Ranipet"]] },
+    { key: "raw", name: "Raw to Tanned", places: [["erode", "Erode"], ["ambur", "Ambur"], ["ranipet", "Ranipet"]], oneEntry: true },
     { key: "tanned", name: "Tanned & Assorted", places: [["grain", "Grain"], ["split", "Split"]] },
     { key: "wbsplit", name: "WB Split - Ambur", places: [["input", "Input"], ["output", "Output"]] }
   ];
@@ -114,7 +115,7 @@ td input.field{width:110px;text-align:right}
   function entryDates(tab, place) { var p = "entry/" + tab + "/" + place + "/"; return Object.keys(D.docs).filter(function (k) { return k.indexOf(p) === 0; }).map(function (k) { return k.slice(p.length); }).sort(); }
 
   /* ---- navigation ---- */
-  function subsOf(t) { return t.places.concat([["reports", "Reports"], ["masters", "Masters"]]); }
+  function subsOf(t) { return (t.oneEntry ? [["entry", "Entry"]] : t.places).concat([["reports", "Reports"], ["masters", "Masters"]]); }
   function fromHash() {
     var p = location.hash.replace(/^#/, "").split("/"), t = TABS.filter(function (x) { return x.key === p[0]; })[0] || TABS[0], subs = subsOf(t);
     cur = { tab: t, sub: subs.filter(function (s) { return s[0] === p[1]; })[0] || subs[0] };
@@ -124,7 +125,7 @@ td input.field{width:110px;text-align:right}
   function render() {
     var tb = $("tabs"), sbx = $("subs"); tb.textContent = ""; sbx.textContent = "";
     TABS.forEach(function (t) { tb.appendChild(tabBtn(t.name, t === cur.tab, function () { go(t, subsOf(t)[0]); })); });
-    subsOf(cur.tab).forEach(function (s) { sbx.appendChild(tabBtn(s[1], s === cur.sub, function () { go(cur.tab, s); }, s[0] === "reports" ? "sep" : "")); });
+    subsOf(cur.tab).forEach(function (s) { sbx.appendChild(tabBtn(s[1], s[0] === cur.sub[0], function () { go(cur.tab, s); }, s[0] === "reports" ? "sep" : "")); });
     $("title").textContent = cur.tab.name + " · " + cur.sub[1]; document.title = cur.sub[1] + " · " + cur.tab.name + " · Trial App";
     var body = $("body"); body.textContent = ""; $("subtitle").textContent = "";
     if (D.err) { body.appendChild(el("div", { class: "card msg bad" }, D.err)); return; }
@@ -134,50 +135,53 @@ td input.field{width:110px;text-align:right}
     renderEntry(body);
   }
 
-  /* ---- a place: the day's pieces at each stage, domestic and imports ---- */
+  /* ---- Entry: the day's pieces at each stage, domestic and imports, one table per place (all places on a oneEntry tab) ---- */
   function renderEntry(body) {
-    var t = cur.tab, place = cur.sub, key = t.key + "/" + place[0], ms = masters(t.key, place[0]), lo = addDays(today(), -6), hi = today();
+    var t = cur.tab, places = t.oneEntry ? t.places : [cur.sub], key = t.key + "/" + cur.sub[0], lo = addDays(today(), -6), hi = today();
     $("subtitle").textContent = "Pieces at each stage on the chosen day. A day can be entered or corrected from " + fmtDate(lo) + " to today.";
-    if (!ms.length) { body.appendChild(el("div", { class: "card hint" }, "No stages for " + place[1] + " yet. Add them under Masters.")); return; }
     var st = ENT[key] = ENT[key] || { date: hi };
     if (st.date < lo || st.date > hi) st.date = hi;
     var c1 = el("div", { class: "card" }), row = el("div", { class: "row" }), lf = el("label", { class: "f" }, "Date");
     var di = el("input", { type: "date", class: "field", min: lo, max: hi }); di.value = st.date; lf.appendChild(di); row.appendChild(lf); c1.appendChild(row);
-    var days = el("div", { class: "days" }), have = entryDates(t.key, place[0]);
-    for (var i = 6; i >= 0; i--) (function (d) { var b = el("button", { type: "button", class: "day" + (have.indexOf(d) >= 0 ? " done" : "") + (d === st.date ? " on" : "") }, fmtDate(d) + (have.indexOf(d) >= 0 ? " ✓" : "")); b.addEventListener("click", function () { st.date = d; render(); }); days.appendChild(b); })(addDays(hi, -i));
+    /* a day is ticked once every place shown has its entry */
+    var done = function (d) { return places.every(function (pl) { return !!entry(t.key, pl[0], d); }); }, days = el("div", { class: "days" });
+    for (var i = 6; i >= 0; i--) (function (d) { var ok = done(d), b = el("button", { type: "button", class: "day" + (ok ? " done" : "") + (d === st.date ? " on" : "") }, fmtDate(d) + (ok ? " ✓" : "")); b.addEventListener("click", function () { st.date = d; render(); }); days.appendChild(b); })(addDays(hi, -i));
     c1.appendChild(days); c1.appendChild(el("div", { class: "hint", style: "margin-top:6px" }, "✓ entered already."));
-    body.appendChild(c1);
-    di.addEventListener("change", function () { var v = di.value; if (!v || v < lo || v > hi) { di.value = st.date; msg.textContent = "Choose a day from " + fmtDate(lo) + " to today."; msg.className = "msg bad"; return; } st.date = v; render(); });
-    var e = entry(t.key, place[0], st.date), cells = (e && e.cells) || {};
-    var c2 = el("div", { class: "card" }); c2.appendChild(el("h3", null, place[1] + " · " + fmtDate(st.date) + (e ? " · saved" : " · not entered yet")));
-    /* one row per stage (in master order); Domestic and Imports across, then the stage's total */
-    var sc = el("div", { class: "scroll" }), tbl = el("table"), thead = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, "Particulars"));
-    ORIGINS.forEach(function (o) { hr.appendChild(el("th", { class: "n" }, o[1])); }); hr.appendChild(el("th", { class: "n" }, "Total")); thead.appendChild(hr); tbl.appendChild(thead);
-    var tbody = el("tbody"), inputs = {};
-    ms.forEach(function (m) {
-      var tr = el("tr"); tr.appendChild(el("td", null, m.name));
-      ORIGINS.forEach(function (o) { var td = el("td", { class: "n" }), v = cells[m.id] && cells[m.id][o[0]]; var ip = el("input", { class: "field", inputmode: "numeric", "aria-label": o[1] + " " + m.name, placeholder: "0" }); ip.value = v == null ? "" : String(v); ip.addEventListener("input", sums); inputs[o[0] + "|" + m.id] = ip; td.appendChild(ip); tr.appendChild(td); });
-      tr.appendChild(el("td", { class: "n tot", "data-row": m.id })); tbody.appendChild(tr);
+    var dmsg = el("div", { class: "msg" }); c1.appendChild(dmsg); body.appendChild(c1);
+    di.addEventListener("change", function () { var v = di.value; if (!v || v < lo || v > hi) { di.value = st.date; dmsg.textContent = "Choose a day from " + fmtDate(lo) + " to today."; dmsg.className = "msg bad"; return; } st.date = v; render(); });
+    var inputs = {}, any = false;
+    places.forEach(function (pl) {
+      var ms = masters(t.key, pl[0]), e = entry(t.key, pl[0], st.date), cells = (e && e.cells) || {}, c2 = el("div", { class: "card" });
+      c2.appendChild(el("h3", null, pl[1] + (e ? " · saved" : " · not entered yet")));
+      if (!ms.length) { c2.appendChild(el("div", { class: "empty" }, "No stages for " + pl[1] + " yet. Add them under Masters.")); body.appendChild(c2); return; }
+      any = true;
+      /* one row per stage (in master order); Domestic and Imports across */
+      var sc = el("div", { class: "scroll" }), tbl = el("table"), thead = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, "Particulars"));
+      ORIGINS.forEach(function (o) { hr.appendChild(el("th", { class: "n" }, o[1])); }); thead.appendChild(hr); tbl.appendChild(thead);
+      var tbody = el("tbody");
+      ms.forEach(function (m) {
+        var tr = el("tr"); tr.appendChild(el("td", null, m.name));
+        ORIGINS.forEach(function (o) { var td = el("td", { class: "n" }), v = cells[m.id] && cells[m.id][o[0]]; var ip = el("input", { class: "field", inputmode: "numeric", "aria-label": pl[1] + " " + o[1] + " " + m.name, placeholder: "0" }); ip.value = v == null ? "" : String(v); inputs[pl[0] + "|" + o[0] + "|" + m.id] = ip; td.appendChild(ip); tr.appendChild(td); });
+        tbody.appendChild(tr);
+      });
+      tbl.appendChild(tbody); sc.appendChild(tbl); c2.appendChild(sc); body.appendChild(c2);
     });
-    var trt = el("tr", { class: "tot" }); trt.appendChild(el("td", null, "Total")); ORIGINS.forEach(function (o) { trt.appendChild(el("td", { class: "n", "data-col": o[0] })); }); trt.appendChild(el("td", { class: "n", "data-all": "1" })); tbody.appendChild(trt);
-    tbl.appendChild(tbody); sc.appendChild(tbl); c2.appendChild(sc);
-    var acts = el("div", { class: "row", style: "margin-top:12px" }), save = el("button", { type: "button", class: "btn primary" }, e ? "Save Changes" : "Save"), msg = el("div", { class: "msg" });
-    acts.appendChild(save); c2.appendChild(acts); c2.appendChild(msg); body.appendChild(c2);
-    function sums() {
-      var all = 0, bad = false;
-      ms.forEach(function (m) { var t0 = 0; ORIGINS.forEach(function (o) { var n = int(inputs[o[0] + "|" + m.id].value); if (isNaN(n)) bad = true; else t0 += n || 0; }); tbody.querySelector('[data-row="' + m.id + '"]').textContent = pcs(t0); all += t0; });
-      ORIGINS.forEach(function (o) { var t1 = 0; ms.forEach(function (m) { var n = int(inputs[o[0] + "|" + m.id].value); if (!isNaN(n)) t1 += n || 0; }); tbody.querySelector('[data-col="' + o[0] + '"]').textContent = pcs(t1); });
-      tbody.querySelector('[data-all="1"]').textContent = pcs(all); return !bad;
-    }
-    sums();
+    if (!any) return;
+    var c3 = el("div", { class: "card" }), acts = el("div", { class: "row" }), saved = places.some(function (pl) { return !!entry(t.key, pl[0], st.date); });
+    var save = el("button", { type: "button", class: "btn primary" }, saved ? "Save Changes" : "Save"), msg = el("div", { class: "msg" });
+    acts.appendChild(save); c3.appendChild(acts); c3.appendChild(msg); body.appendChild(c3);
     save.addEventListener("click", function () {
       msg.textContent = ""; msg.className = "msg";
       if (st.date < addDays(today(), -6) || st.date > today()) { msg.textContent = "Only today and the 6 days before can be entered."; msg.className = "msg bad"; return; }
-      var out = {}, bad = "";
-      ms.forEach(function (m) { var c = {}; ORIGINS.forEach(function (o) { var n = int(inputs[o[0] + "|" + m.id].value); if (isNaN(n)) bad = bad || o[1] + " · " + m.name; else c[o[0]] = n || 0; }); out[m.id] = c; });
+      var docs = [], bad = "";
+      places.forEach(function (pl) {
+        var ms = masters(t.key, pl[0]); if (!ms.length) return; var out = {};
+        ms.forEach(function (m) { var c = {}; ORIGINS.forEach(function (o) { var n = int(inputs[pl[0] + "|" + o[0] + "|" + m.id].value); if (isNaN(n)) bad = bad || pl[1] + " · " + m.name + " · " + o[1]; else c[o[0]] = n || 0; }); out[m.id] = c; });
+        docs.push(["entry/" + t.key + "/" + pl[0] + "/" + st.date, { date: st.date, cells: out, updatedAt: Date.now() }]);
+      });
       if (bad) { msg.textContent = "Pieces are whole numbers. Check " + bad + "."; msg.className = "msg bad"; return; }
       save.disabled = true;
-      put("entry/" + t.key + "/" + place[0] + "/" + st.date, { date: st.date, cells: out, updatedAt: Date.now() }).then(function () { render(); var m2 = document.querySelector("#body .msg"); if (m2) m2.textContent = "Saved for " + fmtDate(st.date) + "."; },
+      Promise.all(docs.map(function (d) { return put(d[0], d[1]); })).then(function () { render(); var ms2 = document.querySelectorAll("#body .msg"), m2 = ms2[ms2.length - 1]; if (m2) m2.textContent = "Saved for " + fmtDate(st.date) + "."; },
         function (er) { save.disabled = false; msg.textContent = "Not saved: " + ((er && er.message) || "error") + ". Try again."; msg.className = "msg bad"; });
     });
   }

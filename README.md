@@ -222,7 +222,7 @@ provides the same calls, so the app code did not need rewriting:
   are kept apart by a `demo__` prefix. Everything entered before the switch existed is Demo.
 - **Bill files** are kept in the private `bill-files` Storage bucket (`live/` or `demo/` folder). The accountant sees
   the file beside the form with page, zoom, fit, rotate and drag. Bills typed in by hand can attach a file.
-- **Settings** (everyone): Personalise (shared by every KKSK app, saved to the login) has light/dark/device mode, a colour, text size, table density, a
+- **Settings** (everyone): Personalise (shared by every KKSK app, saved to the login) has light/dark/device mode, a colour, text size (only the text grows: every font size is calc(size × var(--ts)) set by web/textsize.js, so layouts stay and cells wrap; prints are unaffected), table density, a
   profile picture shown at the top, and Change Password. Admins also see Companies, Users, Change Log and Data &
   Archive there. PDFs and Excel always keep the standard KKSK format.
 - **Admins** are added only by the Super Admin (Settings › Users › Add Admin), with a login or without one

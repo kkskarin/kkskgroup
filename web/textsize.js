@@ -1,24 +1,11 @@
-/* Text Size for every KKSK app (Personalise). Phones and tablets: the browser lays the page out for the larger
-   (or smaller) size through the viewport, so nothing spills off the screen. Computers: the page is zoomed. */
+/* Text Size for every KKSK app (Personalise). Only the text grows or shrinks: every font size in the apps is written as
+   calc(size * var(--ts)), so tables, columns and boxes keep their layout and their cells wrap to fit the bigger text. */
 (function () {
   "use strict";
-  var BASE = "width=device-width,initial-scale=1,viewport-fit=cover", cur = 1;
-  function touch() { return !!(window.matchMedia && matchMedia("(pointer:coarse)").matches) && Math.min(screen.width, screen.height) < 1100; }
-  function deviceWidth() {
-    var w = screen.width, h = screen.height, land = window.screen.orientation ? /landscape/.test(screen.orientation.type) : Math.abs(window.orientation || 0) === 90;
-    return land ? Math.max(w, h) : Math.min(w, h);
-  }
   function apply(z) {
-    cur = z > 0 ? z : 1;
-    var root = document.documentElement, meta = document.querySelector('meta[name="viewport"]');
-    if (touch() && meta) {
-      root.style.zoom = ""; if (document.body) document.body.style.zoom = "";
-      meta.setAttribute("content", cur === 1 ? BASE : "width=" + Math.round(deviceWidth() / cur) + ",initial-scale=" + cur + ",viewport-fit=cover");
-    } else {
-      if (meta) meta.setAttribute("content", BASE);
-      root.style.zoom = cur === 1 ? "" : String(cur); if (document.body) document.body.style.zoom = "";
-    }
+    var cur = z > 0 ? z : 1, root = document.documentElement;
+    root.style.zoom = ""; if (document.body) document.body.style.zoom = "";
+    if (cur === 1) root.style.removeProperty("--ts"); else root.style.setProperty("--ts", String(cur));
   }
-  window.addEventListener("orientationchange", function () { setTimeout(function () { apply(cur); }, 150); });
   window.kkskTextSize = apply;
 })();

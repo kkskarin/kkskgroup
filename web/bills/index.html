@@ -4989,7 +4989,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     show("secVendor");
   }
   function renderVendorHead(v) {
-    if (v.isNew) { $("vTitle").textContent = "Add Vendor"; $("vSub").textContent = "Its opening balances can be entered now or later."; return; }
+    if (v.isNew) { $("vTitle").textContent = "Add Vendor"; $("vSub").textContent = "Its opening balances can be entered now or later."; $("vFlags").textContent = ""; return; }
     $("vTitle").textContent = v.name;
     var fb = v.firstBillId && S.bills[v.firstBillId];
     $("vSub").textContent = (v.createdAt ? "Added " + fmtDay(v.createdAt) + (fb ? " from bill " + (fb.billNo || "") : "") + "." : "") + (v.active === false ? " Deactivated." : "");
@@ -5124,8 +5124,14 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       box.appendChild(el("div", null, [r.type, r.constitution, r.since ? "registered " + r.since : "", r.cancelledOn ? "cancelled " + r.cancelledOn : ""].filter(Boolean).join(" · ")));
       if (r.address) box.appendChild(el("div", null, r.address));
       if (r.env === "sandbox") box.appendChild(el("div", { class: "hint" }, "Sandbox (test) data."));
-      var use = el("button", { type: "button", class: "btn sm", style: "margin-top:6px" }, "Use This Name and Address");
-      use.addEventListener("click", function () { if (r.legalName || r.tradeName) $("veName").value = r.tradeName || r.legalName; if (r.address) $("veAddr").value = r.address; toast("Filled in from the GST portal. Check and save."); });
+      if (!r.address) box.appendChild(el("div", { class: "hint" }, "The portal gave no address" + (r.env === "sandbox" ? " (the sandbox's test taxpayers have none)" : "") + "; enter it from the bill."));
+      var use = el("button", { type: "button", class: "btn sm", style: "margin-top:6px" }, r.address ? "Use This Name and Address" : "Use This Name");
+      use.addEventListener("click", function () {
+        if (r.legalName || r.tradeName) $("veName").value = r.tradeName || r.legalName;
+        if (r.address) $("veAddr").value = r.address;
+        if (!bad && !$("veType").value) $("veType").value = "registered";
+        toast("Filled in from the GST portal. Check and save."); if (!r.address && !$("veAddr").value.trim()) $("veAddr").focus();
+      });
       box.appendChild(use);
     }, function (e) { box.textContent = ""; box.appendChild(el("b", null, e && e.code === "not_configured" ? "The GST connection isn't set up yet." : "The GST portal couldn't be checked.")); box.appendChild(el("div", null, (e && e.message) || "")); })
       .then(function () { btn.disabled = false; btn.textContent = lb; });

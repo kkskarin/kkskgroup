@@ -1025,14 +1025,15 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       <div class="form">
         <div class="f"><label for="veName">Vendor name</label><input class="field" id="veName" maxlength="140" autocomplete="off" data-fmt="name"><span class="err" id="veNameE" hidden></span></div>
         <div class="f"><label for="veType">Vendor type</label><select class="field" id="veType"></select><span class="err" id="veTypeE" hidden></span></div>
-        <div class="f"><label for="veGstin">GSTIN</label><input class="field mono" id="veGstin" maxlength="20" autocomplete="off" spellcheck="false"><span class="hint">Required for a registered vendor. <button type="button" class="link-btn" id="veGstChk" hidden>Check on the GST portal</button></span><span class="err" id="veGstinE" hidden></span><div id="veGstRes" class="gstres" hidden></div></div>
+        <div class="f"><label for="veGstin">GSTIN</label><input class="field mono" id="veGstin" maxlength="20" autocomplete="off" spellcheck="false"><span class="hint">Required for a registered vendor. <button type="button" class="link-btn" id="veGstChk" hidden>Check on the GST portal</button></span><span class="err" id="veGstinE" hidden></span><div id="veGstRes" class="gstres" hidden></div><div id="veGstSaved" class="hint" hidden></div></div>
         <div class="f"><label for="vePan">PAN</label><input class="field mono ro" id="vePan" disabled><span class="hint">Taken from the GSTIN.</span><span class="err" id="vePanE" hidden></span></div>
         <div class="f wide"><label for="veAddr">Address</label><textarea class="field" id="veAddr" rows="2" maxlength="240"></textarea><span class="hint">Street, town and PIN code (with the country for an overseas vendor).</span><span class="err" id="veAddrE" hidden></span></div>
         <div class="f"><label for="veTerm">Payment terms (days)</label><input class="field num" id="veTerm" inputmode="numeric" maxlength="3" autocomplete="off"><span class="hint">Days from the bill date to the due date.</span><span class="err" id="veTermE" hidden></span></div>
-        <div class="f wide"><b>Bank details (for NEFT / RTGS)</b><span class="hint">Filled into the bank's NEFT / RTGS form. Needed only when paying this vendor by NEFT / RTGS.</span></div>
+        <div class="f wide"><b>Bank details (for NEFT / RTGS)</b><span class="hint">Filled into the bank's NEFT / RTGS form. Needed only when paying this vendor by NEFT / RTGS.</span>
+          <div class="acts" style="margin-top:8px"><button type="button" class="btn sm" id="veChq" hidden>Read From a Cancelled Cheque</button><input type="file" id="veChqF" accept="application/pdf,image/jpeg,image/png,image/webp" hidden></div><span class="hint" id="veChqLn"></span></div>
         <div class="f"><label for="veBenName">Account holder name</label><input class="field" id="veBenName" maxlength="120" autocomplete="off" data-fmt="name"></div>
         <div class="f"><label for="veBenAcct">Account number</label><input class="field mono" id="veBenAcct" maxlength="24" autocomplete="off" spellcheck="false"><span class="err" id="veBenAcctE" hidden></span></div>
-        <div class="f"><label for="veBenIfsc">IFSC</label><input class="field mono" id="veBenIfsc" maxlength="11" autocomplete="off" spellcheck="false"><span class="err" id="veBenIfscE" hidden></span></div>
+        <div class="f"><label for="veBenIfsc">IFSC</label><input class="field mono" id="veBenIfsc" maxlength="11" autocomplete="off" spellcheck="false"><span class="hint" id="veBenIfscH">Bank and branch fill in from the IFSC.</span><span class="err" id="veBenIfscE" hidden></span></div>
         <div class="f"><label for="veBenBank">Bank</label><input class="field" id="veBenBank" maxlength="80" autocomplete="off" data-fmt="name"></div>
         <div class="f"><label for="veBenBranch">Branch</label><input class="field" id="veBenBranch" maxlength="80" autocomplete="off" data-fmt="name"></div>
         <div class="f"><label for="veBenType">Account type</label><select class="field" id="veBenType"><option value="">Choose</option><option>Current</option><option>Savings</option><option>Cash Credit</option><option>Overdraft</option></select></div>
@@ -2812,8 +2813,10 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     else b.textContent = (c.shortName || "").slice(0, 4);
     return b;
   }
+  /* Masters › Companies: an admin sees every company in the app; anyone else only the companies they are given. */
   function sorted() {
-    return Object.keys(S.companies).map(function (id) { return S.companies[id]; }).filter(coInApp)
+    var mine = S.isAdmin || PV_ALL ? null : myCompanyIds();
+    return Object.keys(S.companies).map(function (id) { return S.companies[id]; }).filter(function (c) { return coInApp(c) && (!mine || mine.indexOf(c.id) >= 0); })
       .sort(function (a, b) { return (a.active === false) - (b.active === false) || coCmp(a, b); });
   }
 
@@ -3290,6 +3293,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     ledgersFor(function () { return true; }).forEach(function (r) { (linked[r.vid] = linked[r.vid] || []).push(r.cid); });
     return Object.keys(S.vendors).map(function (id) { return S.vendors[id]; }).filter(function (v) {
       if (!vendorInApp(v)) return false;
+      /* Accounts and Finance cover every division, so a person sees only the vendors of their own divisions */
+      if (!DIV && !myDivAll() && !PV_ALL && !((v.apps && v.apps.length) ? v.apps : ["mnt"]).some(function (d) { return myDivs().indexOf(d) >= 0; })) return false;
       var cs = linked[v.id]; if (S.isAdmin || !cs || !cs.length) return true;
       return cs.some(function (c) { return mine.indexOf(c) >= 0; });
     });
@@ -3642,6 +3647,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       "- currency: the ISO code of the currency the bill's amounts are in, such as INR, USD or EUR. INR for rupees.",
       "- Amounts are plain numbers in the bill's currency with no commas or symbols. taxable_amount is the value before tax. gst_amount is CGST plus SGST or UTGST plus IGST, or 0 if no GST is charged. total_amount is the final amount payable as printed, after any round-off.",
       "- payment_term_days: only if the bill prints credit or payment terms (such as Net 30 or 45 days credit) or a due date, as whole days from the bill date. null if nothing is printed. Don't guess.",
+      "- irn, ack_no, ack_date: only for a GST e-invoice, which prints them near the top, usually beside a QR code. irn is the 64-character IRN (letters a to f and digits) copied exactly; ack_no is the acknowledgement number, digits only; ack_date as YYYY-MM-DD. null for each that isn't printed.",
       "- narration: one plain English sentence, under 20 words, saying what was bought, ending with a full stop. Translate if the bill is in another language.",
       "- Capitalisation: write vendor_name, company_name_on_bill and narration in proper case. Capitalise each word of a name, keep acronyms and codes in capitals (KKSK, LLP, GST), and write Pvt. Ltd. that way, even if the bill prints everything in capitals. Copy bill_number exactly as printed.",
       "- Use null for anything not printed or not readable. Never invent values that are not on the bill.",
@@ -3651,7 +3657,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       "- items_note: one or two sentences on anything you are unsure of in the items (which lines, which figures), or an empty string.",
       "",
       "Reply with only this JSON object (bills holds one object per bill):",
-      '{"bills":[{"pages":[1],"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}]}',
+      '{"bills":[{"pages":[1],"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"irn":null,"ack_no":null,"ack_date":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}]}',
       "",
       "COMPANIES: " + JSON.stringify(cos),
       "",
@@ -3724,10 +3730,16 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       billNo: str(res.bill_number, 60).toUpperCase(), billDate: date, currency: A.currency, fxRate: A.fxRate, fcTaxable: A.fcTaxable, fcGst: A.fcGst, fcTotal: A.fcTotal,
       taxable: A.taxable, gstAmt: A.gstAmt, gstPct: A.gstPct, total: A.total,
       termDays: v ? (v.termDays != null ? v.termDays : term) : term, termChoice: "", updateVendorTerm: false,
-      narration: sentenceFix(str(res.narration, 400)),
+      narration: sentenceFix(str(res.narration, 400)), einv: einvOf(res.irn, res.ack_no, res.ack_date),
       ex: { companyName: str(res.company_name_on_bill, 160), vendorName: str(res.vendor_name, 160), vendorGstin: g, vendorAddress: aiAddr(res.vendor_address), billTermDays: term, printedTotal: printed, rateFrom: rateFrom, notes: str(res.notes, 300), aiUnsure: aiUnsure(res, ["company", "vendor", "vendor_gstin", "bill_number", "bill_date", "currency", "taxable_amount", "gst_amount", "payment_term_days", "narration"]), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) }
     };
   }
+  /* A bill's e-invoice details: IRN (64 hex characters), acknowledgement number and date. Read from the bill or typed. */
+  function einvOf(irn, ack, ad) {
+    var i = String(irn == null ? "" : irn).replace(/\s+/g, "").toLowerCase(), a = String(ack == null ? "" : ack).replace(/\s+/g, ""), d = ymdOk(ad) ? ad : parseDate(String(ad || "")) || "";
+    return { irn: i.slice(0, 64), ackNo: a.slice(0, 20), ackDate: d };
+  }
+  function einvText(e) { return e && e.irn ? "IRN " + e.irn + (e.ackNo ? " · Ack No " + e.ackNo : "") + (e.ackDate ? " · Ack Date " + fmtDate(e.ackDate) : "") : ""; }
   /* Which bill-card box each read field lives in, and how to get its value from the card's draft. */
   var BILL_FIELDS = [["company", "bcCo", function (D) { return D.companyId; }], ["vendor", "bcVen", function (D) { return D.vendorChoice; }], ["vendor_name", "bcVName", function (D) { return D.vNew.name; }, "vendor"],
     ["vendor_gstin", "bcVGstin", function (D) { return D.vNew.gstin; }], ["bill_number", "bcNo", function (D) { return D.billNo; }], ["bill_date", "bcDate", function (D) { return D.billDate; }],
@@ -4111,6 +4123,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt),
       tds: b.entryTds || "", tdsSec: b.entryTdsSection || "",
       termDays: b.termDays == null ? "" : String(b.termDays), termChoice: b.termChoice || "", updateVendorTerm: !!b.updateVendorTerm, narration: b.narration || "", advPick: b.advPick || "", advWhy: b.advWhy || "",
+      einv: { irn: (b.einv && b.einv.irn) || "", ackNo: (b.einv && b.einv.ackNo) || "", ackDate: b.einv && b.einv.ackDate ? fmtDate(b.einv.ackDate) : "" },
       ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", forId: b.madeBy ? b.preparedBy || "" : "", forNew: "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), settle: b.settle ? "yes" : "no", X: Object.assign({}, extOf(b, DIV))
     };
   }
@@ -4195,7 +4208,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       billNo: D.billNo.trim(), billDate: parseDate(D.billDate),
       termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: D.narration.trim(), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
       ledgers: ledLinesOut(D.ledgers), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || "",
-      settle: D.settle === "yes" && billAdvOk(D)
+      settle: D.settle === "yes" && billAdvOk(D), einv: einvOf((D.einv || {}).irn, (D.einv || {}).ackNo, parseDate((D.einv || {}).ackDate || ""))
     }, amountsOf(D), prepFields(D.prepBy), approverFields(D.approverId), extDoc(D.companyId, D.X));
   }
   /* Whose cash a bill would come out of, and whether paying it from that cash advance is offered (rupee bills only). */
@@ -4285,6 +4298,12 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (ti.mismatch && !D.termChoice) E("bcTermPick", "Choose which payment terms apply to this bill.");
       else if (!ti.mismatch && !termOk(D.termDays)) E("bcTerm", "Enter the payment terms in days, from 0 to 365.");
     }
+    var ei = D.einv || {}, irn = String(ei.irn || "").replace(/\s+/g, "");
+    if (irn && !/^[0-9a-fA-F]{64}$/.test(irn)) E("bcIrn", "An IRN is 64 characters, digits and the letters a to f. Check it against the bill.");
+    if (String(ei.ackNo || "").trim() && !/^\d{6,20}$/.test(String(ei.ackNo).replace(/\s+/g, ""))) E("bcAck", "The Ack No is digits only.");
+    if (String(ei.ackDate || "").trim() && !parseDate(ei.ackDate)) E("bcAckD", "Enter the date like 12-Sep-26.");
+    if ((String(ei.ackNo || "").trim() || String(ei.ackDate || "").trim()) && !irn) E("bcIrn", "Enter the IRN too, from the same e-invoice block.");
+    if (v) { gstAlerts(v, bd, ga || 0, { irn: irn }).forEach(function (w) { warns.push(w); }); gstRefresh(v, function () { if (B.D && $("bcFlags")) updateDynamic(); }); }
     var oa = openAdvsFor(D, b);
     if (oa.length && !D.advPick) E("bcAdvPick", "Say whether this is the final bill of the open " + (oa[0].kind === "import" ? "import " : "proforma ") + oa[0].piNo + (oa.length > 1 ? " or another open one" : "") + ".");
     else if (oa.length && D.advPick === "no" && String(D.advWhy || "").trim().length < 4) E("bcAdvWhy", "Write why this bill is separate.");
@@ -4436,6 +4455,10 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     f.appendChild(dateField(D));
     f.appendChild(el("div", { class: "f", id: "bcTermBox" }));
     var due = el("div", { class: "f" }); due.appendChild(el("span", { class: "lb" }, "Due date")); due.appendChild(el("div", { class: "field ro num", id: "bcDue" })); f.appendChild(due);
+    D.einv = D.einv || { irn: "", ackNo: "", ackDate: "" };
+    f.appendChild(fld("IRN (e-invoice)", inp("bcIrn", D.einv.irn, { maxlength: "70", class: "field mono", spellcheck: "false" }), "Printed near the QR code on an e-invoice. Leave blank if the bill isn't one.", true));
+    f.appendChild(fld("Ack No", inp("bcAck", D.einv.ackNo, { maxlength: "20", class: "field mono", inputmode: "numeric" })));
+    f.appendChild(fld("Ack Date", inp("bcAckD", D.einv.ackDate, { maxlength: "12", placeholder: "12-Sep-26" })));
     f.appendChild(tidyField("Narration", tidyBox("bcNar", D.narration, "bill", null, 3), "What the bill is for, in any language." + (S.sample ? " It is turned into clean English when you leave the box." : "") + (b.narrLock ? " The closing breakup at the end is always kept, even if deleted." : "")));
     var lgf = el("div", { class: "f wide" }); lgf.appendChild(el("span", { class: "lb" }, "Ledgers")); lgf.appendChild(el("div", { id: "bcLedWrap" }));
     lgf.appendChild(el("span", { class: "hint" }, "Choose the ledger for each part of the bill and enter its amount, before GST. Together they make the taxable amount." + (b.source === "file" ? " The taxable amount read from the bill is filled in on the first line." : "") + " TDS is entered by the accountant."));
@@ -4470,6 +4493,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (t.id === "bcVGstin") tidyIds(t.id);
       else if (t.id === "bcTax" || t.id === "bcGst" || t.id === "bcTds") { t.value = fmtInput(t.value); }
       else if (t.id === "bcDate") { var d = parseDate(t.value); if (d) { t.value = fmtDate(d); readCard(); updateDynamic(); } }
+      else if (t.id === "bcAckD") { var d2 = parseDate(t.value); if (d2) { t.value = fmtDate(d2); readCard(); updateDynamic(); } }
+      else if (t.id === "bcIrn") { t.value = t.value.replace(/\s+/g, "").toLowerCase(); readCard(); updateDynamic(); }
     });
     return card;
   }
@@ -4479,6 +4504,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     D.vNew.name = $("bcVName").value; D.vNew.type = $("bcVType").value; D.vNew.gstin = $("bcVGstin").value; D.vNew.termDays = $("bcVTerm").value; D.vNew.addr = $("bcVAddr").value;
     D.billNo = $("bcNo").value; D.billDate = $("bcDate").value; D.currency = $("bcCur").value || "INR"; D.rate = $("bcRate").value;
     D.taxable = $("bcTax").value; D.gstAmt = $("bcGst").value;
+    if ($("bcIrn")) D.einv = { irn: $("bcIrn").value, ackNo: $("bcAck").value, ackDate: $("bcAckD").value };
     D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value; if ($("bcFor")) { D.forId = $("bcFor").value; D.forNew = $("bcForNew").value; } if ($("bcAppr")) D.approverId = $("bcAppr").value; if ($("bcSettle")) D.settle = $("bcSettle").value;
     if ($("bcTerm")) D.termDays = $("bcTerm").value;
     if ($("bcTds")) { D.tds = $("bcTds").value; D.tdsSec = $("bcTdsSec").value; }
@@ -4953,6 +4979,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       { label: "Overdue", cls: "r num", sort: function (r) { return r.tot.overdue; }, desc: true, cell: function (r, td) { td.appendChild(el("span", { class: r.tot.overdue > 0 ? "late" : "" }, curMoney(r.tot.cur, r.tot.overdue))); } },
       { label: "Status", sort: function (r) { return (r.v.active === false ? 2 : r.n.list.length ? 0 : 1); }, cell: function (r, td) {
           var off = r.v.active === false; td.appendChild(el("span", { class: "chip " + (off ? "off" : "on") }, off ? "Deactivated" : "Active"));
+          var gq = vGst(r.v); if (gq && (gstIsBad(gq) || gstIsComp(gq))) td.appendChild(el("span", { class: "chip off", style: "margin-left:6px" }, gstIsBad(gq) ? "GSTIN " + gq.status : "Composition"));
           if (r.n.list.length) td.appendChild(el("span", { class: "needs" }, "Needs " + r.n.list.join("; ") + (r.n.since ? ". Waiting " + plural(daysSince(r.n.since), "day") + "." : "."))); } },
       { label: "", kind: "act", cls: "r", cell: function (r, td) {
           var b = el("button", { class: "btn" + (r.n.list.length ? " primary" : "") }, r.n.list.length && canEditVendors() ? "Fill in" : "Open"); b.addEventListener("click", function () { openVendor(r.v.id); }); td.appendChild(b); } }
@@ -4976,13 +5003,15 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var v = VE.nv || S.vendors[id]; if (!v) return;
     VE.id = id; veClear();
     $("veName").value = v.name || ""; $("veAddr").value = v.address || ""; fillSelect($("veType"), [["", "Choose a type"]].concat(VTYPES), v.type || "");
-    $("veGstin").value = v.gstin || ""; $("veGstChk").hidden = !window.bvGst; $("veGstRes").hidden = true; $("vePan").value = v.gstin && gstinCheck(v.gstin) !== "format" ? panFromGstin(v.gstin) : ""; $("veTerm").value = v.termDays == null ? "" : String(v.termDays);
+    $("veGstin").value = v.gstin || ""; $("veGstChk").hidden = !window.bvGst; $("veGstRes").hidden = true; VE.gstHit = null; VE.proof = null; paintVendorGst(v); $("vePan").value = v.gstin && gstinCheck(v.gstin) !== "format" ? panFromGstin(v.gstin) : ""; $("veTerm").value = v.termDays == null ? "" : String(v.termDays);
     var bk0 = v.bank || {}; $("veBenName").value = bk0.name || ""; $("veBenAcct").value = bk0.acct || ""; $("veBenIfsc").value = bk0.ifsc || ""; $("veBenBank").value = bk0.bank || ""; $("veBenBranch").value = bk0.branch || ""; $("veBenType").value = bk0.type || ""; $("veBenPhone").value = bk0.phone || "";
     renderOpenings(v); renderVendorHead(v); renderVendorStatements();
     var ed = canEditVendors(), eb = canEditVendorBank();
     Array.prototype.forEach.call(document.querySelectorAll("#secVendor .form .field, #veOb input"), function (i) { if (i.id === "vePan") return; var bank = /^veBen/.test(i.id); i.disabled = bank ? !eb : !ed; });
     $("veSave").hidden = !ed && !eb; $("veCancel").textContent = ed || eb ? "Cancel" : "Back";
     if (!ed || !eb) { var nt = el("div", { class: "flag", style: "margin-top:8px" }, ed ? "The bank details for cheques and NEFT / RTGS are filled in by the financier." : eb ? "The vendor's accounting details and opening balances are kept by the accountant. You fill in the bank details for cheques and NEFT / RTGS." : "Vendor details and opening balances are filled in by the accountant; bank details by the financier."); $("vFlags").appendChild(nt); }
+    $("veChq").hidden = !eb || !S.sample; paintProof(v.bank && v.bank.proof); $("veBenIfscH").textContent = eb ? "Bank and branch fill in from the IFSC." : "";
+    if (!v.isNew) gstRefresh(v, function () { if (VE.id === v.id) paintVendorGst(S.vendors[v.id]); });
     var tg = $("veToggle"); tg.hidden = !S.isAdmin || !ed || !!v.isNew;
     $("veStH").hidden = $("veStSub").hidden = $("veSt").hidden = !!v.isNew; $("veSave").textContent = v.isNew ? "Add vendor" : "Save vendor";
     if (S.isAdmin) { var off = v.active === false; tg.textContent = off ? "Reactivate vendor" : "Deactivate vendor"; tg.className = "btn" + (off ? "" : " danger"); }
@@ -5076,7 +5105,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     });
     if (!ok) { var first = document.querySelector("#secVendor .field.bad"); if (first) first.focus(); return; }
     var data = { name: name, type: type, gstin: g, pan: pan, address: addr, termDays: intOrNull(term), updatedAt: now, updatedBy: meId() };
-    var bkd = { name: smartCase($("veBenName").value.trim()), acct: $("veBenAcct").value.replace(/\s+/g, ""), ifsc: $("veBenIfsc").value.trim().toUpperCase(), bank: smartCase($("veBenBank").value.trim()), branch: smartCase($("veBenBranch").value.trim()), type: $("veBenType").value, phone: $("veBenPhone").value.trim() };
+    if (VE.gstHit && VE.gstHit.gstin === g) data.gst = VE.gstHit;
+    var bkd = readVendorBank(v);
     if (bkd.acct && !/^[0-9A-Za-z]{6,24}$/.test(bkd.acct)) { veErr("veBenAcct", "Letters and digits only, 6 to 24."); $("veBenAcct").focus(); return; }
     if (bkd.ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bkd.ifsc)) { veErr("veBenIfsc", "An IFSC looks like SBIN0001234."); $("veBenIfsc").focus(); return; }
     if (eb) data.bank = bkd;
@@ -5094,9 +5124,12 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       .then(function () { VE.busy = false; $("veSave").disabled = false; });
   }
   /* The financier saves only the bank details. */
-  function readVendorBank() { return { name: smartCase($("veBenName").value.trim()), acct: $("veBenAcct").value.replace(/\s+/g, ""), ifsc: $("veBenIfsc").value.trim().toUpperCase(), bank: smartCase($("veBenBank").value.trim()), branch: smartCase($("veBenBranch").value.trim()), type: $("veBenType").value, phone: $("veBenPhone").value.trim() }; }
+  function readVendorBank(v) {
+    var proof = VE.proof || (v && v.bank && v.bank.proof) || null;
+    return { name: smartCase($("veBenName").value.trim()), acct: $("veBenAcct").value.replace(/\s+/g, ""), ifsc: $("veBenIfsc").value.trim().toUpperCase(), bank: smartCase($("veBenBank").value.trim()), branch: smartCase($("veBenBranch").value.trim()), type: $("veBenType").value, phone: $("veBenPhone").value.trim(), proof: proof };
+  }
   function saveVendorBank(v) {
-    var bkd = readVendorBank();
+    var bkd = readVendorBank(v);
     if (bkd.acct && !/^[0-9A-Za-z]{6,24}$/.test(bkd.acct)) { veErr("veBenAcct", "Letters and digits only, 6 to 24."); $("veBenAcct").focus(); return; }
     if (bkd.ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bkd.ifsc)) { veErr("veBenIfsc", "An IFSC looks like SBIN0001234."); $("veBenIfsc").focus(); return; }
     VE.busy = true; $("veSave").disabled = true;
@@ -5118,10 +5151,12 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     window.bvGst.search(g).then(function (r) {
       box.textContent = "";
       if (!r.found) { box.appendChild(el("b", null, "Not found on the GST portal")); box.appendChild(el("div", null, r.message || "")); if (r.env === "sandbox") box.appendChild(el("div", { class: "hint" }, "This is the WhiteBooks sandbox: only its test GSTINs are found.")); return; }
-      var bad = !/^active/i.test(r.status || "");
+      var bad = !/^active/i.test(r.status || ""), hit = gstFromHit(r), cv = veCur(); VE.gstHit = hit;
+      if (cv && !cv.isNew && normId(cv.gstin) === hit.gstin) { cv.gst = hit; retry(function () { return S.db.doc("vendors/" + cv.id).update({ gst: hit }); }).then(function () { invalidate(); paintVendorGst(cv); }, function () {}); }
       box.appendChild(el("b", { class: bad ? "bad" : "" }, (r.legalName || r.tradeName) + " · " + (r.status || "Status not given")));
       if (r.tradeName && r.tradeName !== r.legalName) box.appendChild(el("div", null, "Trade name: " + r.tradeName));
-      box.appendChild(el("div", null, [r.type, r.constitution, r.since ? "registered " + r.since : "", r.cancelledOn ? "cancelled " + r.cancelledOn : ""].filter(Boolean).join(" · ")));
+      box.appendChild(el("div", null, [r.type, r.constitution, r.since ? "registered " + r.since : "", r.cancelledOn ? "cancelled " + r.cancelledOn : "", r.einvoice ? "e-Invoice: " + r.einvoice : ""].filter(Boolean).join(" · ")));
+      if (r.nba && r.nba.length) box.appendChild(el("div", null, "Business: " + r.nba.join(", ")));
       if (r.address) box.appendChild(el("div", null, r.address));
       if (r.env === "sandbox") box.appendChild(el("div", { class: "hint" }, "Sandbox (test) data."));
       if (!r.address) box.appendChild(el("div", { class: "hint" }, "The portal gave no address" + (r.env === "sandbox" ? " (the sandbox's test taxpayers have none)" : "") + "; enter it from the bill."));
@@ -5135,6 +5170,90 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       box.appendChild(use);
     }, function (e) { box.textContent = ""; box.appendChild(el("b", null, e && e.code === "not_configured" ? "The GST connection isn't set up yet." : "The GST portal couldn't be checked.")); box.appendChild(el("div", null, (e && e.message) || "")); })
       .then(function () { btn.disabled = false; btn.textContent = lb; });
+  }
+  /* ---- The GST portal's details of a vendor, saved on it (vendor.gst) and trusted only for its current GSTIN.
+     Checked again in the background when older than 30 days, as its bills are entered or accounted. ---- */
+  var GST_STALE = 30 * 864e5, GSTQ = {};
+  function vGst(v) { var g = v && v.gst; return g && v.gstin && g.gstin === normId(v.gstin) ? g : null; }
+  function gstFromHit(r) {
+    return { gstin: normId(r.gstin), legalName: r.legalName || "", tradeName: r.tradeName || "", status: r.status || "", type: r.type || "", constitution: r.constitution || "",
+      since: r.since || "", cancelledOn: r.cancelledOn || "", einv: r.einvoice || "", nba: (r.nba || []).slice(0, 8), address: r.address || "", env: r.env || "", checkedAt: Date.now(), checkedBy: meId() };
+  }
+  function gstIsBad(g) { return !!g && !!g.status && !/^active/i.test(g.status); }
+  function gstIsComp(g) { return !!g && /composition/i.test(g.type || ""); }
+  function gstEinv(g) { return !!g && /^y/i.test(g.einv || ""); }
+  /* Section 194C: 1% for an individual or HUF (a proprietorship is an individual), 2% for anyone else. */
+  function gstSmallTds(g) { return !!g && /proprietor|individual|huf|hindu undivided/i.test(g.constitution || ""); }
+  function gstYmd(s) { var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(s || "")); return m ? m[3] + "-" + m[2] + "-" + m[1] : ""; }
+  function gstRefresh(v, then) {
+    if (!window.bvGst || !v || !v.id || !v.gstin || gstinCheck(v.gstin) || GSTQ[v.id]) return;
+    var g = vGst(v); if (g && Date.now() - (g.checkedAt || 0) < GST_STALE) return;
+    GSTQ[v.id] = 1;
+    window.bvGst.search(normId(v.gstin)).then(function (r) {
+      if (!r || !r.found) return;
+      var gd = gstFromHit(r); v.gst = gd;
+      return retry(function () { return S.db.doc("vendors/" + v.id).update({ gst: gd }); }).then(function () { invalidate(); if (then) then(); });
+    }).catch(function () {});
+  }
+  /* Warnings about a bill from its vendor's GST portal details and its e-invoice details. None of them stops the bill,
+     except that a composition dealer's GST can't be accounted (see acctCheck). */
+  function gstAlerts(v, billDate, gst, einv) {
+    var g = vGst(v), out = []; if (!g) return out;
+    if (gstIsBad(g)) { var cd = gstYmd(g.cancelledOn);
+      out.push(/cancel/i.test(g.status) && cd ? "The vendor's GSTIN was cancelled on " + fmtDate(cd) + " (GST portal)." + (billDate && billDate > cd ? " This bill is dated after that, so its GST can't be claimed as input." : "")
+        : "The vendor's GSTIN is " + g.status.toLowerCase() + " on the GST portal. Check before claiming its GST."); }
+    if (gstIsComp(g) && gst > 0) out.push("The vendor is a composition dealer (GST portal), so it can't charge GST. Send this bill back for a bill of supply without GST.");
+    if (gstEinv(g) && !(einv && String(einv.irn || "").trim())) out.push("The vendor issues e-invoices (GST portal), but this bill has no IRN. Ask for the e-invoice with its IRN and QR code.");
+    return out;
+  }
+  function paintVendorGst(v) {
+    var b = $("veGstSaved"), g = vGst(v); b.textContent = ""; b.hidden = !g; if (!g) return;
+    b.appendChild(el("b", { class: gstIsBad(g) ? "bad" : "" }, "GST portal, checked " + fmtDay(g.checkedAt) + ": "));
+    b.appendChild(document.createTextNode([g.status || "Status not given", g.type, g.constitution, "e-Invoice: " + (g.einv || "not stated")].filter(Boolean).join(" · ")));
+  }
+  /* ---- Bank details: the IFSC fills in the bank and branch; a cancelled cheque fills in the rest and is kept as proof. ---- */
+  var IFSCQ = {};
+  function ifscLook() {
+    var i = $("veBenIfsc"), c = i.value.trim().toUpperCase(), h = $("veBenIfscH");
+    if (i.disabled || !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(c)) return Promise.resolve();
+    if (!IFSCQ[c]) IFSCQ[c] = fetch("https://ifsc.razorpay.com/" + c).then(function (r) { return r.ok ? r.json() : r.status === 404 ? null : Promise.reject(r.status); }).catch(function (e) { delete IFSCQ[c]; throw e; });
+    return IFSCQ[c].then(function (j) {
+      if ($("veBenIfsc").value.trim().toUpperCase() !== c) return;
+      if (!j) { h.textContent = "This IFSC isn't on the RBI's list. Check it."; return; }
+      $("veBenBank").value = j.BANK || ""; $("veBenBranch").value = smartCase(String(j.BRANCH || "").toLowerCase());
+      h.textContent = [j.ADDRESS, j.NEFT === false ? "NEFT not offered at this branch" : "", j.RTGS === false ? "RTGS not offered" : ""].filter(Boolean).join(" · ");
+    }, function () { h.textContent = "The bank couldn't be looked up just now. Type the bank and branch."; });
+  }
+  function paintProof(pf) {
+    var ln = $("veChqLn"); ln.textContent = ""; if (!pf || !pf.path) return;
+    ln.appendChild(document.createTextNode("Proof kept: " + (pf.name || "cheque") + " ")); var o = el("button", { type: "button", class: "link-btn" }, "Open");
+    o.addEventListener("click", function () { if (window.bvFiles) window.bvFiles.link(pf.path).then(function (u) { window.open(u, "_blank", "noopener"); }, function () { toast("The file couldn't be opened."); }); }); ln.appendChild(o);
+  }
+  function chequeRead(f) {
+    var v = veCur(), btn = $("veChq"); if (!v || !f || !S.sample) return;
+    var t = fileType(f); if (!t) { toast("Choose a PDF or a photo (JPG, PNG or WebP)."); return; }
+    var lb = btn.textContent; btn.disabled = true; btn.textContent = "Reading…";
+    var path = (S.mode === "demo" ? "demo" : "live") + "/vendors/" + v.id + "/" + Date.now().toString(36) + "-" + fileSafeName(f.name);
+    var keep = window.bvFiles ? window.bvFiles.put(path, f, t).then(function () { VE.proof = { path: path, name: str(f.name || "Cheque", 160), type: t, size: f.size || 0, at: Date.now(), by: meId() }; paintProof(VE.proof); }, function () {}) : Promise.resolve();
+    var read = prepFile(f).then(function (p) {
+      return S.sample.json([
+        "This file is an Indian bank's cancelled cheque, or a bank letter or passbook page showing one bank account. Read the account it shows.",
+        "- account_holder: the account holder's name as printed (on a cheque, usually above the signature line or printed under the account number), in proper case.",
+        "- account_number: the account number, digits exactly as printed, without spaces. Not the cheque number or the MICR line.",
+        "- ifsc: the 11-character IFSC (4 letters, a zero, 6 letters or digits).",
+        "- bank and branch: the bank's name and the branch name as printed.",
+        "- account_type: Current, Savings, Cash Credit or Overdraft if printed, else null.",
+        "Use null for anything not printed or not readable; never guess. Reply with only this JSON:",
+        '{"account_holder":null,"account_number":null,"ifsc":null,"bank":null,"branch":null,"account_type":null,"notes":""}',
+        p.text ? "PDF TEXT:\n" + p.text : ""].join("\n"), { images: p.images.length ? p.images : undefined, modelTier: "default" });
+    }).then(function (r) {
+      r = r || {}; var n = 0, set = function (id, val) { if (val != null && String(val).trim()) { $(id).value = String(val).trim(); n++; } };
+      set("veBenName", r.account_holder && smartCase(String(r.account_holder))); set("veBenAcct", r.account_number && String(r.account_number).replace(/\s+/g, ""));
+      set("veBenIfsc", r.ifsc && String(r.ifsc).replace(/\s+/g, "").toUpperCase()); set("veBenBank", r.bank); set("veBenBranch", r.branch && smartCase(String(r.branch)));
+      if (["Current", "Savings", "Cash Credit", "Overdraft"].indexOf(r.account_type) >= 0) { $("veBenType").value = r.account_type; n++; }
+      toast(n ? "Read from the cheque. Check every figure, then save." : "Nothing could be read from this file."); return ifscLook();
+    }, function () { toast("The cheque couldn't be read. Type the details instead."); });
+    Promise.all([keep, read]).then(function () { btn.disabled = false; btn.textContent = lb; $("veChqF").value = ""; });
   }
   function backToVendors() { VE.id = null; VE.nv = null; renderVendors(); renderNav(); show("secVendors"); }
 
@@ -11211,7 +11330,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function renderBanks() {
     var box = $("bankList"); $("bankAdd").hidden = !chqCan(); box.textContent = "";
-    var rows = bankList(""); if (!rows.length) { box.appendChild(el("div", { class: "card empty" }, "No bank accounts yet. Add each company's account; the first one becomes its default.")); return; }
+    var rows = bankList("").filter(function (b) { return S.isAdmin || canSee(b.companyId); }); if (!rows.length) { box.appendChild(el("div", { class: "card empty" }, "No bank accounts yet. Add each company's account; the first one becomes its default.")); return; }
     var w = el("div", { class: "card list" }); box.appendChild(w);
     sortTable(w, "bankList", [
       { label: "Company", kind: "co", cell: function (b, td) { td.appendChild(el("b", null, coLabel(b.companyId))); if (b.isDefault) sub(td, "Default account", "color:var(--ok);font-weight:600"); } },
@@ -11910,9 +12029,40 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       { label: "Prepared by", who: function (x) { return pnm(x.preparedByName) || userLabel(prepOf(x)); }, cell: function (x, td) { txt(td, pnm(x.preparedByName) || userLabel(prepOf(x)) || ""); var d = personDept(prepOf(x)); if (d) sub(td, d); } },
       { label: isB ? "Taxable" : "Total", cls: "r num", sort: function (x) { return Number(isB ? x.taxable : x.total) || 0; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, isB ? bm(x, x.taxable) : money(x.total))); if (isB) sub(td, "Total " + bm(x, x.total)); } },
       { label: "Ledger", cell: function (x, td) { txt(td, ledText(x.ledgers) || "Not chosen"); if (x.tds != null && x.acct === "approved") sub(td, "TDS " + money(x.tds) + (x.tdsSection ? " · " + x.tdsSection : "")); } },
-      { label: "Status", cell: function (x, td) { var l = acctLabel(x); td.appendChild(el("span", { class: "tag stg " + l[1] }, l[0])); if (x.acctNote && x.acct !== "approved") sub(td, x.acctNote); if (isB && x.acct !== "approved" && acctVendorNeeds(x)) { var n = el("span", { class: "needs" }); n.appendChild(warnIcon("Vendor")); n.appendChild(document.createTextNode(" Vendor details needed first")); td.appendChild(n); } } },
+      { label: "Status", cell: function (x, td) { var l = acctLabel(x); td.appendChild(el("span", { class: "tag stg " + l[1] }, l[0])); if (x.acctNote && x.acct !== "approved") sub(td, x.acctNote); if (isB) { var al = billAlerts(x); if (al.length) { var an = el("span", { class: "needs", title: al.join("\n") }); an.appendChild(warnIcon("Alerts")); an.appendChild(document.createTextNode(" " + plural(al.length, "alert") + (gstEinv(vGst(S.vendors[x.vendorId])) && !(x.einv && x.einv.irn) ? ": no e-invoice" : ""))); td.appendChild(an); } }
+        if (isB && x.acct !== "approved" && acctVendorNeeds(x)) { var n = el("span", { class: "needs" }); n.appendChild(warnIcon("Vendor")); n.appendChild(document.createTextNode(" Vendor details needed first")); td.appendChild(n); } } },
       { label: "", kind: "act", cls: "r", cell: function (x, td) { var o = el("button", { class: "btn sm primary" }, "Open"); o.addEventListener("click", function () { openAcct(isB ? "bill" : "voucher", x.id); }); td.appendChild(o); } }
     ], rows, { sortIndex: 0, limit: AC.limit });
+  }
+  /* Everything doubtful about a saved bill, for the accountant: what was flagged when it was entered, and what the GST portal
+     says of its vendor. Shown as alerts; only a composition dealer's GST stops it being accounted. */
+  function billAlerts(x) {
+    var v = S.vendors[x.vendorId], tx = Number(x.fcTaxable != null ? x.fcTaxable : x.taxable), ga = Number(x.fcGst != null ? x.fcGst : x.gstAmt) || 0, out = [], pr = x.ex && x.ex.printedTotal;
+    if (pr != null && !isNaN(tx) && Math.abs(tx + ga - pr) > 1) out.push("The bill's printed total is " + amt2(pr) + ", but taxable plus GST comes to " + amt2(tx + ga) + ". Check for round-off, freight or TDS.");
+    if (x.gstPct != null && tx > 0 && ga > 0 && !GST_RATES.some(function (r) { return Math.abs(r - x.gstPct) < 0.05; })) out.push("GST works out to " + x.gstPct + "% of the taxable amount, which isn't a standard rate.");
+    if (v && v.type && v.type !== "registered" && ga > 0) out.push("The vendor is " + vtypeLabel(v.type).toLowerCase() + ", but the bill charges GST.");
+    if (v && v.type === "registered" && ga === 0) out.push("The vendor is registered, but the bill charges no GST.");
+    if (x.billDate && x.submittedAt && x.billDate < addDays(ymdOfMs(x.submittedAt), -14)) out.push("The bill was dated more than 2 weeks before it was submitted.");
+    if (x.ex && x.ex.notes) out.push("Claude's note when reading it: " + x.ex.notes);
+    return out.concat(gstAlerts(v, x.billDate, ga, x.einv));
+  }
+  function paintAoAlerts(x) {
+    var b = $("aoAlerts"); if (!b) return; b.textContent = ""; var al = billAlerts(x); if (!al.length) return;
+    var c = el("div", { class: "flag w", style: "margin:0 0 12px;display:block" }); var h = el("b"); h.innerHTML = WARN_SVG; h.appendChild(document.createTextNode(" " + plural(al.length, "alert") + " on this bill")); c.appendChild(h);
+    var ul = el("ul", { style: "margin:6px 0 0;padding-left:20px" }); al.forEach(function (a) { ul.appendChild(el("li", null, a)); }); c.appendChild(ul); b.appendChild(c);
+  }
+  /* The TDS rate for a bill under a section: 194C's lower rate for an individual or HUF, from the vendor's constitution on the GST portal. */
+  function tdsRateFor(x, sec) {
+    var t = taxAll("tds").filter(function (y) { return y.sec === sec; })[0]; if (!t || t.rate == null || t.rate === "") return null;
+    var g = vGst(S.vendors[x.vendorId]), two = t.rate2 != null && t.rate2 !== "";
+    if (!two) return { rate: Number(t.rate), why: "" };
+    if (!g || !g.constitution) return { rate: null, why: sec + ": " + pct(t.rate) + " for an individual or HUF, " + pct(t.rate2) + " for others. The vendor's constitution isn't known from the GST portal, so choose the amount yourself." };
+    var sm = gstSmallTds(g); return { rate: Number(sm ? t.rate : t.rate2), why: sec + " for this vendor: " + pct(sm ? t.rate : t.rate2) + " (" + g.constitution + ", from the GST portal)." };
+  }
+  function aoTdsHint() {
+    var h = $("aoSecH"), x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id]; if (!h || !x) return;
+    var r = AC.D.sec ? tdsRateFor(x, AC.D.sec) : null;
+    h.textContent = !r ? "" : r.why || (AC.D.sec + ": " + pct(r.rate) + ".") + (r.rate != null ? " Filled in as " + pct(r.rate) + " of " + amt2(AC.D.base) + ", rounded to the rupee; change it if needed." : "");
   }
   function acctLocked(kind, x) { return kind === "bill" ? !!checkOf(x) : !!vcrOf(x.id); }
   /* ---- GST on a bill: its GST spread over the GST ledgers. Within the state it is CGST and SGST (equal halves); from another
@@ -12004,6 +12154,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     det.appendChild(el("p", { style: "margin:0 0 6px" }, (isB ? "Narration: " : "Description: ") + (vl ? "" : x.narration || "None")));
     if (vl) vl.forEach(function (ln, i) { det.appendChild(el("div", null, (i + 1) + ". " + ln.d)); });
     if (!isB && x.supplyOf) det.appendChild(el("div", { class: "hint" }, "Supply of: " + x.supplyOf));
+    if (isB) det.appendChild(el("div", { class: "hint mono", style: "word-break:break-all" }, x.einv && x.einv.irn ? "e-Invoice: " + einvText(x.einv) : "e-Invoice: no IRN recorded."));
     /* the items read from the bill, always shown, above the ledgers */
     var itCard = null;
     if (isB && x.ex && (x.ex.items || []).length) {
@@ -12029,7 +12180,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     }
     var ti = inp("aoTds", D.tds, { inputmode: "decimal", class: "field num" }); ti.disabled = locked; ti.addEventListener("input", function () { D.tds = ti.value; }); ti.addEventListener("blur", function () { if (num(ti.value) != null) ti.value = fmtInput(ti.value); });
     form.appendChild(fld("TDS" + (isB && x.currency && x.currency !== "INR" ? " (" + x.currency + ")" : " (₹)"), ti, "Enter 0 if none is deducted. The vendor is paid the total less this."));
-    var ts = el("select", { class: "field", id: "aoSec" }); fillSelect(ts, [["", "No TDS"]].concat(tdsOptions(D.sec)), D.sec); ts.disabled = locked; ts.addEventListener("change", function () { D.sec = ts.value; }); form.appendChild(fld("TDS section", ts));
+    var ts = el("select", { class: "field", id: "aoSec" }); fillSelect(ts, [["", "No TDS"]].concat(tdsOptions(D.sec)), D.sec); ts.disabled = locked;
+    ts.addEventListener("change", function () { D.sec = ts.value; var r = tdsRateFor(x, D.sec); if (r && r.rate != null && !locked) { var a = Math.round((Number(D.base) || 0) * r.rate / 100); D.tds = fmtInput(String(a)); ti.value = D.tds; } aoTdsHint(); });
+    var tsf = fld("TDS section", ts, " "); tsf.querySelector(".hint").id = "aoSecH"; form.appendChild(tsf);
     var lf = el("div", { class: "f wide" }); lf.appendChild(el("span", { class: "lb" }, isB ? "Ledgers" : "Ledger"));
     var eo = { id: "aoLed", lines: D.lines, max: isB ? MAX_LED.bill : MAX_LED.voucher, cid: function () { return x.companyId; }, base: function () { return D.base; }, baseLabel: isB ? "taxable amount" : "total", suggest: isB ? function () { return suggestBill(x, x.companyId, x.vendorId, D.base); } : null };
     lf.appendChild(ledEditor(eo)); lf.appendChild(el("span", { class: "hint" }, isB ? "Up to 4 ledgers. The amounts must add up to the taxable amount, " + amt2(D.base) + "." : "Up to 2 ledgers. The amounts must add up to the total, " + amt2(D.base) + ".")); lf.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" }));
@@ -12077,10 +12230,14 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       gf0.appendChild(el("span", { class: "err", id: "aoGstLedE", hidden: "" })); lw.appendChild(gf0);
     }
     if (itCard) f.insertBefore(itCard, det); f.insertBefore(lw, det); if (eo.info) eo.info(); /* the running totals, now that they are on the page */
-    f.appendChild(form);
+    f.appendChild(form); aoTdsHint();
     if (locked) Array.prototype.forEach.call($("aoBody").querySelectorAll("#aoLed select, #aoLed input, #aoLed button"), function (b0) { b0.disabled = true; });
     var acts = $("aoActs"); acts.textContent = "";
     var cn = el("button", { class: "btn", type: "button" }, "Cancel"); cn.title = "Back to Accounting, without saving"; cn.addEventListener("click", backToAcct);
+    if (isB) {
+      var alb = el("div", { id: "aoAlerts" }); $("aoBody").insertBefore(alb, $("aoBody").firstChild); paintAoAlerts(x);
+      gstRefresh(S.vendors[x.vendorId], function () { if (AC.id === x.id && $("aoAlerts")) { paintAoAlerts(x); aoTdsHint(); } });
+    }
     if (vNeed && !locked) {
       var vf = el("div", { class: "flag e", style: "margin:0 0 12px" }); vf.innerHTML = WARN_SVG; vf.appendChild(el("span", null, "This bill can't be accounted yet: its vendor still needs " + vNeed.join("; ") + ". "));
       var vb = el("button", { class: "link-btn", type: "button" }, "Fill in the vendor"); vb.addEventListener("click", function () { var id = x.vendorId; setTab("Vendors"); openVendor(id); }); vf.appendChild(vb);
@@ -12099,7 +12256,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var le = ledCheck(D.lines, D.base, x.companyId, AC.kind === "bill" ? MAX_LED.bill : MAX_LED.voucher); if (le) errs.push(["aoLed", le + (/must equal/.test(le) ? " These are the purchaser's figures: if the bill says otherwise, send it back." : "")]);
     var t = num(D.tds); if (!String(D.tds).trim()) errs.push(["aoTds", "Enter the TDS. Enter 0 if none is deducted."]); else if (t == null || t < 0) errs.push(["aoTds", "Enter the TDS as a number, 0 or more."]); else if (t > (Number(AC.kind === "bill" ? (x.fcTaxable != null ? x.fcTaxable + (x.fcGst || 0) : x.total) : x.total) || 0)) errs.push(["aoTds", "TDS can't be more than the total."]);
     if (t > 0 && !D.sec) errs.push(["aoSec", "Choose the TDS section."]);
-    if (AC.kind === "bill") { var ge = gstCheck(x, D); if (ge) errs.push(["aoGstLed", ge]); }
+    if (AC.kind === "bill") { var ge = gstCheck(x, D); if (ge) errs.push(["aoGstLed", ge]);
+      if (billGst(x) > 0 && gstIsComp(vGst(S.vendors[x.vendorId]))) errs.push(["aoGstLed", "The vendor is a composition dealer (GST portal), so its GST can't be claimed or accounted. Send the bill back for a bill of supply without GST."]); }
     if (AC.kind === "voucher" && !D.vtype) errs.push(["aoType", "Choose the type of voucher."]);
     if (AC.kind === "voucher" && D.vtype && D.vtype !== "Cash Voucher" && D.gstApp === "RCM" && !D.gstRate) errs.push(["aoRate", "Choose the GST rate."]);
     return errs;
@@ -14453,7 +14611,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     $("bDoneQ").addEventListener("input", function () { B.doneLimit = 100; renderDone(); });
     $("vExport").addEventListener("click", function () { downloadVendorPayables($("vExport")); }); $("vQ").addEventListener("input", renderVendors); $("vCo").addEventListener("change", renderVendors); $("vNeeds").addEventListener("change", renderVendors); $("vOff").addEventListener("change", renderVendors);
     $("vBack").addEventListener("click", backToVendors); $("veCancel").addEventListener("click", backToVendors);
-    $("veSave").addEventListener("click", saveVendor); $("veToggle").addEventListener("click", toggleVendor);
+    $("veSave").addEventListener("click", saveVendor); $("veBenIfsc").addEventListener("input", ifscLook);
+    $("veChq").addEventListener("click", function () { $("veChqF").click(); }); $("veChqF").addEventListener("change", function () { chequeRead(this.files && this.files[0]); }); $("veToggle").addEventListener("click", toggleVendor);
     $("veGstin").addEventListener("input", function () { var g = normId(this.value); $("vePan").value = g && gstinCheck(g) !== "format" ? panFromGstin(g) : ""; $("veGstRes").hidden = true; });
     $("veGstChk").addEventListener("click", function () { gstLookup(this); });
     $("veGstin").addEventListener("blur", function () { this.value = normId(this.value); });

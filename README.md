@@ -131,7 +131,20 @@
   default the sandbox `https://apisandbox.whitebooks.in`; `WB_EMAIL`; `WB_GST_CLIENT_ID`; `WB_GST_CLIENT_SECRET`) and is
   called by signed-in members through `window.bvGst` (`status`, `search`). Vendors › GSTIN has "Check on the GST portal":
   legal and trade name, status, type and address, with "Use This Name and Address". Sandbox finds only WhiteBooks' test
-  GSTINs. e-Invoice and e-Way Bill come later.
+  GSTINs. Live: `WB_BASE_URL` is `https://api.whitebooks.in` (GST subscription only; e-Invoice and e-Way Bill not connected).
+  - The portal's details are saved on the vendor as `gst` (status, type, constitution, e-invoice status, checkedAt) and
+    trusted only for the vendor's current GSTIN (`vGst`). They are checked again in the background (`gstRefresh`) when older
+    than 30 days, as the vendor's bills are entered or accounted.
+  - Alerts (`gstAlerts`, `billAlerts`), shown on the bill form and at the top of the accounting view, and counted in the
+    Accounting list: GSTIN cancelled or suspended; composition dealer charging GST; e-invoicing vendor whose bill has no IRN.
+    None stops a bill, except that a composition dealer's GST can't be accounted (send it back).
+  - Bills record the e-invoice's IRN, Ack No and Ack Date (`einv`), read by Claude when printed and editable on the bill form.
+  - TDS: choosing a section fills the amount from its rate, rounded to the rupee; 194C takes 1% for a proprietorship,
+    individual or HUF and 2% for others, from the vendor's constitution (`tdsRateFor`).
+- **Vendor bank details:** the IFSC fills in bank and branch from Razorpay's free IFSC lookup (`ifscLook`); "Read From a
+  Cancelled Cheque" has Claude read a cheque or bank letter into the form and keeps the file as proof (`bank.proof`).
+- **Who sees what in Accounts and Finance** (they span every division): Masters › Companies and Bank Accounts list only the
+  person's own companies (admins see all); Vendors lists only vendors of the person's divisions.
 - **Cash limits (Payment Entry):** cash to one person stays under ₹10,000 a day; Freight & Transport vouchers can be paid up
   to ₹30,000 in cash a day (`CASH_FREIGHT`, `payFreight`). Cheques and NEFT / RTGS have no limit.
 - **Signatures.** Admins, purchasers, Expenses Operators, accountants, approvers and approval recorders sign once, with a

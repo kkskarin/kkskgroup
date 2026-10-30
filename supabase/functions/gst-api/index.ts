@@ -56,7 +56,8 @@ Deno.serve(async (req) => {
     const addr = [a.bno, a.bnm, a.flno, a.st, a.loc, a.city, a.dst, a.stcd, a.pncd].filter(Boolean).join(", ") || d.pradr?.adr || "";
     return reply(200, {
       env, found: true, gstin: d.gstin || gstin, legalName: d.lgnm || "", tradeName: d.tradeNam || "", status: d.sts || "",
-      type: d.dty || "", since: d.rgdt || "", cancelledOn: d.cxdt || "", constitution: d.ctb || "", address: addr, raw: d,
+      type: d.dty || "", since: d.rgdt || "", cancelledOn: d.cxdt || "", constitution: d.ctb || "", address: addr,
+      einvoice: d.einvoiceStatus || "", nba: Array.isArray(d.nba) ? d.nba : [], raw: d,
     });
   }
   return fail(400, "invalid_argument", "Unknown action.");

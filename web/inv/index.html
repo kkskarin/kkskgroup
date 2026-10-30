@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<title>KKSK Group</title>
+<title>Trial App</title>
 <script src="../textsize.js"></script><link rel="icon" type="image/png" href="../favicon.png"><link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <!-- Public: anyone with the address can open it, no sign-in. Not on the All Apps page. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&family=Marcellus&display=swap" rel="stylesheet">
 <style>
-:root{--bar:#10281F;--brand:#007A4D;--bg:#F4F7F5;--surface:#FFFFFF;--ink:#14231C;--muted:#5E6E66;--line:#DCE5E0;
+:root{--bar:#10281F;--hl:#2DBE7E;--brand:#007A4D;--bg:#F4F7F5;--surface:#FFFFFF;--ink:#14231C;--muted:#5E6E66;--line:#DCE5E0;--navtext:#B9CCC2;
 --font:"Jost",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--serif:"Marcellus",Georgia,"Times New Roman",serif;color-scheme:light}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:calc(15px*var(--ts,1))/1.5 var(--font)}
@@ -19,16 +19,52 @@ header{background:var(--surface);border-bottom:1px solid var(--line);padding:14p
 header .in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:12px}
 header img{width:40px;height:40px}
 header b{font:calc(22px*var(--ts,1)) var(--serif)}
-header a{margin-left:auto;color:var(--brand);font-weight:600}
-main{max-width:1080px;margin:0 auto;padding:32px 16px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px}
-.card h1{margin:0 0 6px;font:calc(26px*var(--ts,1)) var(--serif)}
-.card p{margin:0;color:var(--muted)}
+nav{background:var(--bar)}
+nav .in,.sub .in{max-width:1080px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding:0 8px}
+nav button,.sub button{border:0;background:none;font:inherit;cursor:pointer;white-space:nowrap;padding:14px 14px 12px;border-bottom:3px solid transparent}
+nav button{color:var(--navtext);font-weight:600}
+nav button[aria-selected="true"]{color:#fff;border-bottom-color:var(--hl)}
+.sub{background:var(--surface);border-bottom:1px solid var(--line)}
+.sub button{color:var(--muted);font-weight:500}
+.sub button[aria-selected="true"]{color:var(--brand);font-weight:600;border-bottom-color:var(--brand)}
+main{max-width:1080px;margin:0 auto;padding:28px 16px}
+main h1{margin:0 0 16px;font:calc(28px*var(--ts,1)) var(--serif)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;color:var(--muted)}
 @media print{html{--ts:1!important}}
 </style>
 </head>
 <body>
-<header><div class="in"><img src="../favicon.png" alt=""><b>KKSK Group</b></div></header>
-<main><div class="card"><h1>Coming soon</h1><p>This app is being set up.</p></div></main>
+<header><div class="in"><img src="../favicon.png" alt=""><b>Trial App</b></div></header>
+<nav aria-label="Sections"><div class="in" id="tabs" role="tablist"></div></nav>
+<div class="sub"><div class="in" id="subs" role="tablist"></div></div>
+<main><h1 id="title"></h1><div class="card" id="body">Nothing here yet.</div></main>
+<script>
+(function () {
+  "use strict";
+  /* Tabs and their sub-tabs. The open one is kept in the address (#tab/sub), so a link opens the same place. */
+  var TABS = [
+    { key: "raw", name: "Raw to WB", subs: [["erode", "Erode"], ["ambur", "Ambur"], ["ranipet", "Ranipet"]] },
+    { key: "tanned", name: "Tanned & Assorted", subs: [["grain", "Grain"], ["split", "Split"]] },
+    { key: "wbsplit", name: "WB Split - Ambur", subs: [["input", "Input"], ["output", "Output"]] }
+  ];
+  var cur = { tab: TABS[0], sub: TABS[0].subs[0] };
+  function $(id) { return document.getElementById(id); }
+  function btn(label, on, go) { var b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", on ? "true" : "false"); b.textContent = label; b.addEventListener("click", go); return b; }
+  function fromHash() {
+    var p = location.hash.replace(/^#/, "").split("/"), t = TABS.filter(function (x) { return x.key === p[0]; })[0] || TABS[0];
+    cur = { tab: t, sub: t.subs.filter(function (s) { return s[0] === p[1]; })[0] || t.subs[0] };
+  }
+  function go(t, s) { location.hash = t.key + "/" + s[0]; }
+  function render() {
+    var tb = $("tabs"), sb = $("subs"); tb.textContent = ""; sb.textContent = "";
+    TABS.forEach(function (t) { tb.appendChild(btn(t.name, t === cur.tab, function () { go(t, t.subs[0]); })); });
+    cur.tab.subs.forEach(function (s) { sb.appendChild(btn(s[1], s === cur.sub, function () { go(cur.tab, s); })); });
+    $("title").textContent = cur.tab.name + " · " + cur.sub[1];
+    document.title = cur.sub[1] + " · " + cur.tab.name + " · Trial App";
+  }
+  window.addEventListener("hashchange", function () { fromHash(); render(); });
+  fromHash(); render();
+})();
+</script>
 </body>
 </html>

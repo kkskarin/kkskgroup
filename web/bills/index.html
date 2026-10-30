@@ -1047,7 +1047,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       </div>
       <div style="padding:0 22px 22px">
         <h3 style="margin-top:0">Opening balances</h3>
-        <p class="sub" style="margin-bottom:12px">What you owed this vendor in each company before bills were entered here. Leave both boxes blank if it hasn't been captured yet. Enter 0 if nothing was owed.</p>
+        <p class="sub" style="margin-bottom:12px">For each company this vendor has bills in: what you owed it before bills were entered here, and how much of that was overdue. Enter 0 if nothing was owed.</p>
         <div class="card scroll"><table class="t ob" id="veOb"></table></div>
       </div>
       <div class="form-foot">
@@ -3656,6 +3656,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       "- vendor_type: registered if the supplier shows a GSTIN; overseas if the supplier is outside India; exempt if the bill says the supply is exempt from GST; unregistered if an Indian supplier shows no GSTIN; null if unsure.",
       "- GSTIN has 15 characters and PAN has 10. Copy them exactly as printed, without spaces.",
       "- vendor_address: the seller's full address as printed in the seller's block (street, area, town, state and PIN or postcode, and the country if outside India), on one line, in proper case. Not the buyer's, consignee's or delivery address. Empty string if not printed.",
+      "- vendor_bank: the seller's bank details for payment, only if printed (often in a 'Bank details' block near the foot): {\"account_holder\", \"account_number\", \"ifsc\", \"bank\", \"branch\"}, copied exactly (account number digits only, IFSC 11 characters). null if no bank details are printed.",
       "- bill_date as YYYY-MM-DD. Indian bills write the day first, so 04/05/2026 is 4 May 2026.",
       "- currency: the ISO code of the currency the bill's amounts are in, such as INR, USD or EUR. INR for rupees.",
       "- Amounts are plain numbers in the bill's currency with no commas or symbols. taxable_amount is the value before tax. gst_amount is CGST plus SGST or UTGST plus IGST, or 0 if no GST is charged. total_amount is the final amount payable as printed, after any round-off.",
@@ -3670,7 +3671,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       "- items_note: one or two sentences on anything you are unsure of in the items (which lines, which figures), or an empty string.",
       "",
       "Reply with only this JSON object (bills holds one object per bill):",
-      '{"bills":[{"pages":[1],"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"irn":null,"ack_no":null,"ack_date":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}]}',
+      '{"bills":[{"pages":[1],"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_bank":null,"vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"irn":null,"ack_no":null,"ack_date":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}]}',
       "",
       "COMPANIES: " + JSON.stringify(cos),
       "",
@@ -3707,6 +3708,21 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function str(v, max) { return v == null ? "" : String(v).replace(/\s+/g, " ").trim().slice(0, max || 200); }
   /* The seller's address read from a file, on one line. */
   function aiAddr(a) { return String(a == null ? "" : a).replace(/\s*\n\s*/g, ", ").replace(/\s+/g, " ").replace(/,\s*,/g, ",").trim().slice(0, 240); }
+  /* Bank details read from a bill or proforma: kept only when the account number and IFSC look right. */
+  function bankFromRead(r) {
+    if (!r || typeof r !== "object") return null;
+    var acct = String(r.account_number || "").replace(/[\s-]+/g, ""), ifsc = String(r.ifsc || "").replace(/\s+/g, "").toUpperCase();
+    if (!/^[0-9A-Za-z]{6,24}$/.test(acct) || !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) return null;
+    var bn = bnByCode(ifsc);
+    return { name: smartCase(str(r.account_holder, 120).toLowerCase()), acct: acct, ifsc: ifsc, bank: bn ? bn.name : str(r.bank, 80).trim(), branch: smartCase(str(r.branch, 80).toLowerCase()), address: "", type: "", phone: "" };
+  }
+  /* A vendor without bank details takes the ones read from its bill or proforma (the financier checks them). */
+  function fillVendorBank(v, bk, src) {
+    if (!v || !v.id || !bk || (v.bank && v.bank.acct)) return Promise.resolve();
+    var d = Object.assign({}, bk, { src: src });
+    return (d.bank ? bnEnsure(d.bank, d.ifsc.slice(0, 4)).then(function (n) { d.bank = n; }, function () {}) : Promise.resolve())
+      .then(function () { return retry(function () { return S.db.doc("vendors/" + v.id).update({ bank: d, bankAt: Date.now(), bankBy: meId() }); }); }).then(function () { v.bank = d; invalidate(); }, function () {});
+  }
   /* A vendor saved without an address takes the one read from its bill or proforma. */
   function fillVendorAddr(v, addr, now) {
     if (!v || !v.id || String(v.address || "").trim() || !String(addr || "").trim()) return;
@@ -3744,7 +3760,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       taxable: A.taxable, gstAmt: A.gstAmt, gstPct: A.gstPct, total: A.total,
       termDays: v ? (v.termDays != null ? v.termDays : term) : term, termChoice: "", updateVendorTerm: false,
       narration: sentenceFix(str(res.narration, 400)), einv: einvOf(res.irn, res.ack_no, res.ack_date),
-      ex: { companyName: str(res.company_name_on_bill, 160), vendorName: str(res.vendor_name, 160), vendorGstin: g, vendorAddress: aiAddr(res.vendor_address), billTermDays: term, printedTotal: printed, rateFrom: rateFrom, notes: str(res.notes, 300), aiUnsure: aiUnsure(res, ["company", "vendor", "vendor_gstin", "bill_number", "bill_date", "currency", "taxable_amount", "gst_amount", "payment_term_days", "narration"]), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) }
+      ex: { companyName: str(res.company_name_on_bill, 160), vendorName: str(res.vendor_name, 160), vendorGstin: g, vendorAddress: aiAddr(res.vendor_address), vendorBank: bankFromRead(res.vendor_bank), billTermDays: term, printedTotal: printed, rateFrom: rateFrom, notes: str(res.notes, 300), aiUnsure: aiUnsure(res, ["company", "vendor", "vendor_gstin", "bill_number", "bill_date", "currency", "taxable_amount", "gst_amount", "payment_term_days", "narration"]), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) }
     };
   }
   /* A bill's e-invoice details: IRN (64 hex characters), acknowledgement number and date. Read from the bill or typed. */
@@ -4342,7 +4358,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (foreign && vendorTypeOfCard(D) !== "overseas") E("bcCur", "Only an overseas vendor's bill can be in another currency.");
     var printed = b.ex && b.ex.printedTotal;
     if (printed != null && tx != null && ga != null && Math.abs(tx + ga - printed) > 1) warns.push("The bill's printed total is " + cl + amt(printed) + ", but taxable plus GST comes to " + cl + amt(tx + ga) + ". Check for round-off, freight or TDS.");
-    if (A.gstPct != null && tx > 0 && ga > 0 && !GST_RATES.some(function (r) { return Math.abs(r - A.gstPct) < 0.05; })) warns.push("GST works out to " + A.gstPct + "% of the taxable amount, which isn't a standard rate. Check both amounts, unless the bill has items at different rates.");
+    var gn = tx != null && ga != null ? gstRateNote(tx, ga, D.currency) : ""; if (gn) warns.push(gn);
     if (vt && vt !== "registered" && ga > 0) warns.push("This vendor is " + vtypeLabel(vt).toLowerCase() + ", but the bill charges GST.");
     if (vt === "registered" && ga === 0) warns.push("This vendor is registered, but the bill charges no GST.");
     if (!ti.isNew && v) {
@@ -4792,6 +4808,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       var v = S.vendors[vid];
       fillVendorAddr(v, b.ex && b.ex.vendorAddress, now);
     }
+    if (b.ex && b.ex.vendorBank) { var vb0 = vid, src0 = "bill " + (doc.billNo || ""); job = job.then(function () { return fillVendorBank(S.vendors[vb0], b.ex.vendorBank, src0); }); }
     if (doc.currency !== "INR" && doc.fxRate > 0) {
       var last = S.rates[doc.currency];
       if (!last || last.rate !== doc.fxRate || last.date !== doc.billDate) job = job.then(function () {
@@ -5062,7 +5079,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     Array.prototype.forEach.call(document.querySelectorAll("#secVendor .form .field, #veOb input"), function (i) { if (i.id === "vePan") return; var bank = /^veBen/.test(i.id); i.disabled = bank ? !eb : !ed; });
     $("veSave").hidden = !ed && !eb; $("veCancel").textContent = ed || eb ? "Cancel" : "Back";
     if (!ed || !eb) { var nt = el("div", { class: "flag", style: "margin-top:8px" }, ed ? "The bank details for cheques and NEFT / RTGS are filled in by the financier." : eb ? "The vendor's accounting details and opening balances are kept by the accountant. You fill in the bank details for cheques and NEFT / RTGS." : "Vendor details and opening balances are filled in by the accountant; bank details by the financier."); $("vFlags").appendChild(nt); }
-    $("veBenIfscH").textContent = eb ? "Bank, branch and address fill in from the IFSC." : "";
+    $("veBenIfscH").textContent = bk0.src && bk0.acct ? "Read from " + bk0.src + ". Check them against the vendor's cancelled cheque or letter." : eb ? "Bank, branch and address fill in from the IFSC." : "";
     if (!v.isNew) gstRefresh(v, function () { if (VE.id === v.id) paintVendorGst(S.vendors[v.id]); });
     var tg = $("veToggle"); tg.hidden = !S.isAdmin || !ed || !!v.isNew;
     $("veStH").hidden = $("veStSub").hidden = $("veSt").hidden = !!v.isNew; $("veSave").textContent = v.isNew ? "Add vendor" : "Save vendor";
@@ -5080,14 +5097,15 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function renderOpenings(v) {
     var t = $("veOb"); t.textContent = "";
-    var withBills = vendorBillCompanies(v.id), cos = myCompanies().slice();
-    myCompanyIds().forEach(function (cid) { var c = S.companies[cid]; if (c && c.active === false && (withBills.indexOf(cid) >= 0 || opening(v, cid))) cos.push(c); });
+    /* only the companies this vendor has bills in (or an opening balance already) */
+    var withBills = vendorBillCompanies(v.id), cos = [];
+    myCompanyIds().forEach(function (cid) { var c = S.companies[cid]; if (c && (withBills.indexOf(cid) >= 0 || opening(v, cid))) cos.push(c); });
     cos.sort(function (a, b) { return (withBills.indexOf(b.id) >= 0) - (withBills.indexOf(a.id) >= 0) || coCmp(a, b); });
     var th = el("thead"), hr = el("tr");
     [["Company", ""], ["Opening balance", ""], ["Of which overdue", ""]].forEach(function (h) { hr.appendChild(el("th", null, h[0])); });
     th.appendChild(hr); t.appendChild(th);
     var tb = el("tbody");
-    if (!cos.length) { var er = el("tr"), ec = el("td", { colspan: "3", class: "empty" }, "You don't have any companies to enter balances for."); er.appendChild(ec); tb.appendChild(er); }
+    if (!cos.length) { var er = el("tr"), ec = el("td", { colspan: "3", class: "empty" }, "No bills from this vendor yet. A company's opening balance is asked for here once the vendor has a bill in it."); er.appendChild(ec); tb.appendChild(er); }
     cos.forEach(function (c) {
       var op = opening(v, c.id), has = withBills.indexOf(c.id) >= 0, tr = el("tr", { "data-co": c.id });
       var cc = el("td"); var nm = el("div", { style: "font-weight:700" });
@@ -6454,6 +6472,18 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
 
   /* ================= shared bits for the new tabs ================= */
   function bm(b, n) { return curMoney(b && b.currency, n); }
+  /* The same, to the paisa: for accounting, where figures must tally exactly. */
+  function bm2(b, n) { return (b && b.currency && b.currency !== "INR" ? b.currency + " " : "\u20B9 ") + amt2(n); }
+  /* GST not at a standard rate on the whole taxable amount: often a standard rate on part of it, the rest (freight,
+     cartage, round-off) carrying no GST. Says which, or "" when it is a standard rate. */
+  function gstRateNote(tx, ga, cur) {
+    tx = Number(tx) || 0; ga = Number(ga) || 0; if (!(tx > 0 && ga > 0)) return "";
+    var pc = Math.round(ga / tx * 10000) / 100; if (GST_RATES.some(function (r) { return Math.abs(r - pc) < 0.05; })) return "";
+    var fx = function (n) { return (cur && cur !== "INR" ? cur + " " : "\u20B9 ") + amt2(n); }, best = null;
+    GST_RATES.forEach(function (r) { if (!r) return; var rest = Math.round((tx - ga * 100 / r) * 100) / 100; if (Math.abs(rest - Math.round(rest)) <= 0.05) rest = Math.round(rest); /* CGST and SGST are each rounded on the bill */ var base = Math.round((tx - rest) * 100) / 100; if (rest >= -0.5 && rest <= tx * 0.25 && (!best || rest < best.rest)) best = { r: r, base: base, rest: Math.max(0, rest) }; });
+    if (best && best.rest > 0.5) return "GST is " + best.r + "% on " + fx(best.base) + " of the taxable amount; the other " + fx(best.rest) + " carries no GST (freight, cartage or round-off, say). Check it against the bill's tax table.";
+    return "GST works out to " + pc + "% of the taxable amount, which isn't a standard rate. Check both amounts, unless the bill has items at different rates.";
+  }
   function curMoney(cur, n) { return cur && cur !== "INR" ? cur + " " + amt(n) : money(n); }
   /* A typed date box: 12-Sep-26, 12/09/26 or 2026-09-12 all work. It tidies itself when you leave it. */
   /* Every date in the app is picked from the app's own calendar (the browser's own picker is blocked inside the hosted page).
@@ -6894,6 +6924,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
         job = retry(function () { return S.db.doc("vendors/" + vid).set(vdoc); }).then(function () { S.vendors[vid] = Object.assign({ id: vid }, vdoc); invalidate(); });
       }
     } else fillVendorAddr(S.vendors[vid], D.ex && D.ex.vendorAddress, Date.now());
+    if (D.ex && D.ex.vendorBank) { var vb1 = vid, src1 = (imp ? "order " : "proforma ") + D.piNo.trim().toUpperCase(); job = job.then(function () { return fillVendorBank(S.vendors[vb1], D.ex.vendorBank, src1); }); }
     var doc = { kind: ADV.kind, companyId: D.companyId, vendorId: vid, vendorNew: null, piNo: D.piNo.trim().toUpperCase(), piDate: pd, currency: imp ? D.currency : "INR", total: round2(tot), gst: !imp && D.gst.trim() ? round2(num(D.gst)) : null,
       installments: D.insts.map(function (it, i) { return { pct: round2(num(it.pct)), when: i === 0 ? "receipt" : it.when, days: i === 0 ? 0 : dayCount(it.days) }; }),
       dispatchDate: dd || null, dispatchConfirmed: !!(D.dispConfirmed && dd), narration: sentenceFix(D.narration.trim()), updatedAt: now, updatedBy: meId(),
@@ -6989,6 +7020,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       "- readable: false only if the file shows no such document at all. A hard-to-read copy is still readable: true.",
       "- The vendor is the seller. The company is the buyer it is addressed to. Never swap them.",
       "- vendor_address: the seller's full address as printed in the seller's block (street, area, town, state and PIN or postcode, and the country if outside India), on one line, in proper case. Not the buyer's, consignee's or delivery address. Empty string if not printed.",
+      "- vendor_bank: the seller's bank details for payment, only if printed (often in a 'Bank details' block near the foot): {\"account_holder\", \"account_number\", \"ifsc\", \"bank\", \"branch\"}, copied exactly (account number digits only, IFSC 11 characters). null if no bank details are printed.",
       "- company_id: the matching id from COMPANIES by the buyer's name, or null.",
       "- proforma_date as YYYY-MM-DD. Indian documents write the day first.",
       "- currency: ISO code of the amounts, such as INR, USD, EUR.",
@@ -7001,7 +7033,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       "- items: every line of the item table, in order, as {\"description\", \"hsn\", \"qty\", \"unit\", \"rate\", \"discount\", \"taxable\", \"gst_pct\", \"amount\"}; null for anything not printed; [] if none. items_note: anything unsure in the items, or an empty string.",
       "",
       "Reply with only this JSON object:",
-      '{"readable":true,"company_id":null,"company_name":"","vendor_name":"","vendor_gstin":"","vendor_country":"","vendor_address":"","proforma_number":"","proforma_date":"YYYY-MM-DD","currency":"INR","total_amount":0,"gst_amount":null,"installments":[],"dispatch_date":null,"arrival_date":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"proforma_number":0,"proforma_date":0,"currency":0,"total_amount":0,"gst_amount":0,"installments":0,"dispatch_date":0,"arrival_date":0,"narration":0},"items":[],"items_note":""}',
+      '{"readable":true,"company_id":null,"company_name":"","vendor_name":"","vendor_gstin":"","vendor_country":"","vendor_address":"","vendor_bank":null,"proforma_number":"","proforma_date":"YYYY-MM-DD","currency":"INR","total_amount":0,"gst_amount":null,"installments":[],"dispatch_date":null,"arrival_date":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"proforma_number":0,"proforma_date":0,"currency":0,"total_amount":0,"gst_amount":0,"installments":0,"dispatch_date":0,"arrival_date":0,"narration":0},"items":[],"items_note":""}',
       "",
       "COMPANIES: " + JSON.stringify(cos),
       "",
@@ -7034,7 +7066,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (ymdOk(res.dispatch_date)) D.dispatch = fmtDate(res.dispatch_date);
     if (imp && ymdOk(res.arrival_date)) D.arrival = fmtDate(res.arrival_date);
     D.narration = sentenceFix(str(res.narration, 400));
-    D.ex = { vendorAddress: aiAddr(res.vendor_address), companyName: str(res.company_name, 160), vendorName: [str(res.vendor_name, 160), g].filter(Boolean).join(", GSTIN "), notes: str(res.notes, 300), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) };
+    D.ex = { vendorAddress: aiAddr(res.vendor_address), vendorBank: bankFromRead(res.vendor_bank), companyName: str(res.company_name, 160), vendorName: [str(res.vendor_name, 160), g].filter(Boolean).join(", GSTIN "), notes: str(res.notes, 300), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) };
     return D;
   }
   function readAdvFile(file) {
@@ -12200,7 +12232,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       { label: isB ? "Bill" : "Voucher", kind: "co", sort: function (x) { return isB ? x.billDate : x.voucherDate; }, cell: function (x, td) { td.appendChild(el("b", { class: "mono" }, isB ? x.billNo : x.voucherNo)); sub(td, fmtDate(isB ? x.billDate : x.voucherDate) + " · " + coLabel(x.companyId) + (DIV ? "" : " · " + divName(x))); } },
       { label: isB ? "Vendor" : "Paid to", cls: "desc", cell: function (x, td) { td.appendChild(el("b", null, isB ? vendorLabelOfBill(x) : x.payee || "")); sub(td, isB ? x.narration || "" : (x.vtype || "Type not set") + (x.gstApp === "RCM" ? " · RCM" : "") + " · " + (x.narration || "")); } },
       { label: "Prepared by", who: function (x) { return pnm(x.preparedByName) || userLabel(prepOf(x)); }, cell: function (x, td) { txt(td, pnm(x.preparedByName) || userLabel(prepOf(x)) || ""); var d = personDept(prepOf(x)); if (d) sub(td, d); } },
-      { label: isB ? "Taxable" : "Total", cls: "r num", sort: function (x) { return Number(isB ? x.taxable : x.total) || 0; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, isB ? bm(x, x.taxable) : money(x.total))); if (isB) sub(td, "Total " + bm(x, x.total)); } },
+      { label: isB ? "Taxable" : "Total", cls: "r num", sort: function (x) { return Number(isB ? x.taxable : x.total) || 0; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, isB ? bm2(x, x.fcTaxable != null ? x.fcTaxable : x.taxable) : bm2(null, x.total))); if (isB) sub(td, "Total " + bm2(x, x.fcTotal != null ? x.fcTotal : x.total)); } },
       { label: "Ledger", cell: function (x, td) { txt(td, ledText(x.ledgers) || "Not chosen"); if (x.tds != null && x.acct === "approved") sub(td, "TDS " + money(x.tds) + (x.tdsSection ? " · " + x.tdsSection : "")); } },
       { label: "Status", cell: function (x, td) { var l = acctLabel(x); td.appendChild(el("span", { class: "tag stg " + l[1] }, l[0])); if (x.acctNote && x.acct !== "approved") sub(td, x.acctNote); if (isB) { var al = billAlerts(x); if (al.length) { var an = el("span", { class: "needs", title: al.join("\n") }); an.appendChild(warnIcon("Alerts")); an.appendChild(document.createTextNode(" " + plural(al.length, "alert") + (gstEinv(vGst(S.vendors[x.vendorId])) && !(x.einv && x.einv.irn) ? ": no e-invoice" : ""))); td.appendChild(an); } }
         if (isB && x.acct !== "approved" && acctVendorNeeds(x)) { var n = el("span", { class: "needs" }); n.appendChild(warnIcon("Vendor")); n.appendChild(document.createTextNode(" Vendor details needed first")); td.appendChild(n); } } },
@@ -12212,7 +12244,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function billAlerts(x) {
     var v = S.vendors[x.vendorId], tx = Number(x.fcTaxable != null ? x.fcTaxable : x.taxable), ga = Number(x.fcGst != null ? x.fcGst : x.gstAmt) || 0, out = [], pr = x.ex && x.ex.printedTotal;
     if (pr != null && !isNaN(tx) && Math.abs(tx + ga - pr) > 1) out.push("The bill's printed total is " + amt2(pr) + ", but taxable plus GST comes to " + amt2(tx + ga) + ". Check for round-off, freight or TDS.");
-    if (x.gstPct != null && tx > 0 && ga > 0 && !GST_RATES.some(function (r) { return Math.abs(r - x.gstPct) < 0.05; })) out.push("GST works out to " + x.gstPct + "% of the taxable amount, which isn't a standard rate.");
+    var gn = gstRateNote(tx, ga, x.currency); if (gn) out.push(gn);
     if (v && v.type && v.type !== "registered" && ga > 0) out.push("The vendor is " + vtypeLabel(v.type).toLowerCase() + ", but the bill charges GST.");
     if (v && v.type === "registered" && ga === 0) out.push("The vendor is registered, but the bill charges no GST.");
     if (x.billDate && x.submittedAt && x.billDate < addDays(ymdOfMs(x.submittedAt), -14)) out.push("The bill was dated more than 2 weeks before it was submitted.");
@@ -12318,8 +12350,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       var sp = el("div", { class: "ao-split" }), dl = el("div", { class: "ao-doc" }), dm = el("div", { class: "ao-main" });
       dl.appendChild(AC.fv.el); sp.appendChild(dl); sp.appendChild(dm); f.appendChild(sp); f = dm;
     } else if (isB) f.appendChild(el("div", { class: "flag", style: "margin-bottom:12px" }, x.source === "file" || x.fileName ? "This bill's file was not kept (it was added before files were kept)." : "This bill was typed in by hand, with no file attached."));
-    var facts = isB ? [["Company", coLabel(x.companyId)], ["Bill date", fmtDate(x.billDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Taxable", bm(x, x.fcTaxable != null ? x.fcTaxable : x.taxable)], ["GST", bm(x, x.fcGst != null ? x.fcGst : x.gstAmt)], ["Total", bm(x, x.total)]]
-      : [["Company", coLabel(x.companyId)], ["Voucher date", fmtDate(x.voucherDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Total", money(x.total)], ["GST", x.gstApp === "RCM" ? "RCM " + (x.gstRate || 0) + "%" : "Not applicable"], ["Payment", x.settle ? "From cash advance" : "By Financier"]];
+    var facts = isB ? [["Company", coLabel(x.companyId)], ["Bill date", fmtDate(x.billDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Taxable", bm2(x, x.fcTaxable != null ? x.fcTaxable : x.taxable)], ["GST", bm2(x, x.fcGst != null ? x.fcGst : x.gstAmt)], ["Total", bm2(x, x.fcTotal != null ? x.fcTotal : x.total)]]
+      : [["Company", coLabel(x.companyId)], ["Voucher date", fmtDate(x.voucherDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Total", bm2(null, x.total)], ["GST", x.gstApp === "RCM" ? "RCM " + (x.gstRate || 0) + "%" : "Not applicable"], ["Payment", x.settle ? "From cash advance" : "By Financier"]];
     facts.push(["Approver", approverName(x) || "Not set"]);
     var fb = el("div", { class: "stats" }); facts.forEach(function (k) { var s = el("div", { class: "stat" }); s.appendChild(el("div", { class: "k" }, k[0])); s.appendChild(el("div", { class: "v" }, k[1] || "")); fb.appendChild(s); }); f.appendChild(fb);
     var det = el("div", { class: "card", style: "padding:14px 18px;margin:12px 0" });

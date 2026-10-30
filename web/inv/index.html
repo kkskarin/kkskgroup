@@ -14,6 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&family=Marcellus&display=swap" rel="stylesheet">
 <style>
 :root{--bar:#10281F;--hl:#2DBE7E;--brand:#007A4D;--brand-soft:#E3F2EA;--bg:#F4F7F5;--surface:#FFFFFF;--ink:#14231C;--muted:#5E6E66;--line:#DCE5E0;--soft:#F1F6F3;--navtext:#B9CCC2;--bad:#B42318;--bad-bg:#FDECEA;
+--ok-bg:#CDEEDB;--ok:#00704A;--part:#E08A00;--none-bg:#FBD5D2;--none:#B42318;
 --font:"Jost",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--serif:"Marcellus",Georgia,"Times New Roman",serif;color-scheme:light}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:calc(15px*var(--ts,1))/1.5 var(--font)}
@@ -35,10 +36,12 @@ main h1{margin:0 0 4px;font:calc(28px*var(--ts,1)) var(--serif)}
 .subt{margin:0 0 18px;color:var(--muted)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
 .card h3{margin:0 0 10px;font-size:calc(13px*var(--ts,1));letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+.card h4{margin:14px 0 6px;font-size:calc(15px*var(--ts,1))}
 .row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
 label.f{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:calc(13px*var(--ts,1))}
 .field{font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:inherit;min-width:0}
 .field:focus{outline:2px solid var(--brand);outline-offset:1px}
+textarea.field{min-height:110px;width:100%}
 .btn{font:inherit;font-weight:600;padding:9px 16px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
 .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
 .btn.sm{padding:5px 10px;font-size:calc(13px*var(--ts,1))}
@@ -49,19 +52,34 @@ th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white
 th{font-size:calc(12px*var(--ts,1));letter-spacing:.06em;text-transform:uppercase;color:var(--brand);background:var(--soft)}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 tr.tot td,td.tot{font-weight:700;background:var(--soft)}
-td input.field{width:110px;text-align:right}
+tr.sec td{font-weight:700;background:#F8FBF9;color:var(--brand)}
+td input.field{width:120px;text-align:right}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
 .hint{color:var(--muted);font-size:calc(13px*var(--ts,1))}
 .msg{margin-top:10px;font-weight:600}
 .msg.bad{color:var(--bad)}
-.days{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.day{border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:calc(13px*var(--ts,1));cursor:pointer;background:#fff}
-.day.done{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
-.day.on{outline:2px solid var(--brand)}
 .checks{display:flex;flex-wrap:wrap;gap:6px 14px}
 .checks label{display:flex;gap:6px;align-items:center;font-weight:500}
-.mlist .mrow{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
-.mlist .mrow .field{flex:1}
+.mlist .mrow{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.mlist .mrow .field.nm{flex:1 1 180px}
 .empty{color:var(--muted);padding:6px 0}
+/* the date calendar */
+.cal{display:inline-block;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;user-select:none}
+.cal .hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-weight:600}
+.cal .hd button{border:0;background:none;font:inherit;font-size:calc(18px*var(--ts,1));cursor:pointer;padding:2px 10px;border-radius:8px}
+.cal .hd button:disabled{opacity:.3;cursor:default}
+.cal .g{display:grid;grid-template-columns:repeat(7,calc(40px*var(--ts,1)));gap:3px}
+.cal .wd{text-align:center;font-size:calc(11px*var(--ts,1));color:var(--muted);font-weight:600}
+.cal .d{position:relative;height:calc(36px*var(--ts,1));border:1px solid transparent;border-radius:8px;background:none;font:inherit;cursor:pointer;color:var(--ink)}
+.cal .d:disabled{color:#A9B5AF;cursor:default}
+.cal .d.full{background:var(--ok-bg);color:var(--ok);font-weight:700}
+.cal .d.none{background:var(--none-bg);color:var(--none)}
+.cal .d.part::after{content:"";position:absolute;left:50%;bottom:3px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--part)}
+.cal .d.today{border-color:var(--muted)}
+.cal .d.on{outline:2px solid var(--brand);outline-offset:1px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:calc(12px*var(--ts,1));color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend .lf::before{background:var(--ok-bg)}.legend .lp::before{background:var(--part);border-radius:50%}.legend .ln::before{background:var(--none-bg)}
 @media print{html{--ts:1!important}}
 </style>
 </head>
@@ -74,17 +92,20 @@ td input.field{width:110px;text-align:right}
 (function () {
   "use strict";
   /* Tabs, each with its places (where pieces are counted), then Reports and Masters. A tab marked oneEntry has a single
-     Entry sub-tab instead, with a table per place. The open one is kept in the address
-     (#tab/sub). Data is in Supabase table trial_docs, open to anyone with the link:
-       masters/<tab>/<place>          { items: [{ id, name }] }   the stages counted at that place, in order
-       entry/<tab>/<place>/<date>     { date, cells: { <stageId>: { dom, imp } }, updatedAt }
-     An entry is the stock position: pieces at each stage that day, domestic and imports. */
+     Entry sub-tab instead, with a card per place. The open one is kept in the address (#tab/sub).
+     Data is in Supabase table trial_docs, open to anyone with the link. Two kinds of tab:
+       stage tabs (Raw to Tanned, WB Split - Ambur): masters/<tab>/<place> { items: [{ id, name }] } are the stages;
+         entry/<tab>/<place>/<date> { date, cells: { <stageId>: { dom, imp } } }: pieces at each stage that day.
+       grade tabs (Tanned & Assorted): masters/<tab>/<place> { items: [{ id, name, origin: dom|imp|both, mat: wb|ww|both }] }
+         are the grades; entry/<tab>/<place>/<date> { date, cells: { "<dom|imp>|<wb|ww>|<gradeId>": { p, a } } }:
+         pieces and area of each grade that day, by Domestic / Import and Wet Blue / Wet White.
+     An entry is the stock position on that day. */
   var TABS = [
-    { key: "raw", name: "Raw to Tanned", places: [["erode", "Erode"], ["ambur", "Ambur"], ["ranipet", "Ranipet"]], oneEntry: true },
-    { key: "tanned", name: "Tanned & Assorted", places: [["grain", "Grain"], ["split", "Split"]] },
-    { key: "wbsplit", name: "WB Split - Ambur", places: [["input", "Input"], ["output", "Output"]] }
+    { key: "raw", name: "Raw to Tanned", kind: "stage", places: [["erode", "Erode"], ["ambur", "Ambur"], ["ranipet", "Ranipet"]], oneEntry: true },
+    { key: "tanned", name: "Tanned & Assorted", kind: "grade", places: [["grain", "Grain"], ["split", "Split"]], oneEntry: true },
+    { key: "wbsplit", name: "WB Split - Ambur", kind: "stage", places: [["input", "Input"], ["output", "Output"]] }
   ];
-  var ORIGINS = [["dom", "Domestic"], ["imp", "Imports"]];
+  var ORIGINS = [["dom", "Domestic"], ["imp", "Import"]], MATS = [["wb", "Wet Blue"], ["ww", "Wet White"]];
   var CFG = window.BV_CONFIG || {}, sb = window.supabase && CFG.supabaseUrl ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, { auth: { persistSession: false, autoRefreshToken: false } }) : null;
   var D = { docs: {}, loaded: false, err: "" }, cur = {}, ENT = {}, REP = {};
 
@@ -94,10 +115,14 @@ td input.field{width:110px;text-align:right}
   function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
   function today() { return ymd(new Date()); }
   function addDays(s, n) { var d = new Date(s + "T00:00:00"); d.setDate(d.getDate() + n); return ymd(d); }
-  function fmtDate(s) { if (!s) return ""; var d = new Date(s + "T00:00:00"); return pad(d.getDate()) + "-" + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()] + "-" + String(d.getFullYear()).slice(2); }
+  var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function fmtDate(s) { if (!s) return ""; var d = new Date(s + "T00:00:00"); return pad(d.getDate()) + "-" + MON[d.getMonth()] + "-" + String(d.getFullYear()).slice(2); }
   function pcs(n) { return (Number(n) || 0).toLocaleString("en-IN"); }
+  function area(n) { return (Number(n) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function int(v) { v = String(v == null ? "" : v).replace(/[,\s]/g, ""); if (v === "") return null; return /^\d+$/.test(v) ? Number(v) : NaN; }
+  function dec(v) { v = String(v == null ? "" : v).replace(/[,\s]/g, ""); if (v === "") return null; return /^\d+(\.\d{1,2})?$/.test(v) ? Number(v) : NaN; }
   function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function label(list, k) { var x = list.filter(function (o) { return o[0] === k; })[0]; return x ? x[1] : ""; }
 
   /* ---- data ---- */
   function loadAll() {
@@ -113,6 +138,8 @@ td input.field{width:110px;text-align:right}
   function masters(tab, place) { var m = D.docs["masters/" + tab + "/" + place]; return (m && m.items) || []; }
   function entry(tab, place, date) { return D.docs["entry/" + tab + "/" + place + "/" + date] || null; }
   function entryDates(tab, place) { var p = "entry/" + tab + "/" + place + "/"; return Object.keys(D.docs).filter(function (k) { return k.indexOf(p) === 0; }).map(function (k) { return k.slice(p.length); }).sort(); }
+  /* a grade counts in a Domestic / Import and Wet Blue / Wet White section when it is set for it (or for both) */
+  function gradeIn(g, o, m) { return (g.origin === "both" || g.origin === o) && (g.mat === "both" || g.mat === m); }
 
   /* ---- navigation ---- */
   function subsOf(t) { return (t.oneEntry ? [["entry", "Entry"]] : t.places).concat([["reports", "Reports"], ["masters", "Masters"]]); }
@@ -121,7 +148,7 @@ td input.field{width:110px;text-align:right}
     cur = { tab: t, sub: subs.filter(function (s) { return s[0] === p[1]; })[0] || subs[0] };
   }
   function go(t, s) { location.hash = t.key + "/" + s[0]; }
-  function tabBtn(label, on, fn, cls) { var b = el("button", { type: "button", role: "tab", "aria-selected": on ? "true" : "false" }, label); if (cls) b.className = cls; b.addEventListener("click", fn); return b; }
+  function tabBtn(lbl, on, fn, cls) { var b = el("button", { type: "button", role: "tab", "aria-selected": on ? "true" : "false" }, lbl); if (cls) b.className = cls; b.addEventListener("click", fn); return b; }
   function render() {
     var tb = $("tabs"), sbx = $("subs"); tb.textContent = ""; sbx.textContent = "";
     TABS.forEach(function (t) { tb.appendChild(tabBtn(t.name, t === cur.tab, function () { go(t, subsOf(t)[0]); })); });
@@ -135,125 +162,244 @@ td input.field{width:110px;text-align:right}
     renderEntry(body);
   }
 
-  /* ---- Entry: the day's pieces at each stage, domestic and imports, one table per place (all places on a oneEntry tab) ---- */
+  /* ---- the date calendar: a month at a time; only lo..hi can be picked. Each day shows how complete it is:
+     green all saved, orange dot some saved, red none saved (past days only, from the first entry); Sundays are left plain. ---- */
+  function calendar(box, o) {
+    var view = o.value.slice(0, 7);
+    function draw() {
+      box.textContent = ""; var c = el("div", { class: "cal" }), hd = el("div", { class: "hd" });
+      var y = Number(view.slice(0, 4)), mo = Number(view.slice(5, 7)) - 1, first = new Date(y, mo, 1), prev = ymd(new Date(y, mo - 1, 1)).slice(0, 7), next = ymd(new Date(y, mo + 1, 1)).slice(0, 7);
+      var pb = el("button", { type: "button", "aria-label": "Previous month" }, "‹"), nb = el("button", { type: "button", "aria-label": "Next month" }, "›");
+      pb.disabled = prev < o.lo.slice(0, 7) && prev < (o.from || o.lo).slice(0, 7); nb.disabled = next > o.hi.slice(0, 7);
+      pb.addEventListener("click", function () { view = prev; draw(); }); nb.addEventListener("click", function () { view = next; draw(); });
+      hd.appendChild(pb); hd.appendChild(el("span", null, MON[mo] + " " + y)); hd.appendChild(nb); c.appendChild(hd);
+      var g = el("div", { class: "g" }); ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].forEach(function (w) { g.appendChild(el("div", { class: "wd" }, w)); });
+      for (var i = 0; i < (first.getDay() + 6) % 7; i++) g.appendChild(el("div"));
+      for (var d = 1; d <= new Date(y, mo + 1, 0).getDate(); d++) (function (ds, sun) {
+        var s = sun ? "" : o.status(ds), b = el("button", { type: "button", class: "d" + (s ? " " + s : "") + (ds === o.value ? " on" : "") + (ds === o.hi ? " today" : ""), "aria-label": fmtDate(ds) + (s === "full" ? ", all saved" : s === "part" ? ", partly saved" : s === "none" ? ", nothing saved" : "") }, String(d));
+        b.disabled = ds < o.lo || ds > o.hi; b.addEventListener("click", function () { o.pick(ds); }); g.appendChild(b);
+      })(ymd(new Date(y, mo, d)), new Date(y, mo, d).getDay() === 0);
+      c.appendChild(g); box.appendChild(c);
+      var lg = el("div", { class: "legend" }); [["lf", "All saved"], ["lp", "Partly saved"], ["ln", "Nothing saved"]].forEach(function (x) { lg.appendChild(el("span", { class: x[0] }, x[1])); }); box.appendChild(lg);
+    }
+    draw();
+  }
+  /* how complete a day is for the places shown: full, part, none (past days from the first entry on), or "" */
+  function dayStatus(t, places, d) {
+    var n = places.filter(function (pl) { return !!entry(t.key, pl[0], d); }).length;
+    if (n && n === places.length) return "full"; if (n) return "part";
+    var first = places.reduce(function (m, pl) { var ds = entryDates(t.key, pl[0]); return ds.length && (!m || ds[0] < m) ? ds[0] : m; }, "");
+    return first && d >= first && d < today() ? "none" : "";
+  }
+
+  /* ---- Entry: the day's figures, a card per place ---- */
   function renderEntry(body) {
     var t = cur.tab, places = t.oneEntry ? t.places : [cur.sub], key = t.key + "/" + cur.sub[0], lo = addDays(today(), -6), hi = today();
-    $("subtitle").textContent = "Pieces at each stage on the chosen day. A day can be entered or corrected from " + fmtDate(lo) + " to today.";
+    $("subtitle").textContent = (t.kind === "grade" ? "Pieces and area of each grade" : "Pieces at each stage") + " on the chosen day. Pick the day on the calendar: today or the 6 days before can be entered or corrected.";
     var st = ENT[key] = ENT[key] || { date: hi };
     if (st.date < lo || st.date > hi) st.date = hi;
-    var c1 = el("div", { class: "card" }), row = el("div", { class: "row" }), lf = el("label", { class: "f" }, "Date");
-    var di = el("input", { type: "date", class: "field", min: lo, max: hi }); di.value = st.date; lf.appendChild(di); row.appendChild(lf); c1.appendChild(row);
-    /* a day is ticked once every place shown has its entry */
-    var done = function (d) { return places.every(function (pl) { return !!entry(t.key, pl[0], d); }); }, days = el("div", { class: "days" });
-    for (var i = 6; i >= 0; i--) (function (d) { var ok = done(d), b = el("button", { type: "button", class: "day" + (ok ? " done" : "") + (d === st.date ? " on" : "") }, fmtDate(d) + (ok ? " ✓" : "")); b.addEventListener("click", function () { st.date = d; render(); }); days.appendChild(b); })(addDays(hi, -i));
-    c1.appendChild(days); c1.appendChild(el("div", { class: "hint", style: "margin-top:6px" }, "✓ entered already."));
-    var dmsg = el("div", { class: "msg" }); c1.appendChild(dmsg); body.appendChild(c1);
-    di.addEventListener("change", function () { var v = di.value; if (!v || v < lo || v > hi) { di.value = st.date; dmsg.textContent = "Choose a day from " + fmtDate(lo) + " to today."; dmsg.className = "msg bad"; return; } st.date = v; render(); });
-    var inputs = {}, any = false;
-    places.forEach(function (pl) {
-      var ms = masters(t.key, pl[0]), e = entry(t.key, pl[0], st.date), cells = (e && e.cells) || {}, c2 = el("div", { class: "card" });
-      c2.appendChild(el("h3", null, pl[1] + (e ? " · saved" : " · not entered yet")));
-      if (!ms.length) { c2.appendChild(el("div", { class: "empty" }, "No stages for " + pl[1] + " yet. Add them under Masters.")); body.appendChild(c2); return; }
-      any = true;
-      /* one row per stage (in master order); Domestic and Imports across */
-      var sc = el("div", { class: "scroll" }), tbl = el("table"), thead = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, "Particulars"));
-      ORIGINS.forEach(function (o) { hr.appendChild(el("th", { class: "n" }, o[1])); }); thead.appendChild(hr); tbl.appendChild(thead);
-      var tbody = el("tbody");
-      ms.forEach(function (m) {
-        var tr = el("tr"); tr.appendChild(el("td", null, m.name));
-        ORIGINS.forEach(function (o) { var td = el("td", { class: "n" }), v = cells[m.id] && cells[m.id][o[0]]; var ip = el("input", { class: "field", inputmode: "numeric", "aria-label": pl[1] + " " + o[1] + " " + m.name, placeholder: "0" }); ip.value = v == null ? "" : String(v); inputs[pl[0] + "|" + o[0] + "|" + m.id] = ip; td.appendChild(ip); tr.appendChild(td); });
-        tbody.appendChild(tr);
-      });
-      tbl.appendChild(tbody); sc.appendChild(tbl); c2.appendChild(sc); body.appendChild(c2);
-    });
-    if (!any) return;
+    var c1 = el("div", { class: "card" }); c1.appendChild(el("h3", null, "Date · " + fmtDate(st.date))); var cb = el("div"); c1.appendChild(cb); body.appendChild(c1);
+    var first = places.reduce(function (m, pl) { var ds = entryDates(t.key, pl[0]); return ds.length && (!m || ds[0] < m) ? ds[0] : m; }, "");
+    calendar(cb, { value: st.date, lo: lo, hi: hi, from: first, status: function (d) { return dayStatus(t, places, d); }, pick: function (d) { st.date = d; render(); } });
+    var get = t.kind === "grade" ? gradeCards(body, t, places, st.date) : stageCards(body, t, places, st.date);
+    if (!get) return;
     var c3 = el("div", { class: "card" }), acts = el("div", { class: "row" }), saved = places.some(function (pl) { return !!entry(t.key, pl[0], st.date); });
     var save = el("button", { type: "button", class: "btn primary" }, saved ? "Save Changes" : "Save"), msg = el("div", { class: "msg" });
     acts.appendChild(save); c3.appendChild(acts); c3.appendChild(msg); body.appendChild(c3);
     save.addEventListener("click", function () {
       msg.textContent = ""; msg.className = "msg";
       if (st.date < addDays(today(), -6) || st.date > today()) { msg.textContent = "Only today and the 6 days before can be entered."; msg.className = "msg bad"; return; }
+      var r = get(); if (r.bad) { msg.textContent = r.bad; msg.className = "msg bad"; return; }
+      save.disabled = true;
+      Promise.all(r.docs.map(function (d) { return put("entry/" + t.key + "/" + d[0] + "/" + st.date, { date: st.date, cells: d[1], updatedAt: Date.now() }); })).then(function () { render(); var ms2 = document.querySelectorAll("#body .msg"), m2 = ms2[ms2.length - 1]; if (m2) m2.textContent = "Saved for " + fmtDate(st.date) + "."; },
+        function (er) { save.disabled = false; msg.textContent = "Not saved: " + ((er && er.message) || "error") + ". Try again."; msg.className = "msg bad"; });
+    });
+  }
+  function inp(lbl, val) { var ip = el("input", { class: "field", inputmode: "decimal", "aria-label": lbl, placeholder: "0" }); ip.value = val == null ? "" : String(val); return ip; }
+  /* stage tabs: a table per place, a row per stage, Domestic and Import across */
+  function stageCards(body, t, places, date) {
+    var inputs = {}, any = false;
+    places.forEach(function (pl) {
+      var ms = masters(t.key, pl[0]), e = entry(t.key, pl[0], date), cells = (e && e.cells) || {}, c2 = el("div", { class: "card" });
+      c2.appendChild(el("h3", null, pl[1] + (e ? " · saved" : " · not entered yet")));
+      if (!ms.length) { c2.appendChild(el("div", { class: "empty" }, "No stages for " + pl[1] + " yet. Add them under Masters.")); body.appendChild(c2); return; }
+      any = true;
+      var sc = el("div", { class: "scroll" }), tbl = el("table"), thead = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, "Particulars"));
+      ORIGINS.forEach(function (o) { hr.appendChild(el("th", { class: "n" }, o[1])); }); thead.appendChild(hr); tbl.appendChild(thead);
+      var tbody = el("tbody");
+      ms.forEach(function (m) {
+        var tr = el("tr"); tr.appendChild(el("td", null, m.name));
+        ORIGINS.forEach(function (o) { var td = el("td", { class: "n" }), ip = inp(pl[1] + " " + o[1] + " " + m.name, cells[m.id] && cells[m.id][o[0]]); ip.setAttribute("inputmode", "numeric"); inputs[pl[0] + "|" + o[0] + "|" + m.id] = ip; td.appendChild(ip); tr.appendChild(td); });
+        tbody.appendChild(tr);
+      });
+      tbl.appendChild(tbody); sc.appendChild(tbl); c2.appendChild(sc); body.appendChild(c2);
+    });
+    if (!any) return null;
+    return function () {
       var docs = [], bad = "";
       places.forEach(function (pl) {
         var ms = masters(t.key, pl[0]); if (!ms.length) return; var out = {};
         ms.forEach(function (m) { var c = {}; ORIGINS.forEach(function (o) { var n = int(inputs[pl[0] + "|" + o[0] + "|" + m.id].value); if (isNaN(n)) bad = bad || pl[1] + " · " + m.name + " · " + o[1]; else c[o[0]] = n || 0; }); out[m.id] = c; });
-        docs.push(["entry/" + t.key + "/" + pl[0] + "/" + st.date, { date: st.date, cells: out, updatedAt: Date.now() }]);
+        docs.push([pl[0], out]);
       });
-      if (bad) { msg.textContent = "Pieces are whole numbers. Check " + bad + "."; msg.className = "msg bad"; return; }
-      save.disabled = true;
-      Promise.all(docs.map(function (d) { return put(d[0], d[1]); })).then(function () { render(); var ms2 = document.querySelectorAll("#body .msg"), m2 = ms2[ms2.length - 1]; if (m2) m2.textContent = "Saved for " + fmtDate(st.date) + "."; },
-        function (er) { save.disabled = false; msg.textContent = "Not saved: " + ((er && er.message) || "error") + ". Try again."; msg.className = "msg bad"; });
+      return bad ? { bad: "Pieces are whole numbers. Check " + bad + "." } : { docs: docs };
+    };
+  }
+  /* grade tabs: a card per place with a Domestic and an Import table; each has Wet Blue, then Wet White, a row per grade */
+  function gradeCards(body, t, places, date) {
+    var inputs = {}, any = false;
+    places.forEach(function (pl) {
+      var gs = masters(t.key, pl[0]), e = entry(t.key, pl[0], date), cells = (e && e.cells) || {}, c2 = el("div", { class: "card" });
+      c2.appendChild(el("h3", null, pl[1] + (e ? " · saved" : " · not entered yet")));
+      if (!gs.length) { c2.appendChild(el("div", { class: "empty" }, "No grades for " + pl[1] + " yet. Add them under Masters.")); body.appendChild(c2); return; }
+      any = true; var two = el("div", { class: "two" });
+      ORIGINS.forEach(function (o) {
+        var w = el("div"); w.appendChild(el("h4", null, o[1])); var sc = el("div", { class: "scroll" }), tbl = el("table"), thead = el("thead"), hr = el("tr");
+        ["Grade", "Pieces", "Area"].forEach(function (h, i) { hr.appendChild(el("th", i ? { class: "n" } : null, h)); }); thead.appendChild(hr); tbl.appendChild(thead);
+        var tbody = el("tbody");
+        MATS.forEach(function (m) {
+          var sec = el("tr", { class: "sec" }), sd = el("td", { colspan: "3" }, m[1]); sec.appendChild(sd); tbody.appendChild(sec);
+          var rows = gs.filter(function (g) { return gradeIn(g, o[0], m[0]); });
+          if (!rows.length) { var er = el("tr"); er.appendChild(el("td", { colspan: "3", class: "hint" }, "No grades set for " + o[1] + " " + m[1] + ".")); tbody.appendChild(er); return; }
+          rows.forEach(function (g) {
+            var k = o[0] + "|" + m[0] + "|" + g.id, v = cells[k] || {}, tr = el("tr"); tr.appendChild(el("td", null, g.name));
+            var p1 = inp(pl[1] + " " + o[1] + " " + m[1] + " " + g.name + " pieces", v.p), a1 = inp(pl[1] + " " + o[1] + " " + m[1] + " " + g.name + " area", v.a); p1.setAttribute("inputmode", "numeric");
+            inputs[pl[0] + "|" + k] = [p1, a1]; var td1 = el("td", { class: "n" }), td2 = el("td", { class: "n" }); td1.appendChild(p1); td2.appendChild(a1); tr.appendChild(td1); tr.appendChild(td2); tbody.appendChild(tr);
+          });
+        });
+        tbl.appendChild(tbody); sc.appendChild(tbl); w.appendChild(sc); two.appendChild(w);
+      });
+      c2.appendChild(two); body.appendChild(c2);
     });
+    if (!any) return null;
+    return function () {
+      var docs = [], bad = "";
+      places.forEach(function (pl) {
+        var gs = masters(t.key, pl[0]); if (!gs.length) return; var out = {};
+        ORIGINS.forEach(function (o) { MATS.forEach(function (m) { gs.filter(function (g) { return gradeIn(g, o[0], m[0]); }).forEach(function (g) {
+          var k = o[0] + "|" + m[0] + "|" + g.id, ip = inputs[pl[0] + "|" + k], p = int(ip[0].value), a = dec(ip[1].value), where = pl[1] + " · " + o[1] + " · " + m[1] + " · " + g.name;
+          if (isNaN(p)) bad = bad || "Pieces are whole numbers. Check " + where + ".";
+          else if (isNaN(a)) bad = bad || "Area is a number with up to 2 decimals. Check " + where + ".";
+          else out[k] = { p: p || 0, a: a || 0 };
+        }); }); });
+        docs.push([pl[0], out]);
+      });
+      return bad ? { bad: bad } : { docs: docs };
+    };
   }
 
-  /* ---- Masters: each place's stages, in order ---- */
-  function renderMasters(body) {
+  /* ---- Masters ---- */
+  function renderMasters(body) { return cur.tab.kind === "grade" ? gradeMasters(body) : stageMasters(body); }
+  function listEditor(c, items0, save, extra) {
+    var list = el("div", { class: "mlist" }), items = items0.slice(); c.appendChild(list);
+    function draw() {
+      list.textContent = "";
+      if (!items.length) list.appendChild(el("div", { class: "empty" }, "Nothing yet."));
+      items.forEach(function (m, i) {
+        var r = el("div", { class: "mrow" }), nm = el("input", { class: "field nm", "aria-label": "Name" }); nm.value = m.name;
+        nm.addEventListener("change", function () { var v = nm.value.trim().replace(/\s+/g, " "); if (!v) { nm.value = m.name; return; } commit(items.map(function (x) { return x.id === m.id ? Object.assign({}, x, { name: v }) : x; }), "Renamed."); });
+        r.appendChild(nm); if (extra) extra(r, m, function (patch, note) { commit(items.map(function (x) { return x.id === m.id ? Object.assign({}, x, patch) : x; }), note); });
+        var up = el("button", { type: "button", class: "btn sm", "aria-label": "Move up" }, "↑"); up.disabled = i === 0; up.addEventListener("click", function () { var nx = items.slice(); nx.splice(i - 1, 0, nx.splice(i, 1)[0]); commit(nx, "Moved."); });
+        var dn = el("button", { type: "button", class: "btn sm", "aria-label": "Move down" }, "↓"); dn.disabled = i === items.length - 1; dn.addEventListener("click", function () { var nx = items.slice(); nx.splice(i + 1, 0, nx.splice(i, 1)[0]); commit(nx, "Moved."); });
+        var rm = el("button", { type: "button", class: "btn sm" }, "Remove"); rm.addEventListener("click", function () { if (rm.getAttribute("data-arm") !== "1") { rm.setAttribute("data-arm", "1"); rm.textContent = "Click again"; return; } commit(items.filter(function (x) { return x.id !== m.id; }), "Removed."); });
+        r.appendChild(up); r.appendChild(dn); r.appendChild(rm); list.appendChild(r);
+      });
+    }
+    function commit(next, note) { return save(next, note).then(function () { items = next.slice(); draw(); }); }
+    draw(); return { items: function () { return items; }, commit: commit };
+  }
+  function saver(path, msg) { return function (next, note) { return put(path, { items: next }).then(function () { msg.className = "msg"; msg.textContent = note || "Saved."; }, function (er) { msg.className = "msg bad"; msg.textContent = "Not saved: " + ((er && er.message) || "error") + "."; throw er; }); }; }
+  function stageMasters(body) {
     var t = cur.tab; $("subtitle").textContent = "The stages counted at each place, in the order they show. A stage renamed here keeps its figures; one removed is left out of new entries and reports.";
     t.places.forEach(function (pl) {
-      var c = el("div", { class: "card" }), list = el("div", { class: "mlist" }), path = "masters/" + t.key + "/" + pl[0];
-      c.appendChild(el("h3", null, pl[1])); c.appendChild(list); body.appendChild(c);
-      var items = masters(t.key, pl[0]).slice(), msg = el("div", { class: "msg" });
-      function save(next, note) { return put(path, { items: next }).then(function () { items = next.slice(); draw(); msg.className = "msg"; msg.textContent = note || "Saved."; }, function (er) { msg.className = "msg bad"; msg.textContent = "Not saved: " + ((er && er.message) || "error") + "."; }); }
-      function draw() {
-        list.textContent = "";
-        if (!items.length) list.appendChild(el("div", { class: "empty" }, "No stages yet."));
-        items.forEach(function (m, i) {
-          var r = el("div", { class: "mrow" }), nm = el("input", { class: "field", "aria-label": "Stage name" }); nm.value = m.name;
-          nm.addEventListener("change", function () { var v = nm.value.trim().replace(/\s+/g, " "); if (!v) { nm.value = m.name; return; } var nx = items.map(function (x) { return x.id === m.id ? { id: x.id, name: v } : x; }); save(nx, "Renamed."); });
-          var up = el("button", { type: "button", class: "btn sm", "aria-label": "Move up" }, "↑"); up.disabled = i === 0; up.addEventListener("click", function () { var nx = items.slice(); nx.splice(i - 1, 0, nx.splice(i, 1)[0]); save(nx, "Moved."); });
-          var dn = el("button", { type: "button", class: "btn sm", "aria-label": "Move down" }, "↓"); dn.disabled = i === items.length - 1; dn.addEventListener("click", function () { var nx = items.slice(); nx.splice(i + 1, 0, nx.splice(i, 1)[0]); save(nx, "Moved."); });
-          var rm = el("button", { type: "button", class: "btn sm" }, "Remove"); rm.addEventListener("click", function () { if (rm.getAttribute("data-arm") !== "1") { rm.setAttribute("data-arm", "1"); rm.textContent = "Click again"; return; } save(items.filter(function (x) { return x.id !== m.id; }), "Removed."); });
-          r.appendChild(nm); r.appendChild(up); r.appendChild(dn); r.appendChild(rm); list.appendChild(r);
-        });
-      }
+      var c = el("div", { class: "card" }), msg = el("div", { class: "msg" }); c.appendChild(el("h3", null, pl[1])); body.appendChild(c);
+      var ed = listEditor(c, masters(t.key, pl[0]), saver("masters/" + t.key + "/" + pl[0], msg));
       var add = el("div", { class: "row", style: "margin-top:10px" }), ni = el("input", { class: "field", placeholder: "New stage", "aria-label": "New stage for " + pl[1] }), ab = el("button", { type: "button", class: "btn primary" }, "Add");
-      ab.addEventListener("click", function () { var v = ni.value.trim().replace(/\s+/g, " "); if (!v) { ni.focus(); return; } if (items.some(function (x) { return x.name.toLowerCase() === v.toLowerCase(); })) { msg.className = "msg bad"; msg.textContent = v + " is already there."; return; } save(items.concat([{ id: newId(), name: v }]), v + " added.").then(function () { ni.value = ""; }); });
+      ab.addEventListener("click", function () { var v = ni.value.trim().replace(/\s+/g, " "); if (!v) { ni.focus(); return; } if (ed.items().some(function (x) { return x.name.toLowerCase() === v.toLowerCase(); })) { msg.className = "msg bad"; msg.textContent = v + " is already there."; return; } ed.commit(ed.items().concat([{ id: newId(), name: v }]), v + " added.").then(function () { ni.value = ""; }, function () {}); });
       ni.addEventListener("keydown", function (e) { if (e.key === "Enter") ab.click(); });
-      add.appendChild(ni); add.appendChild(ab); c.appendChild(add); c.appendChild(msg); draw();
+      add.appendChild(ni); add.appendChild(ab); c.appendChild(add); c.appendChild(msg);
+    });
+  }
+  var OB = [["dom", "Domestic"], ["imp", "Import"], ["both", "Both"]], MB = [["wb", "Wet Blue"], ["ww", "Wet White"], ["both", "Both"]];
+  function sel(opts, val, lbl) { var s = el("select", { class: "field", "aria-label": lbl }); opts.forEach(function (o) { var op = el("option", { value: o[0] }, o[1]); if (o[0] === val) op.selected = true; s.appendChild(op); }); return s; }
+  function gradeMasters(body) {
+    var t = cur.tab; $("subtitle").textContent = "The grades of each place: whether each is Domestic, Import or both, and Wet Blue, Wet White or both. A grade shows in the matching sections of the entry tables.";
+    /* add one or many grades at once, with the same settings */
+    var ca = el("div", { class: "card" }), r = el("div", { class: "row" }), amsg = el("div", { class: "msg" }); ca.appendChild(el("h3", null, "Add grades"));
+    var sp = sel(t.places, t.places[0][0], "Grain or Split"), so = sel(OB, "both", "Domestic or Import"), sm = sel(MB, "both", "Wet Blue or Wet White");
+    [["", sp], ["Domestic / Import", so], ["Wet Blue / Wet White", sm]].forEach(function (x, i) { var f = el("label", { class: "f" }, i ? x[0] : t.places.map(function (p) { return p[1]; }).join(" / ")); f.appendChild(x[1]); r.appendChild(f); });
+    ca.appendChild(r); var ta = el("textarea", { class: "field", placeholder: "One grade per line (or separated by commas), e.g.\nA\nB\nC", "aria-label": "Grades to add", style: "margin-top:10px" }); ca.appendChild(ta);
+    var ab = el("button", { type: "button", class: "btn primary", style: "margin-top:10px" }, "Add Grades"); ca.appendChild(ab); ca.appendChild(amsg); body.appendChild(ca);
+    var eds = {};
+    t.places.forEach(function (pl) {
+      var c = el("div", { class: "card" }), msg = el("div", { class: "msg" }); c.appendChild(el("h3", null, pl[1] + " grades")); body.appendChild(c);
+      eds[pl[0]] = listEditor(c, masters(t.key, pl[0]), saver("masters/" + t.key + "/" + pl[0], msg), function (row, g, change) {
+        var a = sel(OB, g.origin || "both", "Domestic or Import for " + g.name), b = sel(MB, g.mat || "both", "Wet Blue or Wet White for " + g.name);
+        a.addEventListener("change", function () { change({ origin: a.value }, "Changed."); }); b.addEventListener("change", function () { change({ mat: b.value }, "Changed."); });
+        row.appendChild(a); row.appendChild(b);
+      });
+      c.appendChild(msg);
+    });
+    ab.addEventListener("click", function () {
+      var names = ta.value.split(/[\n,]+/).map(function (s) { return s.trim().replace(/\s+/g, " "); }).filter(Boolean), ed = eds[sp.value], have = {};
+      ed.items().forEach(function (x) { have[x.name.toLowerCase()] = 1; });
+      var add = [], skip = []; names.forEach(function (n) { if (have[n.toLowerCase()]) skip.push(n); else { have[n.toLowerCase()] = 1; add.push({ id: newId(), name: n, origin: so.value, mat: sm.value }); } });
+      if (!names.length) { amsg.className = "msg bad"; amsg.textContent = "Type at least one grade."; ta.focus(); return; }
+      if (!add.length) { amsg.className = "msg bad"; amsg.textContent = "All of these are already there: " + skip.join(", ") + "."; return; }
+      ed.commit(ed.items().concat(add), add.length + " added.").then(function () { ta.value = ""; amsg.className = "msg"; amsg.textContent = add.length + " grade" + (add.length > 1 ? "s" : "") + " added to " + label(t.places, sp.value) + (skip.length ? "; already there: " + skip.join(", ") : "") + "."; }, function () {});
     });
   }
 
   /* ---- Reports: an interactive pivot of the stock position on a day ---- */
-  var DIMS = [["place", "Place"], ["stage", "Stage"], ["origin", "Domestic / Imports"]];
+  function dimsOf(t) { return t.kind === "grade" ? [["place", t.places.map(function (p) { return p[1]; }).join(" / ")], ["mat", "Wet Blue / Wet White"], ["origin", "Domestic / Import"], ["grade", "Grade"]] : [["place", "Place"], ["stage", "Stage"], ["origin", "Domestic / Import"]]; }
   function renderReports(body) {
-    var t = cur.tab, st = REP[t.key] = REP[t.key] || { date: today(), places: null, origins: null, stages: null, rows: "stage", cols: "place" };
-    $("subtitle").textContent = "Where everything is on the chosen day: each place's latest entry on or before that day. Filter, then pick what goes down and across.";
-    /* stages in master order (by name, so the same stage at several places lines up) */
-    var stageNames = []; t.places.forEach(function (pl) { masters(t.key, pl[0]).forEach(function (m) { if (stageNames.indexOf(m.name) < 0) stageNames.push(m.name); }); });
-    if (!st.places) st.places = t.places.map(function (p) { return p[0]; }); if (!st.origins) st.origins = ORIGINS.map(function (o) { return o[0]; });
-    if (!st.stages) st.stages = stageNames.slice(); stageNames.forEach(function (n) { if (st.stages.indexOf(n) < 0 && !st._seen) st.stages.push(n); }); st._seen = true;
+    var t = cur.tab, dims = dimsOf(t), grade = t.kind === "grade";
+    var st = REP[t.key] = REP[t.key] || { date: today(), f: {}, rows: grade ? "grade" : "stage", cols: "place", val: "p" };
+    $("subtitle").textContent = "Where everything is on the chosen day: each " + (grade ? "section's" : "place's") + " latest entry on or before that day. Filter, then pick what goes down and across.";
+    /* every value of each dimension, in master order */
+    var order = { place: t.places.map(function (p) { return p[1]; }), origin: ORIGINS.map(function (o) { return o[1]; }), mat: MATS.map(function (m) { return m[1]; }), stage: [], grade: [] };
+    t.places.forEach(function (pl) { masters(t.key, pl[0]).forEach(function (m) { var k = grade ? "grade" : "stage"; if (order[k].indexOf(m.name) < 0) order[k].push(m.name); }); });
     var c = el("div", { class: "card" }), r1 = el("div", { class: "row" });
     var lf = el("label", { class: "f" }, "As on"), di = el("input", { type: "date", class: "field", max: today() }); di.value = st.date; lf.appendChild(di); r1.appendChild(lf);
     di.addEventListener("change", function () { if (di.value) { st.date = di.value; render(); } });
-    function dimSel(label, k) { var f = el("label", { class: "f" }, label), s = el("select", { class: "field" }); DIMS.concat([["", "Nothing"]]).forEach(function (d) { var o = el("option", { value: d[0] }, d[1]); if (d[0] === st[k]) o.selected = true; s.appendChild(o); }); s.addEventListener("change", function () { st[k] = s.value; render(); }); f.appendChild(s); r1.appendChild(f); }
-    dimSel("Down (rows)", "rows"); dimSel("Across (columns)", "cols"); c.appendChild(r1);
-    function checks(title, opts, k) {
-      var w = el("div", { style: "margin-top:12px" }); w.appendChild(el("div", { class: "hint", style: "font-weight:600;margin-bottom:4px" }, title)); var g = el("div", { class: "checks" });
-      opts.forEach(function (o) { var lb = el("label"), cb = el("input", { type: "checkbox" }); cb.checked = st[k].indexOf(o[0]) >= 0; cb.addEventListener("change", function () { st[k] = cb.checked ? st[k].concat([o[0]]) : st[k].filter(function (x) { return x !== o[0]; }); render(); }); lb.appendChild(cb); lb.appendChild(document.createTextNode(o[1])); g.appendChild(lb); });
+    function dimSel(lbl, k) { var f = el("label", { class: "f" }, lbl), s = el("select", { class: "field" }); dims.concat([["", "Nothing"]]).forEach(function (d) { var o = el("option", { value: d[0] }, d[1]); if (d[0] === st[k]) o.selected = true; s.appendChild(o); }); s.addEventListener("change", function () { st[k] = s.value; render(); }); f.appendChild(s); r1.appendChild(f); }
+    dimSel("Down (rows)", "rows"); dimSel("Across (columns)", "cols");
+    if (grade) { var vf = el("label", { class: "f" }, "Show"), vs = sel([["p", "Pieces"], ["a", "Area"]], st.val, "Pieces or area"); vs.addEventListener("change", function () { st.val = vs.value; render(); }); vf.appendChild(vs); r1.appendChild(vf); }
+    c.appendChild(r1);
+    dims.forEach(function (d) {
+      var vals = order[d[0]]; if (!vals.length) return; var on = st.f[d[0]] || vals;
+      var w = el("div", { style: "margin-top:12px" }); w.appendChild(el("div", { class: "hint", style: "font-weight:600;margin-bottom:4px" }, d[1])); var g = el("div", { class: "checks" });
+      vals.forEach(function (v) { var lb = el("label"), cb = el("input", { type: "checkbox" }); cb.checked = on.indexOf(v) >= 0; cb.addEventListener("change", function () { var cur0 = (st.f[d[0]] || vals).slice(); st.f[d[0]] = cb.checked ? cur0.concat([v]) : cur0.filter(function (x) { return x !== v; }); render(); }); lb.appendChild(cb); lb.appendChild(document.createTextNode(v)); g.appendChild(lb); });
       w.appendChild(g); c.appendChild(w);
-    }
-    checks("Places", t.places, "places"); checks("Domestic / Imports", ORIGINS, "origins"); checks("Stages", stageNames.map(function (n) { return [n, n]; }), "stages");
+    });
     body.appendChild(c);
     /* the facts: each place's latest entry on or before the day */
-    var facts = [], asOf = [];
+    var facts = [], asOf = [], ok = function (dim, v) { return !st.f[dim] || st.f[dim].indexOf(v) >= 0; };
     t.places.forEach(function (pl) {
-      if (st.places.indexOf(pl[0]) < 0) return;
+      if (!ok("place", pl[1])) return;
       var ds = entryDates(t.key, pl[0]).filter(function (d) { return d <= st.date; }), d = ds[ds.length - 1];
       asOf.push(pl[1] + ": " + (d ? fmtDate(d) : "no entry yet")); if (!d) return;
-      var e = entry(t.key, pl[0], d), cells = (e && e.cells) || {};
-      masters(t.key, pl[0]).forEach(function (m) { if (st.stages.indexOf(m.name) < 0) return; ORIGINS.forEach(function (o) { if (st.origins.indexOf(o[0]) < 0) return; var n = Number(cells[m.id] && cells[m.id][o[0]]) || 0; facts.push({ place: pl[1], stage: m.name, origin: o[1], n: n }); }); });
+      var cells = (entry(t.key, pl[0], d) || {}).cells || {};
+      masters(t.key, pl[0]).forEach(function (m) {
+        ORIGINS.forEach(function (o) {
+          if (!ok("origin", o[1])) return;
+          if (!grade) { if (!ok("stage", m.name)) return; facts.push({ place: pl[1], stage: m.name, origin: o[1], n: Number(cells[m.id] && cells[m.id][o[0]]) || 0 }); return; }
+          if (!ok("grade", m.name)) return;
+          MATS.forEach(function (mt) { if (!ok("mat", mt[1]) || !gradeIn(m, o[0], mt[0])) return; var v = cells[o[0] + "|" + mt[0] + "|" + m.id] || {}; facts.push({ place: pl[1], grade: m.name, origin: o[1], mat: mt[1], n: Number(v[st.val]) || 0 }); });
+        });
+      });
     });
-    var c2 = el("div", { class: "card" }); c2.appendChild(el("h3", null, "Pieces as on " + fmtDate(st.date))); c2.appendChild(el("div", { class: "hint", style: "margin-bottom:10px" }, "Using each place's latest entry: " + (asOf.join(" · ") || "no place chosen") + "."));
-    var order = { place: t.places.map(function (p) { return p[1]; }), stage: stageNames, origin: ORIGINS.map(function (o) { return o[1]; }) };
+    var fmt = grade && st.val === "a" ? area : pcs;
+    var c2 = el("div", { class: "card" }); c2.appendChild(el("h3", null, (grade && st.val === "a" ? "Area" : "Pieces") + " as on " + fmtDate(st.date))); c2.appendChild(el("div", { class: "hint", style: "margin-bottom:10px" }, "Using the latest entry of each: " + (asOf.join(" · ") || "none chosen") + "."));
     function keys(dim) { if (!dim) return ["Total"]; var seen = {}; facts.forEach(function (f) { seen[f[dim]] = 1; }); return order[dim].filter(function (k) { return seen[k]; }); }
     var rk = keys(st.rows), ck = keys(st.cols), cell = {}, rt = {}, ct = {}, all = 0;
     facts.forEach(function (f) { var r = st.rows ? f[st.rows] : "Total", k = st.cols ? f[st.cols] : "Total"; cell[r + "|" + k] = (cell[r + "|" + k] || 0) + f.n; rt[r] = (rt[r] || 0) + f.n; ct[k] = (ct[k] || 0) + f.n; all += f.n; });
     if (!facts.length) { c2.appendChild(el("div", { class: "empty" }, "Nothing to show for these filters.")); body.appendChild(c2); return; }
-    var sc = el("div", { class: "scroll" }), tbl = el("table"), th = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, st.rows ? (DIMS.filter(function (d) { return d[0] === st.rows; })[0] || [0, ""])[1] : ""));
+    var sc = el("div", { class: "scroll" }), tbl = el("table"), th = el("thead"), hr = el("tr"); hr.appendChild(el("th", null, st.rows ? label(dims, st.rows) : ""));
     ck.forEach(function (k) { hr.appendChild(el("th", { class: "n" }, k)); }); if (st.cols) hr.appendChild(el("th", { class: "n" }, "Total")); th.appendChild(hr); tbl.appendChild(th);
     var tb = el("tbody");
-    rk.forEach(function (r) { var tr = el("tr"); tr.appendChild(el("td", null, r)); ck.forEach(function (k) { tr.appendChild(el("td", { class: "n" }, pcs(cell[r + "|" + k]))); }); if (st.cols) tr.appendChild(el("td", { class: "n tot" }, pcs(rt[r]))); tb.appendChild(tr); });
-    if (st.rows) { var trt = el("tr", { class: "tot" }); trt.appendChild(el("td", null, "Total")); ck.forEach(function (k) { trt.appendChild(el("td", { class: "n" }, pcs(ct[k]))); }); if (st.cols) trt.appendChild(el("td", { class: "n" }, pcs(all))); tb.appendChild(trt); }
+    rk.forEach(function (r) { var tr = el("tr"); tr.appendChild(el("td", null, r)); ck.forEach(function (k) { tr.appendChild(el("td", { class: "n" }, fmt(cell[r + "|" + k]))); }); if (st.cols) tr.appendChild(el("td", { class: "n tot" }, fmt(rt[r]))); tb.appendChild(tr); });
+    if (st.rows) { var trt = el("tr", { class: "tot" }); trt.appendChild(el("td", null, "Total")); ck.forEach(function (k) { trt.appendChild(el("td", { class: "n" }, fmt(ct[k]))); }); if (st.cols) trt.appendChild(el("td", { class: "n" }, fmt(all))); tb.appendChild(trt); }
     tbl.appendChild(tb); sc.appendChild(tbl); c2.appendChild(sc); body.appendChild(c2);
   }
 

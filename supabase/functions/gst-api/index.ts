@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     // WhiteBooks wraps GSTN's answer; GSTN's taxpayer record carries lgnm, tradeNam, sts, rgdt, dty, stj and pradr.
     const d = (j.data ?? j.result ?? j) as Record<string, any>;
     const ok = !!(d && (d.gstin || d.lgnm || d.tradeNam));
-    if (!r.ok || !ok) return reply(200, { env, found: false, status: r.status, message: String(j.status_desc ?? j.message ?? j.error?.message ?? (j.error ?? "Not found")), raw: j });
+    if (!r.ok || !ok) return reply(200, { env, found: false, status: r.status, message: String((j.error as any)?.errorMessage ?? (j.error as any)?.message ?? j.message ?? j.status_desc ?? "Not found"), raw: j });
     const a = d.pradr?.addr ?? {};
     const addr = [a.bno, a.bnm, a.flno, a.st, a.loc, a.city, a.dst, a.stcd, a.pncd].filter(Boolean).join(", ") || d.pradr?.adr || "";
     return reply(200, {

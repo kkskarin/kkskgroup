@@ -127,6 +127,11 @@
   Ledger Statements (Duties & Taxes).
 - **Bill files:** a bill back for editing (postponed or sent back) shows its kept file beside the form, as the accountant
   sees it. The viewer has a Browser view switch (remembered per device) for scans the app draws doubled or blurred.
+- **GST through WhiteBooks** (GSP: BVM IT Consulting): the `gst-api` Edge Function holds the keys as secrets (`WB_BASE_URL`,
+  default the sandbox `https://apisandbox.whitebooks.in`; `WB_EMAIL`; `WB_GST_CLIENT_ID`; `WB_GST_CLIENT_SECRET`) and is
+  called by signed-in members through `window.bvGst` (`status`, `search`). Vendors › GSTIN has "Check on the GST portal":
+  legal and trade name, status, type and address, with "Use This Name and Address". Sandbox finds only WhiteBooks' test
+  GSTINs. e-Invoice and e-Way Bill come later.
 - **Cash limits (Payment Entry):** cash to one person stays under ₹10,000 a day; Freight & Transport vouchers can be paid up
   to ₹30,000 in cash a day (`CASH_FREIGHT`, `payFreight`). Cheques and NEFT / RTGS have no limit.
 - **Signatures.** Admins, purchasers, Expenses Operators, accountants, approvers and approval recorders sign once, with a

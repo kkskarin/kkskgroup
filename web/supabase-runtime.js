@@ -603,6 +603,17 @@
       return fetch(CFG.supabaseUrl + "/functions/v1/admin-users", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok, apikey: CFG.supabaseKey }, body: JSON.stringify(body) });
     }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw err(j.code || "unavailable", j.message || ("HTTP " + r.status)); return j; }); });
   }
+  /* ================= GST through WhiteBooks (gst-api Edge Function; its keys stay on the server) ================= */
+  function gstApi(body) {
+    return ready.then(function () { return sb.auth.getSession(); }).then(function (s) {
+      var tok = s.data.session && s.data.session.access_token;
+      return fetch(CFG.supabaseUrl + "/functions/v1/gst-api", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok, apikey: CFG.supabaseKey }, body: JSON.stringify(body) });
+    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw err(j.code || "unavailable", j.message || ("HTTP " + r.status)); return j; }); });
+  }
+  window.bvGst = Object.freeze({
+    status: function () { return gstApi({ action: "status" }); },
+    search: function (gstin) { return gstApi({ action: "search", gstin: gstin }); }
+  });
   window.bvAccount = Object.freeze({
     createLogin: function (email, password, name) { return adminUsers({ action: "create", email: email, password: password, name: name }); },
     setPassword: function (uid, password) { return adminUsers({ action: "password", uid: uid, password: password }); },

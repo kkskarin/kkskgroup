@@ -622,7 +622,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15p
 .fv-stage.drag{cursor:grabbing}.fv-stage:focus-visible{box-shadow:inset 0 0 0 2px var(--kk,#009256)}
 .fv-sheet{margin:0 auto;position:relative;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.35);min-width:40px;min-height:40px}
 .fv-sheet canvas{display:block}
-.gsttab td.bad,.gsttab td.num.bad{color:var(--bad,#b3261e);font-weight:600}.gsttab tfoot td{font-weight:700}.gstsup{font-weight:600;margin:2px 0 4px}
+.gsttab td.bad,.gsttab td.num.bad{color:var(--bad,#b3261e);font-weight:600}.gsttab tfoot td{font-weight:700}
+.gstres{margin-top:6px;padding:8px 10px;border:1px solid var(--line,#e2e8f0);border-radius:8px;font-size:13px;line-height:1.5}.gstres b.bad{color:var(--bad,#b3261e)}.gstsup{font-weight:600;margin:2px 0 4px}
 .fv-native{flex:1;width:100%;border:0;background:#5f6b66;min-height:400px}
 .fv-img{position:absolute;left:50%;top:50%;max-width:none;pointer-events:none}
 .fv-note{padding:24px;color:var(--muted);font-size:13.5px;background:#fff}
@@ -1024,7 +1025,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       <div class="form">
         <div class="f"><label for="veName">Vendor name</label><input class="field" id="veName" maxlength="140" autocomplete="off" data-fmt="name"><span class="err" id="veNameE" hidden></span></div>
         <div class="f"><label for="veType">Vendor type</label><select class="field" id="veType"></select><span class="err" id="veTypeE" hidden></span></div>
-        <div class="f"><label for="veGstin">GSTIN</label><input class="field mono" id="veGstin" maxlength="20" autocomplete="off" spellcheck="false"><span class="hint">Required for a registered vendor.</span><span class="err" id="veGstinE" hidden></span></div>
+        <div class="f"><label for="veGstin">GSTIN</label><input class="field mono" id="veGstin" maxlength="20" autocomplete="off" spellcheck="false"><span class="hint">Required for a registered vendor. <button type="button" class="link-btn" id="veGstChk" hidden>Check on the GST portal</button></span><span class="err" id="veGstinE" hidden></span><div id="veGstRes" class="gstres" hidden></div></div>
         <div class="f"><label for="vePan">PAN</label><input class="field mono ro" id="vePan" disabled><span class="hint">Taken from the GSTIN.</span><span class="err" id="vePanE" hidden></span></div>
         <div class="f wide"><label for="veAddr">Address</label><textarea class="field" id="veAddr" rows="2" maxlength="240"></textarea><span class="hint">Street, town and PIN code (with the country for an overseas vendor).</span><span class="err" id="veAddrE" hidden></span></div>
         <div class="f"><label for="veTerm">Payment terms (days)</label><input class="field num" id="veTerm" inputmode="numeric" maxlength="3" autocomplete="off"><span class="hint">Days from the bill date to the due date.</span><span class="err" id="veTermE" hidden></span></div>
@@ -4967,7 +4968,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     var v = S.vendors[id]; if (!v) return;
     VE.id = id; veClear();
     $("veName").value = v.name || ""; $("veAddr").value = v.address || ""; fillSelect($("veType"), [["", "Choose a type"]].concat(VTYPES), v.type || "");
-    $("veGstin").value = v.gstin || ""; $("vePan").value = v.gstin && gstinCheck(v.gstin) !== "format" ? panFromGstin(v.gstin) : ""; $("veTerm").value = v.termDays == null ? "" : String(v.termDays);
+    $("veGstin").value = v.gstin || ""; $("veGstChk").hidden = !window.bvGst; $("veGstRes").hidden = true; $("vePan").value = v.gstin && gstinCheck(v.gstin) !== "format" ? panFromGstin(v.gstin) : ""; $("veTerm").value = v.termDays == null ? "" : String(v.termDays);
     var bk0 = v.bank || {}; $("veBenName").value = bk0.name || ""; $("veBenAcct").value = bk0.acct || ""; $("veBenIfsc").value = bk0.ifsc || ""; $("veBenBank").value = bk0.bank || ""; $("veBenBranch").value = bk0.branch || ""; $("veBenType").value = bk0.type || ""; $("veBenPhone").value = bk0.phone || "";
     renderOpenings(v); renderVendorHead(v); renderVendorStatements();
     var ed = canEditVendors(), eb = canEditVendorBank();
@@ -5088,6 +5089,26 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     retry(function () { return S.db.doc("vendors/" + v.id).update({ active: off, updatedAt: Date.now(), updatedBy: meId() }); })
       .then(function () { toast(off ? v.name + " is active again." : v.name + " is deactivated. Its old bills still show it."); if (!off) $("vOff").checked = true; backToVendors(); }, function (e) { toast(explain(e)); })
       .then(function () { VE.busy = false; });
+  }
+  /* ---- a vendor's GSTIN checked with GSTN, through WhiteBooks (the gst-api function): legal name, status, address ---- */
+  function gstLookup(btn) {
+    var g = normId($("veGstin").value), box = $("veGstRes"); if (!window.bvGst) return;
+    if (!g || gstinCheck(g)) { veErr("veGstin", "Enter a valid GSTIN first."); return; }
+    var lb = btn.textContent; btn.disabled = true; btn.textContent = "Checking…"; box.hidden = false; box.textContent = "";
+    window.bvGst.search(g).then(function (r) {
+      box.textContent = "";
+      if (!r.found) { box.appendChild(el("b", null, "Not found on the GST portal")); box.appendChild(el("div", null, r.message || "")); if (r.env === "sandbox") box.appendChild(el("div", { class: "hint" }, "This is the WhiteBooks sandbox: only its test GSTINs are found.")); return; }
+      var bad = !/^active/i.test(r.status || "");
+      box.appendChild(el("b", { class: bad ? "bad" : "" }, (r.legalName || r.tradeName) + " · " + (r.status || "Status not given")));
+      if (r.tradeName && r.tradeName !== r.legalName) box.appendChild(el("div", null, "Trade name: " + r.tradeName));
+      box.appendChild(el("div", null, [r.type, r.constitution, r.since ? "registered " + r.since : "", r.cancelledOn ? "cancelled " + r.cancelledOn : ""].filter(Boolean).join(" · ")));
+      if (r.address) box.appendChild(el("div", null, r.address));
+      if (r.env === "sandbox") box.appendChild(el("div", { class: "hint" }, "Sandbox (test) data."));
+      var use = el("button", { type: "button", class: "btn sm", style: "margin-top:6px" }, "Use This Name and Address");
+      use.addEventListener("click", function () { if (r.legalName || r.tradeName) $("veName").value = r.tradeName || r.legalName; if (r.address) $("veAddr").value = r.address; toast("Filled in from the GST portal. Check and save."); });
+      box.appendChild(use);
+    }, function (e) { box.textContent = ""; box.appendChild(el("b", null, e && e.code === "not_configured" ? "The GST connection isn't set up yet." : "The GST portal couldn't be checked.")); box.appendChild(el("div", null, (e && e.message) || "")); })
+      .then(function () { btn.disabled = false; btn.textContent = lb; });
   }
   function backToVendors() { VE.id = null; renderVendors(); renderNav(); show("secVendors"); }
 
@@ -14407,7 +14428,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("vExport").addEventListener("click", function () { downloadVendorPayables($("vExport")); }); $("vQ").addEventListener("input", renderVendors); $("vCo").addEventListener("change", renderVendors); $("vNeeds").addEventListener("change", renderVendors); $("vOff").addEventListener("change", renderVendors);
     $("vBack").addEventListener("click", backToVendors); $("veCancel").addEventListener("click", backToVendors);
     $("veSave").addEventListener("click", saveVendor); $("veToggle").addEventListener("click", toggleVendor);
-    $("veGstin").addEventListener("input", function () { var g = normId(this.value); $("vePan").value = g && gstinCheck(g) !== "format" ? panFromGstin(g) : ""; });
+    $("veGstin").addEventListener("input", function () { var g = normId(this.value); $("vePan").value = g && gstinCheck(g) !== "format" ? panFromGstin(g) : ""; $("veGstRes").hidden = true; });
+    $("veGstChk").addEventListener("click", function () { gstLookup(this); });
     $("veGstin").addEventListener("blur", function () { this.value = normId(this.value); });
     $("veOb").addEventListener("focusout", function (e) { var t = e.target; if (t && t.tagName === "INPUT") t.value = fmtInput(t.value); });
     $("secVendor").addEventListener("input", function (e) { var t = e.target; if (t && t.id) { var er = $(t.id + "E"); if (er) er.hidden = true; t.classList.remove("bad"); } });

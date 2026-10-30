@@ -4298,6 +4298,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     else if (!billCanCo(b, D.companyId)) E("bcCo", "You don't have access to this company.");
     if (S.isAdmin && D.companyId) { if (!D.prepBy) E("bcPrep", "Choose who prepared this bill."); else if (!userHas(S.users[D.prepBy], billStep(b), D.companyId)) E("bcPrep", "That person doesn't hold Bills for this company any more. Choose again."); }
     if (!D.approverId) E("bcAppr", "Choose who approves this bill.");
+    var cce = ccCheck("bcCc", num(D.taxable) != null ? round2((num(D.taxable) || 0) + (num(D.gstAmt) || 0)) : null); if (cce) E("bcCc", cce);
     if (D.settle === "yes" && billAdvOk(D)) { var cb0 = cashBalance(billWho(D), D.companyId, b.id), need0 = billAdvAmt(D);
       if (need0 > cb0.free + 0.004) E("bcSettle", "The bill comes to " + money(need0) + ", more than the " + money(cb0.free) + " cash on hand. Choose No, or ask for a cash advance first."); }
     if (!D.vendorChoice) E("bcVen", "Choose the vendor, or choose New vendor.");
@@ -4613,7 +4614,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     else if (t.id === "bcTerm" && committed) renderTermBox();
     else if (t.id === "bcUpd") renderTermBox();
     else if (t.id === "bcVTerm") renderTermBox();
-    if (t.id === "bcCo" && committed) { renderAdvPick(); ccSync("bcCc", B.D.companyId, (B.D.X || {}).cc); B.D.X = extRead("bc", B.D.X || {}); }
+    if (t.id === "bcCo" && committed) { renderAdvPick(); ccSync("bcCc", B.D.companyId, B.D.X || {}); B.D.X = extRead("bc", B.D.X || {}); }
     updateDynamic();
     scheduleSave(); if (committed) doSave();
   }
@@ -6657,7 +6658,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function advToDraft(a) {
     var vn = a.vendorNew || {};
     return { companyId: a.companyId || "", vendorChoice: a.vendorId || (vn.name ? "new" : ""), vNew: { name: vn.name || "", gstin: vn.gstin || "", type: vn.type || (a.kind === "import" ? "overseas" : ""), country: vn.country || "", termDays: vn.termDays == null ? "" : String(vn.termDays) },
-      piNo: a.piNo || "", piDate: fmtDate(a.piDate), currency: a.currency || "INR", total: fmtInput(a.total), gst: a.gst == null ? "" : fmtInput(a.gst), narration: a.narration || "",
+      X: Object.assign({}, extOf(a, DIV)), piNo: a.piNo || "", piDate: fmtDate(a.piDate), currency: a.currency || "INR", total: fmtInput(a.total), gst: a.gst == null ? "" : fmtInput(a.gst), narration: a.narration || "",
       insts: (a.installments || []).map(function (it) { return { pct: String(it.pct), when: it.when, days: it.days == null ? "" : String(it.days) }; }),
       dispatch: fmtDate(a.dispatchDate), dispConfirmed: !!a.dispatchConfirmed, arrival: fmtDate(a.arrivalDate),
       igst: a.igst == null ? "" : fmtInput(a.igst), transport: a.transport == null ? "" : fmtInput(a.transport), duty: a.duty == null ? "" : fmtInput(a.duty), other: a.other == null ? "" : fmtInput(a.other),
@@ -6713,6 +6714,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var f = el("div", { class: "form", id: "adForm" });
     var co = el("select", { class: "field", id: "adCo" }); fillSelect(co, companyOpts(D.companyId, "adv"), D.companyId);
     f.appendChild(fld("Company", co, D.ex && D.ex.companyName ? "On the file: " + D.ex.companyName : ""));
+    if (APP === "re") { D.X = D.X || {}; f.appendChild(ccField("adCc", D.companyId, D.X)); co.addEventListener("change", function () { ccSync("adCc", co.value, D.X || {}); }); }
     f.appendChild(fld("Approver", approverSelect("adAppr", D.approverId), APPR_HINT));
     var ven = el("select", { class: "field", id: "adVen" }); fillSelect(ven, advVendorOpts(D), D.vendorChoice);
     f.appendChild(fld("Vendor", ven, D.ex && D.ex.vendorName ? "On the file: " + D.ex.vendorName : imp ? "Overseas vendors only." : ""));
@@ -6815,7 +6817,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function readAdvForm() {
     var D = ADV.D, imp = ADV.kind === "import"; if (!$("adCo")) return D;
     function v(id) { var e = $(id); return e ? e.value : ""; }
-    D.companyId = v("adCo"); D.vendorChoice = v("adVen"); D.vNew.name = v("adVName"); D.vNew.addr = v("adVAddr"); D.vNew.termDays = v("adVTerm"); D.approverId = v("adAppr");
+    D.companyId = v("adCo"); if ($("adCc")) D.X = extRead("ad", D.X || {}); D.vendorChoice = v("adVen"); D.vNew.name = v("adVName"); D.vNew.addr = v("adVAddr"); D.vNew.termDays = v("adVTerm"); D.approverId = v("adAppr");
     if (imp) D.vNew.country = v("adVCountry"); else { D.vNew.type = v("adVType"); D.vNew.gstin = v("adVGstin"); }
     D.piNo = v("adNo"); D.piDate = v("adDate"); if (imp) D.currency = v("adCur"); D.total = v("adTotal"); if (!imp) D.gst = v("adGst");
     D.insts = D.insts.map(function (it, i) { return { pct: v("adPct" + i), when: i === 0 ? "receipt" : v("adWhen" + i), days: i === 0 ? "" : v("adDays" + i) }; });
@@ -6848,6 +6850,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     errClear(box);
     function E(id, m) { errOn(id, m); ok = false; }
     if (!D.companyId) E("adCo", "Choose the company."); else if (!canStep("adv", D.companyId)) E("adCo", "You don't have access to this company.");
+    var cce = ccCheck("adCc", num(D.total)); if (cce) E("adCc", cce);
     var g = "";
     if (!D.approverId) E("adAppr", "Choose who approves this.");
     if (!D.vendorChoice) E("adVen", "Choose the vendor, or New vendor.");
@@ -6895,6 +6898,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       installments: D.insts.map(function (it, i) { return { pct: round2(num(it.pct)), when: i === 0 ? "receipt" : it.when, days: i === 0 ? 0 : dayCount(it.days) }; }),
       dispatchDate: dd || null, dispatchConfirmed: !!(D.dispConfirmed && dd), narration: sentenceFix(D.narration.trim()), updatedAt: now, updatedBy: meId(),
       approverId: D.approverId || "", approverName: approverFields(D.approverId).approverName };
+    if (APP === "re") Object.assign(doc, extDoc(D.companyId, D.X));
     if (doc.dispatchConfirmed && !(real && real.dispatchConfirmed && real.dispatchDate === dd)) doc.dispatchConfirmedOn = todayYmd();
     if (!doc.dispatchConfirmed) doc.dispatchConfirmedOn = null;
     if (imp) { doc.arrivalDate = ad || null; Object.assign(doc, costs); }
@@ -9271,6 +9275,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var errs = [];
     function E(f, m) { errs.push([f, m]); }
     if (!D.companyId) E("vfCo", "Choose the company.");
+    var cce = ccCheck("vfCc", vchTotal(D)); if (cce) E("vfCc", cce);
     else if (!hasRole("vouchers", D.companyId)) E("vfCo", "You don't handle vouchers for this company.");
     if (vMaker()) { if (!D.forId) E("vfFor", "Choose who the voucher is for."); else if (D.forId === "new" && !String(D.forNew || "").trim()) E("vfForNew", "Type the name."); else if (!vForIsPerson(D.forId) && D.settle === "yes") E("vfSet", "Only someone with a login has a cash advance; the financier pays this one."); }
     if (S.isAdmin && D.companyId) { if (!D.prepBy) E("vfPrep", "Choose who made the voucher."); else if (!userHas(S.users[D.prepBy], "vouchers", D.companyId)) E("vfPrep", "That person doesn't hold vouchers for this company any more. Choose again."); }
@@ -13996,10 +14001,17 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var out = [], fx = function (x) { return x.currency && x.currency !== "INR" && Number(x.fxRate) ? Number(x.fxRate) : 1; }, inr = function (x) { return round2((Number(x.total) || 0) * fx(x)); };
     /* Entries of other divisions (Maintenance, say) count too when tagged to a transformer or WEG / SEI ID. */
     var all = function (raw, own) { var m = Object.assign({}, raw || {}, own || {}); return Object.keys(m).map(function (k) { return Object.assign({ id: k }, m[k]); }); };
-    all(S.raw.bills, S.bills).forEach(function (b) { var xe = extOf(b, "re"); if ((divOf(b) !== "re" && !xe.ccT) || b.status !== "done" || !b.companyId) return; out.push({ kind: "bill", cc: xe.cc || "", ccT: xe.ccT || "", cid: b.companyId, date: b.billDate || "", amt: inr(b), no: b.billNo || "", party: vendorLabelOfBill(b) || "", led: (b.ledgers || []).map(function (l) { return { id: l.id, amt: round2((Number(l.amt) || 0) * fx(b)) }; }) }); });
-    Object.keys(S.advances || {}).forEach(function (k) { var a = S.advances[k]; if (divOf(a) !== "re" || !a.companyId || a.taxBillId || a.status === "cancelled" || a.status === "deleted") return; var v = S.vendors[a.vendorId]; out.push({ kind: a.kind === "import" ? "import" : "proforma", cid: a.companyId, date: a.piDate || "", amt: inr(a), no: a.piNo || "", party: v ? v.name : (a.vendorNew && a.vendorNew.name) || "", led: [] }); });
-    all(S.raw.vouchers, S.vouchers).forEach(function (v) { var xe = extOf(v, "re"); if ((divOf(v) !== "re" && !xe.ccT) || !v.companyId || v.status === "deleted") return; out.push({ kind: "voucher", cc: xe.cc || "", ccT: xe.ccT || "", cid: v.companyId, date: v.voucherDate || "", amt: Number(v.total) || 0, no: v.voucherNo || "", party: v.payee || "", led: (v.ledgers || []).map(function (l) { return { id: l.id, amt: Number(l.amt) || 0 }; }) }); });
-    return out.filter(function (e) { return /^\d{4}-\d{2}/.test(e.date) && e.amt; });
+    all(S.raw.bills, S.bills).forEach(function (b) { var xe = extOf(b, "re"); if ((divOf(b) !== "re" && !xe.ccT) || b.status !== "done" || !b.companyId) return; out.push({ kind: "bill", cc: xe.cc || "", ccT: xe.ccT || "", ccs: xe.ccs, cid: b.companyId, date: b.billDate || "", amt: inr(b), no: b.billNo || "", party: vendorLabelOfBill(b) || "", led: (b.ledgers || []).map(function (l) { return { id: l.id, amt: round2((Number(l.amt) || 0) * fx(b)) }; }) }); });
+    Object.keys(S.advances || {}).forEach(function (k) { var a = S.advances[k]; if (divOf(a) !== "re" || !a.companyId || a.taxBillId || a.status === "cancelled" || a.status === "deleted") return; var v = S.vendors[a.vendorId], xa = extOf(a, "re"); out.push({ kind: a.kind === "import" ? "import" : "proforma", cc: xa.cc || "", ccT: xa.ccT || "", ccs: xa.ccs, cid: a.companyId, date: a.piDate || "", amt: inr(a), no: a.piNo || "", party: v ? v.name : (a.vendorNew && a.vendorNew.name) || "", led: [] }); });
+    all(S.raw.vouchers, S.vouchers).forEach(function (v) { var xe = extOf(v, "re"); if ((divOf(v) !== "re" && !xe.ccT) || !v.companyId || v.status === "deleted") return; out.push({ kind: "voucher", cc: xe.cc || "", ccT: xe.ccT || "", ccs: xe.ccs, cid: v.companyId, date: v.voucherDate || "", amt: Number(v.total) || 0, no: v.voucherNo || "", party: v.payee || "", led: (v.ledgers || []).map(function (l) { return { id: l.id, amt: Number(l.amt) || 0 }; }) }); });
+    /* an entry spread over several places becomes one expense per place, its ledgers shared in the same proportion */
+    var split = [];
+    out.forEach(function (e) {
+      var rs = e.ccs && e.ccs.length > 1 ? e.ccs : null; if (!rs) { split.push(e); return; }
+      var tot = rs.reduce(function (s0, r) { return s0 + (Number(r.amt) || 0); }, 0) || 1;
+      rs.forEach(function (r) { var k = (Number(r.amt) || 0) / tot; split.push(Object.assign({}, e, { cc: r.cc || "", ccT: r.ccT || "", amt: round2(e.amt * k), led: e.led.map(function (l) { return { id: l.id, amt: round2(l.amt * k) }; }) })); });
+    });
+    return split.filter(function (e) { return /^\d{4}-\d{2}/.test(e.date) && e.amt; });
   }
   /* India's four seasons, by month. */
   var SEASONS = [["winter", "Winter (Jan–Feb)", [1, 2]], ["summer", "Summer (Mar–May)", [3, 4, 5]], ["swm", "South-west monsoon (Jun–Sep)", [6, 7, 8, 9]], ["nem", "North-east monsoon (Oct–Dec)", [10, 11, 12]]];
@@ -14097,8 +14109,10 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
 
   /* ---- Reports › P&L › Profit by cost centre: company, transformer, WEG / SEI ID, location (district) and region.
-     Income (A − B) is known per transformer from each bill of supply's lines; it is not split to WEG / SEI IDs yet, so those show expenses only.
-     Expenses tagged to a WEG / SEI ID also count for its transformer; ones for the company in general stay with the company.
+     Income (A − B) is known per transformer from each bill of supply's lines. In the WEG / SEI ID view, a transformer's income
+     and the expenses on the transformer itself are shared over its windmills or inverters by kW (inverters: AC capacity).
+     Expenses tagged to a WEG / SEI ID also count for its transformer; General ones stay with the company. An entry spread over
+     several places counts each place's amount there.
      A transformer rolls up to its region and location; company-wide expenses have no location, so they show on a row of their own. ---- */
   var CC_VIEWS = [["co", "Company"], ["t", "Transformer"], ["u", "WEG / SEI ID"], ["loc", "Location"], ["reg", "Region"]];
   function ccTrans() { var m = {}; Object.keys(S.companies).forEach(function (cid) { var R = S.companies[cid].re; ((R && R.htscs) || []).forEach(function (h) { var t = htscOf(h.htsc); if (t) m[t] = { cid: cid, h: h, kind: R.kind }; }); }); return m; }
@@ -14115,11 +14129,18 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       return rid ? [rid, regName(rid) || "Region", locName(lid)] : ["~nr", "Region not set", ""];
     }
     function row(k) { return rows[k[0]] || (rows[k[0]] = { k: k[0], name: k[1], sub: k[2], units: 0, A: 0, B: 0, C: 0 }); }
+    /* By WEG / SEI ID: what is on a transformer (its income, and expenses on the transformer itself) is shared over its
+       windmills or inverters by their capacity in kW. */
+    function shares(t) { var x = T[t]; if (view !== "u" || !x) return null; var us = ccUnits(x.h, x.kind).map(function (u) { return { id: ccIdOf(u), kw: n0(u.kw) }; }).filter(function (u) { return u.id && u.kw > 0; }), tot = us.reduce(function (s0, u) { return s0 + u.kw; }, 0); return tot > 0 ? us.map(function (u) { return { id: u.id, k: u.kw / tot }; }) : null; }
     inv.forEach(function (i) {
       var ls = (i.lines && i.lines.length) ? i.lines : [{ plant: i.plant, units: i.units, A: i.A, B: i.B }];
-      ls.forEach(function (l) { var t = htscOf(l.plant || ""), k = key(i.companyId, T[t] ? t : "", ""); var r = row(k); r.units += n0(l.units); r.A += n0(l.A); r.B += n0(l.B); });
+      ls.forEach(function (l) { var t = htscOf(l.plant || ""), sh = T[t] ? shares(t) : null;
+        if (sh) { sh.forEach(function (u) { var r = row(key(i.companyId, t, u.id)); r.units += n0(l.units) * u.k; r.A += n0(l.A) * u.k; r.B += n0(l.B) * u.k; }); return; }
+        var k = key(i.companyId, T[t] ? t : "", ""); var r = row(k); r.units += n0(l.units); r.A += n0(l.A); r.B += n0(l.B); });
     });
-    ex.forEach(function (e) { var u = e.cc && e.cc.indexOf("u:") === 0 ? e.cc.slice(2) : ""; row(key(e.cid, e.ccT || "", u)).C += e.amt; });
+    ex.forEach(function (e) { var u = e.cc && e.cc.indexOf("u:") === 0 ? e.cc.slice(2) : "", sh = !u && e.ccT ? shares(e.ccT) : null;
+      if (sh) { sh.forEach(function (x) { row(key(e.cid, e.ccT, x.id)).C += e.amt * x.k; }); return; }
+      row(key(e.cid, e.ccT || "", u)).C += e.amt; });
     return Object.keys(rows).map(function (k) { var r = rows[k]; r.A = round2(r.A); r.B = round2(r.B); r.C = round2(r.C); r.net = round2(r.A - r.B); r.left = round2(r.net - r.C); return r; });
   }
   function ccProfit(box, inv, ex, consF, periodTxt) {
@@ -14185,11 +14206,19 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     return sel;
   }
   /* The cost centres of a company, for the "Where is this expense from" pick: "" (the company in general), "t:<HTSC>" or "u:<WEG/SEI ID>". */
+  /* Where an expense is from, for a company with transformers: General (the company as a whole), one of its transformers,
+     or one of its windmills (WEG IDs) or inverters (SEI IDs), under headings. */
   function ccOpts(cid) {
     var c = S.companies[cid], R = c && c.re; if (!R || !(R.htscs || []).length) return null;
-    var o = [["", "Company in general"]], idn = R.kind === "wind" ? "WEG" : "SEI";
-    R.htscs.forEach(function (h) { var t = htscOf(h.htsc); if (!t) return; o.push(["t:" + t, "Transformer " + t + (h.location ? " · " + h.location : "")]); ccUnits(h, R.kind).forEach(function (u) { var id = ccIdOf(u); if (id) o.push(["u:" + id, "\u00a0\u00a0\u00a0" + idn + " " + id + " (transformer " + t + ")"]); }); });
-    return o;
+    var wind = R.kind === "wind", tr = [], us = [];
+    R.htscs.forEach(function (h) { var t = htscOf(h.htsc); if (!t) return; tr.push(["t:" + t, "Transformer " + t + (h.location ? " · " + h.location : "")]);
+      ccUnits(h, R.kind).forEach(function (u) { var id = ccIdOf(u); if (id) us.push(["u:" + id, (wind ? "WEG " : "SEI ") + id + " (transformer " + t + (n0(u.kw) ? ", " + n0(u.kw).toLocaleString("en-IN") + " kW" : "") + ")"]); }); });
+    return [["", [["gen", "General (the company as a whole)"]]], ["Transformers", tr], [wind ? "Windmills (WEG IDs)" : "Inverters (SEI IDs)", us]];
+  }
+  function ccFill(sel, groups, val) {
+    sel.textContent = ""; sel.appendChild(el("option", { value: "" }, "Choose where the expense is from")); var have = {};
+    groups.forEach(function (g) { if (!g[1].length) return; var par = g[0] ? el("optgroup", { label: g[0] }) : sel; g[1].forEach(function (o) { have[o[0]] = 1; par.appendChild(el("option", { value: o[0] }, o[1])); }); if (g[0]) sel.appendChild(par); });
+    sel.value = have[val] ? val : "";
   }
   /* ---- Core plus app-specific fields. Every bill and voucher has the same core (what Accounts, Approvals and Finance work
      from); each division app adds its own fields on top, kept under ext.<app> and shown only in that app. A new app only
@@ -14200,33 +14229,73 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function extList(k) { var m = {}; [S.raw && S.raw.bills, S.raw && S.raw.vouchers].forEach(function (src) { Object.keys(src || {}).forEach(function (id) { var v = (extOf(src[id], DIV) || {})[k]; if (v) m[String(v).toLowerCase()] = String(v); }); }); var id = "xl_" + k, dl = $(id); if (!dl) { dl = el("datalist", { id: id }); document.body.appendChild(dl); } dl.textContent = ""; Object.keys(m).map(function (q) { return m[q]; }).sort(natCmp).forEach(function (v) { dl.appendChild(el("option", { value: v })); }); return id; }
   /* The app's own fields on a form (pre: element id prefix; X: this entry's values; cid: its company). */
   function extFields(box, pre, X, cid) {
-    if (APP === "re") box.appendChild(ccField(pre + "Cc", cid, X.cc || ""));
+    if (APP === "re") box.appendChild(ccField(pre + "Cc", cid, X));
     (APP_EXT[DIV] || []).forEach(function (f) { box.appendChild(fld(f[1], inp(pre + "X_" + f[0], X[f[0]] || "", { maxlength: "80", list: extList(f[0]), autocomplete: "off" }), f[2])); });
   }
-  function extRead(pre, X) { X = X || {}; if (APP === "re" && $(pre + "Cc")) X.cc = $(pre + "CcF").hidden ? "" : $(pre + "Cc").value; (APP_EXT[DIV] || []).forEach(function (f) { var i = $(pre + "X_" + f[0]); if (i) X[f[0]] = i.value; }); return X; }
+  function extRead(pre, X) { X = X || {}; if (APP === "re" && $(pre + "CcF")) X.ccs = $(pre + "CcF").hidden ? [] : ccReadRows(pre + "Cc"); (APP_EXT[DIV] || []).forEach(function (f) { var i = $(pre + "X_" + f[0]); if (i) X[f[0]] = i.value; }); return X; }
   /* What is saved: only this app's part. */
   function extDoc(cid, X) {
     if (!DIV) return {}; var o = {};
-    if (APP === "re") o = ccFields(cid, (X || {}).cc);
+    if (APP === "re") o = ccDocOf(cid, X || {});
     (APP_EXT[DIV] || []).forEach(function (f) { var v = String((X || {})[f[0]] || "").trim(); if (v) o[f[0]] = v; });
     var e = {}; e[DIV] = o; return APP === "re" || (APP_EXT[DIV] || []).length ? { ext: e } : {}; /* cleared fields are saved cleared */
   }
+  /* ---- Where an expense is from (Renewable Energy): one or more rows of a place and its amount. A place is General, a
+     transformer, or a WEG / SEI ID (which fills in its transformer). Several rows must add up to the entry's total
+     (including GST); one row takes the whole of it. Saved as ccs [{cc, ccT, amt}], with cc / ccT of the first row. ---- */
+  function ccRowsOf(X) { X = X || {}; if (X.ccs && X.ccs.length) return X.ccs.map(function (r) { return { cc: r.cc || "", amt: r.amt == null ? "" : fmtInput(r.amt) }; }); return [{ cc: X.cc || "", amt: "" }]; }
+  function ccReadRows(id) { var out = []; Array.prototype.forEach.call(document.querySelectorAll("#" + id + "Rows .ccrow"), function (r) { out.push({ cc: r.querySelector("select").value, amt: r.querySelector("input").value }); }); return out; }
+  function ccDocOf(cid, X) {
+    var rows = (X.ccs || (X.cc ? [{ cc: X.cc, amt: "" }] : [])).filter(function (r) { return r.cc; });
+    if (!rows.length) return { cc: "", ccT: "", ccs: [] };
+    var ccs = rows.map(function (r) { var f = ccFields(cid, r.cc); return { cc: f.cc, ccT: f.ccT, amt: rows.length > 1 ? round2(num(r.amt) || 0) : null }; });
+    return { cc: ccs[0].cc, ccT: ccs[0].ccT, ccs: ccs };
+  }
+  /* "" when fine, else what is wrong: a row without a place, or rows not adding up to the total. */
+  function ccCheck(id, total) {
+    var f = $(id + "F"); if (!f || f.hidden) return "";
+    var rows = ccReadRows(id); if (rows.some(function (r) { return !r.cc; })) return "Choose where this expense is from" + (rows.length > 1 ? " on every row." : ".");
+    if (rows.length < 2) return "";
+    if (rows.some(function (r) { var n = num(r.amt); return n == null || n <= 0; })) return "Enter the amount on every row.";
+    var sum = round2(rows.reduce(function (s0, r) { return s0 + (num(r.amt) || 0); }, 0));
+    if (total != null && Math.abs(sum - total) > 0.004) return "The rows add up to " + amt2(sum) + ", but the total (including GST) is " + amt2(total) + ".";
+    return "";
+  }
   /* What a pick saves: cc (the pick) and ccT (its transformer; a WEG / SEI ID fills in the transformer it is on). */
   function ccFields(cid, v) {
-    v = String(v || ""); if (!v) return { cc: "", ccT: "" };
+    v = String(v || ""); if (!v) return { cc: "", ccT: "" }; if (v === "gen") return { cc: "gen", ccT: "" };
     if (v.indexOf("t:") === 0) return { cc: v, ccT: v.slice(2) };
     var R = ((S.companies[cid] || {}).re) || {}, id = v.slice(2), t = "";
     (R.htscs || []).forEach(function (h) { if (ccUnits(h, R.kind).some(function (u) { return ccIdOf(u) === id; })) t = htscOf(h.htsc); });
     return t ? { cc: v, ccT: t } : { cc: "", ccT: "" };
   }
-  function ccLabel(d) { var v = (d && d.cc) || ""; if (!v) return "Company in general"; if (v.indexOf("t:") === 0) return "Transformer " + v.slice(2); var R = ((S.companies[d.companyId] || {}).re) || {}; return (R.kind === "wind" ? "WEG " : "SEI ") + v.slice(2) + (d.ccT ? " · transformer " + d.ccT : ""); }
-  /* The pick on a bill or voucher form: shown only for a company with transformers. */
-  function ccField(id, cid, val) {
-    var o = ccOpts(cid), sel = el("select", { class: "field", id: id }); if (o) fillSelect(sel, o, o.some(function (x) { return x[0] === val; }) ? val : "");
-    var f = fld("Where is this expense from?", sel, "The company in general, one of its transformers, or one " + ((((S.companies[cid] || {}).re) || {}).kind === "wind" ? "WEG ID" : "SEI ID") + " (its transformer is filled in by itself). Profit is reported by each."); f.id = id + "F"; f.hidden = !o || APP !== "re";
+  function ccLabel(d) { var v = (d && d.cc) || ""; if (!v || v === "gen") return "General (company as a whole)"; if (v.indexOf("t:") === 0) return "Transformer " + v.slice(2); var R = ((S.companies[d.companyId] || {}).re) || {}; return (R.kind === "wind" ? "WEG " : "SEI ") + v.slice(2) + (d.ccT ? " · transformer " + d.ccT : ""); }
+  /* The rows on a bill, voucher or proforma form: shown only for a company with transformers. */
+  function ccField(id, cid, X) {
+    var R = ((S.companies[cid] || {}).re) || {}, wind = R.kind === "wind", f = el("div", { class: "f wide", id: id + "F" });
+    f.appendChild(el("span", { class: "lb" }, "Where is this expense from?"));
+    var box = el("div", { id: id + "Rows" }); f.appendChild(box);
+    var add = el("button", { type: "button", class: "link-btn", id: id + "Add" }, "+ Add another place"); f.appendChild(add);
+    f.appendChild(el("span", { class: "hint" }, "Required. General, a transformer or a " + (wind ? "WEG ID" : "SEI ID") + " (its transformer, region and location follow). For several places, give each its amount; together they make the total including GST. An expense on a transformer is shared over its " + (wind ? "WEG" : "SEI") + " IDs by kW in the reports."));
+    f.appendChild(el("span", { class: "err", id: id + "E", hidden: "" }));
+    add.addEventListener("click", function () { var rs = ccReadRows(id); rs.push({ cc: "", amt: "" }); ccDraw(id, f.getAttribute("data-cid"), rs); f.dispatchEvent(new Event("change", { bubbles: true })); });
+    f.setAttribute("data-cid", cid || ""); ccDraw(id, cid, ccRowsOf(X), box);
+    f.hidden = !ccOpts(cid) || APP !== "re";
     return f;
   }
-  function ccSync(id, cid, val) { var f = $(id + "F"), o = APP === "re" ? ccOpts(cid) : null; if (!f) return; f.hidden = !o; if (o) { var sel = $(id); fillSelect(sel, o, o.some(function (x) { return x[0] === val; }) ? val : ""); } }
+  function ccDraw(id, cid, rows, box) {
+    box = box || $(id + "Rows"); var o = ccOpts(cid); if (!box) return; box.textContent = ""; if (!o) return;
+    rows.forEach(function (r, i) {
+      var w = el("div", { class: "ccrow", style: "display:flex;gap:8px;align-items:center;margin:0 0 6px;flex-wrap:wrap" }), sel = el("select", { class: "field", id: id + (i ? "_" + i : ""), style: "flex:1 1 240px" }); ccFill(sel, o, r.cc);
+      var a = inp(id + "A_" + i, rows.length > 1 ? r.amt : "", { inputmode: "decimal", class: "field num", style: "flex:0 0 140px", placeholder: rows.length > 1 ? "Amount" : "Whole amount", "aria-label": "Amount for this place" }); a.disabled = rows.length < 2;
+      w.appendChild(sel); w.appendChild(a);
+      if (rows.length > 1) { var x = el("button", { type: "button", class: "btn sm", "aria-label": "Remove this place" }, "Remove"); x.addEventListener("click", function () { var rs = ccReadRows(id); rs.splice(i, 1); ccDraw(id, cid, rs, box); var ff = $(id + "F"); if (ff) ff.dispatchEvent(new Event("change", { bubbles: true })); }); w.appendChild(x); }
+      box.appendChild(w);
+    });
+  }
+  function ccSync(id, cid, X) { var f = $(id + "F"); if (!f) return; var o = APP === "re" ? ccOpts(cid) : null; f.hidden = !o; f.setAttribute("data-cid", cid || ""); if (o) ccDraw(id, cid, ccRowsOf(X)); }
+  /* Labels of an entry's places, for lists and reports. */
+  function ccText(xe, cid) { var rs = (xe && xe.ccs && xe.ccs.length) ? xe.ccs : [{ cc: (xe && xe.cc) || "", ccT: (xe && xe.ccT) || "" }]; return rs.map(function (r) { return ccLabel({ cc: r.cc, ccT: r.ccT, companyId: cid }) + (rs.length > 1 && r.amt != null ? " " + amt2(r.amt) : ""); }).join("; "); }
   function renderCoRe() {
     var box = $("coRe"); box.hidden = !S.coRe; box.textContent = ""; if (!S.coRe) return;
     var R = S.coRe, wind = R.kind === "wind";
@@ -14735,7 +14804,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       readVchForm();
       if (e.target && e.target.id === "vfPayeeSel" && e.target.value === "new") setTimeout(function () { $("vfPayee").focus(); }, 0);
       if (e.target && e.target.id === "vfCo" && S.isAdmin) { var ps = $("vfPrep"), np = prepSelect("vfPrep", "vouchers", VH.D.companyId, VH.D.prepBy); ps.parentNode.replaceChild(np, ps); VH.D.prepBy = np.value; }
-      if (e.target && e.target.id === "vfCo") { ccSync("vfCc", VH.D.companyId, (VH.D.X || {}).cc); VH.D.X = extRead("vf", VH.D.X || {}); }
+      if (e.target && e.target.id === "vfCo") { ccSync("vfCc", VH.D.companyId, VH.D.X || {}); VH.D.X = extRead("vf", VH.D.X || {}); }
       if (e.target && e.target.id === "vfCo" && $("vfFor")) { var fo0 = $("vfFor"), keep = fo0.value; fillSelect(fo0, vForOpts(VH.D.companyId), keep); VH.D.forId = fo0.value; }
       if ($("vfForNewF")) $("vfForNewF").hidden = VH.D.forId !== "new";
       updVchForm();

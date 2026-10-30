@@ -497,9 +497,13 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   transformer is filled in by itself); saved as `cc` (`""`, `t:<HTSC>` or `u:<ID>`) and `ccT` (the transformer). Entries of
   other divisions (Maintenance & Civil, Bills & Vouchers) tagged to a transformer or ID count in the Renewable Energy P&L
   too. **P&L › Profit by cost centre** (same filters) shows A − B, C and profit by company, transformer, WEG / SEI ID,
-  location or region; income is known per transformer from each bill of supply's lines and is not split to WEG / SEI IDs
-  yet (those rows show expenses); transformers roll up to region and location, and company-wide expenses show on a row of
-  their own. Excel has a sheet per view.
+  location or region. In the WEG / SEI ID view a transformer's income and the expenses on the transformer itself are
+  shared over its windmills or inverters by kW (inverters: AC capacity); transformers roll up to region and location, and
+  General expenses stay with the company on a row of their own. Excel has a sheet per view.
+  **Where an expense is from is required** on Renewable Energy bills, vouchers, proformas and imports of a company with
+  transformers: one or more rows (`ext.re.ccs` [{cc, ccT, amt}], first row also as `cc` / `ccT`) of General (`gen`), a
+  transformer or a WEG / SEI ID (under headings). Several rows must add up to the total including GST; one row takes the
+  whole. Each row counts as its own expense in the reports. Older entries with nothing chosen count as General.
 - Tabs in Renewable Energy: Reports (Transactions, Payables, P&L), Sales (Monthly Billing, Invoices), Expenses
   (bills, proformas, imports, vouchers and their checking reports, cash advances), Masters (Companies, Consumers, PPA
   Rates, Vendors, Ledgers), Settings. Its accounting is in Accounts and its payments in Finance.

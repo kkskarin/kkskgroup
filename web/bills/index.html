@@ -1005,8 +1005,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 
   <section id="secVendors" hidden>
     <div class="head">
-      <div class="grow"><h2>Vendors</h2><p class="sub">Vendors are created when their first bill is submitted. A vendor is flagged until its opening balance is captured for every company it has bills in.</p></div>
-      <div class="acts2"><button class="btn" id="vXls" type="button">Download Excel</button><button class="btn" id="vExport" type="button">Export payables PDF</button></div>
+      <div class="grow"><h2>Vendors</h2><p class="sub">Add a vendor here, or it is added when its first bill is submitted. A vendor is flagged until its opening balance is captured for every company it has bills in.</p></div>
+      <div class="acts2"><button class="btn primary" id="vAdd" type="button" hidden>Add Vendor</button><button class="btn" id="vXls" type="button">Download Excel</button><button class="btn" id="vExport" type="button">Export payables PDF</button></div>
     </div>
     <div class="filters">
       <select class="field" id="vCo" aria-label="Filter by company" style="width:auto;min-width:180px"></select>
@@ -1050,7 +1050,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
         <button class="btn danger" id="veToggle" hidden></button>
       </div>
     </div>
-    <h3>Statements</h3>
+    <h3 id="veStH">Statements</h3>
     <p class="sub" style="margin-bottom:12px" id="veStSub">One statement per company, as a PDF. Figures use what is saved, so save any changes first.</p>
     <div class="card list scroll" id="veSt"></div>
   </section>
@@ -4929,7 +4929,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   }
   function renderVendors() {
     if (IMP.busy) return; /* an upload redraws once it is done */
-    var box = $("vList"); box.textContent = ""; if (canImport()) impButtons("vendors", $("vExport").parentNode);
+    var box = $("vList"); box.textContent = ""; if (canImport()) impButtons("vendors", $("vExport").parentNode); $("vAdd").hidden = !canEditVendors();
     var q = $("vQ").value.trim().toLowerCase(), onlyNeeds = $("vNeeds").checked, showOff = $("vOff").checked;
     var vc = $("vCo"), vcv = vc.value; fillSelect(vc, [["", "All companies"]].concat(myCompanies().map(function (c) { return [c.id, c.shortName || c.name]; })), vcv); vcv = vc.value;
     var inCo = {}; if (vcv) ledgersFor(function (r) { return r.cid === vcv && (r.opening || r.bills.length || r.advs.length || r.txs.length); }).forEach(function (r) { inCo[r.vid] = 1; });
@@ -4940,7 +4940,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
       if (q && ((r.v.name || "") + " " + (r.v.gstin || "") + " " + (r.v.pan || "")).toLowerCase().indexOf(q) < 0) return false;
       return true;
     }).sort(function (a, b) { return (!!b.n.list.length - !!a.n.list.length) || (a.v.active === false) - (b.v.active === false) || natCmp(a.v.name, b.v.name); });
-    if (!all.length) { box.appendChild(el("div", { class: "empty" }, "No vendors yet. A vendor is added here when the first bill from it is submitted on Enter Bills.")); return; }
+    if (!all.length) { box.appendChild(el("div", { class: "empty" }, canEditVendors() ? "No vendors yet. Use Add Vendor, or a vendor is added when the first bill from it is submitted." : "No vendors yet. A vendor is added here when the first bill from it is submitted on Enter Bills.")); return; }
     if (!rows.length) { box.appendChild(el("div", { class: "empty" }, "No vendors match.")); return; }
     rows.forEach(function (r) { r.tot = vendorTotals(r.v.id); });
     sortTable(box, "vList", [
@@ -4964,8 +4964,16 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     Array.prototype.forEach.call(document.querySelectorAll("#secVendor .field.bad"), function (e) { e.classList.remove("bad"); });
   }
   function veErr(id, msg) { var e = $(id + "E"); if (e) { e.textContent = msg; e.hidden = false; } var f = $(id); if (f) f.classList.add("bad"); }
+  /* The vendor on the form: a saved one, or a new one not saved yet (VE.nv). */
+  function veCur() { return VE.nv && VE.nv.id === VE.id ? VE.nv : S.vendors[VE.id]; }
+  function newVendor() {
+    if (!canEditVendors()) return;
+    VE.nv = { id: newId("v"), name: "", address: "", type: "", gstin: "", termDays: null, openings: {}, active: true, isNew: true };
+    openVendor(VE.nv.id);
+  }
   function openVendor(id) {
-    var v = S.vendors[id]; if (!v) return;
+    if (!(VE.nv && VE.nv.id === id)) VE.nv = null;
+    var v = VE.nv || S.vendors[id]; if (!v) return;
     VE.id = id; veClear();
     $("veName").value = v.name || ""; $("veAddr").value = v.address || ""; fillSelect($("veType"), [["", "Choose a type"]].concat(VTYPES), v.type || "");
     $("veGstin").value = v.gstin || ""; $("veGstChk").hidden = !window.bvGst; $("veGstRes").hidden = true; $("vePan").value = v.gstin && gstinCheck(v.gstin) !== "format" ? panFromGstin(v.gstin) : ""; $("veTerm").value = v.termDays == null ? "" : String(v.termDays);
@@ -4975,11 +4983,13 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     Array.prototype.forEach.call(document.querySelectorAll("#secVendor .form .field, #veOb input"), function (i) { if (i.id === "vePan") return; var bank = /^veBen/.test(i.id); i.disabled = bank ? !eb : !ed; });
     $("veSave").hidden = !ed && !eb; $("veCancel").textContent = ed || eb ? "Cancel" : "Back";
     if (!ed || !eb) { var nt = el("div", { class: "flag", style: "margin-top:8px" }, ed ? "The bank details for cheques and NEFT / RTGS are filled in by the financier." : eb ? "The vendor's accounting details and opening balances are kept by the accountant. You fill in the bank details for cheques and NEFT / RTGS." : "Vendor details and opening balances are filled in by the accountant; bank details by the financier."); $("vFlags").appendChild(nt); }
-    var tg = $("veToggle"); tg.hidden = !S.isAdmin || !ed;
+    var tg = $("veToggle"); tg.hidden = !S.isAdmin || !ed || !!v.isNew;
+    $("veStH").hidden = $("veStSub").hidden = $("veSt").hidden = !!v.isNew; $("veSave").textContent = v.isNew ? "Add vendor" : "Save vendor";
     if (S.isAdmin) { var off = v.active === false; tg.textContent = off ? "Reactivate vendor" : "Deactivate vendor"; tg.className = "btn" + (off ? "" : " danger"); }
     show("secVendor");
   }
   function renderVendorHead(v) {
+    if (v.isNew) { $("vTitle").textContent = "Add Vendor"; $("vSub").textContent = "Its opening balances can be entered now or later."; return; }
     $("vTitle").textContent = v.name;
     var fb = v.firstBillId && S.bills[v.firstBillId];
     $("vSub").textContent = (v.createdAt ? "Added " + fmtDay(v.createdAt) + (fb ? " from bill " + (fb.billNo || "") : "") + "." : "") + (v.active === false ? " Deactivated." : "");
@@ -5016,7 +5026,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     t.appendChild(tb);
   }
   function renderVendorStatements() {
-    var v = S.vendors[VE.id]; if (!v) return;
+    var v = S.vendors[VE.id]; if (!v) { $("veSt").textContent = ""; return; }
     var box = $("veSt"); box.textContent = "";
     function lm(cid, n) { return curMoney(ledger(cid, v.id).cur, n); }
     var cids = myCompanyIds().filter(function (cid) { var r = ledger(cid, v.id); return r.opening || r.bills.length || r.txs.length || r.advs.length || r.notes.length; });
@@ -5034,11 +5044,12 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("veStSub").textContent = S.downloads ? "One statement per company, as a PDF. Figures use what is saved, so save any changes first." : "Statements can't be downloaded in this view.";
   }
   function saveVendor() {
-    var v = S.vendors[VE.id]; if (!v || VE.busy) return;
+    var v = veCur(); if (!v || VE.busy) return;
     veClear();
     var ed = canEditVendors(), eb = canEditVendorBank();
     var name = $("veName").value.trim().replace(/\s+/g, " "), type = $("veType").value, g = normId($("veGstin").value), term = $("veTerm").value.trim(), ok = true;
-    if (!ed && eb) return saveVendorBank(v);
+    if (!ed && eb && !v.isNew) return saveVendorBank(v);
+    if (v.isNew && !ed) return;
     var pan = g && gstinCheck(g) !== "format" ? panFromGstin(g) : "";
     $("veGstin").value = g; $("vePan").value = pan;
     if (!name) { veErr("veName", "Enter the vendor's name."); ok = false; }
@@ -5048,6 +5059,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (type === "registered" && gp === "missing") { veErr("veGstin", GSTIN_MSG.missing); ok = false; }
     else if (g && gp) { veErr("veGstin", GSTIN_MSG[gp]); ok = false; }
     else if (g) { var other = vendorByGstin(g, v.id); if (other) { veErr("veGstin", "Another vendor, " + other.name + ", already has this GSTIN."); ok = false; } }
+    if (v.isNew && name && ok) { var sameN = vendorByName(name); if (sameN) { veErr("veName", "A vendor with this name is already here" + (sameN.gstin ? " (GSTIN " + sameN.gstin + ")" : "") + "."); ok = false; } }
     if (!termOk(term)) { veErr("veTerm", "Enter the payment terms in days, from 0 to 365."); ok = false; }
     var openings = {}, now = Date.now(), changed = 0;
     Array.prototype.forEach.call(document.querySelectorAll("#veOb tr[data-co]"), function (tr) {
@@ -5070,6 +5082,14 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (eb) data.bank = bkd;
     if (changed) data.openings = openings;
     VE.busy = true; $("veSave").disabled = true;
+    if (v.isNew) {
+      var nd = Object.assign({ apps: [DIV || "mnt"], active: true, openings: {}, createdAt: now, createdBy: meId(), source: "manual" }, data);
+      if (nd.openings) Object.keys(nd.openings).forEach(function (k) { if (!nd.openings[k]) delete nd.openings[k]; });
+      if (!eb) delete nd.bank;
+      retry(function () { return S.db.doc("vendors/" + v.id).set(nd); }).then(function () { S.vendors[v.id] = Object.assign({ id: v.id }, nd); VE.nv = null; invalidate(); toast(name + " added."); backToVendors(); }, function (e) { toast(explain(e)); })
+        .then(function () { VE.busy = false; $("veSave").disabled = false; });
+      return;
+    }
     retry(function () { return S.db.doc("vendors/" + v.id).update(data); }).then(function () { toast("Vendor saved."); backToVendors(); }, function (e) { toast(explain(e)); })
       .then(function () { VE.busy = false; $("veSave").disabled = false; });
   }
@@ -5110,7 +5130,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     }, function (e) { box.textContent = ""; box.appendChild(el("b", null, e && e.code === "not_configured" ? "The GST connection isn't set up yet." : "The GST portal couldn't be checked.")); box.appendChild(el("div", null, (e && e.message) || "")); })
       .then(function () { btn.disabled = false; btn.textContent = lb; });
   }
-  function backToVendors() { VE.id = null; renderVendors(); renderNav(); show("secVendors"); }
+  function backToVendors() { VE.id = null; VE.nv = null; renderVendors(); renderNav(); show("secVendors"); }
 
   /* ---- PDF statement, one company at a time ---- */
   var JSPDF = "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js", JSPDF_AT = "https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js";
@@ -14297,8 +14317,8 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     if (t === "Bills" && !$("secBills").hidden) renderBills();
     else if (t === "Vendors" && !$("secVendors").hidden) renderVendors();
     else if (t === "Vendors" && !$("secVendor").hidden && VE.id) {
-      var v = S.vendors[VE.id]; if (!v) { backToVendors(); return; }
-      renderVendorHead(v); renderVendorStatements();
+      var v = veCur(); if (!v) { backToVendors(); return; }
+      if (!v.isNew) { renderVendorHead(v); renderVendorStatements(); }
     }
     else if (t === "Companies" && S.isAdmin && !$("secStmt").hidden && S.stmtId) renderStatement(S.stmtId);
     else if (t === "Companies" && !S.editing && !$("secList").hidden) renderList();
@@ -14373,7 +14393,7 @@ h3{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
     $("txSt").addEventListener("change", function () { TX.status = this.value; TX.limit = 200; renderTxn(); }); $("txQ").addEventListener("input", function () { TX.limit = 200; renderTxn(); });
     $("txPdf").addEventListener("click", function () { downloadTxPdf(this); });
     $("ntAdd").addEventListener("click", noteForm); $("ntCo").addEventListener("change", renderNotes); $("ntQ").addEventListener("input", renderNotes);
-    $("bkXls").addEventListener("click", function () { downloadBooksXls(this); }); $("bkPdf").addEventListener("click", function () { downloadBooksPdf(this); }); $("vXls").addEventListener("click", function () { downloadVendorsXls(this); }); $("txXls").addEventListener("click", function () { downloadTxXls(this); });
+    $("bkXls").addEventListener("click", function () { downloadBooksXls(this); }); $("bkPdf").addEventListener("click", function () { downloadBooksPdf(this); }); $("vXls").addEventListener("click", function () { downloadVendorsXls(this); }); $("vAdd").addEventListener("click", newVendor); $("txXls").addEventListener("click", function () { downloadTxXls(this); });
     $("vhNew").addEventListener("click", function () { openVchForm(null); });
     $("vhCo").addEventListener("change", renderVch); $("vhQ").addEventListener("input", renderVch);
     $("vfBack").addEventListener("click", backToVch); $("vfCancel").addEventListener("click", backToVch); $("vfSave").addEventListener("click", saveVch);

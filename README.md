@@ -239,9 +239,12 @@ provides the same calls, so the app code did not need rewriting:
 - **Filters** on Transactions and Payables are tick-box lists for companies, vendors, prepared by and
   approver, plus a from/to date range. A heading with a single tab shows no sub-tab bar.
 - **Demo and Live**: admins switch with the DEMO / LIVE pill in the header (remembered per browser). Everyone else
-  always works in Live. People, admins, access requests, companies, locations, departments and ledgers are
-  shared; entries (bills, vouchers, proformas, reports, payments, cash advances, vendors, balances, change log)
-  are kept apart by a `demo__` prefix. Everything entered before the switch existed is Demo.
+  always works in Live. People, admins, access requests, preferences and signatures are one set (`NS_SHARED`;
+  Demo shows the Live signature and never asks for or changes one). Masters (`NS_LAYER`: companies, vendors, ledgers,
+  GST / TDS, locations, departments, regions, bank names, bank accounts, cheque templates, staff, payees, templates,
+  balances, rates, solar consumers and rates) in Demo are Live's with Demo's own changes on top: Demo reads both and
+  writes only to `demo__…` (the first change copies the Live record; a removal only hides it in Demo). Entries are kept
+  apart by the `demo__` prefix. Nothing done in Demo reaches Live.
 - **Bill files** are kept in the private `bill-files` Storage bucket (`live/` or `demo/` folder). The accountant sees
   the file beside the form with page, zoom, fit, rotate and drag. Bills typed in by hand can attach a file.
 - **Settings** (everyone): Personalise (shared by every KKSK app, saved to the login) has light/dark/device mode, a colour, text size (only the text grows: every font size is calc(size × var(--ts)) set by web/textsize.js, so layouts stay and cells wrap; prints are unaffected), table density, a
@@ -298,7 +301,7 @@ provides the same calls, so the app code did not need rewriting:
   Maker. A Expenses Operator enters bills wherever they make vouchers. Companies (and vendors, ledgers) must be ticked as
   used in Bills & Vouchers. Sign-in check: migration 20261024150000.
 - **Cheque Templates and printing**: Masters › Cheque Templates (Finance only; admins and financiers)
-  holds one template per bank's cheque layout in `chqtpl/*` (shared by Demo and Live): reference name, bank, a blank
+  holds one template per bank's cheque layout in `chqtpl/*` (Demo layers its own changes on top): reference name, bank, a blank
   cheque scanned or photographed at any size (PDF, JPG or PNG; kept in storage under `cheques/`), where the cheque sits
   on the A4 page when printing (mm) and where the date (digit boxes or DD-MM-YYYY), payee, amount in words (two lines),
   amount in figures and an optional "A/c Payee" crossing go (mm from the cheque's top left), and the text size.

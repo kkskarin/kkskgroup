@@ -1606,14 +1606,14 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (p.avatar) { var rm = el("button", { type: "button", class: "btn sm" }, "Remove"); rm.addEventListener("click", function () { pickPref({ avatar: "" }); }); ab.appendChild(rm); }
     who.appendChild(ab); pr.appendChild(who); c1.appendChild(pr); box.appendChild(c1);
     /* signature: printed on the vouchers this person prepares, accounts or approves */
-    if (sigNeeded()) {
+    if (sigRole()) {
       var cs = el("div", { class: "card pcard" }); cs.appendChild(el("h3", null, "Signature")); var sp = el("div"); cs.appendChild(sp); box.appendChild(cs);
       var showSig = function () {
         sp.textContent = ""; sp.appendChild(el("span", { class: "tsub" }, "Loading"));
         sigLoad(meId()).then(function (png) {
           sp.textContent = ""; if (png) sp.appendChild(el("img", { class: "sigprev", alt: "Your signature", src: png })); else sp.appendChild(el("p", { class: "sub" }, "No signature yet."));
           sp.appendChild(el("p", { class: "sub", style: "margin:0" }, "Printed on the vouchers you prepare, account or approve."));
-          var cb = el("button", { type: "button", class: "btn sm", style: "margin-top:8px" }, png ? "Change Signature" : "Add Signature"); cb.addEventListener("click", function () { sigPad(false, showSig); }); sp.appendChild(cb);
+          if (S.mode === "demo") { sp.appendChild(el("div", { class: "hint", style: "margin-top:8px" }, "Demo uses your Live signature. Change it in Live.")); } else { var cb = el("button", { type: "button", class: "btn sm", style: "margin-top:8px" }, png ? "Change Signature" : "Add Signature"); cb.addEventListener("click", function () { sigPad(false, showSig); }); sp.appendChild(cb); }
         });
       };
       showSig();
@@ -8943,7 +8943,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   /* ================= Companies list (admin) ================= */
   /* Admins add and edit companies; in Renewable Energy, also anyone the admin has allowed to (Users › Can add and edit companies). */
   /* Admins; the Accounts team (Accountant job) in any app; people given "add and edit companies" in Renewable Energy. Only admins deactivate. */
-  function canCoEdit() { if (S.mode === "demo" && !S.isAdmin) return false; return S.isAdmin || myJobs().indexOf("accountant") >= 0 || (APP === "re" && !!(S.myUser && S.myUser.reCompanies)); }
+  function canCoEdit() { return S.isAdmin || myJobs().indexOf("accountant") >= 0 || (APP === "re" && !!(S.myUser && S.myUser.reCompanies)); }
   function renderList() {
     var box = $("list");
     $("add").hidden = !canCoEdit();
@@ -10964,8 +10964,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   var TDS_SECTIONS = [["194C", "194C, Contractors"], ["194J", "194J, Professional or technical fees"], ["194H", "194H, Commission or brokerage"], ["194I(a)", "194I(a), Rent of plant or machinery"], ["194I(b)", "194I(b), Rent of land or building"], ["194Q", "194Q, Purchase of goods"], ["194A", "194A, Interest"]];
   var VTYPES_V = [["Cash Voucher", "Cash Voucher"], ["Self Invoice", "Self Invoice"], ["Freight & Transport", "Freight & Transport"]];
   var MAX_LED = { bill: 4, voucher: 2 };
-  /* Ledgers are shared by Demo and Live, so only admins change them while in Demo. */
-  function canLedgers() { return S.isAdmin || (canDo("acct") && S.mode !== "demo"); }
+  /* In Demo, changes go to Demo's own copy of the ledgers (see nsDb), so Live is never touched. */
+  function canLedgers() { return S.isAdmin || canDo("acct"); }
   function ledAll() { return Object.keys(S.ledgers || {}).map(function (k) { return S.ledgers[k]; }); }
   function ledCmp(a, b) { return LED_MAINS.indexOf(a.main) - LED_MAINS.indexOf(b.main) || natCmp(a.sub, b.sub) || natCmp(a.name, b.name); }
   function ledFor(cid) { return ledAll().filter(function (l) { return !l.tax && l.active !== false && ledInApp(l) && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
@@ -11546,8 +11546,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   var CHQ_FIELDS = [["date", "Date"], ["payee", "Payee"], ["words", "Amount in words"], ["figures", "Amount in figures"], ["acpayee", "A/C Payee"]];
   function chqCopy(t) { var d = JSON.parse(JSON.stringify(CHQ_DEF)); t = t || {}; if (t.area) Object.assign(d.area, t.area); if (t.size) d.size = t.size; Object.keys(d.f).forEach(function (k) { if (t.f && t.f[k]) Object.assign(d.f[k], t.f[k]); }); return { name: t.name || "", bank: t.bank || "", bankAcctId: t.bankAcctId || "", first: t.first || "", end: t.end || "", last: t.last || "", neft: t.neft ? JSON.parse(JSON.stringify(t.neft)) : { pad: null, size: 10, fields: [] }, pad: t.pad || null, clean: t.clean || null, corners: t.corners || null, area: d.area, size: d.size, f: d.f }; }
   function chqCan() { return S.isAdmin || canDo("txn"); }
-  /* Cheque templates are shared by Demo and Live, so only admins change them while in Demo. */
-  function chqTplCan() { return S.isAdmin || (canDo("txn") && S.mode !== "demo"); }
+  /* In Demo, changes go to Demo's own copy of the cheque templates (see nsDb), so Live is never touched. */
+  function chqTplCan() { return S.isAdmin || canDo("txn"); }
   /* Rupees in words, the Indian way (lakh, crore). */
   function inrWords(n) {
     var ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"], tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
@@ -12552,7 +12552,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
 
   /* ================= GST and TDS: the tax ledgers, the same in every company =================
-     Kept in taxes/<id> (shared by Demo and Live): TDS sections ({ kind: "tds", sec, nature, rate, rate2, ledName }) and GST
+     Kept in taxes/<id> (Demo layers its own changes on top, see nsDb): TDS sections ({ kind: "tds", sec, nature, rate, rate2, ledName }) and GST
      ledgers ({ kind: "gst", name, order }: CGST / SGST / IGST Input, Input (RCM) and Input - Ineligible, no rates). Each makes
      its ledger under Duties & Taxes (ledgers/tax_<id>), open to every company, today's and any added later (allCos), and every division.
      Those ledgers are locked in the Ledgers list: they are made, changed and removed only here. The TDS sections are the
@@ -12993,7 +12993,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
      Demo and Live, as a PNG on white trimmed to the ink. It prints in the voucher's Prepared by, Accounted by and Approved by
      boxes; entries made before signatures existed print with whatever signatures their people have since added. */
   var SIG_JOBS = ["purchaser", "vmaker", "accountant", "chiefacct", "approver", "recorder"];
-  function sigNeeded() { return S.canWrite !== false && (S.isAdmin || myJobs().some(function (j) { return SIG_JOBS.indexOf(j) >= 0; })); }
+  /* Signatures are always Live's: Demo shows them but never asks for or changes one. */
+  function sigRole() { return S.canWrite !== false && (S.isAdmin || myJobs().some(function (j) { return SIG_JOBS.indexOf(j) >= 0; })); }
+  function sigNeeded() { return S.mode !== "demo" && sigRole(); }
   /* "" when the person has none, null when it couldn't be read (then nobody is stopped). Only signatures found are kept. */
   function sigLoad(id) {
     S.sigs = S.sigs || {}; if (!id || !S.rawDb) return Promise.resolve(null);
@@ -13001,6 +13003,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     return S.rawDb.doc("sigs/" + id).get().then(function (d) { var png = d && d.exists ? (d.data() || {}).png || "" : ""; if (png) S.sigs[id] = png; return png; }, function () { return null; });
   }
   function sigSave(png) {
+    if (S.mode === "demo") return Promise.reject({ code: "permission_denied", message: "Signatures are changed in Live only." });
     var id = meId(), nm = S.isAdmin ? (S.me && S.me.name) || "Admin" : pnm(preparedByText());
     return retry(function () { return S.rawDb.doc("sigs/" + id).set({ png: png, at: Date.now(), name: nm }); }).then(function () { S.sigs = S.sigs || {}; S.sigs[id] = png; });
   }
@@ -14946,11 +14949,50 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
           if (!$("navbar").hidden) renderNav();
         }, function (e) { if (S.loaded) toast("Live updates stopped. Reload the page to reconnect."); else fail("sub", "companies " + ((e && e.code) || "unknown")); });
   }
-  /* ---- Demo and Live: admins can switch; everyone else always works in Live. The set-up (people, admins, access requests,
-     companies, locations, departments, ledgers, preferences) is shared; entries are kept apart. ---- */
-  var NS_SHARED = { users: 1, admins: 1, requests: 1, companies: 1, locations: 1, departments: 1, ledgers: 1, taxes: 1, prefs: 1, chqtpl: 1, regions: 1, banknames: 1 };
-  function nsPath(p) { if (S.mode !== "demo") return p; var top = String(p).split("/")[0]; return NS_SHARED[top] ? p : "demo__" + p; }
-  function nsDb(db) { return { doc: function (p) { return db.doc(nsPath(p)); }, collection: function (p) { return db.collection(nsPath(p)); } }; }
+  /* ---- Demo and Live: admins (and people given Demo) can switch; everyone else always works in Live.
+     People and access (users, admins, access requests, preferences) and signatures are one set, the same in both.
+     Masters (companies, vendors, ledgers, GST / TDS, banks and the rest) in Demo are Live's with Demo's own changes on
+     top: Demo reads both and writes only to its own copy (demo__…); a Live master removed in Demo is only hidden there.
+     Entries (bills, vouchers, payments, reports…) are kept apart. Nothing done in Demo reaches Live. ---- */
+  var NS_SHARED = { users: 1, admins: 1, requests: 1, prefs: 1, sigs: 1 };
+  var NS_LAYER = { companies: 1, locations: 1, departments: 1, ledgers: 1, taxes: 1, chqtpl: 1, regions: 1, banknames: 1, vendors: 1, bankacct: 1, staff: 1, payees: 1, vpeople: 1, tpls: 1, balances: 1, rates: 1, solar_consumers: 1, solar_rates: 1 };
+  function nsTop(p) { return String(p).split("/")[0]; }
+  function nsPath(p) { if (S.mode !== "demo") return p; return NS_SHARED[nsTop(p)] ? p : "demo__" + p; }
+  function nsDb(db) {
+    return {
+      doc: function (p) { return S.mode === "demo" && NS_LAYER[nsTop(p)] ? layerDoc(db, p) : db.doc(nsPath(p)); },
+      collection: function (p) { return S.mode === "demo" && NS_LAYER[nsTop(p)] ? layerColl(db, p) : db.collection(nsPath(p)); }
+    };
+  }
+  function layerGone(d) { return !!(d && d.exists && (d.data() || {})._demoDel); }
+  function layerDoc(db, p) {
+    var live = db.doc(p), mine = db.doc("demo__" + p);
+    return {
+      id: live.id, path: p,
+      get: function () { return mine.get().then(function (d) { if (layerGone(d)) return { id: live.id, exists: false, data: function () { return undefined; } }; return d.exists ? d : live.get(); }); },
+      set: function (data) { return mine.set(data); },
+      /* the first change in Demo copies the Live record into Demo, with the change */
+      update: function (patch) { return mine.get().then(function (d) { if (d.exists && !layerGone(d)) return mine.update(patch); return live.get().then(function (l) { return l.exists && !layerGone(d) ? mine.set(Object.assign({}, l.data() || {}, patch)) : mine.update(patch); }); }); },
+      delete: function () { return live.get().then(function (l) { return l.exists ? mine.set({ _demoDel: true }) : mine.delete(); }); },
+      onSnapshot: function (next, error) { return mine.onSnapshot(next, error); }
+    };
+  }
+  function layerSnap(L, M) {
+    var m = {}; L.docs.forEach(function (d) { m[d.id] = d; }); M.docs.forEach(function (d) { m[d.id] = d; });
+    var docs = Object.keys(m).map(function (k) { return m[k]; }).filter(function (d) { return !layerGone(d); });
+    return { docs: docs, size: docs.length, empty: !docs.length, forEach: function (f) { docs.forEach(f); } };
+  }
+  function layerColl(db, c) {
+    return {
+      onSnapshot: function (next, error) {
+        var L = null, M = null, emit = function () { if (L && M) next(layerSnap(L, M)); };
+        var u1 = db.collection(c).onSnapshot(function (sn) { L = sn; emit(); }, error), u2 = db.collection("demo__" + c).onSnapshot(function (sn) { M = sn; emit(); }, error);
+        return function () { u1(); u2(); };
+      },
+      get: function () { return Promise.all([db.collection(c).get(), db.collection("demo__" + c).get()]).then(function (r) { return layerSnap(r[0], r[1]); }); },
+      doc: function (id) { return layerDoc(db, c + "/" + id); }
+    };
+  }
   /* A person whose Demo switch is on (Settings › Users) may choose Demo or Live, like an admin. */
   function demoAllowed() { var u = S.loginUser || S.myUser; return !S.isAdmin && !!(u && u.demoOk && u.active !== false); }
   /* In Demo, people practise the steps after their own: an Accountant also enters; a Financier enters, accounts, approves

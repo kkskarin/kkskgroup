@@ -64,17 +64,17 @@ td input.field{width:120px;text-align:right}
 .mlist .mrow .field.nm{flex:1 1 180px}
 .empty{color:var(--muted);padding:6px 0}
 /* the date calendar */
-.cal{display:inline-block;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;user-select:none}
+.cal{display:block;width:100%;max-width:470px;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;user-select:none}
 .cal .hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-weight:600}
 .cal .hd button{border:0;background:none;font:inherit;font-size:calc(18px*var(--ts,1));cursor:pointer;padding:2px 10px;border-radius:8px}
 .cal .hd button:disabled{opacity:.3;cursor:default}
-.cal .g{display:grid;grid-template-columns:repeat(7,calc(40px*var(--ts,1)));gap:3px}
+.cal .g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
 .cal .wd{text-align:center;font-size:calc(11px*var(--ts,1));color:var(--muted);font-weight:600}
-.cal .d{position:relative;height:calc(36px*var(--ts,1));border:1px solid transparent;border-radius:8px;background:none;font:inherit;cursor:pointer;color:var(--ink)}
+.cal .d{position:relative;height:calc(56px*var(--ts,1));line-height:1.1;padding:0 0 8px;font-size:calc(15px*var(--ts,1));border:1px solid transparent;border-radius:8px;background:none;font:inherit;cursor:pointer;color:var(--ink)}
 .cal .d:disabled{color:#A9B5AF;cursor:default}
 .cal .d.full{background:var(--ok-bg);color:var(--ok);font-weight:700}
 .cal .d.none{background:var(--none-bg);color:var(--none)}
-.cal .d.part::after{content:"";position:absolute;left:50%;bottom:3px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--part)}
+.cal .d.part::after{content:"";position:absolute;left:50%;bottom:4px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--part)}
 .cal .d.today{border-color:var(--muted)}
 .cal .d.on{outline:2px solid var(--brand);outline-offset:1px}
 .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:calc(12px*var(--ts,1));color:var(--muted)}
@@ -162,27 +162,22 @@ td input.field{width:120px;text-align:right}
     renderEntry(body);
   }
 
-  /* ---- the date calendar: a month at a time; only lo..hi can be picked. Each day shows how complete it is:
-     green all saved, orange dot some saved, red none saved (past days only, from the first entry); Sundays are left plain. ---- */
+  /* ---- the date calendar: just the days that can be picked (lo..hi, the last 7), a row with each day's weekday. Each day
+     shows how complete it is: green all saved, orange dot some saved, red none saved (past days only, from the first entry);
+     Sundays are left plain. ---- */
+  var WD = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
   function calendar(box, o) {
-    var view = o.value.slice(0, 7);
-    function draw() {
-      box.textContent = ""; var c = el("div", { class: "cal" }), hd = el("div", { class: "hd" });
-      var y = Number(view.slice(0, 4)), mo = Number(view.slice(5, 7)) - 1, first = new Date(y, mo, 1), prev = ymd(new Date(y, mo - 1, 1)).slice(0, 7), next = ymd(new Date(y, mo + 1, 1)).slice(0, 7);
-      var pb = el("button", { type: "button", "aria-label": "Previous month" }, "‹"), nb = el("button", { type: "button", "aria-label": "Next month" }, "›");
-      pb.disabled = prev < o.lo.slice(0, 7) && prev < (o.from || o.lo).slice(0, 7); nb.disabled = next > o.hi.slice(0, 7);
-      pb.addEventListener("click", function () { view = prev; draw(); }); nb.addEventListener("click", function () { view = next; draw(); });
-      hd.appendChild(pb); hd.appendChild(el("span", null, MON[mo] + " " + y)); hd.appendChild(nb); c.appendChild(hd);
-      var g = el("div", { class: "g" }); ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].forEach(function (w) { g.appendChild(el("div", { class: "wd" }, w)); });
-      for (var i = 0; i < (first.getDay() + 6) % 7; i++) g.appendChild(el("div"));
-      for (var d = 1; d <= new Date(y, mo + 1, 0).getDate(); d++) (function (ds, sun) {
-        var s = sun ? "" : o.status(ds), b = el("button", { type: "button", class: "d" + (s ? " " + s : "") + (ds === o.value ? " on" : "") + (ds === o.hi ? " today" : ""), "aria-label": fmtDate(ds) + (s === "full" ? ", all saved" : s === "part" ? ", partly saved" : s === "none" ? ", nothing saved" : "") }, String(d));
-        b.disabled = ds < o.lo || ds > o.hi; b.addEventListener("click", function () { o.pick(ds); }); g.appendChild(b);
-      })(ymd(new Date(y, mo, d)), new Date(y, mo, d).getDay() === 0);
-      c.appendChild(g); box.appendChild(c);
-      var lg = el("div", { class: "legend" }); [["lf", "All saved"], ["lp", "Partly saved"], ["ln", "Nothing saved"]].forEach(function (x) { lg.appendChild(el("span", { class: x[0] }, x[1])); }); box.appendChild(lg);
-    }
-    draw();
+    box.textContent = ""; var c = el("div", { class: "cal" }), g = el("div", { class: "g" });
+    var ds = []; for (var d = o.lo; d <= o.hi; d = addDays(d, 1)) ds.push(d);
+    c.appendChild(el("div", { class: "hd" }, fmtDate(o.lo) + " to " + fmtDate(o.hi)));
+    ds.forEach(function (x) { g.appendChild(el("div", { class: "wd" }, WD[new Date(x + "T00:00:00").getDay()])); });
+    ds.forEach(function (x) {
+      var dt = new Date(x + "T00:00:00"), s = dt.getDay() === 0 ? "" : o.status(x);
+      var b = el("button", { type: "button", class: "d" + (s ? " " + s : "") + (x === o.value ? " on" : "") + (x === o.hi ? " today" : ""), "aria-label": fmtDate(x) + (s === "full" ? ", all saved" : s === "part" ? ", partly saved" : s === "none" ? ", nothing saved" : "") }, String(dt.getDate())); b.appendChild(el("small", { style: "display:block;font-size:.72em;opacity:.8" }, MON[dt.getMonth()]));
+      b.addEventListener("click", function () { o.pick(x); }); g.appendChild(b);
+    });
+    c.appendChild(g); box.appendChild(c);
+    var lg = el("div", { class: "legend" }); [["lf", "All saved"], ["lp", "Partly saved"], ["ln", "Nothing saved"]].forEach(function (x) { lg.appendChild(el("span", { class: x[0] }, x[1])); }); box.appendChild(lg);
   }
   /* how complete a day is for the places shown: full, part, none (past days from the first entry on), or "" */
   function dayStatus(t, places, d) {
@@ -195,7 +190,7 @@ td input.field{width:120px;text-align:right}
   /* ---- Entry: the day's figures, a card per place ---- */
   function renderEntry(body) {
     var t = cur.tab, places = t.oneEntry ? t.places : [cur.sub], key = t.key + "/" + cur.sub[0], lo = addDays(today(), -6), hi = today();
-    $("subtitle").textContent = (t.kind === "grade" ? "Pieces and area of each grade" : "Pieces at each stage") + " on the chosen day. Pick the day on the calendar: today or the 6 days before can be entered or corrected.";
+    $("subtitle").textContent = (t.kind === "grade" ? "Pieces and area of each grade" : "Pieces at each stage") + " on the chosen day. Pick the day: today or the 6 days before can be entered or corrected.";
     var st = ENT[key] = ENT[key] || { date: hi };
     if (st.date < lo || st.date > hi) st.date = hi;
     var c1 = el("div", { class: "card" }); c1.appendChild(el("h3", null, "Date · " + fmtDate(st.date))); var cb = el("div"); c1.appendChild(cb); body.appendChild(c1);

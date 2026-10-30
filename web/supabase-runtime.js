@@ -276,13 +276,16 @@
         var p = r.data || {};
         if (!r.error && !p.approved && K !== "mnt") location.replace(HOME + "maintenance/");
         /* Before the four-app split reached the database, apps.bv stood for all of them. */
-        else if (!r.error && p.approved && !(p.apps && (p.apps[K] || (p.apps[K] === undefined && p.apps.bv)))) location.replace(HOME);
+        /* In Demo (the person's saved mode) the apps for the steps practised there open too (p.demo). */
+        else if (!r.error && p.approved && !(p.apps && (p.apps[K] || (p.apps[K] === undefined && p.apps.bv))) && !(p.demo && p.demo[K] && demoSaved(p.uid))) location.replace(HOME);
         else resolve(ME);
       }, function () { resolve(ME); });
       return;
     }
     resolve(ME);
   }
+
+  function demoSaved(uid) { try { return !!uid && localStorage.getItem("bv_mode_" + uid) === "demo"; } catch (e) { return false; } }
 
   /* ================= Errors ================= */
   function err(code, message) { return { code: code, message: message || code }; }

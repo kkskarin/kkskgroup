@@ -46,7 +46,9 @@
     /* Before the four-app split reached the database, apps.bv stood for all of them. */
     if (p.apps && p.apps.mnt === undefined && p.apps.bv) { p.apps.mnt = p.apps.acc = p.apps.fin = true; }
     if (p.apps && p.apps.apr === undefined && p.admin) p.apps.apr = true;
-    var mine = APPS.filter(function (a) { return p.apps && p.apps[a.key] && !HIDDEN[a.key]; });
+    /* In Demo (the person's saved mode) the apps for the steps practised there show too. */
+    var demo = (function () { try { return !!p.uid && localStorage.getItem("bv_mode_" + p.uid) === "demo"; } catch (e) { return false; } })() ? p.demo || {} : {};
+    var mine = APPS.filter(function (a) { return ((p.apps && p.apps[a.key]) || demo[a.key]) && !HIDDEN[a.key]; });
     /* Not approved yet: the access request lives in Maintenance. One app: straight in. */
     if (!p.approved) { location.replace("maintenance/"); return; }
     if (mine.length === 1) { location.replace(landing(mine[0])); return; }

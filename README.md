@@ -246,6 +246,10 @@ provides the same calls, so the app code did not need rewriting:
   balances, rates, solar consumers and rates) in Demo are Live's with Demo's own changes on top: Demo reads both and
   writes only to `demo__…` (the first change copies the Live record; a removal only hides it in Demo). Entries are kept
   apart by the `demo__` prefix. Nothing done in Demo reaches Live.
+  **Approving in Demo:** everyone given Demo gets the Approvals app while in Demo and sees, as an admin would, only the
+  checking reports and cash advances they raised or accounted (`demoInvolved`), approving them in an admin's name. The
+  database returns these Demo-only apps as `app_portal().demo` (migration 20261030150000); the page and the home tiles use
+  them only while the person's saved mode is Demo.
 - **Bill files** are kept in the private `bill-files` Storage bucket (`live/` or `demo/` folder). The accountant sees
   the file beside the form with page, zoom, fit, rotate and drag. Bills typed in by hand can attach a file.
 - **Settings** (everyone): Personalise (shared by every KKSK app, saved to the login) has light/dark/device mode, a colour, text size (only the text grows: every font size is calc(size × var(--ts)) set by web/textsize.js, so layouts stay and cells wrap; prints are unaffected), table density, a

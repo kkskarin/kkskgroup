@@ -2314,7 +2314,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var div = function (k) { return bv && dv.indexOf(k) >= 0 && rolesFit(r, k); };
     var o = { mnt: div("mnt"), re: div("re"), bnv: div("bnv"), acc: bv && (rolesFit(r, "acc") || chief), fin: bv && (rolesFit(r, "fin") || chief), apr: bv && rolesFit(r, "apr") };
     /* Demo: the apps for the steps practised there too */
-    var ds = u && u.demoOk ? demoSteps(u) : []; if (bv && ds.length) { dv.forEach(function (k) { o[k] = true; }); o.acc = true; if (ds.indexOf("txn") >= 0) { o.fin = true; o.apr = true; } }
+    var ds = u && u.demoOk ? demoSteps(u) : []; if (bv && ds.length) { if (ds.indexOf("bills") >= 0) dv.forEach(function (k) { o[k] = true; }); if (ds.indexOf("acct") >= 0) o.acc = true; if (ds.indexOf("txn") >= 0) o.fin = true; if (ds.indexOf("appr") >= 0) o.apr = true; }
     return o;
   }
   /* The divisions a person works for (Maintenance & Civil unless said otherwise, as before). */
@@ -6216,7 +6216,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   /* An approver approves what names them. An Approval Recorder records approvals for everything in their divisions: those whose
      app they have (Maintenance & Civil also through Finance), or every division when they have none of those apps. */
   function recDivs() { var a = (S.myUser && S.myUser.apps) || {}, l = Object.keys(DIVS).filter(function (k) { return !!(a[k] || (k === "mnt" && a.fin)); }); return l.length ? l : Object.keys(DIVS); }
-  function apprForMe(x, namedId) { return namedId === meId() || demoFin(S.myUser) || (canDo("rec") && recDivs().indexOf(divOf(x)) >= 0); }
+  /* In Demo, a person (financiers too) sees and approves only what they raised or accounted. */
+  function apprForMe(x, namedId) { if (demoAppr()) return demoInvolved(x); return namedId === meId() || (canDo("rec") && recDivs().indexOf(divOf(x)) >= 0); }
   /* Admins (the group's approvers) see what names them by default, and can pick another approver or everyone. Items naming
      nobody show with their own. */
   function whoOk(st, id) { if (st.who == null) st.who = meId(); return st.who === "*" || id === st.who || (!id && st.who === meId()); }
@@ -6306,7 +6307,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function behalfField(body, def) {
     S._bhAdm = null;
     /* Demo: a Financier approves in an admin's name */
-    if (APP === "apr" && demoFin(S.myUser)) {
+    if (APP === "apr" && (demoFin(S.myUser) || demoAppr())) {
       S._bh = false; var adm = approverList().filter(function (a) { return S.admins[a.id] || (S.supers || []).some(function (p) { return p.id === a.id; }); }), sel0 = el("select", { class: "field", id: "bhAs" });
       fillSelect(sel0, [["", "Choose the admin"]].concat(adm.map(function (a) { return [a.id, "On behalf of " + a.name]; })), adm.some(function (a) { return a.id === def; }) ? def : "");
       S._bhAdm = { id: "", name: "", demo: true, list: adm };
@@ -15030,7 +15031,15 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   /* In Demo, people practise the steps after their own: an Accountant also enters; a Financier enters, accounts, approves
      (on behalf of an admin) and pays. Live is never affected. */
   function demoFin(u) { return S.mode === "demo" && !S.isAdmin && !!u && (u.jobRoles || []).indexOf("financier") >= 0; }
-  function demoSteps(u) { if (S.mode !== "demo" || S.isAdmin || !u) return []; var js = u.jobRoles || []; return js.indexOf("financier") >= 0 ? ENTRY_STEPS.concat(["acct", "appr", "txn"]) : js.indexOf("accountant") >= 0 ? ENTRY_STEPS.concat(["acct"]) : []; }
+  function demoSteps(u) { if (S.mode !== "demo" || S.isAdmin || !u) return []; var js = u.jobRoles || []; return js.indexOf("financier") >= 0 ? ENTRY_STEPS.concat(["acct", "appr", "txn"]) : js.indexOf("accountant") >= 0 ? ENTRY_STEPS.concat(["acct", "appr"]) : ["appr"]; }
+  /* Demo: anyone given Demo also approves (in an admin's name) what they raised or accounted, to see it through. */
+  function demoAppr() { return S.mode === "demo" && !S.isAdmin && demoAllowed(); }
+  function demoInvolved(x) {
+    var me = meId(); if (!x) return false;
+    if (x.uid === me || x.requestedBy === me || x.preparedBy === me || x.createdBy === me) return true;
+    var items = x.kind === "vcr" ? (x.voucherIds || []).map(function (id) { return S.vouchers[id]; }) : x.kind === "inst" ? [S.advances[x.advanceId]] : (x.billIds || []).map(function (id) { return S.bills[id]; });
+    return items.some(function (i) { return i && (prepOf(i) === me || i.acctBy === me || i.ownerId === me); });
+  }
   function modeKey() { return "bv_mode_" + ((S.me && S.me.id) || ""); }
   function modeSaved() { try { return localStorage.getItem(modeKey()) === "demo" ? "demo" : "live"; } catch (e) { return "live"; } }
   function renderModeSw() {

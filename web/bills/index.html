@@ -13733,41 +13733,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (cr) out.push(words3(cr) + " Crore"); if (lk) out.push(words2(lk) + " Lakh"); if (th) out.push(words2(th) + " Thousand"); if (rest) out.push(words3(rest));
     return "Rupees " + (out.length ? out.join(" ") : "Zero") + (p ? " and " + words2(p) + " Paise" : "") + " Only";
   }
-  /* Voucher PDFs carry their own print settings, for every page: actual size (no "fit to page" shrinking), the paper
-     chosen by the page size (A5 landscape), one-sided, one copy; opening the file brings up the print dialog set that way. */
-  function vchPrintPrefs(doc) {
-    try { if (doc.viewerPreferences) doc.viewerPreferences({ PrintScaling: "None", PickTrayByPDFSize: true, Duplex: "Simplex", NumCopies: 1, PrintArea: "MediaBox", PrintClip: "MediaBox", ViewArea: "MediaBox", ViewClip: "MediaBox" }); } catch (e) {}
-    try { if (doc.autoPrint) doc.autoPrint({ variant: "non-conform" }); } catch (e) {}
-    return doc;
-  }
-  /* Vouchers print on A4, the paper that prints cleanly: an A5 voucher is exactly half an A4 sheet, so each A4 portrait page
-     holds two vouchers at their real size, one above the other, with a dashed cut line between them (one voucher: the top
-     half). Cutting along the line gives A5 vouchers. The file asks for actual size, one-sided, one copy. */
-  var A4PT = [595.28, 841.89];
-  function vchPrintBlob(doc) {
-    var blob = doc.output("blob");
-    return loadScript(PDFLIB).then(function () { return blob.arrayBuffer(); }).then(function (buf) {
-      var L = window.PDFLib;
-      return L.PDFDocument.create().then(function (out) {
-        return out.embedPdf(buf).then(function (pages) {
-          for (var i = 0; i < pages.length; i += 2) {
-            var pg = out.addPage(A4PT), W = A4PT[0], H = A4PT[1];
-            [pages[i], pages[i + 1]].forEach(function (ep, k) {
-              if (!ep) return; var w = Math.min(ep.width, W), h = ep.height * w / ep.width, gap = (H - 2 * h) / 2;
-              pg.drawPage(ep, { x: (W - w) / 2, y: k === 0 ? H - gap - h : gap, width: w, height: h });
-            });
-            var mid = H / 2; pg.drawLine({ start: { x: 0, y: mid }, end: { x: W, y: mid }, thickness: 0.4, color: L.rgb(0.6, 0.6, 0.6), dashArray: [4, 3] });
-          }
-          try {
-            var vp = out.catalog.getOrCreateViewerPreferences();
-            vp.setPrintScaling(L.PrintScaling.None); vp.setDuplex(L.Duplex.Simplex); vp.setPickTrayByPDFSize(true); vp.setNumCopies(1);
-            out.catalog.set(L.PDFName.of("OpenAction"), out.context.obj({ Type: "Action", S: "Named", N: "Print" }));
-          } catch (e) {}
-          return out.save();
-        });
-      });
-    }).then(function (bytes) { return new Blob([bytes], { type: "application/pdf" }); }, function () { return vchPrintPrefs(doc).output("blob"); });
-  }
+  /* Voucher PDFs: A5 landscape, one voucher per page, as drawn. */
+  function vchPrintBlob(doc) { return Promise.resolve(doc.output("blob")); }
   function printVoucher(id, btn) {
     var v = S.vouchers[id]; if (!v || !S.downloads) return;
     var label = btn.textContent; btn.disabled = true; btn.textContent = "Preparing";

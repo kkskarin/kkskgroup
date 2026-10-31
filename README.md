@@ -283,6 +283,9 @@ provides the same calls, so the app code did not need rewriting:
 - **Bill files** are kept in the private `bill-files` Storage bucket (`live/` or `demo/` folder). The accountant sees
   the file beside the form with page, zoom, fit, rotate and drag. Bills typed in by hand can attach a file.
   Proformas and imports read from a file keep it too (`<live|demo>/advances/<id>/`), as do voucher documents.
+- **Voucher PDFs** (one voucher, or all of a set sent without a checking report) carry their print settings for every page:
+  actual size (no scaling), paper picked by the PDF's page size (A5 landscape), one-sided, one copy, and the print dialog
+  opens when the file is opened. Acrobat Reader and most desktop PDF readers follow them; browser PDF viewers mostly don't.
 - **Chemicals division** (`div: "chm"`): entered and approved in the Chemicals app, only accounted and paid here; it has
   no entry app of its own (tick it on users, companies and ledgers like any division). A bill sent with `extAppr` gets an
   approved Bill Checking Report (`reports/rx_<bill id>`) as soon as it is accounted; a proforma or import with `instAppr`

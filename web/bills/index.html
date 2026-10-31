@@ -846,7 +846,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     <div class="head"><div class="grow"><h2>Accounting</h2><p class="sub">Every submitted bill and voucher comes here first. Set the ledgers and TDS and account it; only then can it go into a checking report. Postpone it to come back later, or send it back with a note.</p></div></div>
     <div class="filters">
       <div class="seg" role="tablist" aria-label="Show"><button type="button" role="tab" id="acSideB" aria-selected="true">Bills <span id="acNB"></span></button><button type="button" role="tab" id="acSideV" aria-selected="false">Vouchers <span id="acNV"></span></button></div>
-      <select class="field" id="acSt" aria-label="Status"><option value="pending">Waiting</option><option value="held">Postponed by me</option><option value="back">Sent back</option><option value="approved">Accounted</option><option value="all">All</option></select>
+      <select class="field" id="acSt" aria-label="Status"><option value="pending">Waiting</option><option value="held">Postponed</option><option value="back">Sent back</option><option value="approved">Accounted</option><option value="all">All</option></select>
       <select class="field" id="acCo" aria-label="Company"></select>
       <select class="field" id="acPrep" aria-label="Prepared by"></select>
       <select class="field" id="acDept" aria-label="Department"></select>
@@ -12204,7 +12204,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   /* ================= Accounts › Accounting ================= */
   var AC = { side: "bills", id: null, kind: null, D: null, busy: false, limit: 100 };
   function acctCos() { return S.isAdmin ? activeCompanies() : roleCos("acct"); }
-  function acctBills() { return billList().filter(function (b) { return b.status === "done" && b.companyId && (S.isAdmin || canStep("acct", b.companyId)) && !(checkOf(b) && !b.acct); }); }
+  /* Submitted bills, and bills sent back that are with the purchaser to fix (listed under Sent back, view-only). */
+  function acctBills() { return billList().filter(function (b) { return (b.status === "done" || (b.acct === "back" && b.status !== "deleted")) && b.companyId && (S.isAdmin || canStep("acct", b.companyId)) && !(checkOf(b) && !b.acct); }); }
+  function acctWithPrep(kind, x) { return kind === "bill" && x.status !== "done"; }
   function acctVchs() { return vchList().filter(function (v) { return v.companyId && (S.isAdmin || canStep("acct", v.companyId)) && !(vcrOf(v.id) && !v.acct); }); }
   function acctWaitN() { var f = function (x) { return !x.acct || x.acct === "pending"; }; return acctBills().filter(f).length + acctVchs().filter(f).length; }
   function personDept(uid) { var u = S.users[uid] || (uid === meId() ? S.myUser : null); return u ? deptName(u.deptId) : ""; }
@@ -12235,7 +12237,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       { label: "Prepared by", who: function (x) { return pnm(x.preparedByName) || userLabel(prepOf(x)); }, cell: function (x, td) { txt(td, pnm(x.preparedByName) || userLabel(prepOf(x)) || ""); var d = personDept(prepOf(x)); if (d) sub(td, d); } },
       { label: isB ? "Taxable" : "Total", cls: "r num", sort: function (x) { return Number(isB ? x.taxable : x.total) || 0; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, isB ? bm2(x, x.fcTaxable != null ? x.fcTaxable : x.taxable) : bm2(null, x.total))); if (isB) sub(td, "Total " + bm2(x, x.fcTotal != null ? x.fcTotal : x.total)); } },
       { label: "Ledger", cell: function (x, td) { txt(td, ledText(x.ledgers) || "Not chosen"); if (x.tds != null && x.acct === "approved") sub(td, "TDS " + money(x.tds) + (x.tdsSection ? " · " + x.tdsSection : "")); } },
-      { label: "Status", cell: function (x, td) { var l = acctLabel(x); td.appendChild(el("span", { class: "tag stg " + l[1] }, l[0])); if (x.acctNote && x.acct !== "approved") sub(td, x.acctNote); if (isB) { var al = billAlerts(x); if (al.length) { var an = el("span", { class: "needs", title: al.join("\n") }); an.appendChild(warnIcon("Alerts")); an.appendChild(document.createTextNode(" " + plural(al.length, "alert") + (gstEinv(vGst(S.vendors[x.vendorId])) && !(x.einv && x.einv.irn) ? ": no e-invoice" : ""))); td.appendChild(an); } }
+      { label: "Status", cell: function (x, td) { var l = acctLabel(x); td.appendChild(el("span", { class: "tag stg " + l[1] }, l[0])); if ((x.acct === "held" || x.acct === "back") && x.acctByName) sub(td, "By " + x.acctByName + (x.acctAt ? ", " + fmtDay(x.acctAt) : "") + (acctWithPrep(isB ? "bill" : "voucher", x) ? " · with " + (pnm(x.preparedByName) || "the purchaser") + " to fix" : "")); if (x.acctNote && x.acct !== "approved") sub(td, x.acctNote); if (isB) { var al = billAlerts(x); if (al.length) { var an = el("span", { class: "needs", title: al.join("\n") }); an.appendChild(warnIcon("Alerts")); an.appendChild(document.createTextNode(" " + plural(al.length, "alert") + (gstEinv(vGst(S.vendors[x.vendorId])) && !(x.einv && x.einv.irn) ? ": no e-invoice" : ""))); td.appendChild(an); } }
         if (isB && x.acct !== "approved" && acctVendorNeeds(x)) { var n = el("span", { class: "needs" }); n.appendChild(warnIcon("Vendor")); n.appendChild(document.createTextNode(" Vendor details needed first")); td.appendChild(n); } } },
       { label: "", kind: "act", cls: "r", cell: function (x, td) { var o = el("button", { class: "btn sm primary" }, "Open"); o.addEventListener("click", function () { openAcct(isB ? "bill" : "voucher", x.id); }); td.appendChild(o); } }
     ], rows, { sortIndex: 0, limit: AC.limit });
@@ -12341,9 +12343,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function renderAcctOne() {
     var kind = AC.kind, x = kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D; if (!x) { backToAcct(); return; }
-    var locked = acctLocked(kind, x), isB = kind === "bill", vNeed = isB ? acctVendorNeeds(x) : null;
+    var withPrep = acctWithPrep(kind, x), locked = withPrep || acctLocked(kind, x), isB = kind === "bill", vNeed = isB && !withPrep ? acctVendorNeeds(x) : null;
     $("aoTitle").textContent = (isB ? "Bill " + x.billNo + ", " + vendorLabelOfBill(x) : "Voucher " + x.voucherNo + ", " + (x.payee || ""));
-    var l = acctLabel(x); $("aoSub").textContent = l[0] + (x.acctByName ? " · " + x.acctByName + ", " + fmtDay(x.acctAt) : "") + (locked ? ". It is already in " + (isB ? checkOf(x).r.no : vcrOf(x.id).no) + ", so it can't be changed here." : "");
+    var l = acctLabel(x); $("aoSub").textContent = l[0] + (x.acctByName ? " · " + x.acctByName + ", " + fmtDay(x.acctAt) : "") + (withPrep ? ". It is with " + (pnm(x.preparedByName) || "the purchaser") + " to fix; it comes back to Waiting when they submit it again." : locked ? ". It is already in " + (isB ? checkOf(x).r.no : vcrOf(x.id).no) + ", so it can't be changed here." : "");
     var f = $("aoBody"); f.textContent = "";
     /* The bill file sits beside the form; the same viewer is kept while the bill stays open, so the page and zoom hold. */
     if (isB && x.file && x.file.path && window.bvFiles) {

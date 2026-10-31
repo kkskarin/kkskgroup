@@ -2613,7 +2613,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     host.addEventListener("click", function (e) { e.stopPropagation(); var open = box.querySelector(".memenu"); if (open) { closeMeMenu(); return; } openMeMenu(box, host); });
   }
   /* Admins can see the app exactly as any user sees it, and work as them, without a PIN. */
-  function viewables() { return Object.keys(S.users).map(function (k) { return S.users[k]; }).filter(function (u) { var js = jobsOf(u); return u.active !== false && !(S.admins && S.admins[u.id]) && u.id !== (S.me && S.me.id) && !(js.length === 1 && js[0] === "approver"); }).sort(function (a, b) { return natCmp(a.name, b.name); }); }
+  function viewables() { return Object.keys(S.users).map(function (k) { return S.users[k]; }).filter(function (u) { var js = jobsOf(u); return u.active !== false && !(S.admins && S.admins[u.id]) && u.id !== (S.me && S.me.id); }).sort(function (a, b) { return natCmp(a.name, b.name); }); }
   function renderAdminMe() {
     var box = $("me"); if (!box) return; box.textContent = "";
     var viewing = !!S._adm, u = viewing ? S.users[S.actId] : null;
@@ -4294,7 +4294,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function l1Names(r) { if (r.kind === "vcr") return l1List("vcr").filter(function (a) { return apprCos(r).some(function (cid) { return l1List("vcr", cid).some(function (b) { return b.id === a.id; }); }); }).map(function (a) { return a.name; }).join(", ") || "the voucher 1st approvers"; return pnm(r.approver1Name) || (l1List().filter(function (a) { return a.id === r.approver1Id; })[0] || {}).name || "the 1st approver"; }
   /* Am I this report's 1st approver? */
   function meL1For(r) {
-    var u = S.myUser; if (S.isAdmin || S._adm || APP !== "apr" || !u || demoAppr()) return false;
+    var u = S.myUser; if (S.isAdmin || APP !== "apr" || !u || demoAppr()) return false;
     if ((u.jobRoles || []).indexOf("approver") < 0 || apprOfUser(u).indexOf(repKindKey(r)) < 0) return false;
     if (r.kind !== "vcr" && r.approver1Id !== meId()) return false;
     return apprCos(r).some(function (cid) { return canStep("appr", cid); });
@@ -6351,6 +6351,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   /* A 1st approver checks a Bill or Advance Checking Report and passes it on to its 2nd approver. */
   function l1PassForm(r) {
+    if (S._adm) { toast("No approving while viewing as someone. Go back to your admin view to approve."); return; }
     var body = el("div", { class: "mform" }), to = approverName(r) || "the 2nd approver";
     body.appendChild(tidyField("Note for " + to + " (optional)", tidyBox("l1Note", "", "note", 300), "Anything they should know before approving."));
     popForm("Pass on " + r.no, "You have checked it. It goes to " + to + " for the final approval.", body, "Checked, pass on", function () {

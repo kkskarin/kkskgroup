@@ -1084,6 +1084,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     <div class="stats" id="apStats"></div>
     <h3 style="margin-top:4px">Waiting for approval <span id="apWaitN"></span></h3>
     <div class="card list scroll" id="apWait"></div>
+    <div id="apInstW"><h3 style="margin-top:28px">Instalments due, not in a report yet <span id="apInstN"></span></h3>
+    <p class="sub" style="margin:0 0 10px">Proforma and import instalments that are due. Approve one here: its Advance Checking Report is made and goes for payment.</p>
+    <div class="card list scroll" id="apInst"></div></div>
     <h3 style="margin-top:28px">Approved in the last 30 days</h3>
     <div class="card list scroll" id="apDone"></div>
   </section>
@@ -1399,15 +1402,15 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       <span class="grow"></span>
       <select class="field" id="apCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
-    <h3 style="margin-top:4px" class="teamonly">Instalments not in a report yet <span id="apWaitN"></span></h3>
-    <div class="card list scroll teamonly" id="apWait"></div>
+    <h3 style="margin-top:4px">Instalments not in a report yet <span id="aprWaitN"></span></h3>
+    <div class="card list scroll" id="aprWait"></div>
     <div class="head" style="margin:28px 0 10px;align-items:center"><div><h3 style="margin:0">Reports</h3><p class="sub" id="apListSub" style="margin:2px 0 0"></p></div><span class="grow"></span>
       <input class="field" id="apQ" type="search" placeholder="Search number, vendor or proforma" aria-label="Search reports" autocomplete="off" style="width:auto;flex:0 1 280px"></div>
     <div class="card list scroll" id="apList"></div>
   </section>
   <section id="secArch" hidden>
     <div class="head"><div><h2>Data &amp; Archive</h2><p class="sub">How much the app loads each time it opens, and the yearly close that keeps it quick. A close removes a finished year's settled records after you have downloaded them, and carries every balance forward.</p></div></div>
-    <div class="stats" id="arStats"></div>
+    <div class="stats" id="archStats"></div>
     <h3 style="margin-top:4px">Backups</h3>
     <div class="card" id="bkBox">
       <div class="form" style="grid-template-columns:1fr">
@@ -1445,7 +1448,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       <p class="sub" id="arCloseHint" style="padding:0 22px 6px"></p>
       <p class="sub" id="arProg" aria-live="polite" style="padding:0 22px 16px;font-weight:600;color:var(--brand-text)"></p>
     </div>
-    <p class="sub" id="arDone" style="margin-top:10px"></p>
+    <p class="sub" id="archDone" style="margin-top:10px"></p>
   </section>
   <section id="secStmt" hidden>
     <div class="head"><div><button class="link-btn" id="backStmt">Back to Companies</button><h2 id="stTitle"></h2><p class="sub">Company x Vendor statement with the AP ageing summary. Figures are opening balances plus submitted bills, less TDS, payments, discounts and advances.</p></div></div>
@@ -1752,7 +1755,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   /* The little count shown on a tab, or null. */
   function tabBadge(t) {
     if (t === "Cash Approvals" && dataReady()) { var ncp = capPending().length; if (ncp) return { n: ncp, cls: "count info", label: ncp + " waiting for approval" }; }
-    if (t === "Approvals" && dataReady()) { var nap = apprWaiting().length; if (nap) return { n: nap, cls: "count info", label: nap + " waiting for approval" }; }
+    if (t === "Approvals" && dataReady()) { var nap = apprWaiting().length + (APP === "apr" ? apprInstDue().length : 0); if (nap) return { n: nap, cls: "count info", label: nap + " waiting for approval" }; }
     if (t === "Accounts" && dataReady()) { var na0 = acctWaitN(); if (na0) return { n: na0, cls: "count info", label: na0 + " to account" }; }
     if (t === "Users" && S.isAdmin) { var n = pendingRequests().length; if (n) return { n: n, cls: "count", label: n + " waiting" }; }
     if (t === "Cash Advance" && dataReady()) return caBadge();
@@ -6329,6 +6332,29 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     return "Approved by " + (userLabel(r.approvedBy) || approverName({ approverId: r.approvedBy }) || "an admin");
   }
   function openAppr(r) { if (r.kind === "vcr") openVcr(r.id); else openReport(r.id); }
+  /* Due proforma / import instalments with no report yet, that this person approves (admins: per Assigned to). */
+  function apprInstDue() {
+    var out = [];
+    Object.keys(S.advances || {}).forEach(function (k) {
+      var a = S.advances[k]; if (a.status !== "active" || !a.vendorId || !a.companyId || (APV.div && divOf(a) !== APV.div)) return;
+      if (S.isAdmin ? !whoOk(APV, a.approverId || "") : !(apprForMe(a, a.approverId || "") && canApprove(a.companyId))) return;
+      (a.installments || []).forEach(function (it, i) { if (instState(a, i) === "due") out.push({ a: a, i: i, d: instDue(a, i) || "" }); });
+    });
+    return out;
+  }
+  function renderApprInst() {
+    var w = $("apInstW"), list = APP === "apr" ? apprInstDue() : []; w.hidden = !list.length; if (!list.length) return;
+    $("apInstN").textContent = "(" + list.length + ")"; var box = $("apInst");
+    sortTable(box, "apInst", [
+      { label: "Vendor", kind: "co", sort: function (x) { return advVendorName(x.a); }, cell: function (x, td) { td.appendChild(el("b", null, advVendorName(x.a))); sub(td, (x.a.kind === "import" ? "Import " : "Proforma ") + (x.a.piNo || "") + " · " + coLabel(x.a.companyId) + " · " + divName(x.a)); } },
+      { label: "Instalment", cell: function (x, td) { txt(td, instLabel(x.a, x.i)); sub(td, whenText(x.a, x.i)); } },
+      { label: "Due", cls: "num", sort: function (x) { return x.d || "9999"; }, cell: function (x, td) { txt(td, x.d ? fmtDate(x.d) : "Not known yet"); var late = x.d ? daysBetween(x.d, todayYmd()) : 0; if (late > 0) sub(td, "Due " + plural(late, "day") + " ago", "color:var(--bad);font-weight:600"); } },
+      { label: "Amount", cls: "r num", sort: function (x) { return instAmt(x.a, x.i); }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, curMoney(x.a.currency, instReport(x.a, x.i) ? instRest(x.a, x.i) : instAmt(x.a, x.i)))); sub(td, "No GST or TDS"); } },
+      { label: "", kind: "act", cls: "r", cell: function (x, td) {
+          if (S._adm) return; var b = el("button", { class: "btn primary", type: "button" }, "Approve for Payment");
+          b.addEventListener("click", function () { createInstReport(x.a, x.i, b, true).then(function (r) { if (r) { renderApprovals(); instApproveForm(r); } }); }); td.appendChild(b); } }
+    ], list, { sortIndex: 2, sortDir: 1 });
+  }
   function renderApprovals() {
     var ds = $("apDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), APV.div); APV.div = ds.value; whoSelect($("apWho"), APV, renderApprovals);
     $("apSub").textContent = S.isAdmin ? "Checking reports from every division waiting to be approved for payment. Open one to approve it bill by bill." : (canDo("rec") ? "Checking reports from " + recDivs().map(function (k) { return DIVS[k].name; }).join(" and ") + " waiting to be approved for payment. Record an approval signed on paper by choosing who signed it." : "Checking reports that name you as approver, waiting to be approved for payment. Open one to approve it bill by bill.");
@@ -6336,6 +6362,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     w.forEach(function (r) { curAdd(tot, r.currency || "INR", r.kind === "vcr" ? (r.payable != null ? r.payable : r.total) : r.kind === "inst" ? r.total : payableOf(r)); });
     statBoxes($("apStats"), [["Waiting", String(w.length), plural(w.length, "report")], ["Amount waiting", curSum(tot) || money(0), ""], ["Approved, 30 days", String(done.length), done.filter(function (r) { return r.onBehalf; }).length + " on behalf"]]);
     $("apWaitN").textContent = w.length ? "(" + w.length + ")" : "";
+    renderApprInst();
     var cols = [
       { label: "Report", kind: "co", sort: function (r) { return r.no; }, cell: function (r, td) { td.appendChild(el("b", { class: "mono" }, r.no || "")); sub(td, apprKind(r) + " · " + divName(r)); } },
       { label: "Company", sort: function (r) { return coLabel(apprCos(r)[0]); }, cell: function (r, td) { txt(td, apprCos(r).map(coLabel).join(", ")); } },
@@ -7196,17 +7223,18 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var code = normId(c.shortName || c.name).slice(0, 10) || "CO";
     return { no: serialNo(code + "-" + series, seq, day, fy), seq: seq, fy: fy, day: day };
   }
-  function createInstReport(a, i, btn) {
+  function createInstReport(a, i, btn, quiet) {
     var st0 = a && instState(a, i);
-    if (CK.busy || !a || !(st0 === "due" || st0 === "upcoming" || st0 === "dispatch")) return;
+    if (CK.busy || !a || !(st0 === "due" || st0 === "upcoming" || st0 === "dispatch")) return Promise.resolve(null);
     var now = Date.now(), n = nextReportNo(a.companyId, now, "APR"), amt0 = instReport(a, i) ? instRest(a, i) : instAmt(a, i), id = newId("r"), due0 = instDue(a, i) || "";
     var doc = { kind: "inst", advanceId: a.id, approverId: a.approverId || "", inst: i, advKind: a.kind, no: n.no, seq: n.seq, fy: n.fy, companyId: a.companyId, vendorId: a.vendorId, billIds: [], currency: a.currency || "INR",
       taxable: null, gst: null, total: amt0, periodFrom: due0, periodTo: due0, early: st0 !== "due", checkDate: n.day, preparedBy: preparedByText(), createdAt: now, createdBy: meId(),
       tds: 0, payable: amt0, stage: "generated", generatedAt: now, generatedBy: meId(), log: [logEntry("generated", instLabel(a, i))] };
     CK.busy = true; if (btn) btn.disabled = true;
-    retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () {
-      S.reports[id] = Object.assign({ id: id }, doc); invalidate(); renderNav(); toast("Advance Checking Report " + doc.no + " generated for " + instLabel(a, i).toLowerCase() + (doc.early ? ", ahead of its due date." : ".")); openReport(id);
-    }, function (e) { toast(explain(e)); if (btn) btn.disabled = false; }).then(function () { CK.busy = false; });
+    return retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () {
+      S.reports[id] = Object.assign({ id: id }, doc); invalidate(); renderNav(); if (!quiet) { toast("Advance Checking Report " + doc.no + " generated for " + instLabel(a, i).toLowerCase() + (doc.early ? ", ahead of its due date." : ".")); openReport(id); }
+      return S.reports[id];
+    }, function (e) { toast(explain(e)); if (btn) btn.disabled = false; return null; }).then(function (r) { CK.busy = false; return r; });
   }
   /* ---- Advance Planning Reports tab ---- */
   function aprWaiting(cid) {
@@ -7220,10 +7248,10 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function renderApr() {
     var sel = $("apCo"), cur = sel.value;
     fillSelect(sel, [["", "All your companies"]].concat(roleCos("adv").map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
-    var cid = sel.value, list = aprWaiting(cid), nd = list.filter(function (x) { return x.st === "due"; }).length, box = $("apWait");
-    $("apWaitN").textContent = list.length ? "(" + list.length + (nd ? ", " + nd + " due" : "") + ")" : "";
+    var cid = sel.value, list = aprWaiting(cid), nd = list.filter(function (x) { return x.st === "due"; }).length, box = $("aprWait");
+    $("aprWaitN").textContent = list.length ? "(" + list.length + (nd ? ", " + nd + " due" : "") + ")" : "";
     if (!list.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Every instalment is already in a report or paid.")); }
-    else sortTable(box, "apWait", [
+    else sortTable(box, "aprWait", [
       { label: "Company", kind: "co", sort: function (x) { return coRank(S.companies[x.a.companyId]); }, cell: function (x, td) { td.appendChild(el("b", null, coLabel(x.a.companyId))); } },
       { label: "Vendor", sort: function (x) { return advVendorName(x.a); }, cell: function (x, td) { td.appendChild(el("b", null, advVendorName(x.a))); sub(td, (x.a.kind === "import" ? "Import " : "Proforma ") + (x.a.piNo || "")); } },
       { label: "Instalment", cell: function (x, td) { txt(td, instLabel(x.a, x.i)); sub(td, whenText(x.a, x.i)); } },
@@ -7233,6 +7261,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
           if (late > 0) sub(td, "Due " + plural(late, "day") + " ago", "color:var(--bad);font-weight:600"); else if (late === 0) sub(td, "Due today", "color:var(--bad);font-weight:600"); else sub(td, "In " + plural(-late, "day")); } },
       { label: "Amount", cls: "r num", sort: function (x) { return instAmt(x.a, x.i); }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, curMoney(x.a.currency, instAmt(x.a, x.i)))); sub(td, "No GST or TDS"); } },
       { label: "", kind: "act", cls: "r", cell: function (x, td) {
+          /* admins see what is waiting; the team prepares the reports */
+          if (S.isAdmin) { if (x.st !== "due") { sub(td, "Not due yet"); return; } var al = el("a", { class: "btn", href: "../" + APP_PATH.apr + "/" }, "Approve in Approvals"); td.appendChild(al); return; }
           var due = x.st === "due", b = el("button", { class: "btn" + (due ? " primary" : "") }, due ? "Generate report" : "Generate early");
           b.addEventListener("click", function () {
             if (!due && b.getAttribute("data-arm") !== "1") { b.setAttribute("data-arm", "1"); b.textContent = "Click again: not due yet"; setTimeout(function () { if (b.isConnected) { b.removeAttribute("data-arm"); b.textContent = "Generate early"; } }, 4000); return; }
@@ -10642,7 +10672,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function renderArchive() {
     renderBackup();
     var rows = usageRows(), tot = rows.reduce(function (s0, x) { return s0 + x.n; }, 0), kb = rows.reduce(function (s0, x) { return s0 + x.kb; }, 0), box = $("arUse");
-    statBoxes($("arStats"), [["Records loaded on every open", String(tot), "about " + (kb >= 1024 ? (kb / 1024).toFixed(1) + " MB" : kb + " KB")], ["Change log", "Loaded only on its tab", ""]]);
+    statBoxes($("archStats"), [["Records loaded on every open", String(tot), "about " + (kb >= 1024 ? (kb / 1024).toFixed(1) + " MB" : kb + " KB")], ["Change log", "Loaded only on its tab", ""]]);
     sortTable(box, "arUse", [
       { label: "What", kind: "co", cell: function (x, td) { td.appendChild(el("b", null, x.name)); } },
       { label: "Records", cls: "r num", cell: function (x, td) { txt(td, String(x.n)); } },
@@ -10661,7 +10691,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     $("arNone").hidden = !!fys.length; $("arNone").textContent = "The current year, " + cur0 + ", can be closed from " + next + ". Until then nothing needs archiving.";
     $("arBox").hidden = !fys.length;
     var done = Object.keys(S.closes || {}).map(function (k) { return S.closes[k]; }).filter(function (c) { return c.status === "done"; }).sort(function (a, b) { return natCmp(b.fy, a.fy); });
-    $("arDone").textContent = done.length ? "Closed: " + done.map(function (c) { return c.fy + " on " + fmtDay(c.doneAt) + " (" + (c.total || 0) + " records)"; }).join("; ") + "." : "";
+    $("archDone").textContent = done.length ? "Closed: " + done.map(function (c) { return c.fy + " on " + fmtDay(c.doneAt) + " (" + (c.total || 0) + " records)"; }).join("; ") + "." : "";
     if (!fys.length) return;
     var job = S.closes[AR.fy], P = job && job.status !== "done" ? null : archivePlan(AR.fy);
     var sm = $("arPlan"); sm.textContent = "";

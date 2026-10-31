@@ -283,6 +283,11 @@ provides the same calls, so the app code did not need rewriting:
 - **Bill files** are kept in the private `bill-files` Storage bucket (`live/` or `demo/` folder). The accountant sees
   the file beside the form with page, zoom, fit, rotate and drag. Bills typed in by hand can attach a file.
   Proformas and imports read from a file keep it too (`<live|demo>/advances/<id>/`), as do voucher documents.
+- **Signatures** are always pen strokes: drawn in the box, or "Convert a Photo", which finds the ink in a photo of a
+  signature on paper (paper, shadows, the sheet's edge and specks dropped), thins it to centre lines and traces them into
+  strokes that can be undone, added to or cleared. Saved as ink on a transparent background (`sigs/<id>`: `png`, `src`
+  drawn / photo-strokes). A signature with `review: true` (old ones saved straight from a photo) brings up "Please Redo
+  Your Signature", which can't be closed until a new one is saved.
 - **Voucher PDFs** (one voucher, or all of a set sent without a checking report) carry their print settings for every page:
   actual size (no scaling), paper picked by the PDF's page size (A5 landscape), one-sided, one copy, and the print dialog
   opens when the file is opened. Acrobat Reader and most desktop PDF readers follow them; browser PDF viewers mostly don't.

@@ -142,6 +142,17 @@
   - Bills record the e-invoice's IRN, Ack No and Ack Date (`einv`), read by Claude when printed and editable on the bill form.
   - TDS: choosing a section fills the amount from its rate, rounded to the rupee; 194C takes 1% for a proprietorship,
     individual or HUF and 2% for others, from the vendor's constitution (`tdsRateFor`).
+- **Vouchers under RCM** (Self Invoice, Freight & Transport): the accountant picks GST type (Intrastate: CGST / SGST,
+  Interstate: IGST) and GST (RCM) percent (5% default, or 18%). The tax on the voucher's amount fills in (editable) and is
+  saved as `gstLedgers` on the CGST / SGST / IGST Input (RCM) ledgers (`rcmLines`), posted in Ledger Books and printed in
+  the voucher's tax box (IGST in place of CGST / SGST when interstate). TDS fills from the section's rate on the voucher's
+  amount, without RCM (194C at the individual rate for a voucher's payee), editable.
+- **Narrations:** bills are read with `NARR_RULES` (Being … vide Inv. … dt. DD/MM/YYYY: items; for purpose; at most 255
+  characters; the purchaser's remarks as the purpose); anything Claude flags shows as "Check the narration". The accountant
+  has **Edit** on a bill's narration (with **Write with Claude**, the same rules) and Supply of, and on a voucher's description
+  lines. Every narration and note box is tidied on leaving it: spelling, grammar, punctuation, clear abbreviations expanded,
+  names, part names and codes kept as written.
+- **Supply of** on bills (Goods, Services, Composite): read from the bill, required, editable on the bill and by the accountant.
 - **Bank Names** (Finance › Masters › Others, `banknames/*`, shared): one name per bank with its IFSC code (first 4 letters).
   Renaming one rewrites it on every bank account, cheque template and vendor (`bnForm`). A bank is added by itself
   (`bnEnsure`) when an IFSC of a new bank is saved on a company bank account or a vendor.

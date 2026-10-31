@@ -3637,6 +3637,23 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     return Promise.reject({ kind: "type" });
   }
 
+  /* The accounting narration of a bill (for Tally): the rules Claude follows when a bill is read, and when the accountant asks
+     for it again. At most 255 characters. */
+  var NARR_RULES = [
+    "NARRATION RULES (an accounting narration for an Indian manufacturing company's Tally records):",
+    "- At most 255 characters including spaces and punctuation; prefer under 220. Never cut a word, vendor name, invoice number or date halfway. Count before answering.",
+    "- Begin with \"Being\". Classify by the actual contents (not only headings, HSN/SAC or ledger titles):",
+    "  goods: \"Being goods purchased from [Vendor] vide Inv. [Number] dt. [DD/MM/YYYY]: [Qty] [Item], [Qty] [Item]; for [Purpose/Location].\"",
+    "  services: \"Being services availed from [Vendor] vide Inv. [Number] dt. [DD/MM/YYYY]: [Qty] [Service], [Service]; for [Purpose/Location].\"",
+    "  goods and services: \"Being goods and services from [Vendor] vide Inv. [Number] dt. [DD/MM/YYYY]: [Qty] [Item], [Service]; for [Purpose/Location].\"",
+    "  expenses: \"Being expenses incurred towards [Expense] from [Vendor] vide Inv. [Number] dt. [DD/MM/YYYY]: [Qty and description]; for [Purpose/Location].\"",
+    "- Use the vendor's legal name exactly, the invoice number exactly as printed, the date as DD/MM/YYYY.",
+    "- Items: line items with quantity and unit where meaningful (\"4 bearings, 2 belts, 25 kg grease\"); combine duplicates; keep distinct sizes and grades; no prices, GST, HSN/SAC or totals; never take a pack size, model or serial number for a quantity; never invent a quantity.",
+    "- Clean the language: fix spelling, grammar, capitalisation and punctuation; expand abbreviations only when the meaning is certain (\"m/c\" machine); keep model, part and serial numbers, machine identifiers and unfamiliar part names exactly; units as kg, L, m, pcs; sentence case except proper nouns and codes.",
+    "- Purchaser remarks (handwritten or typed on the bill, or given below) tell the purpose: add them at the end after a semicolon, corrected (\"drum 3\" -> \"for Drum 3\", \"shaving m/c repair\" -> \"for shaving machine repair\", \"used in ETP\"). Never invent a purpose, machine or place; leave out what is unclear.",
+    "- If too long, keep in this order: vendor, invoice number, date, nature, items with quantities, the purchaser's purpose, other details. Shorten wording first, then use clear abbreviations, then end the item list with \"and N other items\". Never drop the purchaser's machine or place if shorter wording keeps it.",
+    "- End with a full stop. No currency symbols, bullets or second sentence. Never fabricate. If the vendor, number or date can't be read, or the document is a credit or debit note or not a purchase bill, still write what you can and say why in narration_review."
+  ].join("\n");
   function buildPrompt(p) {
     var cos = roleCos("bills").map(function (c) { return { id: c.id, name: c.name, internal_name: c.internalName || "", short_name: c.shortName || "" }; });
     var src = (p.images.length && p.text && !p.scanned ? "Its page images are attached, and the text pulled from the PDF is below. Use the text for exact numbers and identifiers, and the images for layout."
@@ -3662,7 +3679,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       "- Amounts are plain numbers in the bill's currency with no commas or symbols. taxable_amount is the value before tax. gst_amount is CGST plus SGST or UTGST plus IGST, or 0 if no GST is charged. total_amount is the final amount payable as printed, after any round-off.",
       "- payment_term_days: only if the bill prints credit or payment terms (such as Net 30 or 45 days credit) or a due date, as whole days from the bill date. null if nothing is printed. Don't guess.",
       "- irn, ack_no, ack_date: only for a GST e-invoice, which prints them near the top, usually beside a QR code. irn is the 64-character IRN (letters a to f and digits) copied exactly; ack_no is the acknowledgement number, digits only; ack_date as YYYY-MM-DD. null for each that isn't printed.",
-      "- narration: one plain English sentence, under 20 words, saying what was bought, ending with a full stop. Translate if the bill is in another language.",
+      "- narration: the accounting narration, following the NARRATION RULES below (in English; translate if the bill is in another language). narration_review: a list of short reasons it needs a person's check, or [].",
+      "- supply_of: goods, services or composite (goods and services together), from what the bill actually supplies.",
       "- Capitalisation: write vendor_name, company_name_on_bill and narration in proper case. Capitalise each word of a name, keep acronyms and codes in capitals (KKSK, LLP, GST), and write Pvt. Ltd. that way, even if the bill prints everything in capitals. Copy bill_number exactly as printed.",
       "- Use null for anything not printed or not readable. Never invent values that are not on the bill.",
       "- notes: one short sentence about anything unclear, or an empty string.",
@@ -3671,7 +3689,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       "- items_note: one or two sentences on anything you are unsure of in the items (which lines, which figures), or an empty string.",
       "",
       "Reply with only this JSON object (bills holds one object per bill):",
-      '{"bills":[{"pages":[1],"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_bank":null,"vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"irn":null,"ack_no":null,"ack_date":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}]}',
+      '{"bills":[{"pages":[1],"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_bank":null,"vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"irn":null,"ack_no":null,"ack_date":null,"narration":"","narration_review":[],"supply_of":"goods","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}]}',
+      "",
+      NARR_RULES,
       "",
       "COMPANIES: " + JSON.stringify(cos),
       "",
@@ -3759,10 +3779,16 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       billNo: str(res.bill_number, 60).toUpperCase(), billDate: date, currency: A.currency, fxRate: A.fxRate, fcTaxable: A.fcTaxable, fcGst: A.fcGst, fcTotal: A.fcTotal,
       taxable: A.taxable, gstAmt: A.gstAmt, gstPct: A.gstPct, total: A.total,
       termDays: v ? (v.termDays != null ? v.termDays : term) : term, termChoice: "", updateVendorTerm: false,
-      narration: sentenceFix(str(res.narration, 400)), einv: einvOf(res.irn, res.ack_no, res.ack_date),
-      ex: { companyName: str(res.company_name_on_bill, 160), vendorName: str(res.vendor_name, 160), vendorGstin: g, vendorAddress: aiAddr(res.vendor_address), vendorBank: bankFromRead(res.vendor_bank), billTermDays: term, printedTotal: printed, rateFrom: rateFrom, notes: str(res.notes, 300), aiUnsure: aiUnsure(res, ["company", "vendor", "vendor_gstin", "bill_number", "bill_date", "currency", "taxable_amount", "gst_amount", "payment_term_days", "narration"]), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) }
+      narration: narrFix(res.narration), supplyOf: supplyOk(res.supply_of), einv: einvOf(res.irn, res.ack_no, res.ack_date),
+      ex: { narrReview: narrReview(res), companyName: str(res.company_name_on_bill, 160), vendorName: str(res.vendor_name, 160), vendorGstin: g, vendorAddress: aiAddr(res.vendor_address), vendorBank: bankFromRead(res.vendor_bank), billTermDays: term, printedTotal: printed, rateFrom: rateFrom, notes: str(res.notes, 300), aiUnsure: aiUnsure(res, ["company", "vendor", "vendor_gstin", "bill_number", "bill_date", "currency", "taxable_amount", "gst_amount", "payment_term_days", "narration"]), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) }
     };
   }
+  /* ---- Supply of (goods, services or composite) and the narration ---- */
+  var SUPPLY = [["goods", "Goods"], ["services", "Services"], ["composite", "Composite (goods and services)"]];
+  function supplyOk(v) { v = String(v || "").toLowerCase(); return v === "mixed" ? "composite" : SUPPLY.some(function (x) { return x[0] === v; }) ? v : ""; }
+  var NARR_MAX = 255;
+  function narrFix(t) { return sentenceFix(String(t == null ? "" : t).replace(/\s+/g, " ").trim()); }
+  function narrReview(res) { var r = (res && (res.narration_review || res.review_reasons)) || []; r = Array.isArray(r) ? r.map(function (x) { return str(x, 160); }).filter(Boolean) : []; if (narrFix(res && res.narration).length > NARR_MAX) r.push("The narration is longer than 255 characters."); return r; }
   /* A bill's e-invoice details: IRN (64 hex characters), acknowledgement number and date. Read from the bill or typed. */
   function einvOf(irn, ack, ad) {
     var i = String(irn == null ? "" : irn).replace(/\s+/g, "").toLowerCase(), a = String(ack == null ? "" : ack).replace(/\s+/g, ""), d = ymdOk(ad) ? ad : parseDate(String(ad || "")) || "";
@@ -4152,7 +4178,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt),
       tds: b.entryTds || "", tdsSec: b.entryTdsSection || "",
       termDays: b.termDays == null ? "" : String(b.termDays), termChoice: b.termChoice || "", updateVendorTerm: !!b.updateVendorTerm, narration: b.narration || "", advPick: b.advPick || "", advWhy: b.advWhy || "",
-      einv: { irn: (b.einv && b.einv.irn) || "", ackNo: (b.einv && b.einv.ackNo) || "", ackDate: b.einv && b.einv.ackDate ? fmtDate(b.einv.ackDate) : "" },
+      supplyOf: b.supplyOf || "", einv: { irn: (b.einv && b.einv.irn) || "", ackNo: (b.einv && b.einv.ackNo) || "", ackDate: b.einv && b.einv.ackDate ? fmtDate(b.einv.ackDate) : "" },
       ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", forId: b.madeBy ? b.preparedBy || "" : "", forNew: "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), settle: b.settle ? "yes" : "no", X: Object.assign({}, extOf(b, DIV))
     };
   }
@@ -4237,7 +4263,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       billNo: D.billNo.trim(), billDate: parseDate(D.billDate),
       termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: D.narration.trim(), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
       ledgers: ledLinesOut(D.ledgers), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || "",
-      settle: D.settle === "yes" && billAdvOk(D), einv: einvOf((D.einv || {}).irn, (D.einv || {}).ackNo, parseDate((D.einv || {}).ackDate || ""))
+      settle: D.settle === "yes" && billAdvOk(D), supplyOf: D.supplyOf || "", einv: einvOf((D.einv || {}).irn, (D.einv || {}).ackNo, parseDate((D.einv || {}).ackDate || ""))
     }, amountsOf(D), prepFields(D.prepBy), approverFields(D.approverId), extDoc(D.companyId, D.X));
   }
   /* Whose cash a bill would come out of, and whether paying it from that cash advance is offered (rupee bills only). */
@@ -4335,6 +4361,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       else { vt = v.type; if (v.active === false) E("bcVen", v.name + " is deactivated. Reactivate it on Reports, Vendors, or choose another vendor."); }
     }
     if (!D.billNo.trim()) E("bcNo", "Enter the bill number.");
+    if (!D.supplyOf) E("bcSupply", "Choose whether the bill is for goods, services or both.");
+    if (String(D.narration || "").trim().length > NARR_MAX) E("bcNar", "The narration is " + String(D.narration).trim().length + " characters; keep it to " + NARR_MAX + ".");
     var bd = parseDate(D.billDate);
     if (!D.billDate.trim()) E("bcDate", "Enter the bill date.");
     else if (!bd) E("bcDate", "Enter the date like 12-Sep-26.");
@@ -4527,7 +4555,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     f.appendChild(fld("IRN (e-invoice)", inp("bcIrn", D.einv.irn, { maxlength: "70", class: "field mono", spellcheck: "false" }), "Printed near the QR code on an e-invoice. Leave blank if the bill isn't one.", true));
     f.appendChild(fld("Ack No", inp("bcAck", D.einv.ackNo, { maxlength: "20", class: "field mono", inputmode: "numeric" })));
     f.appendChild(fld("Ack Date", inp("bcAckD", D.einv.ackDate, { maxlength: "12", placeholder: "12-Sep-26" })));
-    f.appendChild(tidyField("Narration", tidyBox("bcNar", D.narration, "bill", null, 3), "What the bill is for, in any language." + (S.sample ? " It is turned into clean English when you leave the box." : "") + (b.narrLock ? " The closing breakup at the end is always kept, even if deleted." : "")));
+    var sup = el("select", { class: "field", id: "bcSupply" }); fillSelect(sup, [["", "Choose"]].concat(SUPPLY), D.supplyOf || ""); f.appendChild(fld("Supply of", sup, b.source === "file" ? "Read from the bill; change it if needed." : ""));
+    f.appendChild(tidyField("Narration", tidyBox("bcNar", D.narration, "bill", NARR_MAX, 3), "What the bill is for, in any language." + (S.sample ? " It is turned into clean English when you leave the box." : "") + (b.narrLock ? " The closing breakup at the end is always kept, even if deleted." : "")));
     var lgf = el("div", { class: "f wide" }); lgf.appendChild(el("span", { class: "lb" }, "Ledgers")); lgf.appendChild(el("div", { id: "bcLedWrap" }));
     lgf.appendChild(el("span", { class: "hint" }, "Choose the ledger for each part of the bill and enter its amount, before GST. Together they make the taxable amount." + (b.source === "file" ? " The taxable amount read from the bill is filled in on the first line." : "") + " TDS is entered by the accountant."));
     lgf.appendChild(el("span", { class: "err", id: "bcLedE", hidden: "" })); f.appendChild(lgf);
@@ -4573,6 +4602,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     D.billNo = $("bcNo").value; D.billDate = $("bcDate").value; D.currency = $("bcCur").value || "INR"; D.rate = $("bcRate").value;
     D.taxable = $("bcTax").value; D.gstAmt = $("bcGst").value;
     if ($("bcIrn")) D.einv = { irn: $("bcIrn").value, ackNo: $("bcAck").value, ackDate: $("bcAckD").value };
+    if ($("bcSupply")) D.supplyOf = $("bcSupply").value;
     D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value; if ($("bcFor")) { D.forId = $("bcFor").value; D.forNew = $("bcForNew").value; } if ($("bcAppr")) D.approverId = $("bcAppr").value; if ($("bcSettle")) D.settle = $("bcSettle").value;
     if ($("bcTerm")) D.termDays = $("bcTerm").value;
     if ($("bcTds")) { D.tds = $("bcTds").value; D.tdsSec = $("bcTdsSec").value; }
@@ -4763,6 +4793,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var dx = r.errs.filter(function (x) { return x[2]; })[0], dk = dx ? B.cardId + "|" + normId(D.billNo) : "";
     if (dx && B.dupWarned !== dk) { B.dupWarned = dk; toast("Duplicate: " + dx[1]); }
     if (!dx) B.dupWarned = "";
+    var nr = b.ex && b.ex.narrReview; if (nr && nr.length) { var d4 = el("div", { class: "flag w" }); d4.innerHTML = WARN_SVG; d4.appendChild(el("span", null, "Check the narration: " + nr.join("; "))); fl.appendChild(d4); }
     var nt = b.ex && b.ex.notes; if (nt) { var d3 = el("div", { class: "flag w" }); d3.innerHTML = WARN_SVG; d3.appendChild(el("span", null, "Claude's note: " + nt)); fl.appendChild(d3); }
     return r;
   }
@@ -4893,12 +4924,16 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var said = ta.value.trim(), kind = ta.getAttribute("data-tidy");
     if (!said || !S.sample || said === ta._tidied || said.length < 3) return;
     /* Already clean English (plain letters, a capital first, ending with a full stop, no doubled spaces): nothing to ask Claude. */
-    if (/^[A-Z][\x20-\x7E]*[.!?]$/.test(said) && !/\s{2,}|\bi\b|\s[,.]/.test(said)) { ta._tidied = said; return; }
+    if (/^[A-Z][\x20-\x7E]*[.!?]$/.test(said) && !/\s{2,}|\bi\b|\s[,.]/.test(said) && !/\b[a-z]{1,4}\/[a-z]{1,4}\b|\b(qty|nos|mtrs?|pkts?|reqd|recd|approx|dt|inv|wt|amt)\b/i.test(said)) { ta._tidied = said; return; }
     var names = tidyNames(ta);
     var prompt = "Below is " + TIDY.kinds[kind] + ", typed or dictated by a staff member of an Indian company. Work out what language it is in yourself: it may be English, Tamil, Hindi, Urdu, any of them written in English letters, or a mix.\n\n"
-      + "Rewrite it in clean, plain English: translate if needed, fix spelling, grammar and punctuation, keep every fact (items, quantities, amounts, names, places, dates) and add nothing. "
-      + "Use proper capitalisation: capitalise names of people, places and businesses, keep acronyms and company codes in capitals (for example KKSK, LLP, GST), and write units in their usual form (kg, mm, pcs). "
-      + "One or two sentences, under 60 words, ending with a full stop. If it is already clean English, return it unchanged. Reply with only the text.\n\n"
+      + "Rewrite it in clean, plain English: translate if needed, fix spelling, grammar, spacing and punctuation, remove repeated words and filler, keep every fact (items, quantities, units, amounts, names, places, dates) and add nothing. "
+      + "Expand an abbreviation only when its meaning is certain and it reads better (for example m/c to machine, qty to quantity, nos to numbers); never guess an expansion. "
+      + "Keep exactly as written: names of vendors, people and businesses, and model, part and serial numbers, codes, machine identifiers and unfamiliar or new part names (don't correct or replace them). "
+      + "Use proper capitalisation: capitalise names of people, places and businesses, keep acronyms and company codes in capitals (for example KKSK, LLP, GST, ETP), and write units in their usual form (kg, L, mm, m, pcs). "
+      + (kind === "bill" ? "It is a bill's accounting narration: keep it at most 255 characters; if it begins with \"Being\", keep that form (vide Inv. number dt. DD/MM/YYYY, items, then the purpose after a semicolon). "
+        : "One or two sentences, under 60 words. ")
+      + "End with a full stop. If it is already clean English, return it unchanged. Reply with only the text.\n\n"
       + (names.length ? "Names that may appear, spelled correctly: " + names.join("; ") + "\n\n" : "")
       + "Text:\n" + said.slice(0, 3000);
     tidyStatus(ta, "Tidying into clean English…");
@@ -12264,6 +12299,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var t = taxAll("tds").filter(function (y) { return y.sec === sec; })[0]; if (!t || t.rate == null || t.rate === "") return null;
     var g = vGst(S.vendors[x.vendorId]), two = t.rate2 != null && t.rate2 !== "";
     if (!two) return { rate: Number(t.rate), why: "" };
+    /* a voucher's payee is usually a person paid in cash: the individual / HUF rate, changeable */
+    if (!x.vendorId) return { rate: Number(t.rate), why: sec + ": " + pct(t.rate) + " for an individual or HUF payee (" + pct(t.rate2) + " for a firm or company), on the voucher's amount without RCM. Filled in as " + pct(t.rate) + " of " + amt2(AC.D.base) + "; change it if needed." };
     if (!g || !g.constitution) return { rate: null, why: sec + ": " + pct(t.rate) + " for an individual or HUF, " + pct(t.rate2) + " for others. The vendor's constitution isn't known from the GST portal, so choose the amount yourself." };
     var sm = gstSmallTds(g); return { rate: Number(sm ? t.rate : t.rate2), why: sec + " for this vendor: " + pct(sm ? t.rate : t.rate2) + " (" + g.constitution + ", from the GST portal)." };
   }
@@ -12271,6 +12308,51 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var h = $("aoSecH"), x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id]; if (!h || !x) return;
     var r = AC.D.sec ? tdsRateFor(x, AC.D.sec) : null;
     h.textContent = !r ? "" : r.why || (AC.D.sec + ": " + pct(r.rate) + ".") + (r.rate != null ? " Filled in as " + pct(r.rate) + " of " + amt2(AC.D.base) + ", rounded to the rupee; change it if needed." : "");
+  }
+  function label2(list, k) { var x = list.filter(function (o) { return o[0] === k; })[0]; return x ? x[1] : ""; }
+  /* The accountant corrects a bill's narration (and Supply of), or a voucher's description lines. Claude can write a bill's
+     narration again to the narration rules. */
+  function narrEdit(kind, x) {
+    var isB = kind === "bill", body = el("div", { class: "mform" }), lines = !isB && (x.lines || []).length > 1 ? x.lines : null;
+    if (isB) {
+      var ta = tidyBox("neNar", x.narration || "", "bill", NARR_MAX, 4), cnt = el("span", { class: "hint" }); body.appendChild(tidyField("Narration", ta, "")); body.appendChild(cnt);
+      var upd = function () { cnt.textContent = ta.value.trim().length + " of " + NARR_MAX + " characters"; }; ta.addEventListener("input", upd); upd();
+      var sp = el("select", { class: "field", id: "neSup" }); fillSelect(sp, [["", "Choose"]].concat(SUPPLY), x.supplyOf || ""); body.appendChild(fld("Supply of", sp));
+      if (S.sample) {
+        var wb = el("button", { type: "button", class: "btn sm", style: "margin-top:8px" }, "Write with Claude"); body.appendChild(wb);
+        wb.addEventListener("click", function () {
+          wb.disabled = true; wb.textContent = "Writing…";
+          var facts = { vendor_legal_name: vendorLabelOfBill(x), invoice_number: x.billNo || "", invoice_date: x.billDate ? x.billDate.split("-").reverse().join("/") : "", items: ((x.ex && x.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }), purchaser_remarks: ta.value.trim() || x.narration || "", supply_of: sp.value || x.supplyOf || "" };
+          S.sample.json(NARR_RULES + "\n\nWrite the narration for this bill from these fields (authoritative for vendor, number and date). Reply with only JSON: {\"transaction_type\": \"goods | services | mixed | expense | review\", \"narration\": \"\", \"character_count\": 0, \"needs_review\": false, \"review_reasons\": []}\n\nFIELDS: " + JSON.stringify(facts), { modelTier: "default" }).then(function (r) {
+            var t = narrFix(r && r.narration); if (!t) { toast("Claude couldn't write it. Type it instead."); return; }
+            ta.value = t; ta._tidied = t; upd(); var ty = supplyOk(r.transaction_type === "mixed" ? "composite" : r.transaction_type); if (ty && !sp.value) sp.value = ty;
+            if ((r.review_reasons || []).length || t.length > NARR_MAX) toast("Check it: " + ((r.review_reasons || []).join("; ") || "longer than " + NARR_MAX + " characters"));
+          }, function () { toast("Claude couldn't write it just now."); }).then(function () { wb.disabled = false; wb.textContent = "Write with Claude"; });
+        });
+      }
+    } else if (lines) lines.forEach(function (ln, i) { body.appendChild(tidyField("Line " + (i + 1), tidyBox("neL" + i, ln.d || "", "voucher", 200, 2), "")); });
+    else body.appendChild(tidyField("Description", tidyBox("neNar", x.narration || "", "voucher", 400, 3), ""));
+    popForm(isB ? "Edit Narration" : "Edit Description", "Tidied into clean English when you leave a box.", body, "Save", function () {
+      errClear(body); var ids = lines ? lines.map(function (l, i) { return "neL" + i; }) : ["neNar"], pend = ids.map(tidyPending).filter(Boolean);
+      return Promise.all(pend).then(function () {
+        var up = { narrEditedAt: Date.now(), narrEditedBy: meId(), narrEditedByName: acctWho().acctByName };
+        if (lines) { var nl = lines.map(function (l, i) { return Object.assign({}, l, { d: sentenceFix($("neL" + i).value.trim()) }); }); if (nl.some(function (l) { return !l.d; })) { errOn("neL0", "Every line needs a description."); return false; } up.lines = nl; up.narration = nl.map(function (l) { return l.d; }).join(" "); }
+        else { var t = isB ? narrFix($("neNar").value) : sentenceFix($("neNar").value.trim()); if (!t) { errOn("neNar", "Write the " + (isB ? "narration." : "description.")); return false; } if (isB && t.length > NARR_MAX) { errOn("neNar", "Keep it to " + NARR_MAX + " characters (it is " + t.length + ")."); return false; } up.narration = t; }
+        if (isB) { if (!$("neSup").value) { errOn("neSup", "Choose the supply."); return false; } up.supplyOf = $("neSup").value; if (x.ex && x.ex.narrReview && x.ex.narrReview.length) up.ex = Object.assign({}, x.ex, { narrReview: [] }); }
+        return retry(function () { return S.db.doc((isB ? "bills/" : "vouchers/") + x.id).update(up); }).then(function () { Object.assign(x, up); toast("Saved."); renderAcctOne(); return true; }, function (e) { toast(explain(e)); return false; });
+      });
+    });
+  }
+  /* ---- RCM on vouchers ---- */
+  var RCM_TYPES = [["intra", "Intrastate (CGST / SGST)"], ["inter", "Interstate (IGST)"]], RCM_RATES = [["5", "5%"], ["18", "18%"]];
+  function money2(n) { return "\u20B9 " + amt2(n); }
+  function rcmFill(D) { var t = Math.round((Number(D.base) || 0) * (Number(D.gstRate) || 0)) / 100, c = Math.round(t * 50) / 100; D.rcmA = D.gstType === "inter" ? { igst: fmtInput(t) } : { cgst: fmtInput(c), sgst: fmtInput(round2(t - c)) }; }
+  function rcmLed(head) { return ledAll().filter(function (l) { return l.tax === "gst" && l.active !== false && gstFlavour(l) === "rcm" && gstHead(l) === head; })[0] || null; }
+  /* "" when fine, else what is wrong; out gets the ledger lines */
+  function rcmLines(D, out) {
+    var hs = D.gstType === "inter" ? ["igst"] : ["cgst", "sgst"], bad = "";
+    hs.forEach(function (h) { var n = num(D.rcmA[h]), l = rcmLed(h); if (bad) return; if (n == null || n < 0) bad = "Enter the " + h.toUpperCase() + " amount (0 or more)."; else if (!l) bad = "There is no " + h.toUpperCase() + " Input (RCM) ledger. Add it under Ledgers › GST."; else out.push({ id: l.id, amt: round2(n) }); });
+    return bad;
   }
   function acctLocked(kind, x) { return kind === "bill" ? !!checkOf(x) : !!vcrOf(x.id); }
   /* ---- GST on a bill: its GST spread over the GST ledgers. Within the state it is CGST and SGST (equal halves); from another
@@ -12337,7 +12419,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var base = kind === "bill" ? (x.fcTaxable != null ? x.fcTaxable : x.taxable) : x.total;
     var lines = ledLinesIn(x.ledgers);
     if (!lines.length) { if (kind === "bill") lines = suggestBill(x, x.companyId, x.vendorId, Number(base)); else { var sv = suggestVch(x.companyId, x.payee, x.narration); if (sv) lines = [{ id: sv, amt: fmtInput(base) }]; } }
-    AC.D = { lines: lines, tds: x.tds == null ? "" : fmtInput(x.tds), sec: x.tdsSection || "", vtype: x.vtype || "", gstApp: x.gstApp || "N/A", gstRate: x.gstRate != null ? String(x.gstRate) : "", base: Number(base) || 0 };
+    AC.D = { lines: lines, tds: x.tds == null ? "" : fmtInput(x.tds), sec: x.tdsSection || "", vtype: x.vtype || "", gstApp: x.gstApp || "N/A", gstRate: x.gstRate != null && RCM_RATES.some(function (r) { return r[0] === String(x.gstRate); }) ? String(x.gstRate) : "5", gstType: x.gstType || "intra", rcmA: {}, base: Number(base) || 0 };
+    if (kind === "voucher") { if ((x.gstLedgers || []).length) x.gstLedgers.forEach(function (g) { var l = (S.ledgers || {})[g.id]; if (l) AC.D.rcmA[gstHead(l)] = fmtInput(g.amt); }); else rcmFill(AC.D); }
     if (kind === "bill") { AC.D.gstInter = billInter(x); gstFromSaved(x, AC.D); }
     renderAcctOne(); show("secAcctOne");
   }
@@ -12359,7 +12442,10 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var fb = el("div", { class: "stats" }); facts.forEach(function (k) { var s = el("div", { class: "stat" }); s.appendChild(el("div", { class: "k" }, k[0])); s.appendChild(el("div", { class: "v" }, k[1] || "")); fb.appendChild(s); }); f.appendChild(fb);
     var det = el("div", { class: "card", style: "padding:14px 18px;margin:12px 0" });
     var vl = !isB && (x.lines || []).length > 1 ? x.lines : null;
-    det.appendChild(el("p", { style: "margin:0 0 6px" }, (isB ? "Narration: " : "Description: ") + (vl ? "" : x.narration || "None")));
+    var np = el("p", { style: "margin:0 0 6px" }, (isB ? "Narration: " : "Description: ") + (vl ? "" : x.narration || "None"));
+    if (!withPrep && !acctLocked(kind, x)) { var eb0 = el("button", { type: "button", class: "btn sm", style: "margin-left:8px" }, "Edit"); eb0.addEventListener("click", function () { narrEdit(kind, x); }); np.appendChild(eb0); }
+    det.appendChild(np);
+    if (isB) det.appendChild(el("div", { class: "hint" }, "Supply of: " + (label2(SUPPLY, x.supplyOf) || "not set") + (x.ex && x.ex.narrReview && x.ex.narrReview.length ? " · Narration to check: " + x.ex.narrReview.join("; ") : "")));
     if (vl) vl.forEach(function (ln, i) { det.appendChild(el("div", null, (i + 1) + ". " + ln.d)); });
     if (!isB && x.supplyOf) det.appendChild(el("div", { class: "hint" }, "Supply of: " + x.supplyOf));
     if (isB) det.appendChild(el("div", { class: "hint mono", style: "word-break:break-all" }, x.einv && x.einv.irn ? "e-Invoice: " + einvText(x.einv) : "e-Invoice: no IRN recorded."));
@@ -12382,9 +12468,25 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (!isB) {
       var vt = el("select", { class: "field", id: "aoType" }); fillSelect(vt, [["", "Choose the type"]].concat(VTYPES_V), D.vtype); vt.disabled = locked; form.appendChild(fld("Type of voucher", vt));
       var gs = el("select", { class: "field", id: "aoGst" }); fillSelect(gs, [["N/A", "Not applicable"], ["RCM", "RCM (reverse charge)"]], D.gstApp); gs.disabled = locked; var gf = fld("GST applicable", gs, "Only for Self Invoice and Freight & Transport."); form.appendChild(gf);
-      var rs = el("select", { class: "field", id: "aoRate" }); fillSelect(rs, [["", "Choose the rate"]].concat(gstRateOptions(D.gstRate)), D.gstRate); rs.disabled = locked; var rf2 = fld("GST rate under RCM", rs, "Split equally into CGST and SGST on the print."); form.appendChild(rf2);
-      var syncG = function () { var other = D.vtype && D.vtype !== "Cash Voucher"; gf.hidden = !other; rf2.hidden = !(other && D.gstApp === "RCM"); };
-      vt.addEventListener("change", function () { D.vtype = vt.value; syncG(); }); gs.addEventListener("change", function () { D.gstApp = gs.value; syncG(); }); rs.addEventListener("change", function () { D.gstRate = rs.value; }); syncG();
+      /* RCM: the accountant picks the GST type and rate; the tax on the voucher's amount fills in (editable) and goes to the
+         CGST / SGST / IGST Input (RCM) ledgers. */
+      var gtS = el("select", { class: "field", id: "aoGstType" }); fillSelect(gtS, RCM_TYPES, D.gstType); gtS.disabled = locked; var gtf = fld("GST type", gtS); form.appendChild(gtf);
+      var rs = el("select", { class: "field", id: "aoRate" }); fillSelect(rs, RCM_RATES, D.gstRate); rs.disabled = locked; var rf2 = fld("GST (RCM) percent", rs); form.appendChild(rf2);
+      var ra = el("div", { class: "f wide", id: "aoRcmF" }); form.appendChild(ra);
+      var drawR = function (refill) {
+        ra.textContent = ""; if (refill) rcmFill(D); ra.appendChild(el("span", { class: "lb" }, "GST (RCM) on " + money2(D.base) + " at " + D.gstRate + "%"));
+        var w = el("div", { class: "row", style: "display:flex;gap:12px;flex-wrap:wrap" });
+        (D.gstType === "inter" ? [["igst", "IGST Input (RCM)"]] : [["cgst", "CGST Input (RCM)"], ["sgst", "SGST Input (RCM)"]]).forEach(function (h) {
+          var ip = inp("aoRcm_" + h[0], D.rcmA[h[0]], { inputmode: "decimal", class: "field num", style: "max-width:160px" }); ip.disabled = locked;
+          ip.addEventListener("input", function () { D.rcmA[h[0]] = ip.value; }); ip.addEventListener("blur", function () { if (num(ip.value) != null) ip.value = fmtInput(ip.value); });
+          var fw = fld(h[1], ip); fw.style.margin = "0"; w.appendChild(fw);
+        });
+        ra.appendChild(w); ra.appendChild(el("span", { class: "hint" }, "Worked out from the voucher's amount; change it if needed. TDS is on the voucher's amount, without the RCM tax."));
+        ra.appendChild(el("span", { class: "err", id: "aoRcmE", hidden: "" }));
+      };
+      var syncG = function () { var other = D.vtype && D.vtype !== "Cash Voucher", on = other && D.gstApp === "RCM"; gf.hidden = !other; gtf.hidden = rf2.hidden = ra.hidden = !on; if (on) drawR(false); };
+      vt.addEventListener("change", function () { D.vtype = vt.value; syncG(); }); gs.addEventListener("change", function () { D.gstApp = gs.value; if (D.gstApp === "RCM") rcmFill(D); syncG(); });
+      gtS.addEventListener("change", function () { D.gstType = gtS.value; drawR(true); }); rs.addEventListener("change", function () { D.gstRate = rs.value; drawR(true); }); syncG();
     }
     var ti = inp("aoTds", D.tds, { inputmode: "decimal", class: "field num" }); ti.disabled = locked; ti.addEventListener("input", function () { D.tds = ti.value; }); ti.addEventListener("blur", function () { if (num(ti.value) != null) ti.value = fmtInput(ti.value); });
     form.appendChild(fld("TDS" + (isB && x.currency && x.currency !== "INR" ? " (" + x.currency + ")" : " (₹)"), ti, "Enter 0 if none is deducted. The vendor is paid the total less this."));
@@ -12467,7 +12569,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (AC.kind === "bill") { var ge = gstCheck(x, D); if (ge) errs.push(["aoGstLed", ge]);
       if (billGst(x) > 0 && gstIsComp(vGst(S.vendors[x.vendorId]))) errs.push(["aoGstLed", "The vendor is a composition dealer (GST portal), so its GST can't be claimed or accounted. Send the bill back for a bill of supply without GST."]); }
     if (AC.kind === "voucher" && !D.vtype) errs.push(["aoType", "Choose the type of voucher."]);
-    if (AC.kind === "voucher" && D.vtype && D.vtype !== "Cash Voucher" && D.gstApp === "RCM" && !D.gstRate) errs.push(["aoRate", "Choose the GST rate."]);
+    if (AC.kind === "voucher" && D.vtype && D.vtype !== "Cash Voucher" && D.gstApp === "RCM") { if (!D.gstRate) errs.push(["aoRate", "Choose the GST (RCM) percent."]); var rb = rcmLines(D, []); if (rb) errs.push(["aoRcm", rb]); }
     return errs;
   }
   function acctWho() { return { acctAt: Date.now(), acctBy: meId(), acctByName: S.isAdmin ? (S.me && S.me.name) || "Admin" : pnm(preparedByText()) }; }
@@ -12487,7 +12589,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (errs.length) { errs.forEach(function (e) { errOn(e[0], e[1]); }); var f0 = $(errs[0][0]); if (f0 && f0.scrollIntoView) f0.scrollIntoView({ block: "center" }); return; }
     var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, tds = round2(num(D.tds) || 0), up = Object.assign({ acct: "approved", acctNote: "", ledgers: ledLinesOut(D.lines), tds: tds, tdsSection: tds > 0 ? D.sec : "" }, acctWho());
     if (AC.kind === "bill") { var gG = billGst(x) > 0; up.gstLedgers = gG ? gstLinesOut(x, D) : []; up.gstSupply = gG ? (D.gstInter ? "inter" : "intra") : null; up.gstTypes = gG ? D.gstTypes.slice() : null; }
-    if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher"; up.vtype = D.vtype; up.gstApp = oth ? D.gstApp : "N/A"; up.gstRate = oth && D.gstApp === "RCM" ? Number(D.gstRate) : null; up.taxable = Number(x.total) || 0; up.payable = round2((Number(x.total) || 0) - tds); }
+    if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher", rcm = oth && D.gstApp === "RCM", gl = []; if (rcm) rcmLines(D, gl);
+      up.gstType = rcm ? D.gstType : null; up.gstLedgers = gl; up.rcmAmt = round2(gl.reduce(function (s0, g) { return s0 + g.amt; }, 0));
+      up.vtype = D.vtype; up.gstApp = oth ? D.gstApp : "N/A"; up.gstRate = rcm ? Number(D.gstRate) : null; up.taxable = Number(x.total) || 0; up.payable = round2((Number(x.total) || 0) - tds); }
     var col = AC.kind === "bill" ? "bills" : "vouchers", was = x.acct === "approved";
     AC.busy = true; btn.disabled = true;
     retry(function () { return S.db.doc(col + "/" + x.id).update(up); }).then(function () {
@@ -12500,7 +12604,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     popForm("Postpone", "It stays with you, under Postponed, until you approve or send it back. What you have chosen so far is kept.", body, "Postpone", function () {
       var tp = tidyPending("aoHoldWhy");
       return (tp || Promise.resolve()).then(function () {
-        var up = Object.assign({ acct: "held", acctNote: sentenceFix($("aoHoldWhy").value.trim()), ledgers: ledLinesOut(D.lines) }, acctWho()); var t = num(D.tds); if (t != null) up.tds = round2(t); if (D.sec) up.tdsSection = D.sec; if (AC.kind === "voucher" && D.vtype) up.vtype = D.vtype;
+        var up = Object.assign({ acct: "held", acctNote: sentenceFix($("aoHoldWhy").value.trim()), ledgers: ledLinesOut(D.lines) }, acctWho()); var t = num(D.tds); if (t != null) up.tds = round2(t); if (D.sec) up.tdsSection = D.sec; if (AC.kind === "voucher" && D.vtype) { up.vtype = D.vtype; up.gstApp = D.vtype !== "Cash Voucher" ? D.gstApp : "N/A"; if (up.gstApp === "RCM") { var gl0 = []; if (!rcmLines(D, gl0)) { up.gstType = D.gstType; up.gstRate = Number(D.gstRate); up.gstLedgers = gl0; } } }
         if (AC.kind === "bill" && billGst(x) > 0 && !gstCheck(x, D)) { up.gstLedgers = gstLinesOut(x, D); up.gstSupply = D.gstInter ? "inter" : "intra"; up.gstTypes = D.gstTypes.slice(); }
         return retry(function () { return S.db.doc((AC.kind === "bill" ? "bills/" : "vouchers/") + x.id).update(up); }).then(function () { Object.assign(x, up); toast("Postponed."); backToAcct(); renderNav(); return true; }, function (e) { toast(explain(e)); return false; });
       });
@@ -12531,6 +12635,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (side === "vouchers") vchList().forEach(function (v) {
       if (!acctOk(v) || (cid && v.companyId !== cid) || !canSee(v.companyId) || !inRange(v.voucherDate)) return;
       (v.ledgers || []).forEach(function (x) { out.push({ lg: x.id, cid: v.companyId, d: v.voucherDate, no: v.voucherNo, who: v.payee || "", what: v.narration || "", amt: Number(x.amt) || 0, tds: Number(v.tds) || 0, sec: v.tdsSection || "", prep: pnm(v.preparedByName), type: v.vtype || "" }); });
+      /* GST under reverse charge, to the Input (RCM) ledgers */
+      (v.gstApp === "RCM" ? v.gstLedgers || [] : []).forEach(function (x) { out.push({ lg: x.id, cid: v.companyId, d: v.voucherDate, no: v.voucherNo, who: v.payee || "", what: v.narration || "", amt: Number(x.amt) || 0, tds: 0, sec: "", prep: pnm(v.preparedByName), type: "GST (RCM)" }); });
     });
     else billList().forEach(function (b) {
       var pf = !!b.advanceId; if ((side === "proformas") !== pf || !acctOk(b) || (cid && b.companyId !== cid) || !canSee(b.companyId) || !inRange(b.billDate)) return;
@@ -13278,9 +13384,13 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var fy = 142.81, fS = P ? 7.5 : 6.75;
     if (taxT) {
       var tY = 120.12, tB = 2 * TH, cols = [4.5, 70.11, 98.16, 121.97, 146.05, 178.06, 205.85];
-      var taxable = Number(v.taxable != null ? v.taxable : v.total) || 0, rate = rcm ? Number(v.gstRate) || 0 : 0, tax = Math.round(taxable * rate) / 100, half = Math.round(tax * 50) / 100;
-      var hd = ["TAX PAYABLE ON REVERSE CHARGE BASIS", "TAXABLE VALUE", "CGST (" + (rate / 2).toFixed(1) + "%)", "SGST (" + (rate / 2).toFixed(1) + "%)", "TOTAL TAX (" + rate + "%)", "ACCOUNTED BY"];
-      var vals = [rcm ? "YES" : "NO", money(Math.round(taxable)), money(Math.round(half)), money(Math.round(tax - half)), money(Math.round(tax)), ""];
+      /* the accountant's RCM amounts when saved; else worked out from the rate. Interstate shows IGST in place of CGST / SGST. */
+      var taxable = Number(v.taxable != null ? v.taxable : v.total) || 0, rate = rcm ? Number(v.gstRate) || 0 : 0, inter = rcm && v.gstType === "inter", gA = { cgst: 0, sgst: 0, igst: 0 }, gotL = false;
+      (rcm ? v.gstLedgers || [] : []).forEach(function (g) { var l = (S.ledgers || {})[g.id]; if (l) { gA[gstHead(l)] += Number(g.amt) || 0; gotL = true; } });
+      if (!gotL) { var t0 = Math.round(taxable * rate) / 100, h0 = Math.round(t0 * 50) / 100; if (inter) gA.igst = t0; else { gA.cgst = h0; gA.sgst = t0 - h0; } }
+      var tax = gA.cgst + gA.sgst + gA.igst;
+      var hd = ["TAX PAYABLE ON REVERSE CHARGE BASIS", "TAXABLE VALUE", inter ? "IGST (" + rate + "%)" : "CGST (" + (rate / 2).toFixed(1) + "%)", inter ? "SGST" : "SGST (" + (rate / 2).toFixed(1) + "%)", "TOTAL TAX (" + rate + "%)", "ACCOUNTED BY"];
+      var vals = [rcm ? "YES" : "NO", money2(taxable), money2(inter ? gA.igst : gA.cgst), inter ? "—" : money2(gA.sgst), money2(tax), ""];
       box(cols[0], tY + tB, XR, 128.06, FILL);
       box(X0, tY, 206.37, tY + tB, INK); box(X0, 136.0, 206.37, 136.52, INK); box(X0, tY, cols[0], 136.52, INK); box(XR, tY, 206.37, 136.52, INK);
       hl(128.06, cols[0], XR);

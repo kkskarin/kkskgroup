@@ -1,7 +1,7 @@
 # Chemicals app → Bills & Vouchers: integration
 
 The Chemicals app enters chemical purchases, proformas and imports and approves them (Akheel). Bills & Vouchers
-(KKSK Group Supabase project) only **accounts** them (ledgers, TDS, Tally) and **pays** them (Finance, Payment Entry).
+(KKSK Group Supabase project) only **accounts** them (checks the ledger split sent, adds TDS, Tally) and **pays** them (Finance, Payment Entry).
 Everything is exchanged through the shared table `public.app_docs` (`path` text, `data` jsonb). Write with the service
 role from the Chemicals app's server side; never from a browser.
 
@@ -48,6 +48,7 @@ Write the bill when it is approved in the Chemicals app (one write; update the s
 | `supplyOf` | `Goods`, `Services` or `Composite` |
 | `einv` | `{ irn, ackNo, ackDate }` when the bill has them |
 | `narration` | One line on what was bought, no payment words |
+| `ledgers` | **The ledger split, from the Chemicals app**: `[{ id, amt }]`, e.g. Tanning Chemicals 15,000 and ETP Chemicals 5,000. `id` is a ledger here: read `ledgers/*` and pick the one with that `name` whose `companyIds` include the bill's company (or `allCos: true`). Amounts are before GST and add up to `taxable`. A ledger that doesn't exist yet is created by our accountant first. Our accountant only reviews the split and adds TDS. |
 | `file` | `{ path, name, type, size }` — upload the PDF/photo to Storage bucket `bill-files` at `live/bills/<id>/<file name>` |
 | `preparedBy`, `preparedByName` | Who raised it (`preparedBy` may be your own user id) |
 | `submittedAt`, `submittedBy` | When it was sent to us |

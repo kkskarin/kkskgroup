@@ -629,6 +629,16 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:cal
 .fv-note{padding:24px;color:var(--muted);font-size:calc(13.5px*var(--ts,1));background:#fff}
 .ao-split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
 .ao-doc{position:sticky;top:12px;height:calc(100vh - 40px)}
+.modal-bg.dock .modal{max-width:100%}
+.dv-split.on{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:start}
+.dv-doc{display:flex;flex-direction:column;gap:8px}.dv-doc .fv{flex:1;min-height:0}
+.dv-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.dv-bar .grow{flex:1}.dv-at{font-weight:600;font-size:calc(13px*var(--ts,1))}
+.dv-chips{display:flex;flex-wrap:wrap;gap:6px}.dv-chip{all:unset;box-sizing:border-box;cursor:pointer;padding:4px 10px;border:1px solid var(--line);border-radius:999px;font-size:calc(12px*var(--ts,1));background:var(--surface)}
+.dv-chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}.dv-chip.nofile{opacity:.6;border-style:dashed}.dv-chip:focus-visible{outline:2px solid var(--accent,#2563eb);outline-offset:2px}
+.dv-none{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}
+.dv-pick{all:unset;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.dv-pick:focus-visible{outline:2px solid var(--accent,#2563eb)}
+@media (max-width:980px){.dv-split.on{grid-template-columns:minmax(0,1fr)}.dv-split.on .dv-doc{position:static;height:80vh}}
+@media (min-width:1300px){#secCheckView:has(.dv-split.on),#secVcrView:has(.dv-split.on),#secVcrApprove:has(.dv-split.on){width:min(1640px,calc(100vw - 48px));margin-left:calc(50% - min(820px,calc(50vw - 24px)))}}
 @media (min-width:1300px){#secAcctOne:has(.ao-split){width:min(1640px,calc(100vw - 48px));margin-left:calc(50% - min(820px,calc(50vw - 24px)))}}
 @media (max-width:980px){.ao-split{grid-template-columns:1fr}.ao-doc{position:static;height:70vh}}
 .appsln{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:calc(12.5px*var(--ts,1));font-weight:600;color:var(--brand-text);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:var(--surface)}
@@ -1118,6 +1128,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
 
   <section id="secCheckView" hidden>
     <div class="head"><div><button class="link-btn" id="cvBack">Back to Bill Checking</button><h2 id="cvTitle" class="mono"></h2><p class="sub" id="cvSub"></p></div></div>
+    <div class="dv-split" id="cvSplit"><div class="ao-doc dv-doc" id="cvDoc" hidden></div><div class="dv-main">
     <div class="stats" id="cvStats"></div>
     <div class="card">
       <div class="list scroll" id="cvBills"></div>
@@ -1125,6 +1136,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       <div class="form-foot cvfoot" style="align-items:center"><div class="acts" id="cvActs"></div><p class="sub" id="cvHint" style="margin:0"></p></div>
     </div>
     <p class="sub" id="cvNote" style="margin-top:10px"></p>
+    </div></div>
   </section>
 
   <section id="secAdvList" hidden>
@@ -1290,19 +1302,23 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
 
   <section id="secVcrView" hidden>
     <div class="head"><div><button class="link-btn" id="vvBack">Back to Voucher Checking</button><h2 id="vvTitle" class="mono"></h2><p class="sub" id="vvSub"></p></div></div>
+    <div class="dv-split" id="vvSplit"><div class="ao-doc dv-doc" id="vvDoc" hidden></div><div class="dv-main">
     <div class="stats" id="vvStats"></div>
     <div id="vvBox"></div>
     <div class="card" style="margin-top:14px">
       <div class="stats paybar" id="vvPay"></div>
       <div class="form-foot cvfoot" style="align-items:center"><div class="acts" id="vvActs"></div><p class="sub" id="vvHint" style="margin:0"></p></div>
     </div>
+    </div></div>
   </section>
 
   <section id="secVcrApprove" hidden>
     <div class="head"><div class="grow"><button class="link-btn" id="vaBack">Back to the report</button><h2 id="vaTitle" class="mono"></h2><p class="sub">Tick the vouchers you approve. Approved settled vouchers come off the preparer's cash; approved payable vouchers go straight to the financier's Payment Entry. Untick a voucher to send it back to the preparer with a reason; it leaves this report.</p></div></div>
+    <div class="dv-split" id="vaSplit"><div class="ao-doc dv-doc" id="vaDoc" hidden></div><div class="dv-main">
     <div class="stats" id="vaStats"></div>
     <div id="vaBox"></div>
     <div class="card" style="margin-top:16px"><div class="form-foot"><button class="btn primary" id="vaGo">Approve</button><button class="btn" id="vaCancel">Cancel</button></div></div>
+    </div></div>
   </section>
 
   <section id="secPrefs" hidden>
@@ -6169,6 +6185,41 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
 
   /* ---- one report on screen: a plain table, like the screen it was prepared on ---- */
   function openReport(id) { CK.viewId = id; CK.arm = ""; $("cvBack").textContent = S.tab === "Approvals" ? "Back to Approvals" : S.tab === "Advance Report" ? "Back to Advance Checking" : "Back to Bill Checking"; renderReport(); show("secCheckView"); window.scrollTo(0, 0); }
+  /* The original files of what is being approved, on the left, in the order the report lists them; the report on the right.
+     items: [{ label, file }]. Returns pick(i), to show item i's file (used by the report's own rows). */
+  var DOCP = {};
+  function docPane(pfx, items) {
+    var sp = $(pfx + "Split"), pane = $(pfx + "Doc"), has = function (it) { return !!(it.file && it.file.path); };
+    var on = !!(window.bvFiles && items.some(has)); sp.classList.toggle("on", on); pane.hidden = !on;
+    if (!on) { pane.textContent = ""; delete DOCP[pfx]; return null; }
+    var sig = items.map(function (it) { return it.label + "|" + (has(it) ? it.file.path : ""); }).join("~"), st = DOCP[pfx];
+    if (!st || st.sig !== sig) { var keep = st ? st.fv : {}; st = DOCP[pfx] = { sig: sig, i: Math.max(0, items.findIndex(has)), fv: keep }; }
+    function draw() {
+      pane.textContent = ""; var it = items[st.i], n = items.length;
+      var bar = el("div", { class: "dv-bar" }), pv = el("button", { type: "button", class: "btn sm", "aria-label": "Previous file" }, "‹"), nx = el("button", { type: "button", class: "btn sm", "aria-label": "Next file" }, "›");
+      pv.disabled = st.i <= 0; nx.disabled = st.i >= n - 1;
+      pv.addEventListener("click", function () { pick(st.i - 1); }); nx.addEventListener("click", function () { pick(st.i + 1); });
+      bar.appendChild(pv); bar.appendChild(el("span", { class: "dv-at", "aria-live": "polite" }, it.label + (n > 1 ? " (" + (st.i + 1) + " of " + n + ")" : ""))); bar.appendChild(el("span", { class: "grow" })); bar.appendChild(nx);
+      pane.appendChild(bar);
+      if (n > 1) {
+        var ch = el("div", { class: "dv-chips", role: "group", "aria-label": "Files in this report" });
+        items.forEach(function (x, i) {
+          var b = el("button", { type: "button", class: "dv-chip" + (has(x) ? "" : " nofile"), "aria-pressed": i === st.i ? "true" : "false", title: has(x) ? x.file.name || x.label : "No file kept" }, (i + 1) + ". " + x.short);
+          b.addEventListener("click", function () { pick(i); }); ch.appendChild(b);
+        });
+        pane.appendChild(ch);
+      }
+      if (has(it)) { var v = st.fv[it.file.path] || (st.fv[it.file.path] = fileViewer(it.file)); pane.appendChild(v); }
+      else pane.appendChild(el("div", { class: "dv-none" }, "No file was kept for " + it.label + ". It was entered by hand, or before files were kept."));
+    }
+    function pick(i) { if (!DOCP[pfx] || DOCP[pfx] !== st || i < 0 || i >= items.length) return; st.i = i; draw(); if (window.innerWidth <= 980) pane.scrollIntoView({ block: "start", behavior: "smooth" }); }
+    draw(); return pick;
+  }
+  /* A row's number that shows its file on the left, when there is a file pane. */
+  function docLink(pick, i, text) {
+    if (!pick) return el("b", { class: "mono" }, text);
+    var b = el("button", { type: "button", class: "dv-pick mono", title: "Show its file on the left" }); b.appendChild(el("b", null, text)); b.addEventListener("click", function () { pick(i); }); return b;
+  }
   function renderReport() {
     var r = S.reports[CK.viewId]; if (!r) { backToChecks(); return; }
     if (!teamSees(r)) { toast("Report " + r.no + " has been printed and is with the admin now."); backToChecks(); return; }
@@ -6178,9 +6229,11 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var last = (r.log || []).slice(-1)[0];
     $("cvSub").textContent = "Prepared by " + pnm(r.preparedBy) + " on " + fmtDate(r.checkDate || ymdOfMs(r.createdAt)) + (last && last.stage !== "generated" ? ". " + STAGE[last.stage] + " by " + last.name + " on " + fmtDay(last.at) + "." : ".");
     statBoxes($("cvStats"), [["Company", c.name, ""], ["Bill from", v.name, v.gstin ? "GSTIN " + v.gstin : ""], ["Period", periodText(r.periodFrom, r.periodTo), ""], ["Bills", String(bills.length), ""]]);
+    var pick = docPane("cv", bills.map(function (b) { return { label: "Bill " + (b.billNo || ""), short: b.billNo || "Bill", file: b.file }; })), at = {};
+    bills.forEach(function (b, i) { at[b.id] = i; });
     sortTable($("cvBills"), "cvBills", [
       { label: "S.No", cls: "num", cell: function (b, td, i) { txt(td, i + 1); } },
-      { label: "Bill number", kind: "co", sort: function (b) { return b.billNo; }, cell: function (b, td) { td.appendChild(el("b", { class: "mono" }, b.billNo)); } },
+      { label: "Bill number", kind: "co", sort: function (b) { return b.billNo; }, cell: function (b, td) { td.appendChild(docLink(pick, at[b.id], b.billNo)); } },
       { label: "Bill date", cls: "num", sort: function (b) { return b.billDate; }, cell: function (b, td) { txt(td, fmtDate(b.billDate)); sub(td, "Due " + fmtDate(b.dueDate)); } },
       { label: "Description", cls: "desc", cell: function (b, td) { txt(td, b.narration || "No narration"); } },
       { label: "Taxable", cls: "r num", sort: function (b) { return b.taxable || 0; }, desc: true, cell: function (b, td) { txt(td, bm(b, b.taxable)); } },
@@ -6211,6 +6264,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var last = (r.log || []).slice(-1)[0];
     $("cvSub").textContent = "Prepared by " + pnm(r.preparedBy) + " on " + fmtDate(r.checkDate || ymdOfMs(r.createdAt)) + (last && last.stage !== "generated" ? ". " + STAGE[last.stage] + " by " + last.name + " on " + fmtDay(last.at) + "." : ".") + " An advance instalment, so there is no GST or TDS.";
     statBoxes($("cvStats"), [["Company", c.name, ""], ["Bill from", v.name, v.gstin ? "GSTIN " + v.gstin : v.country || ""], [a && a.kind === "import" ? "Import" : "Proforma", a ? a.piNo + ", " + fmtDate(a.piDate) : "", a ? "Total " + curMoney(a.currency, a.total) : ""], ["Instalment", a ? instLabel(a, r.inst) : "", a ? whenText(a, r.inst) : ""]]);
+    docPane("cv", a ? [{ label: (a.kind === "import" ? "Import " : "Proforma ") + (a.piNo || ""), short: a.piNo || "", file: a.file }] : []);
     sortTable($("cvBills"), "cvInst", [
       { label: "S.No", cls: "num", cell: function (b, td, i) { txt(td, i + 1); } },
       { label: "Proforma number", kind: "co", cell: function (b, td) { td.appendChild(el("b", { class: "mono" }, b.billNo)); } },
@@ -6663,6 +6717,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     m.appendChild(body);
     var foot = el("div", { class: "form-foot" }), okB = el("button", { class: "btn primary", type: "button" }, okLabel), no = el("button", { class: "btn", type: "button" }, "Back");
     foot.appendChild(okB); foot.appendChild(no); m.appendChild(foot); bg.appendChild(m); document.body.appendChild(bg);
+    /* With the files open on the left, the form sits over the report side only, so the files can still be read and turned. */
+    var dm = window.innerWidth > 980 && Array.prototype.filter.call(document.querySelectorAll(".dv-split.on > .dv-main"), function (x) { return x.offsetParent; })[0];
+    if (dm) { bg.classList.add("dock"); bg.style.left = Math.max(0, Math.round(dm.getBoundingClientRect().left) - 8) + "px"; m.setAttribute("aria-modal", "false"); }
     var prev = document.activeElement;
     function close() { bg.remove(); document.removeEventListener("keydown", onKey, true); if (prev && prev.focus) prev.focus(); }
     function onKey(e) { if (e.key === "Escape") { e.preventDefault(); close(); } }
@@ -6812,11 +6869,11 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function anyLocked() { var a = ADV.id && S.advances[ADV.id]; return !!a && (a.installments || []).some(function (it, i) { return lockedInst(i); }); }
   function openAdv(id) {
     var a = S.advances[id]; if (!a) return;
-    ADV.id = id; ADV.kind = a.kind; ADV.D = advToDraft(a); ADV.prev = null; ADV.fromFile = ""; ADV.openTb = a.taxBillId || "";
+    ADV.id = id; ADV.kind = a.kind; ADV.D = advToDraft(a); ADV.prev = null; ADV.fromFile = ""; ADV.srcFile = null; ADV.openTb = a.taxBillId || "";
     renderAdvForm(); show("secAdv");
   }
-  function newAdv(D, prev, fileName) {
-    ADV.aiSpecs = null; ADV.id = null; ADV.D = D || blankAdvDraft(ADV.kind); ADV.prev = prev || null; ADV.fromFile = fileName || "";
+  function newAdv(D, prev, fileName, file) {
+    ADV.aiSpecs = null; ADV.id = null; ADV.D = D || blankAdvDraft(ADV.kind); ADV.prev = prev || null; ADV.fromFile = fileName || ""; ADV.srcFile = file || null;
     renderAdvForm(); show("secAdv");
   }
   function advVendorOpts(D) {
@@ -7045,9 +7102,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     doc.taxBillId = D.taxBillId || (real && real.taxBillId && real.taxBillId !== ADV.openTb ? real.taxBillId : null);
     var id = ADV.id || newId(imp ? "imp" : "pi");
     if (!real) Object.assign(doc, { status: "active", createdAt: now, createdBy: meId(), fileName: ADV.fromFile || "", source: ADV.fromFile ? "file" : "by-hand", ex: D.ex || {} });
-    ADV.busy = true; $("adSave").disabled = true;
+    ADV.busy = true; $("adSave").disabled = true; var src = !real || !real.file ? ADV.srcFile : null;
     job.then(function () { return retry(function () { return real ? S.db.doc("advances/" + id).update(doc) : S.db.doc("advances/" + id).set(doc); }); }).then(function () {
-      S.advances[id] = Object.assign({ id: id }, real || {}, doc); invalidate();
+      S.advances[id] = Object.assign({ id: id }, real || {}, doc); invalidate(); if (src) { ADV.srcFile = null; keepAdvFile(id, src); }
       toast((imp ? "Import " : "Proforma ") + doc.piNo + " saved." + (madeVendor ? " " + madeVendor + " was added to the Vendor list." : ""));
       backToAdvList();
     }, function (e) { toast(explain(e)); }).then(function () { ADV.busy = false; $("adSave").disabled = false; });
@@ -7111,7 +7168,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     btn.removeAttribute("data-arm"); btn.textContent = "Delete";
     adminGate(a.createdAt, "proforma", function () {
     ADV.busy = true;
-    retry(function () { return S.db.doc("advances/" + a.id).delete(); }).then(function () { delete S.advances[a.id]; invalidate(); toast("Deleted."); backToAdvList(); }, function (e) { toast(explain(e)); }).then(function () { ADV.busy = false; });
+    retry(function () { return S.db.doc("advances/" + a.id).delete(); }).then(function () { dropFile(a); delete S.advances[a.id]; invalidate(); toast("Deleted."); backToAdvList(); }, function (e) { toast(explain(e)); }).then(function () { ADV.busy = false; });
     });
   }
   function backToAdvList() { ADV.id = null; ADV.D = null; ADV.prev = null; renderAdvList(); renderNav(); show("secAdvList"); }
@@ -7178,6 +7235,14 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     D.ex = { vendorAddress: aiAddr(res.vendor_address), vendorBank: bankFromRead(res.vendor_bank), companyName: str(res.company_name, 160), vendorName: [str(res.vendor_name, 160), g].filter(Boolean).join(", GSTIN "), notes: str(res.notes, 300), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) };
     return D;
   }
+  /* Keeps the proforma or import file it was read from, for the approver to see beside the Advance Checking Report. */
+  function keepAdvFile(id, f) {
+    var t = fileType(f); if (!window.bvFiles || !f || !t || f.size > 25 * 1024 * 1024) return Promise.resolve(null);
+    var path = (S.mode === "demo" ? "demo" : "live") + "/advances/" + id + "/" + Date.now().toString(36) + "-" + fileSafeName(f.name);
+    var meta = { path: path, name: str(f.name || "Proforma", 160), type: t, size: f.size || 0, at: Date.now(), by: meId() };
+    return window.bvFiles.put(path, f, t).then(function () { return retry(function () { return S.db.doc("advances/" + id).update({ file: meta }); }); })
+      .then(function () { if (S.advances[id]) S.advances[id].file = meta; return meta; }, function (e) { toast("The file couldn't be kept (" + ((e && (e.code || e.message)) || "error") + "). The entry itself is saved."); return null; });
+  }
   function readAdvFile(file) {
     if (!file) return;
     if (!S.sample || B.aiOff) { toast("Files can't be read here. Enter it by hand."); return; }
@@ -7192,11 +7257,11 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       });
     }).then(function (x) {
       if (!x.res || typeof x.res !== "object") throw { kind: "blank", prev: x.p.previews };
-      ADV.log = ""; ADV.kind = kind; newAdv(draftFromAdvResult(x.res, kind), x.p.previews, file.name || "the file");
+      ADV.log = ""; ADV.kind = kind; newAdv(draftFromAdvResult(x.res, kind), x.p.previews, file.name || "the file", file);
     }).catch(function (e) {
       e = e || {}; ADV.log = (REJECT[e.kind] || REJECT.failed).replace("this bill", "it").replace("Enter this bill by hand", "Enter it by hand");
       if (ADV.kind === kind && !$("secAdvList").hidden) renderAdvList();
-      if (e.prev) { ADV.kind = kind; newAdv(null, e.prev, file.name || "the file"); }
+      if (e.prev) { ADV.kind = kind; newAdv(null, e.prev, file.name || "the file", file); }
     });
   }
 
@@ -10019,13 +10084,15 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     $("vvTitle").textContent = r.no; $("vvSub").textContent = (r.direct ? "Vouchers sent for approval without a checking report: each voucher is printed and signed. " : "Voucher Checking Report, ") + STAGE[s].toLowerCase() + ". " + (r.direct ? "Sent " : "Generated ") + stamp(r.generatedAt || r.createdAt) + ".";
     statBoxes($("vvStats"), [whoStat(["Prepared by", pnm(r.preparedBy), ""]), ["Checking date", fmtDate(r.checkDate), ""], ["Period", periodText(r.periodFrom, r.periodTo), ""], ["Stage", stageTag(r), ""]]);
     var box = $("vvBox"); box.textContent = "";
+    var allV = [], at = {}; (r.companyIds || []).forEach(function (cid) { vcrVouchers(r, cid).forEach(function (v) { at[v.id] = allV.length; allV.push(v); }); });
+    var pick = docPane("vv", allV.map(function (v) { return { label: "Voucher " + (v.voucherNo || ""), short: v.voucherNo || "Voucher", file: v.file }; }));
     (r.companyIds || []).forEach(function (cid) {
       var vs = vcrVouchers(r, cid), c = S.companies[cid] || { name: "" }, bc = (r.byCo || {})[cid] || vcrSums(vs);
       box.appendChild(el("h3", null, c.name));
       var card = el("div", { class: "card list scroll" }); box.appendChild(card);
       sortTable(card, "vv_" + cid, [
         { label: "S.No", cls: "num", cell: function (v, td, i) { txt(td, i + 1); } },
-        { label: "Voucher number", kind: "co", cell: function (v, td) { td.appendChild(el("b", { class: "mono" }, v.voucherNo)); } },
+        { label: "Voucher number", kind: "co", cell: function (v, td) { td.appendChild(docLink(pick, at[v.id], v.voucherNo)); } },
         { label: "Voucher date", cls: "num", cell: function (v, td) { txt(td, fmtDate(v.voucherDate)); } },
         { label: "Paid to", cls: "desc", cell: function (v, td) { td.appendChild(el("b", null, v.payee || "")); sub(td, v.narration || ""); } },
         { label: "Total amount", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(v.total))); } },
@@ -10084,6 +10151,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var r = S.reports[VA.rid]; if (!r) { backToVcr(); return; }
     $("vaTitle").textContent = "Approve " + r.no;
     var vs = vcrVouchers(r), box = $("vaBox"); box.textContent = "";
+    var at = {}, order = []; [true, false].forEach(function (g) { vs.forEach(function (v) { if (!!v.settle === g) { at[v.id] = order.length; order.push(v); } }); });
+    var pick = docPane("va", order.map(function (v) { return { label: "Voucher " + (v.voucherNo || ""), short: v.voucherNo || "Voucher", file: v.file }; }));
     [["Settled", "Paid by " + pnm(r.preparedBy) + " from their cash advance. Approving takes it off their cash.", true], ["Payable", "To be paid to the person or shop on the voucher. Approving sends it to the financier's Payment Entry.", false]].forEach(function (g) {
       var list = vs.filter(function (v) { return !!v.settle === g[2]; }); if (!list.length) return;
       box.appendChild(el("h3", null, g[0] + " (" + list.length + ")")); box.appendChild(el("p", { class: "sub", style: "margin:-6px 0 8px" }, g[1]));
@@ -10091,7 +10160,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       sortTable(card, "va_" + g[0], [
         { label: "", cls: "ckcol", head: function (th) { var a = el("input", { type: "checkbox", "aria-label": "Approve every " + g[0].toLowerCase() + " voucher" }); a.checked = list.every(function (v) { return VA.sel[v.id]; }); a.addEventListener("change", function () { list.forEach(function (v) { VA.sel[v.id] = a.checked; }); renderVcrApprove(); }); th.appendChild(a); },
           cell: function (v, td) { var i = el("input", { type: "checkbox", "aria-label": "Approve voucher " + v.voucherNo }); i.checked = !!VA.sel[v.id]; i.addEventListener("change", function () { VA.sel[v.id] = i.checked; renderVcrApprove(); }); td.appendChild(i); } },
-        { label: "Voucher", kind: "co", cell: function (v, td) { td.appendChild(el("b", { class: "mono" }, v.voucherNo)); sub(td, fmtDate(v.voucherDate) + " · " + coLabel(v.companyId)); } },
+        { label: "Voucher", kind: "co", cell: function (v, td) { td.appendChild(docLink(pick, at[v.id], v.voucherNo)); sub(td, fmtDate(v.voucherDate) + " · " + coLabel(v.companyId)); } },
         { label: "Paid to", cls: "desc", cell: function (v, td) { td.appendChild(el("b", null, v.payee || "")); sub(td, v.narration || ""); } },
         { label: "Payable", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(vPayable(v)))); } },
         { label: "Decision", cls: "wcol", cell: function (v, td) {

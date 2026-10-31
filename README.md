@@ -272,6 +272,11 @@ provides the same calls, so the app code did not need rewriting:
   them only while the person's saved mode is Demo.
 - **Bill files** are kept in the private `bill-files` Storage bucket (`live/` or `demo/` folder). The accountant sees
   the file beside the form with page, zoom, fit, rotate and drag. Bills typed in by hand can attach a file.
+  Proformas and imports read from a file keep it too (`<live|demo>/advances/<id>/`), as do voucher documents.
+- **Original files beside reports:** a Bill, Advance or Voucher Checking Report (and the voucher-by-voucher approve
+  screen) opens with the originals on the left and the report on the right, in the report's order: ‹ › and numbered
+  chips step through them, a bill or voucher number in the table shows its file, and items with no file kept say so.
+  The Approve form then sits over the report side only, so the files stay readable. Below 980px wide it stacks.
 - **Settings** (everyone): Personalise (shared by every KKSK app, saved to the login) has light/dark/device mode, a colour, text size (only the text grows: every font size is calc(size × var(--ts)) set by web/textsize.js, so layouts stay and cells wrap; prints are unaffected), table density, a
   profile picture shown at the top, and Change Password. Admins also see Companies, Users, Change Log and Data &
   Archive there. PDFs and Excel always keep the standard KKSK format.

@@ -3170,6 +3170,18 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     return hit;
   }
   function vendorOfBill(b) { return b.vendorId && S.vendors[b.vendorId] ? S.vendors[b.vendorId] : null; }
+  /* The name a vendor goes by in our books: the business, never its owner. For a proprietorship (or an individual or HUF) the
+     GST "legal name" is the owner's own name, so the trade name is used; companies, LLPs and firms use their legal name. */
+  function gstBizName(g) {
+    if (!g) return ""; var lg = String(g.legalName || "").trim(), tr = String(g.tradeName || "").trim();
+    if (tr && (/propriet|individual|huf|hindu undivided/i.test(g.constitution || "") || !lg)) return tr;
+    return lg || tr;
+  }
+  /* The narration names the vendor as saved here, whatever name came with the bill or was written in. */
+  function narrVendor(t, name) {
+    t = String(t || ""); name = String(name || "").trim(); if (!t || !name) return t;
+    return t.replace(/^(Being\b.*?\b(?:from|with)\s+)(.+?)(\s+vide\b)/i, function (m0, a, v, b) { return a + name + b; });
+  }
   function vendorLabelOfBill(b) { var v = vendorOfBill(b); return v ? v.name : (b.vendorNew && b.vendorNew.name) || ""; }
   function keyMissing(b) { return !b.companyId || !vendorLabelOfBill(b) || !ymdOk(b.billDate) || !String(b.billNo || "").trim(); }
   /* Company, then vendor, then bill date, then bill number. Anything missing one of those goes last. */
@@ -3685,7 +3697,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     "  services: \"Being services availed from [Vendor] vide Inv. [Number] dt. [DD/MM/YYYY]: [Qty] [Service], [Service]; for [Purpose/Location].\"",
     "  goods and services: \"Being goods and services from [Vendor] vide Inv. [Number] dt. [DD/MM/YYYY]: [Qty] [Item], [Service]; for [Purpose/Location].\"",
     "  expenses: \"Being expenses incurred towards [Expense] from [Vendor] vide Inv. [Number] dt. [DD/MM/YYYY]: [Qty and description]; for [Purpose/Location].\"",
-    "- Use the vendor's legal name exactly, the invoice number exactly as printed, the date as DD/MM/YYYY.",
+    "- Name the vendor by its business name: the firm or company the bill is issued in (a proprietorship's trade name, e.g. \"Balaji Tarpaulins Company\"), exactly as given in the fields when they name it; never the name of an owner, proprietor, partner or director. The invoice number exactly as printed, the date as DD/MM/YYYY.",
     "- Items: line items with quantity and unit where meaningful (\"4 bearings, 2 belts, 25 kg grease\"); combine duplicates; keep distinct sizes and grades; no prices, GST, HSN/SAC or totals; never take a pack size, model or serial number for a quantity; never invent a quantity.",
     "- Clean the language: fix spelling, grammar, capitalisation and punctuation; expand abbreviations only when the meaning is certain (\"m/c\" machine); keep model, part and serial numbers, machine identifiers and unfamiliar part names exactly; units as kg, L, m, pcs; sentence case except proper nouns and codes.",
     "- Purchaser remarks (handwritten or typed on the bill, or given below) tell the purpose: add them at the end after a semicolon, corrected (\"drum 3\" -> \"for Drum 3\", \"shaving m/c repair\" -> \"for shaving machine repair\", \"used in ETP\"). Never invent a purpose, machine or place; leave out what is unclear.",
@@ -4339,7 +4351,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       companyId: D.companyId || null, vendorId: D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : null,
       vendorNew: { name: D.vNew.name.trim(), gstin: normId(D.vNew.gstin), pan: panOfNew(D), type: D.vNew.type || "", termDays: intOrNull(D.vNew.termDays), address: String(D.vNew.addr || "").trim(), addrPick: D.vNew.addrPick || "" },
       billNo: D.billNo.trim(), billDate: parseDate(D.billDate),
-      termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: D.narration.trim(), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
+      termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: narrVendor(D.narration.trim(), D.vendorChoice === "new" ? D.vNew.name : (S.vendors[D.vendorChoice] || {}).name), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
       ledgers: ledLinesOut(D.ledgers), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || "",
       settle: D.settle === "yes" && billAdvOk(D), supplyOf: D.supplyOf || "", einv: einvOf((D.einv || {}).irn, (D.einv || {}).ackNo, parseDate((D.einv || {}).ackDate || ""))
     }, amountsOf(D), prepFields(D.prepBy), approverFields(D.approverId, D.approver1Id || ""), extDoc(D.companyId, D.X));
@@ -4389,7 +4401,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (!r || !r.found) { ex.gstMiss = g; } else { ex.gst = gstFromHit(r); delete ex.gstMiss; }
       x.ex = ex; retry(function () { return S.db.doc("bills/" + id).update({ ex: ex }); }).catch(function () {});
       var D2 = B.cardId === id ? B.D : null; if (!D2 || !ex.gst || normId(D2.vNew.gstin) !== g) { if (D2) updateDynamic(); return; }
-      var pg = ex.gst, nm = smartCase(String(pg.legalName || pg.tradeName || "").toLowerCase());
+      var pg = ex.gst, nm = smartCase(gstBizName(pg).toLowerCase());
       if (nm) { D2.vNew.name = nm; $("bcVName").value = nm; }
       if (!D2.vNew.type) { D2.vNew.type = "registered"; $("bcVType").value = "registered"; }
       if (pg.address && !String(D2.vNew.addr || "").trim()) { D2.vNew.addr = pg.address; $("bcVAddr").value = pg.address; }
@@ -4999,9 +5011,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function narrPayCheck(t) { var w = payWords(t); return w ? "Leave payment details out of the narration (\u201c" + w + "\u201d): payments are recorded in Payment Entry." : ""; }
   /* What a narration box is about, for writing it to the rules: the bill or proforma's vendor, number, date and items. */
   function tidyCtx(ta) {
-    if (ta.id === "bcNar" && B.D) { var b = S.bills[B.cardId] || {}, D = B.D; return { vendor_legal_name: D.vendorChoice === "new" ? D.vNew.name : (S.vendors[D.vendorChoice] || {}).name || "", invoice_number: D.billNo || "", invoice_date: (parseDate(D.billDate) || "").split("-").reverse().join("/"), supply_of: D.supplyOf || "", items: ((b.ex && b.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }) }; }
-    if (ta.id === "neNar" && AC.kind === "bill" && S.bills[AC.id]) { var x = S.bills[AC.id]; return { vendor_legal_name: vendorLabelOfBill(x), invoice_number: x.billNo || "", invoice_date: (x.billDate || "").split("-").reverse().join("/"), supply_of: x.supplyOf || "", items: ((x.ex && x.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }) }; }
-    if (ta.id === "adNar" && ADV.D) { var A = ADV.D; return { vendor_legal_name: A.vendorChoice && A.vendorChoice !== "new" ? (S.vendors[A.vendorChoice] || {}).name || "" : (A.vNew || {}).name || "", proforma_number: A.piNo || "", proforma_date: (parseDate(A.piDate) || "").split("-").reverse().join("/"), kind: ADV.kind === "import" ? "import order" : "proforma invoice", items: ((A.ex && A.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }) }; }
+    if (ta.id === "bcNar" && B.D) { var b = S.bills[B.cardId] || {}, D = B.D; return { vendor_name: D.vendorChoice === "new" ? D.vNew.name : (S.vendors[D.vendorChoice] || {}).name || "", invoice_number: D.billNo || "", invoice_date: (parseDate(D.billDate) || "").split("-").reverse().join("/"), supply_of: D.supplyOf || "", items: ((b.ex && b.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }) }; }
+    if (ta.id === "neNar" && AC.kind === "bill" && S.bills[AC.id]) { var x = S.bills[AC.id]; return { vendor_name: vendorLabelOfBill(x), invoice_number: x.billNo || "", invoice_date: (x.billDate || "").split("-").reverse().join("/"), supply_of: x.supplyOf || "", items: ((x.ex && x.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }) }; }
+    if (ta.id === "adNar" && ADV.D) { var A = ADV.D; return { vendor_name: A.vendorChoice && A.vendorChoice !== "new" ? (S.vendors[A.vendorChoice] || {}).name || "" : (A.vNew || {}).name || "", proforma_number: A.piNo || "", proforma_date: (parseDate(A.piDate) || "").split("-").reverse().join("/"), kind: ADV.kind === "import" ? "import order" : "proforma invoice", items: ((A.ex && A.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }) }; }
     return null;
   }
   function tidyPrompt(kind, said, names, ctx) {
@@ -5393,7 +5405,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (!r.address) box.appendChild(el("div", { class: "hint" }, "The portal gave no address" + (r.env === "sandbox" ? " (the sandbox's test taxpayers have none)" : "") + "; enter it from the bill."));
       var use = el("button", { type: "button", class: "btn sm", style: "margin-top:6px" }, r.address ? "Use This Name and Address" : "Use This Name");
       use.addEventListener("click", function () {
-        if (r.legalName || r.tradeName) $("veName").value = r.tradeName || r.legalName;
+        if (r.legalName || r.tradeName) $("veName").value = smartCase(gstBizName(r).toLowerCase());
         if (r.address) $("veAddr").value = r.address;
         if (!bad && !$("veType").value) $("veType").value = "registered";
         toast("Filled in from the GST portal. Check and save."); if (!r.address && !$("veAddr").value.trim()) $("veAddr").focus();
@@ -12710,7 +12722,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
         var wb = el("button", { type: "button", class: "btn sm", style: "margin-top:8px" }, "Write with Claude"); body.appendChild(wb);
         wb.addEventListener("click", function () {
           wb.disabled = true; wb.textContent = "Writing…";
-          var facts = { vendor_legal_name: vendorLabelOfBill(x), invoice_number: x.billNo || "", invoice_date: x.billDate ? x.billDate.split("-").reverse().join("/") : "", items: ((x.ex && x.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }), purchaser_remarks: ta.value.trim() || x.narration || "", supply_of: sp.value || x.supplyOf || "" };
+          var facts = { vendor_name: vendorLabelOfBill(x), invoice_number: x.billNo || "", invoice_date: x.billDate ? x.billDate.split("-").reverse().join("/") : "", items: ((x.ex && x.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }), purchaser_remarks: ta.value.trim() || x.narration || "", supply_of: sp.value || x.supplyOf || "" };
           S.sample.json(NARR_RULES + "\n\nWrite the narration for this bill from these fields (authoritative for vendor, number and date). Reply with only JSON: {\"transaction_type\": \"goods | services | mixed | expense | review\", \"narration\": \"\", \"character_count\": 0, \"needs_review\": false, \"review_reasons\": []}\n\nFIELDS: " + JSON.stringify(facts), { modelTier: "default" }).then(function (r) {
             var t = narrFix(r && r.narration); if (!t) { toast("Claude couldn't write it. Type it instead."); return; }
             ta.value = t; ta._tidied = t; upd(); var ty = supplyOk(r.transaction_type === "mixed" ? "composite" : r.transaction_type); if (ty && !sp.value) sp.value = ty;
@@ -12725,7 +12737,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       return Promise.all(pend).then(function () {
         var up = { narrEditedAt: Date.now(), narrEditedBy: meId(), narrEditedByName: acctWho().acctByName };
         if (lines) { var nl = lines.map(function (l, i) { return Object.assign({}, l, { d: sentenceFix($("neL" + i).value.trim()) }); }); if (nl.some(function (l) { return !l.d; })) { errOn("neL0", "Every line needs a description."); return false; } var pw = nl.map(function (l) { return narrPayCheck(l.d); }).filter(Boolean)[0]; if (pw) { errOn("neL0", pw); return false; } up.lines = nl; up.narration = nl.map(function (l) { return l.d; }).join(" "); }
-        else { var t = isB ? narrFix($("neNar").value) : sentenceFix($("neNar").value.trim()); if (!t) { errOn("neNar", "Write the " + (isB ? "narration." : "description.")); return false; } if (isB && t.length > NARR_MAX) { errOn("neNar", "Keep it to " + NARR_MAX + " characters (it is " + t.length + ")."); return false; } if (narrPayCheck(t)) { errOn("neNar", narrPayCheck(t)); return false; } up.narration = t; }
+        else { var t = isB ? narrVendor(narrFix($("neNar").value), vendorLabelOfBill(x)) : sentenceFix($("neNar").value.trim()); if (!t) { errOn("neNar", "Write the " + (isB ? "narration." : "description.")); return false; } if (isB && t.length > NARR_MAX) { errOn("neNar", "Keep it to " + NARR_MAX + " characters (it is " + t.length + ")."); return false; } if (narrPayCheck(t)) { errOn("neNar", narrPayCheck(t)); return false; } up.narration = t; }
         if (isB) { if (!$("neSup").value) { errOn("neSup", "Choose the supply."); return false; } up.supplyOf = $("neSup").value; if (x.ex && x.ex.narrReview && x.ex.narrReview.length) up.ex = Object.assign({}, x.ex, { narrReview: [] }); }
         return retry(function () { return S.db.doc((isB ? "bills/" : "vouchers/") + x.id).update(up); }).then(function () { Object.assign(x, up); toast("Saved."); renderAcctOne(); return true; }, function (e) { toast(explain(e)); return false; });
       });

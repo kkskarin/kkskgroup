@@ -10221,10 +10221,10 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
       return Promise.all(vs.map(sigsFor)).then(function (sgs) {
         var doc = new jsPDF({ orientation: "landscape", unit: "mm", format: VCH_PAGE, compress: true }); pdfFonts(doc);
-        vs.forEach(function (v, i) { if (i) doc.addPage(VCH_PAGE, "landscape"); drawVoucher(doc, v, sgs[i]); }); return vchPrintPrefs(doc);
+        vs.forEach(function (v, i) { if (i) doc.addPage(VCH_PAGE, "landscape"); drawVoucher(doc, v, sgs[i]); }); return doc;
       });
-    }).then(function (doc) {
-      return S.downloads.save({ filename: "Vouchers " + safeName(r.no) + ".pdf", data: doc.output("blob") });
+    }).then(vchPrintBlob).then(function (blob) {
+      return S.downloads.save({ filename: "Vouchers " + safeName(r.no) + ".pdf", data: blob });
     }).then(function () { toast(plural(vs.length, "voucher") + " ready to print and sign."); }, function (e) { var k = e && (e.code || e.kind); toast(k === "declined" ? "Download cancelled." : "The vouchers couldn't be printed (" + (k || "error") + ")."); })
       .then(function () { btn.disabled = false; btn.textContent = label; });
   }
@@ -13740,6 +13740,24 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     try { if (doc.autoPrint) doc.autoPrint({ variant: "non-conform" }); } catch (e) {}
     return doc;
   }
+  /* A5 sheets go into the printer upright, like A4. So each voucher page is made exactly A5 portrait (148 × 210 mm), the
+     voucher laid sideways on it, and the page marked to be shown turned (Rotate 90) so it still reads upright on screen. The
+     printer then sees plain A5 and prints it as it is, the voucher across the sheet, with no size or rotation to set. */
+  function vchPrintBlob(doc) {
+    var blob = vchPrintPrefs(doc).output("blob");
+    return loadScript(PDFLIB).then(function () { return blob.arrayBuffer(); }).then(function (buf) { return window.PDFLib.PDFDocument.load(buf); }).then(function (pd) {
+      var L = window.PDFLib;
+      pd.getPages().forEach(function (pg) {
+        var sz = pg.getSize(), w = sz.width, h = sz.height; if (w <= h) return;
+        pg.node.normalize(); pg.getContentStream();
+        var st = pd.context.register(pg.createContentStream(L.pushGraphicsState(), L.concatTransformationMatrix(0, 1, -1, 0, h, 0)));
+        var en = pd.context.register(pg.createContentStream(L.popGraphicsState()));
+        pg.node.wrapContentStreams(st, en);
+        pg.setSize(h, w); pg.setRotation(L.degrees(90));
+      });
+      return pd.save();
+    }).then(function (bytes) { return new Blob([bytes], { type: "application/pdf" }); }, function () { return blob; });
+  }
   function printVoucher(id, btn) {
     var v = S.vouchers[id]; if (!v || !S.downloads) return;
     var label = btn.textContent; btn.disabled = true; btn.textContent = "Preparing";
@@ -13747,10 +13765,10 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       var jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF) throw { kind: "lib" };
       return sigsFor(v).then(function (sg) {
         var doc = new jsPDF({ orientation: "landscape", unit: "mm", format: VCH_PAGE, compress: true }); pdfFonts(doc);
-        drawVoucher(doc, v, sg); return vchPrintPrefs(doc);
+        drawVoucher(doc, v, sg); return doc;
       });
-    }).then(function (doc) {
-      return S.downloads.save({ filename: "Voucher " + safeName(v.voucherNo) + " " + safeName(coLabel(v.companyId)) + ".pdf", data: doc.output("blob") });
+    }).then(vchPrintBlob).then(function (blob) {
+      return S.downloads.save({ filename: "Voucher " + safeName(v.voucherNo) + " " + safeName(coLabel(v.companyId)) + ".pdf", data: blob });
     }).then(function () { toast("Voucher printed to PDF."); }, function (e) { var k = e && (e.code || e.kind); toast(k === "declined" ? "Download cancelled." : k === "lib" ? "The PDF maker didn't load. Check the connection and try again." : "The voucher couldn't be printed (" + (k || "error") + ")."); })
       .then(function () { btn.disabled = false; btn.textContent = label; });
   }

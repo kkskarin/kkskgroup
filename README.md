@@ -283,6 +283,12 @@ provides the same calls, so the app code did not need rewriting:
 - **Bill files** are kept in the private `bill-files` Storage bucket (`live/` or `demo/` folder). The accountant sees
   the file beside the form with page, zoom, fit, rotate and drag. Bills typed in by hand can attach a file.
   Proformas and imports read from a file keep it too (`<live|demo>/advances/<id>/`), as do voucher documents.
+- **Chemicals division** (`div: "chm"`): entered and approved in the Chemicals app, only accounted and paid here; it has
+  no entry app of its own (tick it on users, companies and ledgers like any division). A bill sent with `extAppr` gets an
+  approved Bill Checking Report (`reports/rx_<bill id>`) as soon as it is accounted; a proforma or import with `instAppr`
+  gets an approved Advance Checking Report per approved instalment (`reports/rx_<advance id>_<n>`). Accounts and Finance
+  make any that are missing when they open (fixed ids, so never twice). The fields the Chemicals app writes are in
+  `docs/chemicals-app-integration.md`.
 - **Original files beside reports:** a Bill, Advance or Voucher Checking Report (and the voucher-by-voucher approve
   screen) opens with the originals on the left and the report on the right, in the report's order: ‹ › and numbered
   chips step through them, a bill or voucher number in the table shows its file, and items with no file kept say so.

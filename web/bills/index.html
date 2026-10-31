@@ -965,7 +965,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
               <select class="field" id="uPpRegion" aria-label="Production Planning region"><option value="">Erode and Ambur</option><option value="E">Erode</option><option value="A">Ambur</option></select></div></div>
           <span class="hint">Accounts, Finance and Approvals come with the role (Accountant, Financier, Approver or Approval Recorder; a Chief Accountant gets Accounts and Finance). With one app they go straight into it. Admins get every app.</span><span class="err" id="uEApps" hidden>Give at least one app.</span></div>
         <div class="f wide" id="uDivF" hidden><span class="lb">Divisions</span>
-          <div class="uapps"><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppBnv"> Bills &amp; Vouchers</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label></div>
+          <div class="uapps"><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppBnv"> Bills &amp; Vouchers</label><label class="check"><input type="checkbox" id="uAppChm"> Chemicals</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label></div>
           <span class="hint">The divisions this person works for: where they enter bills and vouchers (Purchaser, Expenses Operator), and whose entries they see in Accounts (Accountant) and Finance (Financier). Sales is Renewable Energy. A Chief Accountant covers every division; an Approver sees what names them.</span><span class="err" id="uEDiv" hidden>Tick at least one division.</span></div>
         <div class="f"><label for="uName">Name</label><input class="field" id="uName" data-fmt="name" maxlength="60" autocomplete="off"><span class="err" id="uEName" hidden>Enter the user's name.</span></div>
         <div class="f" id="uMailF" hidden><label for="uMail">Login Email</label><input class="field" id="uMail" type="email" autocomplete="off" maxlength="120" placeholder="name@example.com"><span class="hint">Any email: their own, Gmail, Yahoo or kksk.in.</span><span class="err" id="uEMail" hidden></span></div>
@@ -1702,7 +1702,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
      are planned and recorded (for every division). Renewable Energy keeps its Sales. Every entry carries the division it came from. */
   var APP = window.BV_APP || "mnt";
   /* Bills & Vouchers (bnv): its own division, a copy of Maintenance & Civil worked by Expenses Operators, who pick who prepared each entry. */
-  var DIVS = { mnt: { name: "Maintenance & Civil", payIn: "fin" }, re: { name: "Renewable Energy", payIn: "fin" }, bnv: { name: "Bills & Vouchers", payIn: "fin" } };
+  var DIVS = { mnt: { name: "Maintenance & Civil", payIn: "fin" }, re: { name: "Renewable Energy", payIn: "fin" }, bnv: { name: "Bills & Vouchers", payIn: "fin" }, chm: { name: "Chemicals", payIn: "fin", ext: true } };
+  /* Chemicals (ext) has no entry app here: its purchases, proformas and imports are entered and approved in the Chemicals app
+     and only accounted and paid here. */
   var APP_NAMES = { mnt: "Maintenance & Civil", re: "Renewable Energy", bnv: "Bills & Vouchers", acc: "Accounts", fin: "Finance", apr: "Approvals" };
   var APP_KEYS = ["apr", "acc", "fin", "re", "mnt", "bnv"]; /* the order apps are listed in everywhere */
   function appName(k) { return APP_NAMES[k || APP] || ""; }
@@ -1798,6 +1800,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function renderNav() {
     document.body.classList.toggle("is-admin", !!S.isAdmin);
+    if (APP === "fin" || APP === "acc") setTimeout(chmSync, 300);
     var nav = $("nav"), subn = $("subnav"), gs = navGroups(), cg = groupOf(S.tab);
     nav.textContent = ""; subn.textContent = "";
     gs.forEach(function (g) {
@@ -2307,7 +2310,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function fillUserForm(src, roles, balUid) {
     var js = jobsOf(src); jobChecks($("uJobs"), js); $("uJobsE").hidden = true;
-    var ap = appsWith(src), dv = divsOf(src); $("uAppMnt").checked = dv.indexOf("mnt") >= 0; $("uAppRe").checked = dv.indexOf("re") >= 0; $("uAppBnv").checked = dv.indexOf("bnv") >= 0; $("uReCo").checked = !!(src && src.reCompanies); $("uAppBv").checked = !src || !src.apps || src.apps.bv !== false; $("uAppWb").checked = !!(src && src.apps && src.apps.wb); var pp0 = (src && src.apps && src.apps.pp) || null; $("uAppPp").checked = !!(pp0 && pp0.role); $("uPpRole").value = (pp0 && pp0.role) || ""; $("uPpRegion").value = (pp0 && pp0.region) || ""; $("uEApps").hidden = true; syncAppsF();
+    var ap = appsWith(src), dv = divsOf(src); $("uAppMnt").checked = dv.indexOf("mnt") >= 0; $("uAppRe").checked = dv.indexOf("re") >= 0; $("uAppBnv").checked = dv.indexOf("bnv") >= 0; $("uAppChm").checked = dv.indexOf("chm") >= 0; $("uReCo").checked = !!(src && src.reCompanies); $("uAppBv").checked = !src || !src.apps || src.apps.bv !== false; $("uAppWb").checked = !!(src && src.apps && src.apps.wb); var pp0 = (src && src.apps && src.apps.pp) || null; $("uAppPp").checked = !!(pp0 && pp0.role); $("uPpRole").value = (pp0 && pp0.role) || ""; $("uPpRegion").value = (pp0 && pp0.region) || ""; $("uEApps").hidden = true; syncAppsF();
     var ua = $("uAppr"); ua.parentNode.replaceChild(approverSelect("uAppr", src.defaultApproverId || ""), ua); $("uAppr").options[0].textContent = "Choose the default approver";
     var ao = $("uApOf"), aon = apprOfUser(src); ao.textContent = ""; APPR_OF.forEach(function (k) { var lab = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: k[0] }), tx = el("span"); cb.checked = aon.indexOf(k[0]) >= 0; tx.appendChild(el("b", null, k[1])); tx.appendChild(el("span", null, k[2])); lab.appendChild(cb); lab.appendChild(tx); ao.appendChild(lab); }); $("uEApOf").hidden = true;
     syncApprF();
@@ -2345,7 +2348,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   /* The divisions a person works for (Maintenance & Civil unless said otherwise, as before). */
   function divsOf(u) { var a = (u && u.apps) || {}; return Object.keys(DIVS).filter(function (k) { return a[k] != null ? !!a[k] : k === "mnt"; }); }
   /* Divisions ticked = the person's scope; Accounts, Finance and Approvals come with the role (always "on" here). */
-  function readApps() { var bv = $("uAppBv").checked; return { bv: bv, mnt: bv && $("uAppMnt").checked, re: bv && ($("uAppRe").checked || readChecks($("uJobs")).indexOf("solar") >= 0), bnv: bv && $("uAppBnv").checked, acc: bv, fin: bv, apr: bv }; }
+  function readApps() { var bv = $("uAppBv").checked; return { bv: bv, mnt: bv && $("uAppMnt").checked, re: bv && ($("uAppRe").checked || readChecks($("uJobs")).indexOf("solar") >= 0), bnv: bv && $("uAppBnv").checked, chm: bv && $("uAppChm").checked, acc: bv, fin: bv, apr: bv }; }
   function anyMoneyApp(a) { return a.bv != null ? !!a.bv : !!(a.mnt || a.re || a.bnv || a.acc || a.fin || a.apr); }
   function syncAppsF() {
     var bv = $("uAppBv").checked; $("uPpRegion").hidden = !$("uPpRole").value; $("uDivF").hidden = !bv; if (readChecks($("uJobs")).indexOf("solar") >= 0) $("uAppRe").checked = true; $("uReCoF").hidden = !$("uAppRe").checked;
@@ -2379,7 +2382,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     /* Each app only for the responsibilities that belong in it (a Chief Accountant fits Accounts and Finance everywhere). */
     /* Divisions: needed by everyone who enters, accounts or pays (a Chief Accountant covers every division; an Approver needs none). */
     var needDiv = appBv && jobs0.some(function (j) { return ["purchaser", "vmaker", "accountant", "financier", "solar"].indexOf(j) >= 0; }) && !chiefOnly;
-    $("uEDiv").hidden = true; if (needDiv && !(ma.mnt || ma.re || ma.bnv)) { $("uEDiv").hidden = false; ok = false; }
+    $("uEDiv").hidden = true; if (needDiv && !(ma.mnt || ma.re || ma.bnv || ma.chm)) { $("uEDiv").hidden = false; ok = false; }
     var dept = usDept.value(); if (!dept) { $("uEDept").hidden = false; ok = false; }
     var jobs = readChecks($("uJobs")); $("uJobsE").textContent = "Choose at least one job."; if (appBv && !jobs.length) { $("uJobsE").hidden = false; ok = false; }
     if (jobsClash(jobs)) { $("uJobsE").textContent = CLASH_MSG; $("uJobsE").hidden = false; ok = false; }
@@ -7396,6 +7399,47 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var code = normId(c.shortName || c.name).slice(0, 10) || "CO";
     return { no: serialNo(code + "-" + series, seq, day, fy), seq: seq, fy: fy, day: day };
   }
+  /* ---- Chemicals: approved in the Chemicals app ----
+     A bill from there carries extAppr {amount, by, byName, at, note}; once our accountant has accounted it, an approved Bill
+     Checking Report is made for it here, so it goes straight to the financier's Payment Entry. A proforma or import carries
+     instAppr [{inst, amount, by, byName, at, note}]: each approved instalment gets an approved Advance Checking Report.
+     Report ids are fixed per bill and per instalment, so it is never made twice. */
+  function extApprText(e) { return e ? "Approved in the Chemicals app by " + (pnm(e.byName) || userLabel(e.by) || "the approver") + (e.at ? " on " + fmtDay(e.at) : "") : ""; }
+  function extDiscText(e) { var d = e && e.discount; return d && Number(d.amount) > 0 ? " Discount agreed: \u20B9 " + amt2(d.amount) + (d.reason ? " (" + sentenceFix(String(d.reason)).replace(/\.$/, "") + ")" : "") + "; the financier records it with the payment." : ""; }
+  function extReportId(s0) { return "rx_" + String(s0).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 70); }
+  function autoBcr(b) {
+    var e = b && b.extAppr, id = b && extReportId(b.id);
+    if (!e || b.status !== "done" || b.acct !== "approved" || checkOf(b) || S.reports[id] || ((S.raw && S.raw.reports) || {})[id]) return Promise.resolve(null);
+    var now = Date.now(), n = nextReportNo(b.companyId, now, "BCR"), t = sumBills([b]), amt = round2(Math.min(Number(e.amount) || t.total, t.total)), ap = {}; ap[b.id] = amt;
+    var why = extApprText(e) + (e.note ? ". " + sentenceFix(String(e.note)) : "") + extDiscText(e);
+    var doc = { no: n.no, seq: n.seq, fy: n.fy, companyId: b.companyId, vendorId: b.vendorId, billIds: [b.id], taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to,
+      checkDate: n.day, preparedBy: pnm(b.preparedByName) || "", preparedById: prepOf(b), approverId: e.by || b.approverId || "", billTds: true, tds: 0, amts: null, currency: b.currency || "INR", div: b.div || "chm",
+      createdAt: now, createdBy: meId(), generatedAt: now, generatedBy: meId(), stage: "payment", appr: ap, sentBack: [], lastBack: [], backNote: ((e.note ? sentenceFix(String(e.note)) : "") + extDiscText(e)).trim(),
+      approvedAt: e.at || now, approvedBy: e.by || "", extAppr: true, log: [logEntry("generated", "Made on its own for a bill approved in the Chemicals app"), logEntry("payment", why)] };
+    return retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () { S.reports[id] = Object.assign({ id: id }, doc); invalidate(); return S.reports[id]; }, function () { return null; });
+  }
+  function autoAcr(a, it) {
+    var i = Number(it && it.inst), id = extReportId(a.id + "_" + i), ins = (a.installments || [])[i];
+    if (!ins || !(Number(it.amount) > 0) || S.reports[id] || ((S.raw && S.raw.reports) || {})[id] || instReports(a, i).length) return Promise.resolve(null);
+    var now = Date.now(), n = nextReportNo(a.companyId, now, "APR"), full = round2(instAmt(a, i)), amt = round2(Math.min(Number(it.amount), full)), due0 = instDue(a, i) || "";
+    var doc = { kind: "inst", advanceId: a.id, approverId: it.by || a.approverId || "", inst: i, advKind: a.kind, no: n.no, seq: n.seq, fy: n.fy, companyId: a.companyId, vendorId: a.vendorId, billIds: [], currency: a.currency || "INR", div: a.div || "chm",
+      taxable: null, gst: null, total: full, periodFrom: due0, periodTo: due0, early: false, checkDate: n.day, preparedBy: pnm(a.preparedByName) || "", createdAt: now, createdBy: meId(),
+      tds: 0, payable: full, stage: "payment", generatedAt: now, generatedBy: meId(), apprAmt: amt, backNote: it.note ? sentenceFix(String(it.note)) : "", approvedAt: it.at || now, approvedBy: it.by || "", extAppr: true,
+      log: [logEntry("generated", instLabel(a, i)), logEntry("payment", extApprText(it) + (it.note ? ". " + sentenceFix(String(it.note)) : ""))] };
+    return retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () { S.reports[id] = Object.assign({ id: id }, doc); invalidate(); return S.reports[id]; }, function () { return null; });
+  }
+  /* Runs in Accounts and Finance: anything approved in the Chemicals app that is ready gets its approved report. */
+  var CHM = { busy: false, at: 0 };
+  function chmSync() {
+    if (CHM.busy || S._adm || S.mode === "demo" || !dataReady() || Date.now() - CHM.at < 20000 || (APP !== "fin" && APP !== "acc")) return;
+    if (!(S.isAdmin || canDo("txn") || canDo("acct"))) return;
+    CHM.at = Date.now(); CHM.busy = true;
+    var job = Promise.resolve(), made = 0;
+    var RB = (S.raw && S.raw.bills) || S.bills || {}, RA = (S.raw && S.raw.advances) || S.advances || {};
+    Object.keys(RB).forEach(function (k) { var b = Object.assign({ id: k }, RB[k]); if (b.extAppr && b.acct === "approved" && !checkOf(b)) job = job.then(function () { return autoBcr(b).then(function (r) { if (r) made++; }); }); });
+    if (APP === "fin" || S.isAdmin) Object.keys(RA).forEach(function (k) { var a = Object.assign({ id: k }, RA[k]); if (a.status === "active" && a.vendorId && Array.isArray(a.instAppr)) a.instAppr.forEach(function (it) { job = job.then(function () { return autoAcr(a, it).then(function (r) { if (r) made++; }); }); }); });
+    job.then(function () { CHM.busy = false; if (made) { renderNav(); toast(plural(made, "approval") + " from the Chemicals app sent to Payment Entry."); } }, function () { CHM.busy = false; });
+  }
   function createInstReport(a, i, btn, quiet) {
     var st0 = a && instState(a, i);
     if (CK.busy || !a || !(st0 === "due" || st0 === "upcoming" || st0 === "dispatch")) return Promise.resolve(null);
@@ -11718,7 +11762,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       { label: "Amount", cls: "r num", sort: function (r) { return r.amt; }, cell: function (r, td) { txt(td, curMoney(r.cur, r.amt)); } },
       { label: "Where it stands", cls: "desc", cell: function (r, td) { txt(td, aeStatus(r.x, r.kind)); } },
       { label: "From", cell: function (r, td) { var d = divOf(r.x), here = d === APP; td.appendChild(el("span", { class: "tag" + (here ? "" : " info") }, here ? "Bills & Vouchers" : "from " + divName(d))); } },
-      { label: "", kind: "act", cls: "r", cell: function (r, td) { var d = divOf(r.x), a = el("a", { class: "btn sm", href: "../" + APP_PATH[d] + "/?go=" + (r.kind === "bill" ? "b:" : "v:") + r.x.id }, d === APP ? "Open" : "Open in " + divName(d)); if (d !== APP) { a.target = "_blank"; a.rel = "noopener"; } td.appendChild(a); } }
+      { label: "", kind: "act", cls: "r", cell: function (r, td) { var d = divOf(r.x); if (!APP_PATH[d]) { sub(td, "Entered in the " + divName(d) + " app"); return; } var a = el("a", { class: "btn sm", href: "../" + APP_PATH[d] + "/?go=" + (r.kind === "bill" ? "b:" : "v:") + r.x.id }, d === APP ? "Open" : "Open in " + divName(d)); if (d !== APP) { a.target = "_blank"; a.rel = "noopener"; } td.appendChild(a); } }
     ], rows, { sortIndex: 0, sortDir: -1, limit: AE.limit, more: function (m, n) { var mb = el("button", { class: "btn" }, "Show " + Math.min(200, n) + " more of " + n); mb.addEventListener("click", function () { AE.limit += 200; renderAllEnt(); }); m.appendChild(mb); } });
   }
   /* ---- Payments › Salary (Renewable Energy and Finance; admins and financiers) ----
@@ -12625,6 +12669,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var v = S.vendors[x.vendorId], tx = Number(x.fcTaxable != null ? x.fcTaxable : x.taxable), ga = Number(x.fcGst != null ? x.fcGst : x.gstAmt) || 0, out = [], pr = x.ex && x.ex.printedTotal;
     if (pr != null && !isNaN(tx) && Math.abs(tx + ga - pr) > 1) out.push("The bill's printed total is " + amt2(pr) + ", but taxable plus GST comes to " + amt2(tx + ga) + ". Check for round-off, freight or TDS.");
     var gn = gstRateNote(tx, ga, x.currency); if (gn) out.push(gn);
+    if (x.extAppr) out.push(extApprText(x.extAppr) + " for " + curMoney(x.currency, x.extAppr.amount || x.total) + ". Once accounted it goes straight to Payment Entry." + extDiscText(x.extAppr));
     if (v && v.type && v.type !== "registered" && ga > 0) out.push("The vendor is " + vtypeLabel(v.type).toLowerCase() + ", but the bill charges GST.");
     if (v && v.type === "registered" && ga === 0) out.push("The vendor is registered, but the bill charges no GST.");
     if (x.billDate && x.submittedAt && x.billDate < addDays(ymdOfMs(x.submittedAt), -14)) out.push("The bill was dated more than 2 weeks before it was submitted.");
@@ -12938,7 +12983,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var col = AC.kind === "bill" ? "bills" : "vouchers", was = x.acct === "approved";
     AC.busy = true; btn.disabled = true;
     retry(function () { return S.db.doc(col + "/" + x.id).update(up); }).then(function () {
-      Object.assign(x, up); invalidate(); toast((AC.kind === "bill" ? "Bill " + x.billNo : "Voucher " + x.voucherNo) + (was ? " updated." : " accounted. It can now go into a checking report.")); backToAcct(); renderNav();
+      Object.assign(x, up); invalidate(); toast((AC.kind === "bill" ? "Bill " + x.billNo : "Voucher " + x.voucherNo) + (was ? " updated." : x.extAppr ? " accounted. It was approved in the Chemicals app, so it goes straight to Payment Entry." : " accounted. It can now go into a checking report.")); backToAcct(); renderNav();
+      if (AC.kind === "bill" && x.extAppr) autoBcr(x).then(function (r) { if (r) renderNav(); });
     }, function (e) { toast(explain(e)); }).then(function () { AC.busy = false; btn.disabled = false; });
   }
   function acctHold(btn) {
@@ -15316,7 +15362,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (t.classList.contains("vnco")) VC.cos[t.getAttribute("data-co")] = t.checked; else if (t.classList.contains("vninc")) VC.sel[t.getAttribute("data-id")] = t.checked;
       updVcrNew();
     });
-    ["uAppBv", "uAppMnt", "uAppRe", "uAppBnv"].forEach(function (id) { $(id).addEventListener("change", syncAppsF); }); $("uJobs").addEventListener("change", function () { if (S.userEditing) syncAppsF(); }); $("uPpRole").addEventListener("change", syncAppsF); $("uAppPp").addEventListener("change", syncAppsF);
+    ["uAppBv", "uAppMnt", "uAppRe", "uAppBnv", "uAppChm"].forEach(function (id) { $(id).addEventListener("change", syncAppsF); }); $("uJobs").addEventListener("change", function () { if (S.userEditing) syncAppsF(); }); $("uPpRole").addEventListener("change", syncAppsF); $("uAppPp").addEventListener("change", syncAppsF);
     $("uJobs").addEventListener("change", function () { if (!S.userEditing) return; $("uJobsE").hidden = true; syncApprF(); var js = readChecks($("uJobs")), cos = readChecks($("uCos")), m = {}; cos.forEach(function (cid) { m[cid] = stepsForJobs(js); }); S.userEditing.roles = m; renderRoleGrid(cos, m); });
     $("uCos").addEventListener("change", function () { if (!S.userEditing) return; var cur = readRoleGrid(), cos = readChecks($("uCos")), m = {}, js = readChecks($("uJobs")); cos.forEach(function (cid) { m[cid] = cur[cid] || (js.length ? stepsForJobs(js) : STEPS.map(function (s) { return s[0]; })); }); renderRoleGrid(cos, m);
       var keep = {}; Array.prototype.forEach.call(document.querySelectorAll("#uOb input"), function (i) { keep[i.id] = i.value; });

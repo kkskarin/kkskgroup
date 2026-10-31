@@ -2375,7 +2375,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var obs = null; if (S.balances[balUid] || noLogin || link) { obs = Object.assign({}, (S.balances[balUid] || {}).openings || {}); Array.prototype.forEach.call(document.querySelectorAll("#uOb tr[data-co]"), function (tr) { var cid = tr.getAttribute("data-co"), v = $("uob_" + cid).value.trim(); if (v === "") delete obs[cid]; else if (num(v) != null) obs[cid] = round2(num(v)); }); }
     if (!name) { $("uEName").hidden = false; $("uName").classList.add("bad"); ok = false; }
     if (!loc) { $("uELoc").hidden = false; ok = false; }
-    var ma = readApps(), appBv = anyMoneyApp(ma), ppRole = $("uAppPp").checked ? ($("uPpRole").value || "floor") : "", apps = { bv: appBv, mnt: ma.mnt, re: ma.re, bnv: ma.bnv, acc: ma.acc, fin: ma.fin, apr: ma.apr, wb: $("uAppWb").checked, pp: ppRole ? { role: ppRole, region: $("uPpRegion").value || null } : null };
+    var ma = readApps(), appBv = anyMoneyApp(ma), ppRole = $("uAppPp").checked ? ($("uPpRole").value || "floor") : "", apps = { bv: appBv, mnt: ma.mnt, re: ma.re, bnv: ma.bnv, chm: ma.chm, acc: ma.acc, fin: ma.fin, apr: ma.apr, wb: $("uAppWb").checked, pp: ppRole ? { role: ppRole, region: $("uPpRegion").value || null } : null };
     $("uEApps").hidden = true; $("uEApps").textContent = "Give at least one app."; if (!appBv && !ppRole && !apps.wb) { $("uEApps").hidden = false; ok = false; }
     var jobs0 = readChecks($("uJobs")), chief = jobs0.indexOf("chiefacct") >= 0, chiefOnly = chief && jobs0.length === 1;
     if (appBv && !cos.length && !chiefOnly) { $("uECos").hidden = false; ok = false; }

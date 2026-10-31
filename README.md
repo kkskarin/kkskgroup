@@ -66,8 +66,18 @@
   Expenses Operator), and they see only those reports and vouchers. On the bill form GST shows as GST (CGST + SGST) or GST (IGST), from the vendor's and company's states.
   A Purchaser who is also the Accountant for a company accounts a bill as they record it (ledgers and TDS on the bill form);
   it skips Accounting but still goes to approval. The accountant "accounts" entries; only the Approver step "approves".
-- **Approvals** happen only in the Approvals app, for admins and people with Approval. An Approver sees and approves only the
-  checking reports and cash advances that name them; checking reports are made one per approver. An **Approval
+- **Approvals** happen only in the Approvals app, for admins and people with Approval, in two levels.
+  **2nd approvers** are the admins (and Super Admins, and admins without a login, such as MD, whose approvals the Approval
+  Recorder enters): every bill, proforma, import and voucher names one, and they give the final approval.
+  **1st approvers** are people with the Approver job, for what is ticked under **Approver Of** (Bill, Advance and/or Voucher
+  Checking Reports). On a bill, proforma or import a 1st approver is optional; they only check and pass on ("Checked, pass on",
+  with an optional note). Every voucher goes to all the voucher 1st approvers, who decide voucher by voucher (or for ticked
+  vouchers / all at once): Approve (final, goes for payment), Pass on to an admin (the maker's suggested 2nd approver,
+  changeable), or Send back. Passed-on vouchers of an otherwise approved report move to a new report for that admin.
+  Reports carry `l1` ("wait", "passed", "final"), `approver1Id`, `l1By`/`l1ByName`/`l1At`/`l1Note`; Bill Checking Reports
+  are made one per 2nd and 1st approver pair. 2nd approvers see what is passed on, and "Also show ones still with a 1st
+  approver" lets them act early. The Approvals lists filter by report kind, company, prepared by and vendor. Alerts reach
+  the admin when a report is passed on (or straight away when it has no 1st approver). An **Approval
   Recorder** records approvals already signed on paper: for every checking report and cash advance in their divisions (Maintenance &
   Civil with the Finance or Maintenance & Civil app, Renewable Energy with that app; every division if they have none of these),
   for companies where they hold the Approval Recorder step. They choose who signed (the named approver by default) and it is saved

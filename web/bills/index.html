@@ -630,6 +630,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:cal
 .ao-split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
 .ao-doc{position:sticky;top:12px;height:calc(100vh - 40px)}
 .modal-bg.dock .modal{max-width:100%}
+.apfilt{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}.apfilt .field{width:auto;min-width:150px;flex:0 1 200px}
 .dv-split.on{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:start}
 .dv-doc{display:flex;flex-direction:column;gap:8px}.dv-doc .fv{flex:1;min-height:0}
 .dv-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.dv-bar .grow{flex:1}.dv-at{font-weight:600;font-size:calc(13px*var(--ts,1))}
@@ -971,6 +972,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
         <div class="f" id="uPwF" hidden><label for="uPw" id="uPwL">Password</label><input class="field" id="uPw" type="text" autocomplete="new-password" maxlength="72" spellcheck="false"><span class="hint" id="uPwH">At least 8 characters. Give it to them; they can change it under Settings.</span><span class="err" id="uEPw" hidden></span></div>
         <div class="f wide"><span class="lb">Role</span><div class="checks" id="uJobs"></div><span class="hint">Tick every role that applies.</span><span class="err" id="uJobsE" hidden>Tick at least one role.</span></div>
         <div class="f" id="uApprF" hidden><label for="uAppr">Default Approver</label><select class="field" id="uAppr"></select><span class="hint">Filled in on this purchaser's bills, proformas and vouchers. They can change it on each one.</span><span class="err" id="uEAppr" hidden>Choose the admin who approves this purchaser's work.</span></div>
+        <div class="f wide" id="uApOfF" hidden><span class="lb">Approver Of</span><div class="checks" id="uApOf"></div><span class="hint">A person with the Approver job is a 1st approver: they check what names them and pass it on to an admin, who gives the final approval. Every voucher goes to all the voucher 1st approvers, who can also approve it in full.</span><span class="err" id="uEApOf" hidden>Tick at least one.</span></div>
         <div class="f"><label for="usLoc">Location</label><select class="field" id="usLoc"></select>
           <div class="newloc" id="usNewLoc" hidden>
             <input class="field" id="usNewLocName" data-fmt="name" maxlength="40" autocomplete="off" aria-label="New location name" placeholder="New location name">
@@ -1092,6 +1094,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       <select class="field" id="apDiv" aria-label="Filter by division" style="width:auto;min-width:180px"></select>
     </div>
     <div class="stats" id="apStats"></div>
+    <div class="apfilt" id="apFilt"></div>
     <h3 style="margin-top:4px">Waiting for approval <span id="apWaitN"></span></h3>
     <div class="card list scroll" id="apWait"></div>
     <div id="apInstW"><h3 style="margin-top:28px">Instalments due, not in a report yet <span id="apInstN"></span></h3>
@@ -1313,7 +1316,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   </section>
 
   <section id="secVcrApprove" hidden>
-    <div class="head"><div class="grow"><button class="link-btn" id="vaBack">Back to the report</button><h2 id="vaTitle" class="mono"></h2><p class="sub">Tick the vouchers you approve. Approved settled vouchers come off the preparer's cash; approved payable vouchers go straight to the financier's Payment Entry. Untick a voucher to send it back to the preparer with a reason; it leaves this report.</p></div></div>
+    <div class="head"><div class="grow"><button class="link-btn" id="vaBack">Back to the report</button><h2 id="vaTitle" class="mono"></h2><p class="sub">Choose a decision for each voucher, or tick several and set them together. Approved settled vouchers come off the preparer's cash; approved payable vouchers go straight to the financier's Payment Entry. A voucher sent back leaves this report with its reason.</p></div></div>
     <div class="dv-split" id="vaSplit"><div class="ao-doc dv-doc" id="vaDoc" hidden></div><div class="dv-main">
     <div class="stats" id="vaStats"></div>
     <div id="vaBox"></div>
@@ -2007,7 +2010,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
 
   /* ================= responsibilities: who does which step for which company ================= */
   /* Job roles every user must have. Each suggests the steps it usually does; the admin can still change the ticks. */
-  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["chiefacct", "Chief Accountant", "Every company, no need to choose: does the accounting, keeps vendors and ledgers, and sees payments, payables and advances (doesn't record payments)"], ["approver", "Approver", "Approves checking reports and cash advances that name them, in the Approvals app"], ["recorder", "Approval Recorder", "Records approvals already signed on paper by an admin or approver, in their name; is never named as approver"], ["vmaker", "Expenses Operator", "Enters vouchers (and, in Bills & Vouchers, bills) for other people, chosen from a saved list of names, and their checking reports"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Sales", "Renewable Energy: reads the TNPDCL statements for solar plants and windmills, issues the bills of supply to consumers and records their receipts"]];
+  var JOBS = [["purchaser", "Purchaser", "Enters bills, proformas, imports and vouchers, and makes the checking reports"], ["accountant", "Accountant", "Accounts every bill and voucher: ledgers and TDS; keeps the ledgers and vendors"], ["chiefacct", "Chief Accountant", "Every company, no need to choose: does the accounting, keeps vendors and ledgers, and sees payments, payables and advances (doesn't record payments)"], ["approver", "Approver", "1st approver, in the Approvals app: checks the checking reports chosen under Approver Of and passes them on to an admin (vouchers: may approve in full); approves cash advances that name them"], ["recorder", "Approval Recorder", "Records approvals already signed on paper by an admin or approver, in their name; is never named as approver"], ["vmaker", "Expenses Operator", "Enters vouchers (and, in Bills & Vouchers, bills) for other people, chosen from a saved list of names, and their checking reports"], ["financier", "Financier", "Pays out: Payment Entry"], ["solar", "Sales", "Renewable Energy: reads the TNPDCL statements for solar plants and windmills, issues the bills of supply to consumers and records their receipts"]];
   /* A Chief Accountant covers every company without choosing: the accounting step everywhere, and a view of the finance reports. */
   function isChief(u) { return !!u && u.active !== false && (u.jobRoles || []).indexOf("chiefacct") >= 0; }
   function meChief() { return !S.isAdmin && isChief(S.myUser); }
@@ -2134,7 +2137,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     who.appendChild(el("b", null, rec.name || "No name given"));
     if (extra) who.appendChild(extra);
     if (profile && (profile.name || profile.email)) who.appendChild(el("span", { class: "ln" }, "Signed in as " + [profile.name, profile.email].filter(Boolean).join(" · ")));
-    who.appendChild(el("span", { class: "ln" }, "Location: " + (locName(rec.locationId) || "Not set") + " · Department: " + (deptName(rec.deptId) || "Not set") + " · Role: " + (jobsText(jobsOf(rec)) || "Not set") + " · Apps: " + (appsOf(rec) || "None")));
+    who.appendChild(el("span", { class: "ln" }, "Location: " + (locName(rec.locationId) || "Not set") + " · Department: " + (deptName(rec.deptId) || "Not set") + " · Role: " + (jobsText(jobsOf(rec)) || "Not set") + (jobsOf(rec).indexOf("approver") >= 0 ? " (1st approver of " + apprOfUser(rec).map(function (k) { return APPR_OF.filter(function (x) { return x[0] === k; })[0][2].toLowerCase(); }).join(", ") + ")" : "") + " · Apps: " + (appsOf(rec) || "None")));
     who.appendChild(companyTags(rec.companyIds));
     row.appendChild(who);
     return row;
@@ -2305,7 +2308,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function fillUserForm(src, roles, balUid) {
     var js = jobsOf(src); jobChecks($("uJobs"), js); $("uJobsE").hidden = true;
     var ap = appsWith(src), dv = divsOf(src); $("uAppMnt").checked = dv.indexOf("mnt") >= 0; $("uAppRe").checked = dv.indexOf("re") >= 0; $("uAppBnv").checked = dv.indexOf("bnv") >= 0; $("uReCo").checked = !!(src && src.reCompanies); $("uAppBv").checked = !src || !src.apps || src.apps.bv !== false; $("uAppWb").checked = !!(src && src.apps && src.apps.wb); var pp0 = (src && src.apps && src.apps.pp) || null; $("uAppPp").checked = !!(pp0 && pp0.role); $("uPpRole").value = (pp0 && pp0.role) || ""; $("uPpRegion").value = (pp0 && pp0.region) || ""; $("uEApps").hidden = true; syncAppsF();
-    var ua = $("uAppr"); ua.parentNode.replaceChild(approverSelect("uAppr", src.defaultApproverId || ""), ua); $("uAppr").options[0].textContent = "Choose the default approver"; syncApprF();
+    var ua = $("uAppr"); ua.parentNode.replaceChild(approverSelect("uAppr", src.defaultApproverId || ""), ua); $("uAppr").options[0].textContent = "Choose the default approver";
+    var ao = $("uApOf"), aon = apprOfUser(src); ao.textContent = ""; APPR_OF.forEach(function (k) { var lab = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: k[0] }), tx = el("span"); cb.checked = aon.indexOf(k[0]) >= 0; tx.appendChild(el("b", null, k[1])); tx.appendChild(el("span", null, k[2])); lab.appendChild(cb); lab.appendChild(tx); ao.appendChild(lab); }); $("uEApOf").hidden = true;
+    syncApprF();
     if (!roles && js.length) { roles = {}; (src.companyIds || []).forEach(function (cid) { roles[cid] = stepsForJobs(js); }); }
     $("uName").value = src.name || ""; usLoc.close(); usLoc.fill(src.locationId || ""); usDept.close(); usDept.fill(src.deptId || ""); buildChecks($("uCos"), src.companyIds || [], true);
     S.userEditing.roles = roles; S.userEditing.balUid = balUid;
@@ -2351,6 +2356,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function appsOf(u) { var a = (u && u.apps) || {}, w = appsWith(u), out = APP_KEYS.filter(function (k) { return w[k]; }).map(function (k) { return APP_NAMES[k]; }); if (a.wb) out.push("W/B Costing"); if (a.pp && a.pp.role) out.push("Production Planning (" + ({ approver: "Approver", planner: "Planner", floor: "Floor Team" }[a.pp.role] || a.pp.role) + (a.pp.region ? ", " + ({ E: "Erode", A: "Ambur" }[a.pp.region]) : "") + ")"); return out.join(", "); }
   function syncApprF() {
     var js = readChecks($("uJobs")), on = js.indexOf("purchaser") >= 0; $("uApprF").hidden = !on; if (!on) $("uEAppr").hidden = true;
+    $("uApOfF").hidden = js.indexOf("approver") < 0;
     /* A Chief Accountant alone covers every company: no companies or steps to choose. */
     var only = js.length === 1 && js[0] === "chiefacct", cf = $("uCos").closest(".f"), rs = document.querySelector("#secUser .uresp");
     if (cf && !cf.hidden) { Array.prototype.forEach.call(cf.children, function (c) { if (c.id !== "uChiefNote") c.style.display = only ? "none" : ""; }); var n = $("uChiefNote"); if (!n) { n = el("p", { class: "sub", id: "uChiefNote", style: "margin:0" }); cf.appendChild(n); } n.textContent = "Chief Accountant: every company, now and later. No need to choose."; n.hidden = !only; }
@@ -2380,6 +2386,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     else if (rolesClash(roles).length) { $("uJobsE").textContent = "For " + rolesClash(roles).map(coLabel).join(", ") + ", this person both enters purchases and approves. One person can't be both Purchaser and Approver: untick Approval or the purchase steps there."; $("uJobsE").hidden = false; ok = false; }
     if (jobs.indexOf("recorder") >= 0 && jobs.indexOf("approver") >= 0) { $("uJobsE").textContent = "An Approval Recorder records others' approvals and can't also be an Approver. Untick one."; $("uJobsE").hidden = false; ok = false; }
     var purch = appBv && jobs.indexOf("purchaser") >= 0, defAppr = purch ? $("uAppr").value : "";
+    var apOf = jobs.indexOf("approver") >= 0 ? readChecks($("uApOf")) : null; $("uEApOf").hidden = true; if (apOf && !apOf.length) { $("uEApOf").hidden = false; ok = false; }
     if (purch && !defAppr) { $("uEAppr").hidden = false; ok = false; }
     var accOn = !$("uAccF").hidden, acc = accOn ? $("uAcc").value : "", pin = $("uPin").value.trim(), cur = S.users[uid] || {};
     $("uEMail").hidden = true; $("uEPw").hidden = true;
@@ -2390,7 +2397,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (!ok) return;
     S.busy = true; $("userSave").disabled = true;
     (acc && pin ? pinHash(uid, pin) : Promise.resolve("")).then(function (ph) {
-    var extra = { deptId: dept, jobRoles: jobs, defaultApproverId: defAppr || null, apps: apps, reCompanies: !!(ma.re && $("uReCo").checked) };
+    var extra = { deptId: dept, jobRoles: jobs, defaultApproverId: defAppr || null, apprOf: apOf, apps: apps, reCompanies: !!(ma.re && $("uReCo").checked) };
     if (accOn) { extra.accountedFor = acc || null; extra.unlinked = !acc; if (ph) extra.pinHash = ph; else if ((!acc || S.userEditing.resetPin) && cur.pinHash) extra.pinHash = null; }
     var job;
     if (mode === "login") {
@@ -2403,7 +2410,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
         .then(function () { if (obs && Object.keys(obs).length) return retry(function () { return S.db.doc("balances/" + uid).set({ openings: obs, name: name, updatedAt: now, updatedBy: by }); }); });
     } else if (mode === "approve" && link) {
       var rq = S.requests[uid] || {};
-      job = relinkPerson(link, uid, { name: name, locationId: loc, deptId: dept, jobRoles: jobs, defaultApproverId: defAppr || null, apps: apps, companyIds: cos, roles: roles, active: true, requestedAt: rq.at || now, approvedAt: now, updatedAt: now, by: by, linkedFrom: link, linkedAt: now }, obs)
+      job = relinkPerson(link, uid, { name: name, locationId: loc, deptId: dept, jobRoles: jobs, defaultApproverId: defAppr || null, apprOf: apOf, apps: apps, companyIds: cos, roles: roles, active: true, requestedAt: rq.at || now, approvedAt: now, updatedAt: now, by: by, linkedFrom: link, linkedAt: now }, obs)
         .then(function () { return retry(function () { return S.db.doc("requests/" + uid).update({ status: "approved", decidedAt: now, linkedFrom: link }); }); });
     } else if (mode === "approve") {
       var r = S.requests[uid] || {};
@@ -2654,9 +2661,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       var st = stageOf(r);
       if (st === "payment") { goDone("Report " + r.no + " is already approved."); return true; }
       if (st !== "generated" && st !== "printed") { goDone("Report " + r.no + " isn't waiting for approval any more."); return true; }
-      if (S.isAdmin) APV.who = "*"; else if (!apprMine(r)) { goDone("Report " + r.no + " waits for another approver."); return true; }
+      if (S.isAdmin) { APV.who = "*"; APV.early = true; } else if (!apprMine(r)) { goDone("Report " + r.no + " waits for another approver."); return true; }
       goDone(); setTab("Approvals"); openReport(id);
-      if (r.kind === "vcr") openVcrApprove(r); else if (r.kind === "inst") instApproveForm(r); else crApproveForm(r);
+      if (r.kind === "vcr") openVcrApprove(r); else if (l1Wait(r) && meL1For(r)) l1PassForm(r); else if (r.kind === "inst") instApproveForm(r); else crApproveForm(r);
       return true;
     }
     var a = S.cashadv[id]; if (!a) return false;
@@ -4207,7 +4214,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       tds: b.entryTds || "", tdsSec: b.entryTdsSection || "",
       termDays: b.termDays == null ? "" : String(b.termDays), termChoice: b.termChoice || "", updateVendorTerm: !!b.updateVendorTerm, narration: b.narration || "", advPick: b.advPick || "", advWhy: b.advWhy || "",
       supplyOf: b.supplyOf || "", einv: { irn: (b.einv && b.einv.irn) || "", ackNo: (b.einv && b.einv.ackNo) || "", ackDate: b.einv && b.einv.ackDate ? fmtDate(b.einv.ackDate) : "" },
-      ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", forId: b.madeBy ? b.preparedBy || "" : "", forNew: "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), settle: b.settle ? "yes" : "no", X: Object.assign({}, extOf(b, DIV))
+      ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", forId: b.madeBy ? b.preparedBy || "" : "", forNew: "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), approver1Id: b.approver1Id || "", settle: b.settle ? "yes" : "no", X: Object.assign({}, extOf(b, DIV))
     };
   }
   function draftFromBill(b) { var D = draftFrom(b); if (!D.ledgers.length && num(D.taxable) != null && num(D.taxable) > 0) D.ledgers.push({ id: "", amt: D.taxable }); return D; }
@@ -4234,9 +4241,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var m = {};
     (S.supers || []).forEach(function (p) { if (p && p.id) m[p.id] = { id: p.id, name: pnm(p.name) || "Super Admin" }; });
     Object.keys(S.admins || {}).forEach(function (k) { var a = S.admins[k]; if (a && a.active !== false && !m[k]) m[k] = { id: k, name: pnm(a.name) || userLabel(k) || "Admin" }; });
-    var ap = Object.assign({}, S.approvers || {}); Object.keys(S.users || {}).forEach(function (k) { if ((S.users[k].jobRoles || []).indexOf("approver") >= 0) ap[k] = S.users[k]; });
-    Object.keys(ap).forEach(function (k) { var u = (S.users || {})[k] || ap[k]; if ((S.admins || {})[k]) return; if (!u || (u.jobRoles || []).indexOf("approver") < 0 || (u.jobRoles || []).indexOf("recorder") >= 0) delete ap[k]; });
-    Object.keys(ap).forEach(function (k) { var u = ap[k]; if (u && u.active !== false && !m[k] && (!cid || userHas(Object.assign({ id: k }, u), "appr", cid))) m[k] = { id: k, name: pnm(u.name) || "Approver" }; });
+    /* People with the Approver job are 1st approvers (l1List); the final, 2nd approver is always an admin. */
     return Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return natCmp(a.name, b.name); });
   }
   function approverName(x) {
@@ -4255,14 +4260,56 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (cur && !ls.some(function (a) { return a.id === cur; })) o.push([cur, "Former approver"]);
     fillSelect(sel, o, cur || ""); return sel;
   }
-  function approverFields(id) { var a = approverList().filter(function (y) { return y.id === id; })[0]; return { approverId: id || "", approverName: a ? a.name : "" }; }
+  function approverFields(id, id1) {
+    var a = approverList().filter(function (y) { return y.id === id; })[0], o = { approverId: id || "", approverName: a ? a.name : "" };
+    if (id1 !== undefined) { var b = l1List().filter(function (y) { return y.id === id1; })[0]; o.approver1Id = b ? id1 : ""; o.approver1Name = b ? b.name : ""; }
+    return o;
+  }
+  /* ---- Two levels of approval ----
+     1st approvers: people with the Approver job, for the checking reports ticked under Approver Of. On bills, proformas and imports
+     a 1st approver is optional and only checks and passes on. Every voucher goes to all the voucher 1st approvers, who may approve it
+     in full, pass it on to a 2nd approver, or send it back. 2nd approvers are the admins; they give the final approval, and can also
+     act on what is still with a 1st approver. */
+  var APPR_OF = [["bcr", "Bill Checking Reports", "Bills"], ["acr", "Advance Checking Reports", "Proformas and imports"], ["vcr", "Voucher Checking Reports", "Vouchers"]];
+  function apprOfUser(u) { return u && u.apprOf && u.apprOf.length ? u.apprOf : APPR_OF.map(function (k) { return k[0]; }); }
+  function l1List(kind, cid) {
+    var us = Object.assign({}, S.approvers || {}, S.users || {});
+    return Object.keys(us).filter(function (k) {
+      var u = us[k]; if (!u || u.active === false || (S.admins || {})[k] || (S.supers || []).some(function (p) { return p.id === k; })) return false;
+      var js = u.jobRoles || []; if (js.indexOf("approver") < 0 || js.indexOf("recorder") >= 0) return false;
+      return (!kind || apprOfUser(u).indexOf(kind) >= 0) && (!cid || userHas(Object.assign({ id: k }, u), "appr", cid));
+    }).map(function (k) { return { id: k, name: pnm(us[k].name) || "Approver" }; }).sort(function (a, b) { return natCmp(a.name, b.name); });
+  }
+  function l1Select(id, kind, cur) {
+    var sel = el("select", { class: "field", id: id }), ls = l1List(kind), o = [["", "None: straight to the 2nd approver"]];
+    ls.forEach(function (a) { o.push([a.id, a.name]); }); if (cur && !ls.some(function (a) { return a.id === cur; })) o.push([cur, "Former 1st approver"]);
+    fillSelect(sel, o, cur || ""); return sel;
+  }
+  function repKindKey(r) { return r.kind === "vcr" ? "vcr" : r.kind === "inst" ? "acr" : "bcr"; }
+  /* A report still waiting for its 1st approver. */
+  function l1Wait(r) { var s = stageOf(r); return r.l1 === "wait" && (s === "generated" || s === "printed"); }
+  function l1Names(r) { if (r.kind === "vcr") return l1List("vcr").filter(function (a) { return apprCos(r).some(function (cid) { return l1List("vcr", cid).some(function (b) { return b.id === a.id; }); }); }).map(function (a) { return a.name; }).join(", ") || "the voucher 1st approvers"; return pnm(r.approver1Name) || (l1List().filter(function (a) { return a.id === r.approver1Id; })[0] || {}).name || "the 1st approver"; }
+  /* Am I this report's 1st approver? */
+  function meL1For(r) {
+    var u = S.myUser; if (S.isAdmin || S._adm || APP !== "apr" || !u || demoAppr()) return false;
+    if ((u.jobRoles || []).indexOf("approver") < 0 || apprOfUser(u).indexOf(repKindKey(r)) < 0) return false;
+    if (r.kind !== "vcr" && r.approver1Id !== meId()) return false;
+    return apprCos(r).some(function (cid) { return canStep("appr", cid); });
+  }
+  function l1Text(r) {
+    if (r.l1 === "wait") return "With 1st approver: " + l1Names(r);
+    if (r.l1 === "passed") return "Checked by " + pnm(r.l1ByName) + ", passed on" + (r.l1At ? " " + fmtDay(r.l1At) : "");
+    if (r.l1 === "final") return "Approved by 1st approver " + pnm(r.l1ByName);
+    return "";
+  }
   /* The approvers named on the bills, vouchers or proforma in a checking report. */
   function crApprovers(r) {
     var xs = r.kind === "vcr" ? (r.voucherIds || []).map(function (id) { return S.vouchers[id]; }) : r.kind === "inst" ? [S.advances[r.advanceId]] : (r.billIds || []).map(function (id) { return S.bills[id]; });
     var m = {}; xs.forEach(function (x) { var n = approverName(x); if (n) m[n] = 1; });
     return Object.keys(m).sort(natCmp).join(", ");
   }
-  var APPR_HINT = "The approver (or admin) who approves it, in the Approvals app.";
+  var APPR_HINT = "The admin who gives the final approval, in the Approvals app.";
+  var APPR1_HINT = "Checks it first and passes it on to the 2nd approver.";
   function prepName(x) { return pnm(x.preparedByName) || (S.isAdmin ? userLabel(prepOf(x)) : prepOf(x) === meId() ? preparedByText() : "") || ""; }
   /* A final bill started from a proforma or import counts under Proformas, imports, Advance Checking Report as well as Bills. */
   function billStep(b) { return b && b.advanceId ? "adv" : "bills"; }
@@ -4292,7 +4339,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: D.narration.trim(), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
       ledgers: ledLinesOut(D.ledgers), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || "",
       settle: D.settle === "yes" && billAdvOk(D), supplyOf: D.supplyOf || "", einv: einvOf((D.einv || {}).irn, (D.einv || {}).ackNo, parseDate((D.einv || {}).ackDate || ""))
-    }, amountsOf(D), prepFields(D.prepBy), approverFields(D.approverId), extDoc(D.companyId, D.X));
+    }, amountsOf(D), prepFields(D.prepBy), approverFields(D.approverId, D.approver1Id || ""), extDoc(D.companyId, D.X));
   }
   /* Whose cash a bill would come out of, and whether paying it from that cash advance is offered (rupee bills only). */
   function billWho(D) { return S.isAdmin ? D.prepBy : bnvMaker() ? (D.forId === meId() ? meId() : "") : meId(); }
@@ -4554,7 +4601,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       var bn = fld("Name", inp("bcForNew", D.forNew || "", { maxlength: "80", autocomplete: "off", "data-fmt": "name" }), "Saved, and offered next time."); bn.hidden = D.forId !== "new"; f.appendChild(bn);
       bf.addEventListener("change", function () { bn.hidden = bf.value !== "new"; });
     }
-    f.appendChild(fld("Approver", approverSelect("bcAppr", D.approverId), APPR_HINT));
+    f.appendChild(fld("2nd Approver (final)", approverSelect("bcAppr", D.approverId), APPR_HINT));
+    if (l1List("bcr").length) f.appendChild(fld("1st Approver (optional)", l1Select("bcAppr1", "bcr", D.approver1Id), APPR1_HINT));
     var stl = el("select", { class: "field", id: "bcSettle" }); fillSelect(stl, [["no", "No, the financier pays the vendor"], ["yes", "Yes, I paid it from my cash advance"]], D.settle === "yes" ? "yes" : "no");
     var stf = fld("Paid from cash advance?", stl, " "); stf.id = "bcSetF"; stf.hidden = true; f.appendChild(stf);
     var ven = el("select", { class: "field", id: "bcVen" }); fillSelect(ven, vendorOpts(D), D.vendorChoice);
@@ -4632,7 +4680,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     D.taxable = $("bcTax").value; D.gstAmt = $("bcGst").value;
     if ($("bcIrn")) D.einv = { irn: $("bcIrn").value, ackNo: $("bcAck").value, ackDate: $("bcAckD").value };
     if ($("bcSupply")) D.supplyOf = $("bcSupply").value;
-    D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value; if ($("bcFor")) { D.forId = $("bcFor").value; D.forNew = $("bcForNew").value; } if ($("bcAppr")) D.approverId = $("bcAppr").value; if ($("bcSettle")) D.settle = $("bcSettle").value;
+    D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value; if ($("bcFor")) { D.forId = $("bcFor").value; D.forNew = $("bcForNew").value; } if ($("bcAppr")) D.approverId = $("bcAppr").value; if ($("bcAppr1")) D.approver1Id = $("bcAppr1").value; if ($("bcSettle")) D.settle = $("bcSettle").value;
     if ($("bcTerm")) D.termDays = $("bcTerm").value;
     if ($("bcTds")) { D.tds = $("bcTds").value; D.tdsSec = $("bcTdsSec").value; }
     var r = document.querySelector('input[name="bcTermPick"]:checked'); if (r) D.termChoice = r.value;
@@ -5915,7 +5963,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function tdsText(n, cur) { n = Number(n) || 0; return n > 0 ? "(" + curMoney(cur, n) + ")" : curMoney(cur, 0); }
   function stageTag(r) { var s = stageOf(r); return el("span", { class: "tag stg s-" + s }, STAGE[s]); }
-  function draftFor(cid, vid, prep, appr) { var ks = Object.keys(S.reports); for (var i = 0; i < ks.length; i++) { var r = S.reports[ks[i]]; if (r.kind !== "vcr" && r.companyId === cid && r.vendorId === vid && stageOf(r) === "draft" && (!r.preparedById || r.preparedById === prep) && (r.approverId || "") === (appr || "")) return r; } return null; }
+  function draftFor(cid, vid, prep, appr) { var ks = Object.keys(S.reports); for (var i = 0; i < ks.length; i++) { var r = S.reports[ks[i]]; if (r.kind !== "vcr" && r.companyId === cid && r.vendorId === vid && stageOf(r) === "draft" && (!r.preparedById || r.preparedById === prep) && apKey(r.approverId, r.approver1Id) === (appr || "")) return r; } return null; }
   function logEntry(stage, note) { return { stage: stage, at: Date.now(), by: meId(), name: preparedByText(), note: note || "" }; }
   function ridx() {
     if (RIDX) return RIDX;
@@ -5942,12 +5990,17 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     });
     return out;
   }
+  /* Bill Checking Reports are made per 2nd approver and 1st approver: "2nd~1st" (just "2nd" when there is no 1st). */
+  function apKey(a2, a1) { return (a2 || "") + (a1 ? "~" + a1 : ""); }
+  function apSplit(k) { var p = String(k || "").split("~"); return { a2: p[0] || "", a1: p[1] || "" }; }
+  function apprPair(k) { var x = apSplit(k), b = x.a1 ? (l1List().filter(function (a) { return a.id === x.a1; })[0] || {}) : {}; return { approverId: x.a2, approver1Id: x.a1, approver1Name: b.name || "", l1: x.a1 ? "wait" : null, l1By: null, l1ByName: "", l1At: null, l1Note: "" }; }
+  function apKeyText(k) { var x = apSplit(k), n = approverName({ approverId: x.a2 }) || "Not named"; if (x.a1) n += " (1st: " + ((l1List().filter(function (a) { return a.id === x.a1; })[0] || {}).name || "former approver") + ")"; return n; }
   function checkGroups(cidFilter) {
     var g = {};
     awaitingCheck().forEach(function (b) {
       if (cidFilter && b.companyId !== cidFilter) return;
       /* One report per company, vendor, preparer and approver: each report goes to one approver. */
-      var pb = prepOf(b), ap = b.approverId || "", k = b.companyId + "|" + b.vendorId + "|" + pb + "|" + ap, x = g[k] || (g[k] = { cid: b.companyId, vid: b.vendorId, prep: pb, appr: ap, prepName: prepName(b), bills: [], total: 0, oldest: 0 });
+      var pb = prepOf(b), ap = apKey(b.approverId, b.approver1Id), k = b.companyId + "|" + b.vendorId + "|" + pb + "|" + ap, x = g[k] || (g[k] = { cid: b.companyId, vid: b.vendorId, prep: pb, appr: ap, prepName: prepName(b), bills: [], total: 0, oldest: 0 });
       x.bills.push(b); x.total += checkOf(b) ? billRest(b) : Number(b.total) || 0; if (b.submittedAt && (!x.oldest || b.submittedAt < x.oldest)) x.oldest = b.submittedAt;
     });
     return Object.keys(g).map(function (k) { return g[k]; }).filter(function (x) { return S.vendors[x.vid]; });
@@ -5984,7 +6037,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       { label: "Vendor", sort: function (x) { return S.vendors[x.vid].name; }, cell: function (x, td) {
           var v = S.vendors[x.vid]; td.appendChild(el("b", null, v.name)); if (v.gstin) sub(td, v.gstin);
           if (!opening(v, x.cid)) { var n = el("span", { class: "needs" }); n.appendChild(warnIcon("Blocked")); n.appendChild(document.createTextNode(" Opening balance for " + coLabel(x.cid) + " isn't captured yet.")); td.appendChild(n); } } },
-      { label: "Approver", sort: function (x) { return approverName({ approverId: x.appr }); }, cell: function (x, td) { txt(td, approverName({ approverId: x.appr }) || "Not named"); } },
+      { label: "Approver", sort: function (x) { return apKeyText(x.appr); }, cell: function (x, td) { txt(td, apKeyText(x.appr)); } },
       { label: "Prepared by", who: function (x) { return x.prepName; }, sort: function (x) { return x.prepName; }, cell: function (x, td) { txt(td, x.prepName || "Not recorded"); } },
       { label: "Bills", cls: "r num", sort: function (x) { return x.bills.length; }, desc: true, cell: function (x, td) { txt(td, x.bills.length); } },
       { label: "Total amount", cls: "r num", sort: function (x) { return x.total; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, money(x.total))); } },
@@ -6027,7 +6080,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function openDraft(id) {
     var r = S.reports[id]; if (!r) return;
-    CK.draftId = id; CK.cid = r.companyId; CK.vid = r.vendorId; CK.prep = r.preparedById || (reportBills(r)[0] ? prepOf(reportBills(r)[0]) : ""); CK.appr = r.approverId || ""; CK.sel = {};
+    CK.draftId = id; CK.cid = r.companyId; CK.vid = r.vendorId; CK.prep = r.preparedById || (reportBills(r)[0] ? prepOf(reportBills(r)[0]) : ""); CK.appr = apKey(r.approverId, r.approver1Id); CK.sel = {};
     newCheckBills().forEach(function (b) { CK.sel[b.id] = true; });
     renderNewCheck(); show("secCheckNew");
   }
@@ -6154,7 +6207,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       id = d.id; doc = Object.assign({}, d); delete doc.id;
       Object.assign(doc, { billIds: bills.map(function (b) { return b.id; }), taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to,
         tds: 0, amts: crAmtsFor(bills), appr: null, sentBack: [], backNote: "", stage: "generated", generatedAt: now, generatedBy: meId(), log: (d.log || []).concat([logEntry("generated")]), currency: billsCur(bills), billTds: true,
-        preparedById: CK.prep || "", approverId: CK.appr || "", preparedBy: prepName(bills[0]) || d.preparedBy || "" });
+        preparedById: CK.prep || "", preparedBy: prepName(bills[0]) || d.preparedBy || "" }, apprPair(CK.appr));
     } else {
       /* Numbers run through the financial year (April to March) for each company and restart at 01 the next year.
          A cancelled report is deleted, so the next report takes the lowest free number. */
@@ -6167,8 +6220,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       var code = normId(c.shortName || c.name).slice(0, 10) || "CO";
       id = newId("r");
       doc = { no: serialNo(code + "-BCR", seq, day, fy), seq: seq, fy: fy, companyId: CK.cid, vendorId: CK.vid, billIds: bills.map(function (b) { return b.id; }),
-        taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to, checkDate: day, preparedBy: prepName(bills[0]) || preparedByText(), preparedById: CK.prep || "", approverId: CK.appr || "", billTds: true, createdAt: now, createdBy: meId(),
+        taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to, checkDate: day, preparedBy: prepName(bills[0]) || preparedByText(), preparedById: CK.prep || "", billTds: true, createdAt: now, createdBy: meId(),
         tds: 0, amts: crAmtsFor(bills), stage: "generated", generatedAt: now, generatedBy: meId(), log: [logEntry("generated")], currency: billsCur(bills) };
+      Object.assign(doc, apprPair(CK.appr));
     }
     CK.busy = true; $("cnCreate").disabled = true;
     retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () {
@@ -6286,13 +6340,34 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     });
     box.appendChild(b); return b;
   }
+  /* Saves a 1st approver's step on a report, without changing its stage. */
+  function l1Save(r, extra, note) {
+    var doc = Object.assign({}, r); delete doc.id;
+    Object.assign(doc, extra, { log: (r.log || []).concat([logEntry(stageOf(r), note)]) });
+    return retry(function () { return S.db.doc("reports/" + r.id).set(doc); }).then(function () { S.reports[r.id] = Object.assign({ id: r.id }, doc); invalidate(); renderNav(); });
+  }
+  /* A 1st approver checks a Bill or Advance Checking Report and passes it on to its 2nd approver. */
+  function l1PassForm(r) {
+    var body = el("div", { class: "mform" }), to = approverName(r) || "the 2nd approver";
+    body.appendChild(tidyField("Note for " + to + " (optional)", tidyBox("l1Note", "", "note", 300), "Anything they should know before approving."));
+    popForm("Pass on " + r.no, "You have checked it. It goes to " + to + " for the final approval.", body, "Checked, pass on", function () {
+      return (tidyPending("l1Note") || Promise.resolve()).then(function () {
+        var note = sentenceFix($("l1Note").value.trim()), now = Date.now();
+        return l1Save(r, { l1: "passed", l1By: meId(), l1ByName: pnm(preparedByText()), l1At: now, l1Note: note }, "Checked by the 1st approver and passed on to " + to + (note ? ". " + note : "")).then(function () {
+          toast(r.no + " passed on to " + to + "."); backToChecks(); return true;
+        }, function (e) { toast(explain(e)); return false; });
+      });
+    });
+  }
   function renderActions(r) {
     var box = $("cvActs"), s = stageOf(r), hint = $("cvHint"), admin = S.isAdmin;
+    if (l1Text(r)) $("cvSub").textContent += " " + l1Text(r) + "." + (r.l1Note ? " Note: " + r.l1Note : "");
     function actBtn(b0, label, cls, fn, arm) { if (noApprove(label)) return; return actBtnAll(b0, label, cls, fn, arm); }
     box.textContent = ""; hint.textContent = "";
     if (S.tab === "Approvals" && apprUser()) {
       if (S.downloads) actBtnAll(box, "Download PDF", "", function (b) { downloadReport(r.id, b); });
-      if ((s === "generated" || s === "printed") && apprMine(r)) { actBtnAll(box, "Approve for payment", "primary", function () { if (r.kind === "inst") instApproveForm(r); else crApproveForm(r); }); hint.textContent = r.kind === "inst" ? "Approve the instalment, or part of it; the rest goes back to the purchaser." : "Approve it bill by bill: untick a bill to send it back, or lower its amount to approve part of it."; }
+      if (l1Wait(r) && meL1For(r)) { actBtnAll(box, "Checked, pass on", "primary", function () { l1PassForm(r); }); hint.textContent = "You are the 1st approver: check it and pass it on to " + (approverName(r) || "the 2nd approver") + ", who gives the final approval."; }
+      else if ((s === "generated" || s === "printed") && apprMine(r)) { actBtnAll(box, "Approve for payment", "primary", function () { if (r.kind === "inst") instApproveForm(r); else crApproveForm(r); }); hint.textContent = r.kind === "inst" ? "Approve the instalment, or part of it; the rest goes back to the purchaser." : "Approve it bill by bill: untick a bill to send it back, or lower its amount to approve part of it."; }
       else if (s === "payment") {
         hint.textContent = apprByText(r) + ", " + stamp(r.approvedAt) + ".";
         if (admin && (r.kind === "inst" ? !advPaid(r.advanceId, r.inst) && !instLaterReport(r) : !inLockedPlan(r.id))) actBtnAll(box, "Undo approval", "", function () { if (r.kind === "inst") setStage(r, "printed", { apprAmt: null, backNote: "" }); else undoCrApprove(r); }, "Click again to undo the approval");
@@ -6364,7 +6439,16 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     fillSelect(sel, [[me, "Assigned to me"]].concat(others.map(function (a) { return [a.id, "Assigned to " + a.name]; })).concat([["*", "Everyone's"]]), st.who); st.who = sel.value; sel.hidden = false;
     if (!sel._on) { sel._on = 1; sel.addEventListener("change", function () { st.who = sel.value; rerender(); }); }
   }
-  function apprMine(r) { if (S.isAdmin) return whoOk(APV, reportApproverId(r)); return APP === "apr" && apprForMe(r, reportApproverId(r)) && apprCos(r).some(function (cid) { return canApprove(cid); }); }
+  /* What shows in my Approvals: a 1st approver sees what waits for them; a 2nd approver (or the recorder) sees what has been passed on
+     or has no 1st approver, and with "Also show" what is still with a 1st approver. */
+  function apprMine(r) {
+    var early = !l1Wait(r) || APV.early;
+    if (S.isAdmin) return early && whoOk(APV, reportApproverId(r));
+    if (APP !== "apr") return false;
+    if (l1Wait(r) && meL1For(r)) return true;
+    if (r.l1By && r.l1By === meId()) return stageOf(r) === "payment";
+    return early && apprForMe(r, reportApproverId(r)) && apprCos(r).some(function (cid) { return canApprove(cid); });
+  }
   /* The approver a checking report is for: saved on it, or (older reports) the one most of its entries name. */
   function reportApproverId(r) { return r.approverId || reportApprover(r); }
   function apprKind(r) { return r.kind === "vcr" ? (r.direct ? "Vouchers (no checking report)" : "Voucher Checking Report") : r.kind === "inst" ? "Advance Checking Report" : "Bill Checking Report"; }
@@ -6409,10 +6493,33 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
           b.addEventListener("click", function () { createInstReport(x.a, x.i, b, true).then(function (r) { if (r) { renderApprovals(); instApproveForm(r); } }); }); td.appendChild(b); } }
     ], list, { sortIndex: 2, sortDir: 1 });
   }
+  /* Filters on the Approvals lists (report kind, company, prepared by, vendor), and for 2nd approvers the button that also shows
+     what is still with a 1st approver. */
+  function apprPrep(r) { return pnm(r.preparedBy) || (r.kind === "inst" ? "" : userLabel(r.preparedById || "")) || ""; }
+  function apprFilter(list, build) {
+    var f = APV.f || (APV.f = { kind: "", co: "", prep: "", ven: "" });
+    if (build) {
+      var box = $("apFilt"); box.textContent = "";
+      var opts = function (fn) { var m = {}; list.forEach(function (r) { fn(r).forEach(function (x) { if (x[0]) m[x[0]] = x[1]; }); }); return Object.keys(m).map(function (k) { return [k, m[k]]; }).sort(function (a, b) { return natCmp(a[1], b[1]); }); };
+      [["kind", "Every kind of report", [["bcr", "Bill Checking Reports"], ["acr", "Advance Checking Reports"], ["vcr", "Voucher Checking Reports"]]],
+       ["co", "Every company", opts(function (r) { return apprCos(r).map(function (c) { return [c, coLabel(c)]; }); })],
+       ["prep", "Everyone who prepared", opts(function (r) { var n = apprPrep(r); return [[n, n]]; })],
+       ["ven", "Every vendor", opts(function (r) { return r.vendorId ? [[r.vendorId, (S.vendors[r.vendorId] || {}).name || ""]] : []; })]].forEach(function (k) {
+        var sel = el("select", { class: "field", "aria-label": k[1] }); fillSelect(sel, [["", k[1]]].concat(k[2]), f[k[0]]); f[k[0]] = sel.value;
+        sel.addEventListener("change", function () { f[k[0]] = sel.value; renderApprovals(); }); box.appendChild(sel);
+      });
+      if ((S.isAdmin && !S._adm) || canDo("rec")) {
+        var n = Object.keys(S.reports).filter(function (k) { var r = S.reports[k]; return l1Wait(r) && (S.isAdmin ? whoOk(APV, reportApproverId(r)) : apprForMe(r, reportApproverId(r))); }).length;
+        var eb = el("button", { type: "button", class: "btn sm", "aria-pressed": APV.early ? "true" : "false" }, APV.early ? "Hide ones still with a 1st approver" : "Also show ones still with a 1st approver" + (n ? " (" + n + ")" : ""));
+        eb.addEventListener("click", function () { APV.early = !APV.early; renderApprovals(); renderNav(); }); box.appendChild(eb);
+      }
+    }
+    return list.filter(function (r) { return (!f.kind || repKindKey(r) === f.kind) && (!f.co || apprCos(r).indexOf(f.co) >= 0) && (!f.prep || apprPrep(r) === f.prep) && (!f.ven || r.vendorId === f.ven); });
+  }
   function renderApprovals() {
     var ds = $("apDiv"); fillSelect(ds, [["", "Every division"]].concat(Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })), APV.div); APV.div = ds.value; whoSelect($("apWho"), APV, renderApprovals);
     $("apSub").textContent = S.isAdmin ? "Checking reports from every division waiting to be approved for payment. Open one to approve it bill by bill." : (canDo("rec") ? "Checking reports from " + recDivs().map(function (k) { return DIVS[k].name; }).join(" and ") + " waiting to be approved for payment. Record an approval signed on paper by choosing who signed it." : "Checking reports that name you as approver, waiting to be approved for payment. Open one to approve it bill by bill.");
-    var w = apprWaiting(), done = apprRecent(), tot = {};
+    var w = apprFilter(apprWaiting(), true), done = apprFilter(apprRecent()), tot = {};
     w.forEach(function (r) { curAdd(tot, r.currency || "INR", r.kind === "vcr" ? (r.payable != null ? r.payable : r.total) : r.kind === "inst" ? r.total : payableOf(r)); });
     statBoxes($("apStats"), [["Waiting", String(w.length), plural(w.length, "report")], ["Amount waiting", curSum(tot) || money(0), ""], ["Approved, 30 days", String(done.length), done.filter(function (r) { return r.onBehalf; }).length + " on behalf"]]);
     $("apWaitN").textContent = w.length ? "(" + w.length + ")" : "";
@@ -6426,7 +6533,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var box = $("apWait"); box.textContent = "";
     if (!w.length) box.appendChild(el("div", { class: "empty" }, "Nothing is waiting for approval."));
     else sortTable(box, "apWait", cols.concat([
-      { label: "Stage", cell: function (r, td) { td.appendChild(stageTag(r)); sub(td, "Since " + fmtDay(r.printedAt || r.generatedAt || r.createdAt)); } },
+      { label: "Stage", cell: function (r, td) { td.appendChild(stageTag(r)); sub(td, "Since " + fmtDay(r.printedAt || r.generatedAt || r.createdAt)); if (l1Text(r)) sub(td, l1Text(r), l1Wait(r) ? "color:var(--warn)" : ""); } },
       { label: "", kind: "act", cls: "r", cell: function (r, td) { var b = el("button", { type: "button", class: "btn sm primary" }, "Open to approve"); b.addEventListener("click", function () { openAppr(r); }); td.appendChild(b); } }
     ]), w, { sortIndex: -1 });
     var db = $("apDone"); db.textContent = "";
@@ -6857,7 +6964,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       insts: (a.installments || []).map(function (it) { return { pct: String(it.pct), when: it.when, days: it.days == null ? "" : String(it.days) }; }),
       dispatch: fmtDate(a.dispatchDate), dispConfirmed: !!a.dispatchConfirmed, arrival: fmtDate(a.arrivalDate),
       igst: a.igst == null ? "" : fmtInput(a.igst), transport: a.transport == null ? "" : fmtInput(a.transport), duty: a.duty == null ? "" : fmtInput(a.duty), other: a.other == null ? "" : fmtInput(a.other),
-      taxBillId: a.taxBillId || "", ex: a.ex || {}, approverId: a.approverId || defaultApprover(a.preparedBy || a.ownerId) };
+      taxBillId: a.taxBillId || "", ex: a.ex || {}, approverId: a.approverId || defaultApprover(a.preparedBy || a.ownerId), approver1Id: a.approver1Id || "" };
   }
   /* What the record would look like if saved now, for working out amounts and due dates while typing. */
   function draftAsAdv(D) {
@@ -6910,7 +7017,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var co = el("select", { class: "field", id: "adCo" }); fillSelect(co, companyOpts(D.companyId, "adv"), D.companyId);
     f.appendChild(fld("Company", co, D.ex && D.ex.companyName ? "On the file: " + D.ex.companyName : ""));
     if (APP === "re") { D.X = D.X || {}; f.appendChild(ccField("adCc", D.companyId, D.X)); co.addEventListener("change", function () { ccSync("adCc", co.value, D.X || {}); }); }
-    f.appendChild(fld("Approver", approverSelect("adAppr", D.approverId), APPR_HINT));
+    f.appendChild(fld("2nd Approver (final)", approverSelect("adAppr", D.approverId), APPR_HINT));
+    if (l1List("acr").length) f.appendChild(fld("1st Approver (optional)", l1Select("adAppr1", "acr", D.approver1Id), APPR1_HINT));
     var ven = el("select", { class: "field", id: "adVen" }); fillSelect(ven, advVendorOpts(D), D.vendorChoice);
     f.appendChild(fld("Vendor", ven, D.ex && D.ex.vendorName ? "On the file: " + D.ex.vendorName : imp ? "Overseas vendors only." : ""));
     var vb = el("div", { class: "vbox", id: "adVBox" }); vb.hidden = D.vendorChoice !== "new";
@@ -7012,7 +7120,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function readAdvForm() {
     var D = ADV.D, imp = ADV.kind === "import"; if (!$("adCo")) return D;
     function v(id) { var e = $(id); return e ? e.value : ""; }
-    D.companyId = v("adCo"); if ($("adCc")) D.X = extRead("ad", D.X || {}); D.vendorChoice = v("adVen"); D.vNew.name = v("adVName"); D.vNew.addr = v("adVAddr"); D.vNew.termDays = v("adVTerm"); D.approverId = v("adAppr");
+    D.companyId = v("adCo"); if ($("adCc")) D.X = extRead("ad", D.X || {}); D.vendorChoice = v("adVen"); D.vNew.name = v("adVName"); D.vNew.addr = v("adVAddr"); D.vNew.termDays = v("adVTerm"); D.approverId = v("adAppr"); if ($("adAppr1")) D.approver1Id = v("adAppr1");
     if (imp) D.vNew.country = v("adVCountry"); else { D.vNew.type = v("adVType"); D.vNew.gstin = v("adVGstin"); }
     D.piNo = v("adNo"); D.piDate = v("adDate"); if (imp) D.currency = v("adCur"); D.total = v("adTotal"); if (!imp) D.gst = v("adGst");
     D.insts = D.insts.map(function (it, i) { return { pct: v("adPct" + i), when: i === 0 ? "receipt" : v("adWhen" + i), days: i === 0 ? "" : v("adDays" + i) }; });
@@ -7094,7 +7202,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var doc = { kind: ADV.kind, companyId: D.companyId, vendorId: vid, vendorNew: null, piNo: D.piNo.trim().toUpperCase(), piDate: pd, currency: imp ? D.currency : "INR", total: round2(tot), gst: !imp && D.gst.trim() ? round2(num(D.gst)) : null,
       installments: D.insts.map(function (it, i) { return { pct: round2(num(it.pct)), when: i === 0 ? "receipt" : it.when, days: i === 0 ? 0 : dayCount(it.days) }; }),
       dispatchDate: dd || null, dispatchConfirmed: !!(D.dispConfirmed && dd), narration: sentenceFix(D.narration.trim()), updatedAt: now, updatedBy: meId(),
-      approverId: D.approverId || "", approverName: approverFields(D.approverId).approverName };
+      approverId: D.approverId || "", approverName: approverFields(D.approverId).approverName, approver1Id: approverFields("", D.approver1Id || "").approver1Id, approver1Name: approverFields("", D.approver1Id || "").approver1Name };
     if (APP === "re") Object.assign(doc, extDoc(D.companyId, D.X));
     if (doc.dispatchConfirmed && !(real && real.dispatchConfirmed && real.dispatchDate === dd)) doc.dispatchConfirmedOn = todayYmd();
     if (!doc.dispatchConfirmed) doc.dispatchConfirmedOn = null;
@@ -7292,7 +7400,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var st0 = a && instState(a, i);
     if (CK.busy || !a || !(st0 === "due" || st0 === "upcoming" || st0 === "dispatch")) return Promise.resolve(null);
     var now = Date.now(), n = nextReportNo(a.companyId, now, "APR"), amt0 = instReport(a, i) ? instRest(a, i) : instAmt(a, i), id = newId("r"), due0 = instDue(a, i) || "";
-    var doc = { kind: "inst", advanceId: a.id, approverId: a.approverId || "", inst: i, advKind: a.kind, no: n.no, seq: n.seq, fy: n.fy, companyId: a.companyId, vendorId: a.vendorId, billIds: [], currency: a.currency || "INR",
+    var doc = { kind: "inst", advanceId: a.id, approverId: a.approverId || "", approver1Id: a.approver1Id || "", approver1Name: a.approver1Name || "", l1: a.approver1Id ? "wait" : null, inst: i, advKind: a.kind, no: n.no, seq: n.seq, fy: n.fy, companyId: a.companyId, vendorId: a.vendorId, billIds: [], currency: a.currency || "INR",
       taxable: null, gst: null, total: amt0, periodFrom: due0, periodTo: due0, early: st0 !== "due", checkDate: n.day, preparedBy: preparedByText(), createdAt: now, createdBy: meId(),
       tds: 0, payable: amt0, stage: "generated", generatedAt: now, generatedBy: meId(), log: [logEntry("generated", instLabel(a, i))] };
     CK.busy = true; if (btn) btn.disabled = true;
@@ -9386,7 +9494,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       var fo = el("select", { class: "field", id: "vfFor" }); fillSelect(fo, vForOpts(D.companyId), D.forId || ""); f.appendChild(fld(APP === "bnv" ? "Prepared by" : "Voucher for", fo, APP === "bnv" ? "Who prepared this voucher: you, or a saved name. It counts as theirs." : "The person whose voucher this is. It counts as theirs: their cash advance and their checking report."));
       var fn = fld("Name", inp("vfForNew", D.forNew || "", { maxlength: "80", autocomplete: "off", "data-fmt": "name" }), "Saved, and offered next time."); fn.id = "vfForNewF"; fn.hidden = D.forId !== "new"; f.appendChild(fn);
     }
-    f.appendChild(fld("Approver", approverSelect("vfAppr", D.approverId), APPR_HINT));
+    f.appendChild(fld("2nd Approver (suggested)", approverSelect("vfAppr", D.approverId), l1List("vcr").length ? "Every voucher first goes to " + l1List("vcr").map(function (a) { return a.name; }).join(" and ") + ", who approve it or pass it on to this admin." : APPR_HINT));
     var ty = el("select", { class: "field", id: "vfType" }); fillSelect(ty, [["", "Choose the type"]].concat(VTYPES_V), D.vtype); f.appendChild(fld("Type of voucher", ty, "Cash Voucher, Self Invoice, or Freight & Transport."));
     var ps = el("select", { class: "field", id: "vfPayeeSel" }); fillSelect(ps, payeeOpts(D), D.payeeChoice);
     f.appendChild(fld("Paid To", ps, "Someone paid before, or a new person or shop."));
@@ -9957,7 +10065,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (!groups.length) { wb.textContent = ""; wb.appendChild(el("div", { class: "empty" }, "No vouchers are waiting for a report.")); }
     else sortTable(wb, "vcWait", [
       { label: "Prepared by", kind: "co", who: function (x) { return x.name; }, sort: function (x) { return x.name; }, cell: function (x, td) { td.appendChild(el("b", null, x.name || "Not recorded")); } },
-      { label: "Approver", sort: function (x) { return approverName({ approverId: x.appr }); }, cell: function (x, td) { txt(td, approverName({ approverId: x.appr }) || "Not named"); } },
+      { label: "Approver", sort: function (x) { return apKeyText(x.appr); }, cell: function (x, td) { txt(td, apKeyText(x.appr)); } },
       { label: "Companies", cell: function (x, td) { txt(td, sorted().filter(function (c) { return x.cos[c.id]; }).map(function (c) { return (c.shortName || c.name) + " (" + x.cos[c.id] + ")"; }).join(", ")); } },
       { label: "Vouchers", cls: "r num", sort: function (x) { return x.vs.length; }, desc: true, cell: function (x, td) { txt(td, x.vs.length); } },
       { label: "Total amount", cls: "r num", sort: function (x) { return x.total; }, desc: true, cell: function (x, td) { td.appendChild(el("b", null, money(x.total))); } },
@@ -10022,6 +10130,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     statBoxes($("vnStats"), [whoStat(["Prepared by", pnm(all[0] && (all[0].preparedByName || prepName(all[0]))) || "Not recorded", ""]), ["Vouchers", sel.length + " of " + all.length, ""], ["Total amount", money(t.total), ""], ["By Financier", money(t.toPay), t.settled ? money(t.settled) + " settled from advance" : ""]]);
     $("vnCreate").disabled = !sel.length || VC.busy;
   }
+  /* Vouchers always go to the voucher 1st approvers first, when there are any for these companies. */
+  function vcrL1(cids) { return (cids || []).some(function (cid) { return l1List("vcr", cid).length; }); }
   function createVcr() {
     if (VC.busy) return;
     var vs = vcrPicked(); if (!vs.length) { toast("Tick at least one voucher."); return; }
@@ -10032,7 +10142,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     cos.forEach(function (cid) { var s = vcrSums(vs.filter(function (v) { return v.companyId === cid; })); byCo[cid] = { total: s.total, tds: s.tds, payable: s.payable, settled: s.settled, toPay: s.toPay }; });
     var id = newId("r"), doc = { kind: "vcr", no: serialNo("VCR", seq, day, fy), seq: seq, fy: fy, voucherIds: vs.map(function (v) { return v.id; }), companyIds: cos, byCo: byCo,
       preparedById: VC.prep, approverId: VC.appr || "", preparedBy: pnm(vs[0].preparedByName || prepName(vs[0])), total: t.total, tds: t.tds, payable: t.payable, settled: t.settled, toPay: t.toPay,
-      periodFrom: t.from, periodTo: t.to, checkDate: day, currency: "INR", stage: "generated", createdAt: now, createdBy: meId(), generatedAt: now, generatedBy: meId(), log: [logEntry("generated")] };
+      periodFrom: t.from, periodTo: t.to, checkDate: day, currency: "INR", stage: "generated", createdAt: now, createdBy: meId(), generatedAt: now, generatedBy: meId(), log: [logEntry("generated")], l1: vcrL1(cos) ? "wait" : null };
     VC.busy = true; $("vnCreate").disabled = true;
     retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () {
       S.reports[id] = Object.assign({ id: id }, doc); invalidate(); renderNav(); toast("Voucher Checking Report " + doc.no + " generated."); openVcr(id);
@@ -10053,7 +10163,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       var t = vcrSums(vs), id = newId("r"), byCo = {}; byCo[cid] = { total: t.total, tds: t.tds, payable: t.payable, settled: t.settled, toPay: t.toPay };
       var doc = { kind: "vcr", direct: true, no: serialNo("VCH", seq, day, fy), seq: seq, fy: fy, voucherIds: vs.map(function (v) { return v.id; }), companyIds: [cid], byCo: byCo,
         preparedById: x.prep, approverId: x.appr || "", preparedBy: pnm(vs[0].preparedByName || prepName(vs[0])), total: t.total, tds: t.tds, payable: t.payable, settled: t.settled, toPay: t.toPay,
-        periodFrom: t.from, periodTo: t.to, checkDate: day, currency: "INR", stage: "generated", createdAt: now, createdBy: meId(), generatedAt: now, generatedBy: meId(), log: [logEntry("generated", "Sent for approval without a checking report")] };
+        periodFrom: t.from, periodTo: t.to, checkDate: day, currency: "INR", stage: "generated", createdAt: now, createdBy: meId(), generatedAt: now, generatedBy: meId(), log: [logEntry("generated", "Sent for approval without a checking report")], l1: vcrL1([cid]) ? "wait" : null };
       return retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () { S.reports[id] = Object.assign({ id: id }, doc); made.push(doc); });
     }); });
     chain.then(function () { invalidate(); renderNav(); toast(plural(made.reduce(function (s0, d) { return s0 + d.voucherIds.length; }, 0), "voucher") + " sent for approval. Print each voucher for signature."); renderVcr(); }, function (e) { toast(explain(e)); renderVcr(); }).then(function () { VC.busy = false; });
@@ -10104,10 +10214,12 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     });
     statBoxes($("vvPay"), [["Total amount", money(r.total), ""], ["Total payable", money(r.payable), ""], ["Settled from advance", money(r.settled), ""], ["By Financier", money(r.toPay), "", "hi"]]);
     var acts = $("vvActs"), hint = $("vvHint"); acts.textContent = ""; hint.textContent = "";
+    if (l1Text(r)) $("vvSub").textContent += " " + l1Text(r) + "." + (r.fromNo ? " Passed on from " + r.fromNo + "." : "");
     function actBtn(b0, label, cls, fn, arm) { if (noApprove(label)) return; return actBtnAll(b0, label, cls, fn, arm); }
     if (S.tab === "Approvals" && apprUser()) {
       if (S.downloads) { if (r.direct) actBtnAll(acts, "Print vouchers", "", function (b) { printVouchers(r, b); }); else actBtnAll(acts, "Download PDF", "", function (b) { downloadVcr(r.id, b); }); }
-      if ((s === "generated" || s === "printed") && apprMine(r)) { actBtnAll(acts, "Approve for payment", "primary", function () { openVcrApprove(r); }); hint.textContent = "Approve it voucher by voucher."; }
+      if ((s === "generated" || s === "printed") && l1Wait(r) && meL1For(r)) { actBtnAll(acts, "Approve, pass on or send back", "primary", function () { openVcrApprove(r); }); hint.textContent = "You are the 1st approver: approve vouchers in full, pass them on to an admin, or send them back."; }
+      else if ((s === "generated" || s === "printed") && apprMine(r)) { actBtnAll(acts, "Approve for payment", "primary", function () { openVcrApprove(r); }); hint.textContent = "Approve it voucher by voucher."; }
       else if (s === "payment") { hint.textContent = apprByText(r) + ", " + stamp(r.approvedAt) + "."; if (admin && !vcrPaid(r.id) && !inLockedPlan(r.id)) actBtnAll(acts, "Undo approval", "", function () { undoVcrApprove(r); }, "Click again to undo"); }
       return;
     }
@@ -10140,75 +10252,135 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   var SEND_BACK = [["lower", "Asked for lower price"], ["proof", "Bill or proof missing"], ["amount", "Wrong amount"], ["other", "Other"]];
   function sendBackText(sb) { if (!sb) return ""; var r = SEND_BACK.filter(function (x) { return x[0] === sb.reason; })[0]; return (r ? r[1] : "Sent back") + (sb.note ? ": " + sb.note : ""); }
   function vchPaid(vid) { var s = 0; txList().forEach(function (t) { if (t.voucherId === vid && t.kind === "payment") s += Number(t.amount) || 0; }); return round2(s); }
+  /* Approving vouchers, voucher by voucher: approve, pass on (1st approvers only) or send back. Tick vouchers to set several at once. */
   function openVcrApprove(r) {
     if (S._adm) { toast("No approving while viewing as someone. Go back to your admin view to approve."); return; }
     if (!apprMine(r)) return;
-    VA = { rid: r.id, sel: {}, why: {}, note: {}, busy: false, paperBy: reportApprover(r) };
-    vcrVouchers(r).forEach(function (v) { VA.sel[v.id] = true; });
+    VA = { rid: r.id, dec: {}, to: {}, pick: {}, why: {}, note: {}, busy: false, paperBy: reportApprover(r), l1: l1Wait(r) && meL1For(r) };
+    vcrVouchers(r).forEach(function (v) { VA.dec[v.id] = "ok"; VA.to[v.id] = approverList().some(function (a) { return a.id === v.approverId; }) ? v.approverId : ""; });
     renderVcrApprove(); show("secVcrApprove");
   }
+  var VA_DEC = [["ok", "Approve"], ["pass", "Pass on"], ["back", "Send back"]];
   function renderVcrApprove() {
     var r = S.reports[VA.rid]; if (!r) { backToVcr(); return; }
-    $("vaTitle").textContent = "Approve " + r.no;
+    $("vaTitle").textContent = (VA.l1 ? "Check " : "Approve ") + r.no;
     var vs = vcrVouchers(r), box = $("vaBox"); box.textContent = "";
+    var decs = VA_DEC.filter(function (d) { return VA.l1 || d[0] !== "pass"; }), adm = approverList();
     var at = {}, order = []; [true, false].forEach(function (g) { vs.forEach(function (v) { if (!!v.settle === g) { at[v.id] = order.length; order.push(v); } }); });
     var pick = docPane("va", order.map(function (v) { return { label: "Voucher " + (v.voucherNo || ""), short: v.voucherNo || "Voucher", file: v.file }; }));
+    /* With the ticked vouchers (or all): one decision for the lot. */
+    var picked = vs.filter(function (v) { return VA.pick[v.id]; }), bar = el("div", { class: "card", style: "padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center" });
+    bar.appendChild(el("b", null, picked.length ? "With the " + plural(picked.length, "ticked voucher") + ":" : "With every voucher:"));
+    var toAll = null;
+    if (VA.l1) { toAll = el("select", { class: "field sm", "aria-label": "Pass on to", style: "width:auto" }); fillSelect(toAll, [["", "Pass on to…"]].concat(adm.map(function (a) { return [a.id, a.name]; })), ""); }
+    decs.forEach(function (d) {
+      var b = el("button", { type: "button", class: "btn sm" + (d[0] === "back" ? " danger" : "") }, d[1]);
+      b.addEventListener("click", function () {
+        if (d[0] === "pass" && toAll && !toAll.value) { toAll.classList.add("bad"); toAll.focus(); toast("Choose who to pass them on to."); return; }
+        (picked.length ? picked : vs).forEach(function (v) { VA.dec[v.id] = d[0]; if (d[0] === "pass") VA.to[v.id] = toAll.value; });
+        VA.pick = {}; renderVcrApprove();
+      });
+      bar.appendChild(b); if (d[0] === "pass" && toAll) { bar.appendChild(toAll); }
+    });
+    box.appendChild(bar);
+    if (VA.l1) box.appendChild(el("p", { class: "sub", style: "margin:8px 0 0" }, "You are the 1st approver. Approve: it is approved for payment, no one else needed. Pass on: it goes to the admin you choose for the final approval. Send back: it goes back to " + pnm(r.preparedBy) + "."));
     [["Settled", "Paid by " + pnm(r.preparedBy) + " from their cash advance. Approving takes it off their cash.", true], ["Payable", "To be paid to the person or shop on the voucher. Approving sends it to the financier's Payment Entry.", false]].forEach(function (g) {
       var list = vs.filter(function (v) { return !!v.settle === g[2]; }); if (!list.length) return;
       box.appendChild(el("h3", null, g[0] + " (" + list.length + ")")); box.appendChild(el("p", { class: "sub", style: "margin:-6px 0 8px" }, g[1]));
       var card = el("div", { class: "card list scroll" }); box.appendChild(card);
       sortTable(card, "va_" + g[0], [
-        { label: "", cls: "ckcol", head: function (th) { var a = el("input", { type: "checkbox", "aria-label": "Approve every " + g[0].toLowerCase() + " voucher" }); a.checked = list.every(function (v) { return VA.sel[v.id]; }); a.addEventListener("change", function () { list.forEach(function (v) { VA.sel[v.id] = a.checked; }); renderVcrApprove(); }); th.appendChild(a); },
-          cell: function (v, td) { var i = el("input", { type: "checkbox", "aria-label": "Approve voucher " + v.voucherNo }); i.checked = !!VA.sel[v.id]; i.addEventListener("change", function () { VA.sel[v.id] = i.checked; renderVcrApprove(); }); td.appendChild(i); } },
+        { label: "", cls: "ckcol", head: function (th) { var a = el("input", { type: "checkbox", "aria-label": "Tick every " + g[0].toLowerCase() + " voucher" }); a.checked = list.every(function (v) { return VA.pick[v.id]; }); a.addEventListener("change", function () { list.forEach(function (v) { VA.pick[v.id] = a.checked; }); renderVcrApprove(); }); th.appendChild(a); },
+          cell: function (v, td) { var i = el("input", { type: "checkbox", "aria-label": "Tick voucher " + v.voucherNo }); i.checked = !!VA.pick[v.id]; i.addEventListener("change", function () { VA.pick[v.id] = i.checked; renderVcrApprove(); }); td.appendChild(i); } },
         { label: "Voucher", kind: "co", cell: function (v, td) { td.appendChild(docLink(pick, at[v.id], v.voucherNo)); sub(td, fmtDate(v.voucherDate) + " · " + coLabel(v.companyId)); } },
         { label: "Paid to", cls: "desc", cell: function (v, td) { td.appendChild(el("b", null, v.payee || "")); sub(td, v.narration || ""); } },
         { label: "Payable", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(vPayable(v)))); } },
         { label: "Decision", cls: "wcol", cell: function (v, td) {
-            if (VA.sel[v.id]) { td.appendChild(el("span", { class: "tag stg s-payment" }, "Approve")); return; }
-            var s = el("select", { class: "field sm", "aria-label": "Why voucher " + v.voucherNo + " is sent back" }); fillSelect(s, [["", "Send back: choose a reason"]].concat(SEND_BACK), VA.why[v.id] || "");
-            s.addEventListener("change", function () { VA.why[v.id] = s.value; s.classList.remove("bad"); });
-            var n = el("input", { class: "field sm", maxlength: "160", placeholder: "Note for " + pnm(r.preparedBy) + " (optional)", "aria-label": "Note for voucher " + v.voucherNo, style: "margin-top:6px" }); n.value = VA.note[v.id] || "";
-            n.addEventListener("input", function () { VA.note[v.id] = n.value; });
-            s.id = "vaWhy_" + v.id; td.appendChild(s); td.appendChild(n); } }
-      ], list, { sortIndex: -1, rowClass: function (v) { return VA.sel[v.id] ? "" : "skip"; } });
+            var d = el("select", { class: "field sm", id: "vaDec_" + v.id, "aria-label": "Decision for voucher " + v.voucherNo }); fillSelect(d, decs, VA.dec[v.id] || "ok");
+            d.addEventListener("change", function () { VA.dec[v.id] = d.value; renderVcrApprove(); }); td.appendChild(d);
+            if (VA.dec[v.id] === "pass") {
+              var t = el("select", { class: "field sm", id: "vaTo_" + v.id, "aria-label": "Pass voucher " + v.voucherNo + " on to", style: "margin-top:6px" }); fillSelect(t, [["", "Pass on to…"]].concat(adm.map(function (a) { return [a.id, a.name]; })), VA.to[v.id] || "");
+              t.addEventListener("change", function () { VA.to[v.id] = t.value; t.classList.remove("bad"); }); td.appendChild(t);
+            } else if (VA.dec[v.id] === "back") {
+              var s = el("select", { class: "field sm", id: "vaWhy_" + v.id, "aria-label": "Why voucher " + v.voucherNo + " is sent back", style: "margin-top:6px" }); fillSelect(s, [["", "Choose a reason"]].concat(SEND_BACK), VA.why[v.id] || "");
+              s.addEventListener("change", function () { VA.why[v.id] = s.value; s.classList.remove("bad"); });
+              var n = el("input", { class: "field sm", maxlength: "160", placeholder: "Note for " + pnm(r.preparedBy) + " (optional)", "aria-label": "Note for voucher " + v.voucherNo, style: "margin-top:6px" }); n.value = VA.note[v.id] || "";
+              n.addEventListener("input", function () { VA.note[v.id] = n.value; });
+              td.appendChild(s); td.appendChild(n);
+            } } }
+      ], list, { sortIndex: -1, rowClass: function (v) { return VA.dec[v.id] === "back" ? "skip" : ""; } });
     });
-    if (canBehalf(reportApproverId(r))) {
+    if (!VA.l1 && canBehalf(reportApproverId(r))) {
       var bw = el("div", { class: "card", style: "padding:14px 16px" }); behalfField(bw, VA.paperBy || reportApproverId(r)); box.insertBefore(bw, box.firstChild);
       $("bhBy").addEventListener("change", function () { VA.paperBy = this.value; this.classList.remove("bad"); });
     }
-    var ok = vs.filter(function (v) { return VA.sel[v.id]; }), t = vcrSums(ok), back = vs.length - ok.length;
-    statBoxes($("vaStats"), [["Prepared by", pnm(r.preparedBy), ""], ["Settled to approve", money(t.settled), ""], ["Payable to approve", money(t.toPay), "Goes to Payment Entry"], ["Sent back", String(back), back ? "Leave the report" : ""]]);
-    $("vaGo").textContent = ok.length ? (back ? "Approve " + ok.length + ", send back " + back : "Approve all and process payment") : "Send all back";
+    var by = function (k) { return vs.filter(function (v) { return VA.dec[v.id] === k; }); }, ok = by("ok"), pass = by("pass"), back = by("back"), t = vcrSums(ok);
+    statBoxes($("vaStats"), [["Prepared by", pnm(r.preparedBy), ""], ["Settled to approve", money(t.settled), ""], ["Payable to approve", money(t.toPay), "Goes to Payment Entry"], VA.l1 ? ["Passed on", String(pass.length), pass.length ? "To the 2nd approver" : ""] : null, ["Sent back", String(back.length), back.length ? "Leave the report" : ""]]);
+    var parts = []; if (ok.length) parts.push("approve " + ok.length); if (pass.length) parts.push("pass on " + pass.length); if (back.length) parts.push("send back " + back.length);
+    $("vaGo").textContent = !pass.length && !back.length ? "Approve all and process payment" : !ok.length && !pass.length ? "Send all back" : parts.join(", ").replace(/^./, function (c) { return c.toUpperCase(); });
+  }
+  /* The voucher fields of a voucher report, worked out from its vouchers. */
+  function vcrDocOf(vs) {
+    var t = vcrSums(vs), cos = sorted().filter(function (c) { return vs.some(function (v) { return v.companyId === c.id; }); }).map(function (c) { return c.id; }), byCo = {};
+    cos.forEach(function (cid) { var s = vcrSums(vs.filter(function (v) { return v.companyId === cid; })); byCo[cid] = { total: s.total, tds: s.tds, payable: s.payable, settled: s.settled, toPay: s.toPay }; });
+    return { voucherIds: vs.map(function (v) { return v.id; }), companyIds: cos, byCo: byCo, total: t.total, tds: t.tds, payable: t.payable, settled: t.settled, toPay: t.toPay, periodFrom: t.from, periodTo: t.to };
   }
   function goVcrApprove(btn) {
     var r = S.reports[VA.rid]; if (!r || VA.busy) return;
-    var vs = vcrVouchers(r), ok = vs.filter(function (v) { return VA.sel[v.id]; }), back = vs.filter(function (v) { return !VA.sel[v.id]; });
-    var miss = back.filter(function (v) { return !VA.why[v.id]; }), bh = behalfRead();
+    var vs = vcrVouchers(r), by = function (k) { return vs.filter(function (v) { return VA.dec[v.id] === k; }); }, ok = by("ok"), pass = VA.l1 ? by("pass") : [], back = by("back");
+    var miss = back.filter(function (v) { return !VA.why[v.id]; }), noTo = pass.filter(function (v) { return !VA.to[v.id]; }), bh = VA.l1 ? {} : behalfRead();
     if (!bh) { toast("Choose who signed it on paper."); $("bhBy").focus(); return; }
-    if (miss.length) { miss.forEach(function (v) { var s = $("vaWhy_" + v.id); if (s) s.classList.add("bad"); }); toast("Choose why each unticked voucher is sent back."); var f = $("vaWhy_" + miss[0].id); if (f) f.focus(); return; }
+    if (noTo.length) { noTo.forEach(function (v) { var s = $("vaTo_" + v.id); if (s) s.classList.add("bad"); }); toast("Choose who each voucher passed on goes to."); var f0 = $("vaTo_" + noTo[0].id); if (f0) f0.focus(); return; }
+    if (miss.length) { miss.forEach(function (v) { var s = $("vaWhy_" + v.id); if (s) s.classList.add("bad"); }); toast("Choose why each voucher is sent back."); var f = $("vaWhy_" + miss[0].id); if (f) f.focus(); return; }
     if (btn.getAttribute("data-arm") !== "1") { btn.setAttribute("data-arm", "1"); var lb = btn.textContent; btn.textContent = "Click again to confirm"; setTimeout(function () { if (btn.isConnected) { btn.removeAttribute("data-arm"); btn.textContent = lb; } }, 4000); return; }
     btn.removeAttribute("data-arm");
     VA.busy = true; btn.disabled = true;
-    var now = Date.now(), job = Promise.resolve();
+    var now = Date.now(), job = Promise.resolve(), me = pnm(preparedByText()), l1f = VA.l1 ? { l1By: meId(), l1ByName: me, l1At: now } : {};
     ok.forEach(function (v) { job = job.then(function () { return retry(function () { return S.db.doc("vouchers/" + v.id).update({ approvedAt: now, approvedBy: meId(), approvedIn: r.id }); }).then(function () { v.approvedAt = now; v.approvedIn = r.id; }); }); });
     back.forEach(function (v) {
-      var sb = { reason: VA.why[v.id], note: String(VA.note[v.id] || "").trim(), at: now, by: meId(), byName: pnm(preparedByText()), fromNo: r.no };
+      var sb = { reason: VA.why[v.id], note: String(VA.note[v.id] || "").trim(), at: now, by: meId(), byName: me, fromNo: r.no };
       job = job.then(function () { return retry(function () { return S.db.doc("vouchers/" + v.id).update({ sentBack: sb, approvedAt: null }); }).then(function () { v.sentBack = sb; v.approvedAt = null; }); });
     });
+    pass.forEach(function (v) {
+      var up = Object.assign(approverFields(VA.to[v.id]), { l1Check: { by: meId(), byName: me, at: now } });
+      job = job.then(function () { return retry(function () { return S.db.doc("vouchers/" + v.id).update(up); }).then(function () { Object.assign(v, up); }); });
+    });
+    /* Vouchers passed on wait in a report for each 2nd approver: this report itself when nothing in it is approved, else a new one. */
+    var groups = {}, gorder = []; pass.forEach(function (v) { var k = VA.to[v.id]; if (!groups[k]) { groups[k] = []; gorder.push(k); } groups[k].push(v); });
+    var made = [];
+    function passNote(to) { return "Checked by the 1st approver and passed on to " + (approverName({ approverId: to }) || "the 2nd approver"); }
+    function newPassed(to, list) {
+      var day = ymdOfMs(now), fy = fyOf(day), used = {}, seq = 1;
+      vcrList().forEach(function (x) { if (!!x.direct === !!r.direct && x.fy === fy && x.seq) used[x.seq] = 1; }); while (used[seq]) seq++;
+      var id = newId("r"), doc = Object.assign({ kind: "vcr", direct: !!r.direct, no: serialNo(r.direct ? "VCH" : "VCR", seq, day, fy), seq: seq, fy: fy, preparedById: r.preparedById || "", preparedBy: r.preparedBy || "", checkDate: day, currency: "INR",
+        stage: "generated", createdAt: now, createdBy: meId(), generatedAt: now, generatedBy: meId(), fromNo: r.no, log: [logEntry("generated", passNote(to) + ", from " + r.no)] }, vcrDocOf(list), approverFields(to), { l1: "passed" }, l1f);
+      return retry(function () { return S.db.doc("reports/" + id).set(doc); }).then(function () { S.reports[id] = Object.assign({ id: id }, doc); made.push(doc.no); });
+    }
     job = job.then(function () {
-      if (!ok.length) return retry(function () { return S.db.doc("reports/" + r.id).delete(); }).then(function () { delete S.reports[r.id]; return "gone"; });
-      var t = vcrSums(ok), cos = sorted().filter(function (c) { return ok.some(function (v) { return v.companyId === c.id; }); }).map(function (c) { return c.id; }), byCo = {};
-      cos.forEach(function (cid) { var s = vcrSums(ok.filter(function (v) { return v.companyId === cid; })); byCo[cid] = { total: s.total, tds: s.tds, payable: s.payable, settled: s.settled, toPay: s.toPay }; });
-      var doc = Object.assign({}, r); delete doc.id;
-      Object.assign(doc, { voucherIds: ok.map(function (v) { return v.id; }), companyIds: cos, byCo: byCo, total: t.total, tds: t.tds, payable: t.payable, settled: t.settled, toPay: t.toPay, periodFrom: t.from, periodTo: t.to,
-        stage: "payment", approvedAt: now, approvedBy: meId(), sentBackIds: (r.sentBackIds || []).concat(back.map(function (v) { return v.id; })),
-        log: (r.log || []).concat([logEntry("payment", "Approved " + plural(ok.length, "voucher") + (back.length ? ", sent back " + back.length : "") + (bh.onBehalf ? " · " + behalfNote(bh) : ""))]) }, bh);
-      return retry(function () { return S.db.doc("reports/" + r.id).set(doc); }).then(function () { S.reports[r.id] = Object.assign({ id: r.id }, doc); });
+      var first = null, base = Object.assign({}, r); delete base.id; base.sentBackIds = (r.sentBackIds || []).concat(back.map(function (v) { return v.id; }));
+      var step;
+      if (ok.length) {
+        var doc = Object.assign(base, vcrDocOf(ok), { stage: "payment", approvedAt: now, approvedBy: meId(),
+          log: (r.log || []).concat([logEntry("payment", (VA.l1 ? "Approved by the 1st approver: " : "Approved ") + plural(ok.length, "voucher") + (pass.length ? ", passed on " + pass.length : "") + (back.length ? ", sent back " + back.length : "") + (bh.onBehalf ? " · " + behalfNote(bh) : ""))]) }, bh, VA.l1 ? Object.assign({ l1: "final" }, l1f) : {});
+        step = retry(function () { return S.db.doc("reports/" + r.id).set(doc); }).then(function () { S.reports[r.id] = Object.assign({ id: r.id }, doc); return "ok"; });
+      } else if (pass.length) {
+        first = gorder[0];
+        var pd = Object.assign(base, vcrDocOf(groups[first]), approverFields(first), { l1: "passed", log: (r.log || []).concat([logEntry(stageOf(r), passNote(first) + (back.length ? ", sent back " + back.length : ""))]) }, l1f);
+        step = retry(function () { return S.db.doc("reports/" + r.id).set(pd); }).then(function () { S.reports[r.id] = Object.assign({ id: r.id }, pd); return "passed"; });
+      } else step = retry(function () { return S.db.doc("reports/" + r.id).delete(); }).then(function () { delete S.reports[r.id]; return "gone"; });
+      return step.then(function (res) {
+        var ch = Promise.resolve(); gorder.forEach(function (k) { if (k !== first) ch = ch.then(function () { return newPassed(k, groups[k]); }); });
+        return ch.then(function () { return res; });
+      });
     });
     job.then(function (res) {
       invalidate(); renderNav();
-      toast(res === "gone" ? "Every voucher was sent back, so " + r.no + " is cancelled." : r.no + " approved." + (back.length ? " " + plural(back.length, "voucher") + " sent back to " + pnm(r.preparedBy) + "." : "") + (vcrSums(ok).toPay ? " The payable vouchers are now on the financier's Payment Entry." : ""));
-      if (res === "gone") backToVcr(); else openVcr(r.id);
+      var bits = [];
+      if (res === "gone") bits.push("Every voucher was sent back, so " + r.no + " is cancelled.");
+      else if (res === "ok") bits.push(r.no + " approved." + (vcrSums(ok).toPay ? " The payable vouchers are now on the financier's Payment Entry." : ""));
+      if (pass.length) bits.push(plural(pass.length, "voucher") + " passed on to " + gorder.map(function (k) { return approverName({ approverId: k }); }).join(" and ") + (made.length ? " (in " + made.join(", ") + ")" : "") + ".");
+      if (back.length) bits.push(plural(back.length, "voucher") + " sent back to " + pnm(r.preparedBy) + ".");
+      toast(bits.join(" "));
+      if (res === "ok" || (res === "passed" && !VA.l1)) openVcr(r.id); else backToVcr();
     }, function (e) { toast(explain(e)); }).then(function () { VA.busy = false; btn.disabled = false; });
   }
   /* Undoing an approval puts the report back to printed and its vouchers back to waiting for approval. */

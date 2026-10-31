@@ -30,7 +30,9 @@ Deno.serve(async (req) => {
   const co = async (id: string) => { const c = id ? await get("companies/" + id) : null; return c ? (c.shortName || c.name || "") : ""; };
   if (path.startsWith("reports/")) {
     if (d.stage !== "generated") return reply(200, { sent: 0, reason: "not waiting" });
-    key = path + ":" + (d.generatedAt ?? "");
+    // With a 1st approver first: the admin hears about it once it is passed on.
+    if (d.l1 === "wait") return reply(200, { sent: 0, reason: "with 1st approver" });
+    key = path + ":" + (d.generatedAt ?? "") + (d.l1 === "passed" ? ":passed" : "");
     item = (d.kind === "inst" ? "Advance checking report " : d.kind === "vcr" ? (d.direct ? "Vouchers " : "Voucher checking report ") : "Bill checking report ") + (d.no || "");
     const v = d.vendorId ? await get("vendors/" + d.vendorId) : null;
     const cos = (await Promise.all((d.companyIds || [d.companyId]).filter(Boolean).map(co))).filter(Boolean).join(", ");

@@ -152,6 +152,15 @@
   has **Edit** on a bill's narration (with **Write with Claude**, the same rules) and Supply of, and on a voucher's description
   lines. Every narration and note box is tidied on leaving it: spelling, grammar, punctuation, clear abbreviations expanded,
   names, part names and codes kept as written.
+- **Every narration and internal note box** (bills, proformas, vouchers, sending back, postponing, cancelling, approval
+  notes, reasons) is written in English by Claude on leaving it, from any language or mix (`tidyPrompt`): bill and proforma
+  narrations to the narration rules ("Being …", at most 255 characters, from the bill's or proforma's details), voucher lines
+  as short descriptions, notes as clean English. Each has **Speak** (the browser's speech recognition in the chosen language,
+  remembered), then the same writing. Narrations of bills, proformas and vouchers never carry payment details: words like
+  paid, cash, cheque, NEFT, UPI are refused (`narrPayCheck`).
+- **Vouchers** take an optional document (receipt, slip, photo): kept with the voucher (`file`), shown to the accountant beside
+  it, and Claude writes the lines (and blank amounts) from it.
+- **Company logos:** Download Image on Masters › Companies and in the company form saves the logo as a file.
 - **Supply of** on bills (Goods, Services, Composite): read from the bill, required, editable on the bill and by the accountant.
 - **Bank Names** (Finance › Masters › Others, `banknames/*`, shared): one name per bank with its IFSC code (first 4 letters).
   Renaming one rewrites it on every bank account, cheque template and vendor (`bnForm`). A bank is added by itself

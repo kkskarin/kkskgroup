@@ -911,6 +911,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
             <div class="logo-box" id="logoBox">No logo</div>
             <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp" hidden>
             <button class="btn" id="logoPick">Choose image</button>
+            <button class="btn" id="logoDl" type="button" hidden>Download Image</button>
             <button class="link-btn" id="logoClear" hidden>Remove logo</button>
           </div>
           <span class="hint">Needed: it heads every bill, voucher and report. PNG or JPG, resized to fit before saving.</span><span class="err" id="eLogo" hidden></span>
@@ -2833,10 +2834,18 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       .sort(function (a, b) { return (a.active === false) - (b.active === false) || coCmp(a, b); });
   }
 
+  /* Save a company's logo (kept as an image data address) as an image file. */
+  function logoDownload(uri, c) {
+    var m = /^data:(image\/[a-z+]+);base64,(.*)$/.exec(String(uri || "")); if (!m) { toast("This logo can't be downloaded."); return; }
+    var bin = atob(m[2]), u8 = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    var blob = new Blob([u8], { type: m[1] }), ext = { "image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp" }[m[1]] || ".png", name = safeName((c && (c.shortName || c.name)) || "Company") + " logo" + ext;
+    if (S.downloads) { S.downloads.save({ filename: name, data: blob }).then(function () { toast("Logo downloaded."); }, function (e) { toast(explain(e)); }); return; }
+    var a = el("a", { href: URL.createObjectURL(blob), download: name }); document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
   function setLogoPreview() {
     var box = $("logoBox"); box.textContent = "";
     if (S.draftLogo) { var im = el("img", { alt: "Logo preview" }); im.src = S.draftLogo; box.appendChild(im); } else box.textContent = "No logo";
-    $("logoClear").hidden = !S.draftLogo;
+    $("logoClear").hidden = !S.draftLogo; $("logoDl").hidden = !S.draftLogo;
   }
   function clearErrors() { ["eName", "eShort", "eLogo", "eApps"].forEach(function (id) { $(id).hidden = true; }); $("fName").classList.remove("bad"); $("fShort").classList.remove("bad"); }
   function openEdit(id) {
@@ -4362,6 +4371,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     }
     if (!D.billNo.trim()) E("bcNo", "Enter the bill number.");
     if (!D.supplyOf) E("bcSupply", "Choose whether the bill is for goods, services or both.");
+    if (narrPayCheck(D.narration)) E("bcNar", narrPayCheck(D.narration));
     if (String(D.narration || "").trim().length > NARR_MAX) E("bcNar", "The narration is " + String(D.narration).trim().length + " characters; keep it to " + NARR_MAX + ".");
     var bd = parseDate(D.billDate);
     if (!D.billDate.trim()) E("bcDate", "Enter the bill date.");
@@ -4911,7 +4921,28 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   /* Any textarea with data-tidy is rewritten into clean English by Claude once typing stops (on leaving the box).
      The status line under it says what happened. Submitting waits for a tidy still running. */
   var TIDY = { pending: {}, kinds: {
-    bill: "a narration for a purchase bill", voucher: "a narration for a cash voucher (cash paid on the spot)", proforma: "a description of what is being bought on a proforma invoice or import order", purpose: "the purpose of a cash advance request", reason: "the reason a payment differs from the amount planned (paid in part, or paid extra)" } };
+    bill: "a narration for a purchase bill", voucher: "a narration for a cash voucher (cash paid on the spot)", proforma: "a description of what is being bought on a proforma invoice or import order", purpose: "the purpose of a cash advance request", reason: "the reason a payment differs from the amount planned (paid in part, or paid extra)", note: "an internal note between staff (why something is sent back, postponed, cancelled or approved in part)" } };
+  /* Narrations (of bills, proformas, advances and vouchers) never carry payment details: how, when or whether it was paid. */
+  var PAY_WORDS = /\b(paid|pay|payment|payments|cheque|chq|neft|rtgs|imps|upi|gpay|google ?pay|phone ?pe|phonepe|paytm|by cash|in cash|cash paid|advance paid|balance (?:payable|due))\b/i;
+  var NO_PAY = "Leave out anything about payment (paid, cash, cheque, NEFT, UPI, advance or balance): it is recorded when paying.";
+  function payWords(t) { var m = PAY_WORDS.exec(String(t || "")); return m ? m[0] : ""; }
+  function narrPayCheck(t) { var w = payWords(t); return w ? "Leave payment details out of the narration (\u201c" + w + "\u201d): payments are recorded in Payment Entry." : ""; }
+  /* What a narration box is about, for writing it to the rules: the bill or proforma's vendor, number, date and items. */
+  function tidyCtx(ta) {
+    if (ta.id === "bcNar" && B.D) { var b = S.bills[B.cardId] || {}, D = B.D; return { vendor_legal_name: D.vendorChoice === "new" ? D.vNew.name : (S.vendors[D.vendorChoice] || {}).name || "", invoice_number: D.billNo || "", invoice_date: (parseDate(D.billDate) || "").split("-").reverse().join("/"), supply_of: D.supplyOf || "", items: ((b.ex && b.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }) }; }
+    if (ta.id === "neNar" && AC.kind === "bill" && S.bills[AC.id]) { var x = S.bills[AC.id]; return { vendor_legal_name: vendorLabelOfBill(x), invoice_number: x.billNo || "", invoice_date: (x.billDate || "").split("-").reverse().join("/"), supply_of: x.supplyOf || "", items: ((x.ex && x.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }) }; }
+    if (ta.id === "adNar" && ADV.D) { var A = ADV.D; return { vendor_legal_name: A.vendorChoice && A.vendorChoice !== "new" ? (S.vendors[A.vendorChoice] || {}).name || "" : (A.vNew || {}).name || "", proforma_number: A.piNo || "", proforma_date: (parseDate(A.piDate) || "").split("-").reverse().join("/"), kind: ADV.kind === "import" ? "import order" : "proforma invoice", items: ((A.ex && A.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }) }; }
+    return null;
+  }
+  function tidyPrompt(kind, said, names, ctx) {
+    var lang = "Below is " + TIDY.kinds[kind] + ", typed or spoken by a staff member of an Indian company. Work out what language it is in yourself: it may be English, Tamil, Hindi, Urdu, any of them written in English letters, or a mix. Write it in English.\n\n";
+    var clean = "Fix spelling, grammar, spacing and punctuation, remove repeated words and filler, keep every fact (items, quantities, units, amounts, names, places, dates) and add nothing. Expand an abbreviation only when its meaning is certain (m/c machine, qty quantity); never guess. Keep exactly as written: names of vendors, people and businesses, model, part and serial numbers, codes, machine identifiers and unfamiliar part names. Keep acronyms and company codes in capitals (KKSK, LLP, GST, ETP); units as kg, L, mm, m, pcs. ";
+    var tail = (names.length ? "Names that may appear, spelled correctly: " + names.join("; ") + "\n\n" : "") + "Text:\n" + said.slice(0, 3000);
+    if (kind === "bill") return lang + NARR_RULES + "\n- " + NO_PAY + "\n\nWrite the bill's narration to these rules. The text is the purchaser's words (remarks on the purpose, or a narration to correct); the FIELDS are authoritative for vendor, number and date. Reply with only the narration.\n\n" + (ctx ? "FIELDS: " + JSON.stringify(ctx) + "\n\n" : "") + tail;
+    if (kind === "proforma") return lang + "Write the narration of a " + ((ctx && ctx.kind) || "proforma invoice") + " (an order not yet billed): \"Being [goods / services] ordered from [Vendor] vide Proforma [Number] dt. [DD/MM/YYYY]: [Qty] [Item], [Qty] [Item]; for [Purpose].\" At most 255 characters; never cut a name, number or date; never invent a quantity or purpose; leave out what is unclear. " + clean + NO_PAY + " End with a full stop. Reply with only the narration.\n\n" + (ctx ? "FIELDS: " + JSON.stringify(ctx) + "\n\n" : "") + tail;
+    if (kind === "voucher") return lang + "Write one line of a cash voucher's description: what the expense was for (item or service, quantity, place or purpose), as a short phrase or sentence, at most 160 characters. " + clean + NO_PAY + " End with a full stop. Reply with only the text.\n\n" + tail;
+    return lang + "Rewrite it in clean, plain English. " + clean + "One to three sentences, under 80 words, ending with a full stop. If it is already clean English, return it unchanged. Reply with only the text.\n\n" + tail;
+  }
   function tidyStatus(ta, t) { var s = ta && ta.parentNode && ta.parentNode.querySelector(".tidy-st"); if (s) s.textContent = t; }
   function tidyNames(ta) {
     var names = myCompanies().map(function (c) { return [c.name, c.internalName, c.shortName].filter(Boolean).join(", "); });
@@ -4924,19 +4955,10 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var said = ta.value.trim(), kind = ta.getAttribute("data-tidy");
     if (!said || !S.sample || said === ta._tidied || said.length < 3) return;
     /* Already clean English (plain letters, a capital first, ending with a full stop, no doubled spaces): nothing to ask Claude. */
-    if (/^[A-Z][\x20-\x7E]*[.!?]$/.test(said) && !/\s{2,}|\bi\b|\s[,.]/.test(said) && !/\b[a-z]{1,4}\/[a-z]{1,4}\b|\b(qty|nos|mtrs?|pkts?|reqd|recd|approx|dt|inv|wt|amt)\b/i.test(said)) { ta._tidied = said; return; }
+    if ((kind !== "bill" && kind !== "proforma" || /^Being /.test(said)) && /^[A-Z][\x20-\x7E]*[.!?]$/.test(said) && !/\s{2,}|\bi\b|\s[,.]/.test(said) && !/\b[a-z]{1,4}\/[a-z]{1,4}\b|\b(qty|nos|mtrs?|pkts?|reqd|recd|approx|dt|inv|wt|amt)\b/i.test(said)) { ta._tidied = said; return; }
     var names = tidyNames(ta);
-    var prompt = "Below is " + TIDY.kinds[kind] + ", typed or dictated by a staff member of an Indian company. Work out what language it is in yourself: it may be English, Tamil, Hindi, Urdu, any of them written in English letters, or a mix.\n\n"
-      + "Rewrite it in clean, plain English: translate if needed, fix spelling, grammar, spacing and punctuation, remove repeated words and filler, keep every fact (items, quantities, units, amounts, names, places, dates) and add nothing. "
-      + "Expand an abbreviation only when its meaning is certain and it reads better (for example m/c to machine, qty to quantity, nos to numbers); never guess an expansion. "
-      + "Keep exactly as written: names of vendors, people and businesses, and model, part and serial numbers, codes, machine identifiers and unfamiliar or new part names (don't correct or replace them). "
-      + "Use proper capitalisation: capitalise names of people, places and businesses, keep acronyms and company codes in capitals (for example KKSK, LLP, GST, ETP), and write units in their usual form (kg, L, mm, m, pcs). "
-      + (kind === "bill" ? "It is a bill's accounting narration: keep it at most 255 characters; if it begins with \"Being\", keep that form (vide Inv. number dt. DD/MM/YYYY, items, then the purpose after a semicolon). "
-        : "One or two sentences, under 60 words. ")
-      + "End with a full stop. If it is already clean English, return it unchanged. Reply with only the text.\n\n"
-      + (names.length ? "Names that may appear, spelled correctly: " + names.join("; ") + "\n\n" : "")
-      + "Text:\n" + said.slice(0, 3000);
-    tidyStatus(ta, "Tidying into clean English…");
+    var prompt = tidyPrompt(kind, said, names, tidyCtx(ta));
+    tidyStatus(ta, kind === "bill" || kind === "proforma" ? "Writing the narration in English…" : "Tidying into clean English…");
     var id = ta.id, p = S.sample(prompt, { modelTier: "quick" }).then(function (r) {
       var t = String((r && r.text) || "").trim().replace(/^["“]+|["”]+$/g, "");
       if (!ta.isConnected || ta.value.trim() !== said) { tidyStatus(ta, ""); return; }
@@ -4953,9 +4975,32 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     return ta;
   }
   function tidyField(label, ta, hint) {
-    var f = fld(label, ta, hint, true); f.insertBefore(el("span", { class: "hint tidy-st", "aria-live": "polite" }), ta.nextSibling); return f;
+    var f = fld(label, ta, hint, true), st = el("span", { class: "hint tidy-st", "aria-live": "polite" }); f.insertBefore(st, ta.nextSibling); f.insertBefore(micBar(ta), st); return f;
   }
-  function micStop() {}
+  /* ---- Speak instead of typing: the browser's speech recognition in the language chosen (remembered), then Claude writes it
+     in English to the box's rules. Shown where the browser can listen (Chrome, Edge, Safari). ---- */
+  var MIC_LANGS = [["en-IN", "English"], ["ta-IN", "Tamil"], ["hi-IN", "Hindi"], ["ur-IN", "Urdu"], ["te-IN", "Telugu"], ["ml-IN", "Malayalam"], ["kn-IN", "Kannada"]];
+  var MIC = { rec: null, ta: null, btn: null };
+  function micOk() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+  function micLang() { try { return localStorage.getItem("bv_mic_lang") || "en-IN"; } catch (e) { return "en-IN"; } }
+  function micStop() { if (MIC.rec) { try { MIC.rec.stop(); } catch (e) {} } }
+  function micBar(ta) {
+    var w = el("div", { class: "micbar", style: "display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap" }); if (!micOk()) return w;
+    var b = el("button", { type: "button", class: "btn sm mic", "aria-label": "Speak instead of typing" }, "🎤 Speak"), l = el("select", { class: "field", "aria-label": "Language you will speak", style: "padding:5px 8px;width:auto" });
+    MIC_LANGS.forEach(function (x) { var o = el("option", { value: x[0] }, x[1]); if (x[0] === micLang()) o.selected = true; l.appendChild(o); });
+    l.addEventListener("change", function () { try { localStorage.setItem("bv_mic_lang", l.value); } catch (e) {} });
+    b.addEventListener("click", function () {
+      if (MIC.rec && MIC.ta === ta) { micStop(); return; } micStop();
+      var R = window.SpeechRecognition || window.webkitSpeechRecognition, r = new R(), base = ta.value.trim(), heard = "";
+      r.lang = l.value; r.continuous = true; r.interimResults = true;
+      r.onresult = function (e) { var fin = "", tmp = ""; for (var i = 0; i < e.results.length; i++) { if (e.results[i].isFinal) fin += e.results[i][0].transcript + " "; else tmp += e.results[i][0].transcript; } heard = fin.trim(); ta.value = (base ? base + " " : "") + (fin + tmp).trim(); };
+      r.onerror = function (e) { tidyStatus(ta, e.error === "not-allowed" ? "The microphone is blocked. Allow it in the browser's address bar." : "Couldn't hear that. Try again."); };
+      r.onend = function () { b.classList.remove("on"); b.textContent = "🎤 Speak"; MIC.rec = null; MIC.ta = null; if (heard) { ta.value = (base ? base + " " : "") + heard; ta.dispatchEvent(new Event("input", { bubbles: true })); autoTidy(ta); } };
+      MIC.rec = r; MIC.ta = ta; b.classList.add("on"); b.textContent = "■ Stop"; tidyStatus(ta, "Listening in " + label2(MIC_LANGS, l.value) + "… press Stop when done.");
+      try { r.start(); } catch (e) { r.onend(); }
+    });
+    w.appendChild(b); w.appendChild(l); return w;
+  }
 
   /* ================= Bills tab: lists ================= */
   function billRow(b, kind) {
@@ -5711,7 +5756,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     body.appendChild(fld("Note number", inp("ntNo", "", { maxlength: "40" }), "The number on the note, if it has one."));
     var amf = fld("Amount", inp("ntAmt", "", { inputmode: "decimal", class: "field num" })); body.appendChild(amf);
     var bs = el("select", { class: "field", id: "ntBill" }), bf = fld("Against", bs, "A debit note can go against one bill; otherwise it settles the earliest dues."); body.appendChild(bf);
-    body.appendChild(tidyField("Reason", tidyBox("ntWhy", "", "reason", 300)));
+    body.appendChild(tidyField("Reason", tidyBox("ntWhy", "", "note", 300)));
     function sync() {
       var r = ve.value ? ledger(co.value, ve.value) : null, open = r ? r.bills.filter(function (b) { return billInfo(b).rem > 0.5; }) : [];
       fillSelect(bs, [["", "Earliest dues"]].concat(open.map(function (b) { return [b.id, "Bill " + b.billNo + ", " + fmtDate(b.billDate) + ", balance " + bm(b, billInfo(b).rem)]; })), bs.value);
@@ -6402,7 +6447,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     });
     body.appendChild(totEl);
     behalfField(body, reportApprover(r));
-    var nf = tidyField("Note to the purchaser", tidyBox("apNote", "", "reason", 300), "Needed when a bill goes back or is approved in part. The purchaser sees it with the bill."); body.appendChild(nf);
+    var nf = tidyField("Note to the purchaser", tidyBox("apNote", "", "note", 300), "Needed when a bill goes back or is approved in part. The purchaser sees it with the bill."); body.appendChild(nf);
     sync();
     popForm("Approve " + r.no, "Untick a bill to send it back to the purchaser. Lower the amount to approve part of a bill: the rest goes back to the purchaser, who can put it in a new Bill Checking Report later.", body, "Approve for payment", function () {
       errClear(body); var appr = {}, keep = [], back = [], part = false, bad = "";
@@ -6431,7 +6476,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (S._adm) { toast("No approving while viewing as someone. Go back to your admin view to approve."); return; }
     var a = S.advances[r.advanceId], max = round2(Number(r.total) || 0), cur = r.currency || "INR", body = el("div", { class: "mform" });
     body.appendChild(fld("Amount to approve" + (cur !== "INR" ? " (" + cur + ")" : ""), inp("iaAmt", fmtInput(String(max)), { inputmode: "decimal", class: "field num" }), "Up to " + curMoney(cur, max) + ". Anything less stays due and goes back to the purchaser for a new Advance Checking Report."));
-    body.appendChild(tidyField("Note to the purchaser", tidyBox("iaNote", "", "reason", 300), "Needed when approving less than the full amount."));
+    body.appendChild(tidyField("Note to the purchaser", tidyBox("iaNote", "", "note", 300), "Needed when approving less than the full amount."));
     behalfField(body, reportApprover(r));
     popForm("Approve " + r.no, a ? instLabel(a, r.inst) + " of " + (a.kind === "import" ? "import " : "proforma ") + (a.piNo || "") : "", body, "Approve for payment", function () {
       errClear(body); var n = num($("iaAmt").value), note = $("iaNote").value.trim(), bh = behalfRead(); if (!bh) return false;
@@ -6874,7 +6919,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (pend && !a.taxBillId) fb.appendChild(el("span", { class: "needs" }, "A final bill for this is open on Enter Bills (" + (pend.billNo || "number not filled in yet") + "). Submit it there and it attaches itself here."));
       f.appendChild(fb);
     }
-    f.appendChild(tidyField("What is being bought", tidyBox("adNar", D.narration, "proforma"), "In any language." + (S.sample ? " It is turned into clean English when you leave the box." : "")));
+    f.appendChild(tidyField("What is being bought", tidyBox("adNar", D.narration, "proforma", NARR_MAX, 3), "In any language." + (S.sample ? " It is turned into clean English when you leave the box." : "")));
     body.appendChild(f);
     $("adDelete").hidden = !a || locked; $("adClose").hidden = !a || !S.isAdmin;
     if (a) $("adClose").textContent = a.status === "closed" ? "Reopen" : imp ? "Close import" : "Close proforma";
@@ -6917,6 +6962,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     function E(id, m) { errOn(id, m); ok = false; }
     if (!D.companyId) E("adCo", "Choose the company."); else if (!canStep("adv", D.companyId)) E("adCo", "You don't have access to this company.");
     var cce = ccCheck("adCc", num(D.total)); if (cce) E("adCc", cce);
+    if (narrPayCheck(D.narration)) E("adNar", narrPayCheck(D.narration));
     var g = "";
     if (!D.approverId) E("adAppr", "Choose who approves this.");
     if (!D.vendorChoice) E("adVen", "Choose the vendor, or New vendor.");
@@ -7063,7 +7109,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       "- total_amount: the grand total payable as printed, including GST or taxes. gst_amount: CGST plus SGST plus IGST if shown, else null.",
       "- installments: the payment terms as a list in order, each {\"percent\": number, \"when\": one of \"receipt\" (advance with order or on receipt of proforma), \"after_proforma\", \"before_dispatch\", \"after_dispatch\", \"days\": whole number}. Always give days, never weeks or months: a week is 7 days, a month is 30 days. \"Against dispatch\" or \"before shipment\" is before_dispatch with 0 days. \"Against documents\" or \"on B/L\" is after_dispatch with 0 days. The first is usually receipt. Use [] if no terms are printed. Percents must add up to 100.",
       "- dispatch_date and arrival_date (arrival at Indian port) as YYYY-MM-DD only if printed, else null.",
-      "- narration: one plain English sentence, under 20 words, saying what is being bought, ending with a full stop.",
+      "- narration: \"Being [goods / services] ordered from [Vendor] vide Proforma [Number] dt. [DD/MM/YYYY]: [Qty] [Item], [Qty] [Item]; for [Purpose].\" in English, at most 255 characters, the purpose only if written on it; no prices, taxes or payment terms; never invent.",
       "- Proper case for names, acronyms in capitals. Copy the document number exactly. Use null for anything not printed. Never invent values.",
       "- confidence: for each field, how sure you are that what you gave is exactly right, from 0 to 100. 90 or more only when clearly printed and read exactly; 50 to 79 when partly unclear; under 50 when mostly a guess; 0 for a field you left null.",
       "- items: every line of the item table, in order, as {\"description\", \"hsn\", \"qty\", \"unit\", \"rate\", \"discount\", \"taxable\", \"gst_pct\", \"amount\"}; null for anything not printed; [] if none. items_note: anything unsure in the items, or an empty string.",
@@ -7101,7 +7147,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (ins.length) D.insts = ins.map(function (x, i) { return { pct: String(round2(num(x.percent))), when: i === 0 ? "receipt" : map[x.when] && map[x.when] !== "receipt" ? map[x.when] : "afterPi", days: i === 0 ? "" : String(intOrNull(x.days) == null ? 0 : Math.min(9999, Math.round(num(x.days) || 0))) }; });
     if (ymdOk(res.dispatch_date)) D.dispatch = fmtDate(res.dispatch_date);
     if (imp && ymdOk(res.arrival_date)) D.arrival = fmtDate(res.arrival_date);
-    D.narration = sentenceFix(str(res.narration, 400));
+    D.narration = narrFix(str(res.narration, 400));
     D.ex = { vendorAddress: aiAddr(res.vendor_address), vendorBank: bankFromRead(res.vendor_bank), companyName: str(res.company_name, 160), vendorName: [str(res.vendor_name, 160), g].filter(Boolean).join(", GSTIN "), notes: str(res.notes, 300), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) };
     return D;
   }
@@ -7241,7 +7287,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function adminGate(ms, what, go) {
     if (!S.isAdmin || within3(ms)) { go(); return; }
     var body = el("div", { class: "mform" });
-    body.appendChild(tidyField("Reason", tidyBox("rvWhy", "", "reason", 300), "Any language; it is tidied into English and kept in the Change Log."));
+    body.appendChild(tidyField("Reason", tidyBox("rvWhy", "", "note", 300), "Any language; it is tidied into English and kept in the Change Log."));
     popForm("Reason needed", "This " + what + " is more than " + REV_DAYS + " days old, so changing it needs a reason.", body, "Continue", function () {
       errClear(body); if ($("rvWhy").value.trim().length < 4) { errOn("rvWhy", "Write the reason."); return false; }
       return (tidyPending("rvWhy") || Promise.resolve()).then(function () { S.auditReason = sentenceFix($("rvWhy").value.trim()); S.auditReasonAt = Date.now(); go(); return true; });
@@ -7571,7 +7617,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   /* Cancels a cheque: the cheque and its payments are marked cancelled, and the bills go back to the list for a new cheque. */
   function chequeCancel(c) {
-    var body = el("div", { class: "mform" }); body.appendChild(tidyField("Why is it cancelled?", tidyBox("cqWhy", "", "reason", 200), "For example: wrong amount, spoilt, lost."));
+    var body = el("div", { class: "mform" }); body.appendChild(tidyField("Why is it cancelled?", tidyBox("cqWhy", "", "note", 200), "For example: wrong amount, spoilt, lost."));
     popForm("Cancel cheque " + c.no, c.payee + " · " + money(c.amount) + " · " + fmtDate(c.date) + ". Its payments are cancelled and the bills come back to Plan for Payment.", body, "Cancel Cheque", function () {
       var why = $("cqWhy").value.trim(); if (why.length < 3) { errOn("cqWhy", "Write the reason."); return false; }
       var now = Date.now(), up = { cancelled: true, cancelledAt: now, cancelledBy: meId(), cancelReason: sentenceFix(why) };
@@ -9048,7 +9094,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       false && { label: "Overdue", cls: "r num", cell: function (c, td) {
           var b = el("button", { class: "amt" + (anyOver(c._tot, "overdue") ? " od" : ""), "aria-label": "Overdue for " + c.name + ", open statement" }, mixMoney(c._tot, "overdue")); b.addEventListener("click", function () { openStatement(c.id); }); td.appendChild(b); } },
       { label: "Status", cell: function (c, td) { var off = c.active === false; td.appendChild(el("span", { class: "chip " + (off ? "off" : "on") }, off ? "Deactivated" : "Active")); } },
-      { label: "", kind: "act", cls: "r", cell: function (c, td) { if (!canCoEdit()) return; var b = el("button", { class: "btn" }, "Edit"); b.addEventListener("click", function () { openEdit(c.id); }); td.appendChild(b); } }
+      { label: "", kind: "act", cls: "r", cell: function (c, td) { var w = el("div", { class: "acts" });
+          if (c.logo) { var dl = el("button", { class: "btn", type: "button" }, "Download Image"); dl.addEventListener("click", function () { logoDownload(c.logo, c); }); w.appendChild(dl); }
+          if (canCoEdit()) { var b = el("button", { class: "btn" }, "Edit"); b.addEventListener("click", function () { openEdit(c.id); }); w.appendChild(b); } td.appendChild(w); } }
     ], rows, { sortIndex: -1, rowClass: function (c) { return c.active === false ? "off" : ""; } });
     /* Drag a row by its handle to move it; the new order is saved for everyone. */
     var trs = box.querySelectorAll("tbody tr"), dragId = null;
@@ -9224,7 +9272,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var cos = roleCos("vouchers");
     var lg0 = ((v && v.ledgers) || [])[0] || {};
     var lines = v ? (v.lines && v.lines.length ? v.lines.map(function (x) { return { d: x.d || "", amt: fmtInput(x.amt), lg: x.lg || ((v.ledgers || []).length === 1 ? lg0.id : ""), touched: true }; }) : [{ d: v.narration || "", amt: fmtInput(v.total), lg: lg0.id || "", touched: true }]) : [{ d: "", amt: "", lg: "", touched: false }];
-    VH.D = v ? { companyId: v.companyId, prepBy: v.preparedBy || "", forId: v.preparedBy || "", forNew: "", approverId: v.approverId || "", voucherNo: v.voucherNo || "", voucherDate: v.voucherDate || "", payee: v.payee || "", payeeChoice: v.payee || "", payeeNew: "", settle: v.settle ? "yes" : "no", lines: lines, X: Object.assign({}, extOf(v, DIV)),
+    VH.D = v ? { companyId: v.companyId, prepBy: v.preparedBy || "", forId: v.preparedBy || "", forNew: "", approverId: v.approverId || "", voucherNo: v.voucherNo || "", voucherDate: v.voucherDate || "", payee: v.payee || "", payeeChoice: v.payee || "", payeeNew: "", settle: v.settle ? "yes" : "no", lines: lines, file: v.file || null, X: Object.assign({}, extOf(v, DIV)),
         vtype: v.vtype || "", supplyOf: v.supplyOf || "", payeeAddr: v.payeeAddr || "", payeeIdNo: v.payeeIdNo || "" }
       : { companyId: cos.length === 1 ? cos[0].id : "", prepBy: "", approverId: S.isAdmin ? "" : defaultApprover(), voucherNo: "", voucherDate: "", payee: "", payeeChoice: "", payeeNew: "", settle: "", lines: lines, vtype: "", supplyOf: "", payeeAddr: "", payeeIdNo: "" };
     $("vfTitle").textContent = v ? "Voucher " + v.voucherNo : "New voucher";
@@ -9257,6 +9305,11 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (D.supplyOf && SUPPLY_OF.indexOf(D.supplyOf) < 0) sopts.push([D.supplyOf, D.supplyOf]);
     fillSelect(sup, sopts, D.supplyOf); var so = fld("Supply Of", sup, "Goods, Services, or Composite (goods and services together)."); so.id = "vfSupplyF"; f.appendChild(so);
     var lw = el("div", { class: "f wide" }); lw.appendChild(el("span", { class: "lb" }, "Details and ledger (up to 2 lines)")); var lb = el("div", { id: "vfLines" }); lw.appendChild(lb); lw.appendChild(el("span", { class: "err", id: "vfLinesE", hidden: "" })); f.appendChild(lw);
+    /* an optional document (receipt, slip, photo): kept with the voucher, and Claude writes the lines from it */
+    var dw = el("div", { class: "f wide" }); dw.appendChild(el("span", { class: "lb" }, "Document (optional)"));
+    var dfi = el("input", { type: "file", accept: "application/pdf,image/jpeg,image/png,image/webp", hidden: "" }), dbn = el("button", { type: "button", class: "btn sm" }, VH.D.file ? "Replace Document" : "Attach Document"), dln = el("span", { class: "hint", id: "vfDocLn" }, VH.D.file ? "Kept: " + VH.D.file.name : "A receipt, slip or photo. The details are written from it" + (S.sample ? " by Claude" : "") + "; check them.");
+    dbn.addEventListener("click", function () { dfi.click(); }); dfi.addEventListener("change", function () { vchDoc(dfi.files && dfi.files[0], dbn, dln); dfi.value = ""; });
+    var drow = el("div", { class: "row", style: "display:flex;gap:10px;align-items:center;flex-wrap:wrap" }); drow.appendChild(dbn); drow.appendChild(dln); dw.appendChild(drow); dw.appendChild(dfi); f.appendChild(dw);
     drawVchLines();
     var tt = el("div", { class: "f" }); tt.appendChild(el("span", { class: "lb" }, "Total amount")); tt.appendChild(el("div", { class: "field ro num", id: "vfTotV" })); tt.appendChild(el("span", { class: "hint" }, "The lines added up. Paid in full.")); f.appendChild(tt);
     var sf = el("div", { class: "f wide", id: "vfSetF" }); sf.appendChild(el("span", { class: "lb", id: "vfSetL" }, "Is this an advance settlement?"));
@@ -9273,18 +9326,36 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var D = VH.D, box = $("vfLines"); if (!box) return; box.textContent = "";
     D.lines.forEach(function (x, i) {
       var row = el("div", { class: "ledrow" });
-      var d = tidyBox("vfLd" + i, x.d, "voucher", 160, 1); d.setAttribute("aria-label", "Description, line " + (i + 1)); d.setAttribute("placeholder", "What it was for, in any language");
+      var d = tidyBox("vfLd" + i, x.d, "voucher", 160, 1); d.setAttribute("aria-label", "Description, line " + (i + 1)); d.setAttribute("placeholder", "What it was for, in any language (no payment details)");
       var a = inp("vfLa" + i, x.amt, { inputmode: "decimal", class: "field num", placeholder: "Amount (\u20B9)", "aria-label": "Amount, line " + (i + 1) });
       a.addEventListener("blur", function () { if (num(a.value) != null) a.value = fmtInput(a.value); });
       var lg = ledSelect(D.companyId, x.lg, { id: "vfLg" + i, "aria-label": "Ledger, line " + (i + 1) }); lg.setAttribute("data-co", D.companyId || "");
       lg.addEventListener("change", function () { x.lg = lg.value; x.touched = true; });
-      row.appendChild(d); row.appendChild(a); row.appendChild(lg);
+      row.appendChild(d); row.appendChild(a); row.appendChild(lg); var mb = micBar(d); mb.style.margin = "0"; row.appendChild(mb);
       if (D.lines.length > 1) { var rm = el("button", { class: "btn sm", type: "button" }, "Remove"); rm.addEventListener("click", function () { readVchForm(); D.lines.splice(i, 1); drawVchLines(); updVchForm(); }); row.appendChild(rm); }
       box.appendChild(row);
     });
     if (D.lines.length < MAX_LED.voucher) { var add = el("button", { class: "link-btn", type: "button" }, "+ Add a line"); add.addEventListener("click", function () { readVchForm(); D.lines.push({ d: "", amt: "", lg: "", touched: false }); drawVchLines(); updVchForm(); var n = $("vfLd" + (D.lines.length - 1)); if (n) n.focus(); }); box.appendChild(add); }
   }
   var SUPPLY_OF = ["Goods", "Services", "Composite"];
+  /* Keep a voucher's document and have Claude write its lines from it (descriptions, and amounts where blank). */
+  function vchDoc(f, btn, ln) {
+    var D = VH.D, t = fileType(f); if (!D || !f) return; if (!t) { toast("Choose a PDF or a photo (JPG, PNG or WebP)."); return; }
+    readVchForm(); D.docKey = D.docKey || newId("vd"); var lb = btn.textContent; btn.disabled = true; btn.textContent = "Reading…";
+    var path = (S.mode === "demo" ? "demo" : "live") + "/vouchers/" + D.docKey + "/" + Date.now().toString(36) + "-" + fileSafeName(f.name);
+    var keep = window.bvFiles ? window.bvFiles.put(path, f, t).then(function () { D.file = { path: path, name: str(f.name || "Document", 160), type: t, size: f.size || 0, at: Date.now(), by: meId() }; ln.textContent = "Kept: " + D.file.name; }, function () { ln.textContent = "The document couldn't be kept."; }) : Promise.resolve();
+    var read = !S.sample ? Promise.resolve() : prepFile(f).then(function (p) {
+      return S.sample.json(["This file supports a cash voucher of an Indian company (a receipt, slip, handwritten note or photo). Read what the expense was for.",
+        "Return up to " + MAX_LED.voucher + " lines, each {\"description\": what it was for (item or service, quantity, place or purpose), in English, at most 160 characters, ending with a full stop; \"amount\": the rupee amount as a plain number, or null}.",
+        "Translate if needed; fix spelling; keep names, part names and codes as written; expand abbreviations only when certain. " + NO_PAY + " Never invent.",
+        "Reply with only JSON: {\"lines\": [{\"description\": \"\", \"amount\": null}]}", p.text ? "PDF TEXT:\n" + p.text : ""].join("\n"), { images: p.images.length ? p.images : undefined, modelTier: "default" });
+    }).then(function (r) {
+      var ls = ((r && r.lines) || []).filter(function (x) { return x && String(x.description || "").trim(); }).slice(0, MAX_LED.voucher); if (!ls.length) { if (S.sample) toast("Nothing could be read from it. Type the details."); return; }
+      ls.forEach(function (x, i) { var L = D.lines[i] || (D.lines[i] = { d: "", amt: "", lg: "", touched: false }); L.d = sentenceFix(str(x.description, 160)); if (!String(L.amt || "").trim() && num(x.amount) != null) L.amt = fmtInput(num(x.amount)); });
+      drawVchLines(); updVchForm(); toast("Details written from the document. Check them.");
+    }, function () { toast("The document couldn't be read. Type the details."); });
+    Promise.all([keep, read]).then(function () { btn.disabled = false; btn.textContent = D.file ? "Replace Document" : lb; });
+  }
   /* People and shops paid by voucher, with their address: payees/<key>. Picking a saved one fills the address back in. */
   function payeeKey(n) { return "p_" + normId(n).slice(0, 60); }
   /* A cash voucher's payee is identified by Aadhaar or PAN, kept with the name (payees/*) and on each voucher. */
@@ -9356,7 +9427,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (D.payeeChoice && other && !String(D.payeeAddr || "").trim()) E("vfAddr", "Enter the address of the person or shop.");
     if (other && !D.supplyOf.trim()) E("vfSupply", "Choose Goods, Services or Composite.");
     var bad = "";
-    D.lines.forEach(function (x, i) { if (bad) return; var n = num(x.amt); if (!String(x.d).trim()) bad = "Describe line " + (i + 1) + "."; else if (n == null || n <= 0) bad = "Enter the amount on line " + (i + 1) + ", more than zero."; });
+    D.lines.forEach(function (x, i) { if (bad) return; var n = num(x.amt); if (!String(x.d).trim()) bad = "Describe line " + (i + 1) + "."; else if (narrPayCheck(x.d)) bad = "Line " + (i + 1) + ": " + narrPayCheck(x.d); else if (n == null || n <= 0) bad = "Enter the amount on line " + (i + 1) + ", more than zero."; });
     if (bad) E("vfLines", bad);
     var t = vchTotal(D);
     if (!bad && D.companyId) D.lines.forEach(function (x, i) { if (bad) return; if (!x.lg) bad = "Choose the ledger on line " + (i + 1) + "."; else if (!ledOk(x.lg, D.companyId)) bad = "The ledger on line " + (i + 1) + " isn't used by " + coLabel(D.companyId) + ". Choose again."; });
@@ -9412,7 +9483,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var lmap = {}, lorder = []; lines.forEach(function (x) { if (lmap[x.lg] == null) { lmap[x.lg] = 0; lorder.push(x.lg); } lmap[x.lg] = round2(lmap[x.lg] + x.amt); });
     /* A new voucher, or one moved to another company, takes the next number in that company's series. */
     var vn = !old || old.companyId !== D.companyId || !old.voucherNo ? nextVoucherNo(D.companyId, D.voucherDate) : { no: old.voucherNo, seq: old.voucherSeq || null, fy: old.voucherFy || fyOf(D.voucherDate) };
-    var doc = Object.assign({ companyId: D.companyId, voucherNo: vn.no, voucherSeq: vn.seq, voucherFy: vn.fy, voucherDate: D.voucherDate, payee: D.payee.trim(), total: total, tds: tds, lines: lines,
+    var doc = Object.assign({ companyId: D.companyId, voucherNo: vn.no, voucherSeq: vn.seq, voucherFy: vn.fy, voucherDate: D.voucherDate, payee: D.payee.trim(), total: total, tds: tds, lines: lines, file: D.file || null,
       narration: lines.map(function (x) { return x.d; }).join(" "), vtype: D.vtype, gstApp: old && other ? old.gstApp || "N/A" : "N/A", gstRate: old && other && old.gstApp === "RCM" ? old.gstRate : null, taxable: total,
       supplyOf: other ? D.supplyOf.trim() : "", payeeAddr: other ? D.payeeAddr.trim() : "", payeeIdNo: idNorm(D.payeeIdNo), payeeIdKind: idKind(D.payeeIdNo), ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
       settle: D.settle === "yes", acct: "pending", acctNote: "", updatedAt: now, updatedBy: meId() }, prepFields(D.prepBy), approverFields(D.approverId), extDoc(D.companyId, D.X));
@@ -12336,8 +12407,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       errClear(body); var ids = lines ? lines.map(function (l, i) { return "neL" + i; }) : ["neNar"], pend = ids.map(tidyPending).filter(Boolean);
       return Promise.all(pend).then(function () {
         var up = { narrEditedAt: Date.now(), narrEditedBy: meId(), narrEditedByName: acctWho().acctByName };
-        if (lines) { var nl = lines.map(function (l, i) { return Object.assign({}, l, { d: sentenceFix($("neL" + i).value.trim()) }); }); if (nl.some(function (l) { return !l.d; })) { errOn("neL0", "Every line needs a description."); return false; } up.lines = nl; up.narration = nl.map(function (l) { return l.d; }).join(" "); }
-        else { var t = isB ? narrFix($("neNar").value) : sentenceFix($("neNar").value.trim()); if (!t) { errOn("neNar", "Write the " + (isB ? "narration." : "description.")); return false; } if (isB && t.length > NARR_MAX) { errOn("neNar", "Keep it to " + NARR_MAX + " characters (it is " + t.length + ")."); return false; } up.narration = t; }
+        if (lines) { var nl = lines.map(function (l, i) { return Object.assign({}, l, { d: sentenceFix($("neL" + i).value.trim()) }); }); if (nl.some(function (l) { return !l.d; })) { errOn("neL0", "Every line needs a description."); return false; } var pw = nl.map(function (l) { return narrPayCheck(l.d); }).filter(Boolean)[0]; if (pw) { errOn("neL0", pw); return false; } up.lines = nl; up.narration = nl.map(function (l) { return l.d; }).join(" "); }
+        else { var t = isB ? narrFix($("neNar").value) : sentenceFix($("neNar").value.trim()); if (!t) { errOn("neNar", "Write the " + (isB ? "narration." : "description.")); return false; } if (isB && t.length > NARR_MAX) { errOn("neNar", "Keep it to " + NARR_MAX + " characters (it is " + t.length + ")."); return false; } if (narrPayCheck(t)) { errOn("neNar", narrPayCheck(t)); return false; } up.narration = t; }
         if (isB) { if (!$("neSup").value) { errOn("neSup", "Choose the supply."); return false; } up.supplyOf = $("neSup").value; if (x.ex && x.ex.narrReview && x.ex.narrReview.length) up.ex = Object.assign({}, x.ex, { narrReview: [] }); }
         return retry(function () { return S.db.doc((isB ? "bills/" : "vouchers/") + x.id).update(up); }).then(function () { Object.assign(x, up); toast("Saved."); renderAcctOne(); return true; }, function (e) { toast(explain(e)); return false; });
       });
@@ -12431,7 +12502,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var l = acctLabel(x); $("aoSub").textContent = l[0] + (x.acctByName ? " · " + x.acctByName + ", " + fmtDay(x.acctAt) : "") + (withPrep ? ". It is with " + (pnm(x.preparedByName) || "the purchaser") + " to fix; it comes back to Waiting when they submit it again." : locked ? ". It is already in " + (isB ? checkOf(x).r.no : vcrOf(x.id).no) + ", so it can't be changed here." : "");
     var f = $("aoBody"); f.textContent = "";
     /* The bill file sits beside the form; the same viewer is kept while the bill stays open, so the page and zoom hold. */
-    if (isB && x.file && x.file.path && window.bvFiles) {
+    /* a voucher's optional document shows the same way */
+    if (x.file && x.file.path && window.bvFiles) {
       if (!AC.fv || AC.fv.path !== x.file.path) AC.fv = { path: x.file.path, el: fileViewer(x.file) };
       var sp = el("div", { class: "ao-split" }), dl = el("div", { class: "ao-doc" }), dm = el("div", { class: "ao-main" });
       dl.appendChild(AC.fv.el); sp.appendChild(dl); sp.appendChild(dm); f.appendChild(sp); f = dm;
@@ -12600,7 +12672,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function acctHold(btn) {
     var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, body = el("div", { class: "mform" });
-    body.appendChild(tidyField("Note for yourself (optional)", tidyBox("aoHoldWhy", x.acctNote || "", "reason", 300), "Why it is on hold, in any language."));
+    body.appendChild(tidyField("Note for yourself (optional)", tidyBox("aoHoldWhy", x.acctNote || "", "note", 300), "Why it is on hold, in any language."));
     popForm("Postpone", "It stays with you, under Postponed, until you approve or send it back. What you have chosen so far is kept.", body, "Postpone", function () {
       var tp = tidyPending("aoHoldWhy");
       return (tp || Promise.resolve()).then(function () {
@@ -12612,7 +12684,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function acctSendBack() {
     var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], body = el("div", { class: "mform" });
-    body.appendChild(tidyField("What needs fixing?", tidyBox("aoBackWhy", "", "reason", 400), "Any language. It is tidied into clean English and shown to " + (pnm(x.preparedByName) || "the person who prepared it") + "."));
+    body.appendChild(tidyField("What needs fixing?", tidyBox("aoBackWhy", "", "note", 400), "Any language. It is tidied into clean English and shown to " + (pnm(x.preparedByName) || "the person who prepared it") + "."));
     popForm("Send Back", AC.kind === "bill" ? "The bill goes back to the purchaser's Postponed list with your note. They fix it and submit it again." : "The voucher goes back to the purchaser with your note. They fix it and save it again.", body, "Send back", function () {
       errClear(body); if ($("aoBackWhy").value.trim().length < 4) { errOn("aoBackWhy", "Write what needs fixing."); return false; }
       var tp = tidyPending("aoBackWhy");
@@ -15005,6 +15077,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
 
     $("logoPick").addEventListener("click", function () { $("logoFile").click(); });
     $("logoClear").addEventListener("click", function () { S.draftLogo = ""; setLogoPreview(); });
+    $("logoDl").addEventListener("click", function () { logoDownload(S.draftLogo, S.editing && S.companies[S.editing]); });
     $("logoFile").addEventListener("change", function () {
       var f = this.files && this.files[0]; this.value = ""; if (!f) return;
       readLogo(f).then(function (uri) { S.draftLogo = uri; setLogoPreview(); }, function (e) {

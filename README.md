@@ -288,10 +288,9 @@ provides the same calls, so the app code did not need rewriting:
   strokes that can be undone, added to or cleared. Saved as ink on a transparent background (`sigs/<id>`: `png`, `src`
   drawn / photo-strokes). A signature with `review: true` (old ones saved straight from a photo) brings up "Please Redo
   Your Signature", which can't be closed until a new one is saved.
-- **Voucher PDFs** (one voucher, or all of a set sent without a checking report): each page is exactly A5 portrait (the way
-  A5 sheets are loaded, like A4) with the voucher laid sideways and the page marked Rotate 90, so it reads upright on screen
-  and the printer gets plain A5. They also carry print settings for every page: actual size, paper picked by page size,
-  one-sided, one copy, print dialog on opening (Acrobat Reader and desktop readers follow these; browser viewers mostly don't).
+- **Voucher PDFs** (one voucher, or all of a set sent without a checking report) print on A4: each A4 portrait page holds
+  two A5 vouchers at actual size, one above the other, with a dashed cut line (a single voucher sits in the top half). The
+  file asks for actual size, one-sided, one copy and opens the print dialog.
 - **Chemicals division** (`div: "chm"`): entered and approved in the Chemicals app, only accounted and paid here; it has
   no entry app of its own (tick it on users, companies and ledgers like any division). A bill sent with `extAppr` gets an
   approved Bill Checking Report (`reports/rx_<bill id>`) as soon as it is accounted; a proforma or import with `instAppr`

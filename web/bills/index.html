@@ -13740,23 +13740,33 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     try { if (doc.autoPrint) doc.autoPrint({ variant: "non-conform" }); } catch (e) {}
     return doc;
   }
-  /* A5 sheets go into the printer upright, like A4. So each voucher page is made exactly A5 portrait (148 × 210 mm), the
-     voucher laid sideways on it, and the page marked to be shown turned (Rotate 90) so it still reads upright on screen. The
-     printer then sees plain A5 and prints it as it is, the voucher across the sheet, with no size or rotation to set. */
+  /* Vouchers print on A4, the paper that prints cleanly: an A5 voucher is exactly half an A4 sheet, so each A4 portrait page
+     holds two vouchers at their real size, one above the other, with a dashed cut line between them (one voucher: the top
+     half). Cutting along the line gives A5 vouchers. The file asks for actual size, one-sided, one copy. */
+  var A4PT = [595.28, 841.89];
   function vchPrintBlob(doc) {
-    var blob = vchPrintPrefs(doc).output("blob");
-    return loadScript(PDFLIB).then(function () { return blob.arrayBuffer(); }).then(function (buf) { return window.PDFLib.PDFDocument.load(buf); }).then(function (pd) {
+    var blob = doc.output("blob");
+    return loadScript(PDFLIB).then(function () { return blob.arrayBuffer(); }).then(function (buf) {
       var L = window.PDFLib;
-      pd.getPages().forEach(function (pg) {
-        var sz = pg.getSize(), w = sz.width, h = sz.height; if (w <= h) return;
-        pg.node.normalize(); pg.getContentStream();
-        var st = pd.context.register(pg.createContentStream(L.pushGraphicsState(), L.concatTransformationMatrix(0, 1, -1, 0, h, 0)));
-        var en = pd.context.register(pg.createContentStream(L.popGraphicsState()));
-        pg.node.wrapContentStreams(st, en);
-        pg.setSize(h, w); pg.setRotation(L.degrees(90));
+      return L.PDFDocument.create().then(function (out) {
+        return out.embedPdf(buf).then(function (pages) {
+          for (var i = 0; i < pages.length; i += 2) {
+            var pg = out.addPage(A4PT), W = A4PT[0], H = A4PT[1];
+            [pages[i], pages[i + 1]].forEach(function (ep, k) {
+              if (!ep) return; var w = Math.min(ep.width, W), h = ep.height * w / ep.width, gap = (H - 2 * h) / 2;
+              pg.drawPage(ep, { x: (W - w) / 2, y: k === 0 ? H - gap - h : gap, width: w, height: h });
+            });
+            var mid = H / 2; pg.drawLine({ start: { x: 0, y: mid }, end: { x: W, y: mid }, thickness: 0.4, color: L.rgb(0.6, 0.6, 0.6), dashArray: [4, 3] });
+          }
+          try {
+            var vp = out.catalog.getOrCreateViewerPreferences();
+            vp.setPrintScaling(L.PrintScaling.None); vp.setDuplex(L.Duplex.Simplex); vp.setPickTrayByPDFSize(true); vp.setNumCopies(1);
+            out.catalog.set(L.PDFName.of("OpenAction"), out.context.obj({ Type: "Action", S: "Named", N: "Print" }));
+          } catch (e) {}
+          return out.save();
+        });
       });
-      return pd.save();
-    }).then(function (bytes) { return new Blob([bytes], { type: "application/pdf" }); }, function () { return blob; });
+    }).then(function (bytes) { return new Blob([bytes], { type: "application/pdf" }); }, function () { return vchPrintPrefs(doc).output("blob"); });
   }
   function printVoucher(id, btn) {
     var v = S.vouchers[id]; if (!v || !S.downloads) return;

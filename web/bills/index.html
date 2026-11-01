@@ -834,12 +834,6 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     <div class="head"><div class="grow"><h2>Bank Accounts</h2><p class="sub">Each company's bank accounts, added before any cheque template for that bank. The IFSC fills in the bank's name, branch, city and address. One account is the company's default, and each account has a default cheque book; both fill in when paying and can be changed. The bank's name, city and account number also go on the salary covering letter.</p></div><div class="acts"><button class="btn primary" id="bankAdd" type="button">Add Bank Account</button></div></div>
     <div id="bankList"></div>
   </section>
-  <section id="secPayees" hidden>
-    <div class="head"><div class="grow"><h2>Payees</h2><p class="sub" id="pyeSub">People and shops paid by voucher, one record each, with every name they have gone by and their PAN and Aadhaar. A PAN or Aadhaar belongs to one record only.</p></div>
-      <span class="grow"></span><div class="acts2"><button class="btn" id="pyeMerge" disabled>Merge Ticked</button></div></div>
-    <div class="filters"><input class="field" id="pyeQ" type="search" placeholder="Search name, PAN, Aadhaar or address" aria-label="Search payees" autocomplete="off"></div>
-    <div id="pyeList"></div>
-  </section>
   <section id="secOthers" hidden>
     <div class="head"><div class="grow"><h2>Others</h2><p class="sub">Lists used across the app. A change here updates every place that uses it.</p></div></div>
     <h3>Bank Names</h3>
@@ -1033,6 +1027,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       <div class="grow"><h2>Vendors</h2><p class="sub">Add a vendor here, or it is added when its first bill is submitted. A vendor is flagged until its opening balance is captured for every company it has bills in.</p></div>
       <div class="acts2"><button class="btn primary" id="vAdd" type="button" hidden>Add Vendor</button><button class="btn" id="vXls" type="button">Download Excel</button><button class="btn" id="vExport" type="button">Export payables PDF</button></div>
     </div>
+    <div class="seg" role="tablist" aria-label="Kind of vendor" id="vSeg" style="margin-bottom:12px"><button type="button" role="tab" data-k="reg" aria-selected="true">Registered <span></span></button><button type="button" role="tab" data-k="unreg" aria-selected="false">Unregistered <span></span></button><button type="button" role="tab" data-k="ovs" aria-selected="false">Overseas <span></span></button></div>
     <div class="filters">
       <select class="field" id="vCo" aria-label="Filter by company" style="width:auto;min-width:180px"></select>
       <input class="field" id="vQ" type="search" placeholder="Search name, GSTIN or PAN" aria-label="Search vendors" autocomplete="off">
@@ -1041,6 +1036,12 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     </div>
     <div class="card uplog" id="vImp" hidden></div>
     <div class="card list scroll" id="vList"></div>
+    <div id="vPayW" hidden>
+      <div class="head" style="margin:28px 0 10px;align-items:center"><div class="grow"><h3 style="margin:0">Paid by Voucher</h3><p class="sub" id="pyeSub" style="margin:2px 0 0">People and shops paid by voucher, one record each, with every name they have gone by and their PAN and Aadhaar. A PAN or Aadhaar belongs to one record only.</p></div>
+        <div class="acts2"><button class="btn" id="pyeMerge" disabled>Merge Ticked</button></div></div>
+      <div class="filters"><input class="field" id="pyeQ" type="search" placeholder="Search name, PAN, Aadhaar or address" aria-label="Search people and shops paid by voucher" autocomplete="off"></div>
+      <div id="pyeList"></div>
+    </div>
   </section>
 
   <section id="secVendor" hidden>
@@ -1531,7 +1532,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   var S = { staff: {}, salruns: {}, regions: {}, ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secPayees", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
+  var VIEWS = ["secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1744,8 +1745,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Requests", "Advance Requests"], ["Advance Summary", "Advances"], ["Salary", "Salary"]] };
   /* Masters: its own heading. Companies first, then (Renewable Energy) Consumers and PPA Rates, then Vendors and Ledgers. */
   /* Cheque Templates: where the financier pays (Renewable Energy pays its own; Finance pays the other divisions). */
-  var CHQ_TAB = ["Cheques", "Cheque Templates", 0, "m"], BANK_TAB = ["Banks", "Bank Accounts", 0, "m"], OTHERS_TAB = ["Others", "Others", 0, "m"], PAYEE_TAB = ["Payees", "Payees", 0, "m"];
-  var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], PAYEE_TAB, MASTERS[2]] : APP === "fin" ? [MASTERS[0], MASTERS[1], PAYEE_TAB, BANK_TAB, CHQ_TAB, OTHERS_TAB] : MASTERS.concat([PAYEE_TAB]) }; /* Finance: no expense ledgers, only what payments need */
+  var CHQ_TAB = ["Cheques", "Cheque Templates", 0, "m"], BANK_TAB = ["Banks", "Bank Accounts", 0, "m"], OTHERS_TAB = ["Others", "Others", 0, "m"];
+  var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], MASTERS[2]] : APP === "fin" ? [MASTERS[0], MASTERS[1], BANK_TAB, CHQ_TAB, OTHERS_TAB] : MASTERS }; /* Finance: no expense ledgers, only what payments need */
   var SET_ALL = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Activity", "Show Activity", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] };
   var NAV_BY_APP = {
     mnt: [REP_TABS, EXP_TABS, MAS_TABS, SET_ALL],
@@ -1873,7 +1874,6 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (t === "Cheques") { CQ.id = null; CQ.D = null; renderCheques(); show("secCheques"); return; }
     if (t === "Banks") { renderBanks(); show("secBanks"); return; }
     if (t === "Others") { renderOthers(); show("secOthers"); return; }
-    if (t === "Payees") { renderPayees(); show("secPayees"); return; }
     if (t === "Salary") { renderSalary(); show("secSalary"); return; }
     if (t === "All Entries") { if (dataReady()) { renderAllEnt(); show("secAllEnt"); } else show("vLoading"); return; }
     if (t === "Users" && S.isAdmin) { renderUsers(); renderSupers(); show("secUsers"); }
@@ -5239,19 +5239,27 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     ledgersFor(function (r) { return r.vid === vid && canSee(r.cid); }).forEach(function (r) { t.outstanding += r.outstanding; t.overdue += r.overdue; if (r.cur !== "INR") t.cur = r.cur; });
     return t;
   }
+  var VSEG = { k: "reg" };
   function renderVendors() {
     if (IMP.busy) return; /* an upload redraws once it is done */
     var box = $("vList"); box.textContent = ""; if (canImport()) impButtons("vendors", $("vExport").parentNode); $("vAdd").hidden = !canEditVendors();
     var q = $("vQ").value.trim().toLowerCase(), onlyNeeds = $("vNeeds").checked, showOff = $("vOff").checked;
     var vc = $("vCo"), vcv = vc.value; fillSelect(vc, [["", "All companies"]].concat(myCompanies().map(function (c) { return [c.id, c.shortName || c.name]; })), vcv); vcv = vc.value;
     var inCo = {}; if (vcv) ledgersFor(function (r) { return r.cid === vcv && (r.opening || r.bills.length || r.advs.length || r.txs.length); }).forEach(function (r) { inCo[r.vid] = 1; });
-    var all = visibleVendors().filter(function (v) { return !vcv || inCo[v.id] || (v.openings && v.openings[vcv]); });
+    /* Registered (with a GSTIN, composition dealers too), Unregistered (no GSTIN; with the people and shops paid by voucher), Overseas */
+    var seg = VSEG.k, grp = function (v) { return v.type === "overseas" ? "ovs" : v.type === "unregistered" || v.type === "exempt" ? "unreg" : "reg"; };
+    var all0 = visibleVendors().filter(function (v) { return !vcv || inCo[v.id] || (v.openings && v.openings[vcv]); }), cnt = { reg: 0, unreg: 0, ovs: 0 };
+    all0.forEach(function (v) { if (showOff || v.active !== false) cnt[grp(v)]++; });
+    Array.prototype.forEach.call($("vSeg").querySelectorAll("button"), function (b) { var k = b.getAttribute("data-k"); b.setAttribute("aria-selected", k === seg ? "true" : "false"); b.querySelector("span").textContent = "(" + cnt[k] + (k === "unreg" ? " + " + payeeNames().length + " by voucher" : "") + ")"; });
+    $("vPayW").hidden = seg !== "unreg"; if (seg === "unreg") renderPayees();
+    var all = all0.filter(function (v) { return grp(v) === seg; });
     var rows = all.map(function (v) { return { v: v, n: v.active !== false ? vendorNeeds(v) : { list: [], since: 0 } }; }).filter(function (r) {
       if (!showOff && r.v.active === false) return false;
       if (onlyNeeds && !r.n.list.length) return false;
       if (q && ((r.v.name || "") + " " + (r.v.gstin || "") + " " + (r.v.pan || "")).toLowerCase().indexOf(q) < 0) return false;
       return true;
     }).sort(function (a, b) { return (!!b.n.list.length - !!a.n.list.length) || (a.v.active === false) - (b.v.active === false) || natCmp(a.v.name, b.v.name); });
+    if (!all.length && all0.length) { box.appendChild(el("div", { class: "empty" }, "No " + { reg: "registered", unreg: "unregistered", ovs: "overseas" }[seg] + " vendors" + (vcv ? " for this company." : "."))); return; }
     if (!all.length) { box.appendChild(el("div", { class: "empty" }, canEditVendors() ? "No vendors yet. Use Add Vendor, or a vendor is added when the first bill from it is submitted." : "No vendors yet. A vendor is added here when the first bill from it is submitted on Enter Bills.")); return; }
     if (!rows.length) { box.appendChild(el("div", { class: "empty" }, "No vendors match.")); return; }
     rows.forEach(function (r) { r.tot = vendorTotals(r.v.id); });
@@ -15797,7 +15805,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     $("lgSideV").addEventListener("click", function () { LG.side = "vendors"; LG.limit = 100; renderLedger(); }); $("lgSideC").addEventListener("click", function () { LG.side = "vouchers"; LG.limit = 100; renderLedger(); });
     $("lgCo").addEventListener("change", renderLedger); $("lgQ").addEventListener("input", renderLedger);
     $("bDoneQ").addEventListener("input", function () { B.doneLimit = 100; renderDone(); });
-    $("vExport").addEventListener("click", function () { downloadVendorPayables($("vExport")); }); $("vQ").addEventListener("input", renderVendors); $("vCo").addEventListener("change", renderVendors); $("vNeeds").addEventListener("change", renderVendors); $("vOff").addEventListener("change", renderVendors);
+    $("vExport").addEventListener("click", function () { downloadVendorPayables($("vExport")); }); $("vSeg").addEventListener("click", function (e) { var b = e.target.closest && e.target.closest("button[data-k]"); if (!b) return; VSEG.k = b.getAttribute("data-k"); renderVendors(); }); $("vQ").addEventListener("input", renderVendors); $("vCo").addEventListener("change", renderVendors); $("vNeeds").addEventListener("change", renderVendors); $("vOff").addEventListener("change", renderVendors);
     $("vBack").addEventListener("click", backToVendors); $("veCancel").addEventListener("click", backToVendors);
     $("veSave").addEventListener("click", saveVendor); $("veBenIfsc").addEventListener("input", ifscLook); $("veToggle").addEventListener("click", toggleVendor);
     $("veGstin").addEventListener("input", function () { var g = normId(this.value); $("vePan").value = g && gstinCheck(g) !== "format" ? panFromGstin(g) : ""; $("veGstRes").hidden = true; });

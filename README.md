@@ -307,7 +307,7 @@ provides the same calls, so the app code did not need rewriting:
   `pan` and/or `aadhaar`, `address`, `notSame`; a record merged into another has `mergedInto` and counts as that one
   everywhere (list, earlier vouchers, cash limit). A PAN or Aadhaar can belong to one record only: typing one already saved
   shows "Use <name>". A new name that looks like a saved one (similar name, or same address) asks "Same person?": Yes uses
-  the saved record and adds the new name and number to it; No records who said they differ. Masters › Payees lists them;
+  the saved record and adds the new name and number to it; No records who said they differ. Masters › Vendors › Unregistered lists them under "Paid by Voucher";
   admins and accountants tick two and Merge (refused when the two have different PANs or Aadhaars).
 - **Risky narrations** (bribes, kickbacks, speed money, gifts or cash to officials, fake or inflated bills, other illegal or
   non-compliant payments) are refused on bills, proformas, imports and vouchers: a word list, plus Claude answering BLOCKED
@@ -316,6 +316,8 @@ provides the same calls, so the app code did not need rewriting:
   GST, or whose GST isn't a standard rate can't be submitted, unless the purchaser ticks the Undertaking (takes full
   responsibility) and writes why. It is kept on the bill (`undertaking`: by, when, issues, reason) and shown to the accountant
   and in the Bill Checking Report.
+- **Masters › Vendors** has three views: Registered (with a GSTIN, composition dealers included), Unregistered (no GSTIN,
+  plus the people and shops paid by voucher), and Overseas.
 - **Vendors** are one pool for the group. Maintenance & Civil, Renewable Energy and Chemicals each show the vendors tagged
   for them; Bills & Vouchers (like Accounts and Finance) picks from all of them. Using a vendor in an app tags it there.
 - **Chemicals division** (`div: "chm"`): entered and approved in the Chemicals app, only accounted and paid here; it has

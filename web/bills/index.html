@@ -1181,7 +1181,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
 
   <section id="secMark" hidden>
     <div class="head">
-      <div><h2>Payment Entry</h2><p class="sub">Everything approved and not yet paid. <b>Plan for Payment</b>: tick bills by vendor (earliest due first), set what to pay now, choose Cheque, NEFT / RTGS or Cash and A/C Payee, then print every cheque in one go with running numbers. <b>Already Paid</b>: record a payment made outside the app (cheque, NEFT / RTGS, net banking, credit card or cash) with its cheque number or transaction ID. Cash stays under ₹10,000 a payee a day (Freight &amp; Transport vouchers: up to ₹30,000; cheques have no limit).</p></div>
+      <div><h2>Payment Entry</h2><p class="sub">Everything approved and not yet paid. <b>Plan for Payment</b>: tick bills by vendor (earliest due first), set what to pay now, choose Cheque, NEFT / RTGS or Cash and A/C Payee, then print every cheque in one go with running numbers. <b>Already Paid</b>: record a payment made outside the app (cheque, NEFT / RTGS, net banking, credit card or cash) with its cheque number or transaction ID. Cash stays under ₹10,000 a payee a day (Freight &amp; Transport vouchers: up to ₹35,000; cheques have no limit).</p></div>
       <span class="grow"></span>
       <select class="field" id="mkCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
@@ -7640,9 +7640,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   /* Two views: Vendors (bills, opening balances, proforma and import instalments) and Vouchers (cash vouchers paid back).
      Everything the admin approved and not yet paid, by when it falls due. A payment that differs from the approved amount needs a reason.
      Every payment needs its mode and reference; cash is only for vouchers, and under ₹10,000 to one person in a day
-     (Freight & Transport vouchers: up to ₹30,000 a day; cheques have no limit). */
+     (Freight & Transport vouchers: up to ₹35,000 a day; cheques have no limit). */
   var MK = { amts: {}, dates: {}, refs: {}, modes: {}, view: "pay", side: "vendors", busy: false, stale: false, doneLimit: 100, how: "plan", pl: { sel: {}, amt: {}, mode: {}, acp: {}, bank: {}, book: {} } };
-  var TX_DAYS = 3, CASH_LIMIT = 10000, CASH_FREIGHT = 30000;
+  var TX_DAYS = 3, CASH_LIMIT = 10000, CASH_FREIGHT = 35000;
   /* the voucher(s) a payment row or plan item pays: Freight & Transport ones may go up to CASH_FREIGHT in cash a day */
   function payFreight(x) {
     var ids = x ? (x.v ? [x.v.id] : x.voucherId ? [x.voucherId] : x.voucherIds || []) : [], R = (S.raw && S.raw.vouchers) || S.vouchers || {};
@@ -7852,27 +7852,34 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       fillSelect(ts, books.length ? books.map(function (t) { return [t.id, t.name]; }) : [["", "No cheque template for " + (bk ? bk.bank : "this bank")]], tp ? tp.id : ""); ts.addEventListener("change", function () { MK.pl.book[c.id] = ts.value; renderMark(); }); hd.appendChild(ts);
       if (bk) { var nx = chqNext(bk), lf = chqLeft(bk, nx); hd.appendChild(el("span", { class: "tsub", style: lf != null && lf <= CHQ_WARN ? "color:var(--warn);font-weight:600" : "" }, "Next cheque " + chqNoText(nx, bk) + (lf != null ? " · " + chqLeftText(bk, nx) : ""))); }
       card.appendChild(hd);
-      gs.forEach(function (g) {
-        var gw = el("div", { style: "border-top:1px solid var(--line);padding:12px 16px" }), top = el("div", { style: "display:flex;flex-wrap:wrap;gap:10px;align-items:center" });
-        var gc = el("input", { type: "checkbox", "aria-label": "Select every item for " + g.name }); gc.checked = g.items.every(function (it) { return MK.pl.sel[it.key]; }); gc.addEventListener("change", function () { g.items.forEach(function (it) { MK.pl.sel[it.key] = gc.checked; }); renderMark(); });
-        top.appendChild(gc); var nmw = el("div", { class: "grow" }); nmw.appendChild(el("b", null, g.name)); nmw.appendChild(el("span", { class: "tsub", style: "display:block" }, "Earliest due " + fmtDate(g.due))); top.appendChild(nmw);
-        var md = el("select", { class: "field", style: "width:auto", "aria-label": "How to pay " + g.name }); fillSelect(md, g.cur !== "INR" ? [["neft", "NEFT / RTGS"]] : [["cheque", "Cheque"], ["neft", "NEFT / RTGS"], ["cash", "Cash"]], plMode(g));
-        md.addEventListener("change", function () { MK.pl.mode[g.key] = md.value; renderMark(); }); top.appendChild(md);
-        var m = plMode(g), al = el("label", { class: "check" }), ac = el("input", { type: "checkbox" }); ac.checked = m === "neft" ? true : !!MK.pl.acp[g.key]; ac.disabled = m === "neft"; al.hidden = m === "cash";
-        ac.addEventListener("change", function () { MK.pl.acp[g.key] = ac.checked; }); al.appendChild(ac); al.appendChild(document.createTextNode(" A/C Payee")); top.appendChild(al);
-        var st = plSelTotal(g); top.appendChild(el("b", { class: "num", style: "min-width:110px;text-align:right" }, st > 0 ? curMoney(g.cur, st) : "—"));
-        gw.appendChild(top);
-        var tw = el("div", { class: "list", style: "margin-top:8px" }); gw.appendChild(tw);
-        sortTable(tw, "pl_" + g.key, [
-          { label: "", cls: "ckcol", cell: function (it, td) { var c0 = el("input", { type: "checkbox", "aria-label": "Pay " + it.label }); c0.checked = !!MK.pl.sel[it.key]; c0.addEventListener("change", function () { MK.pl.sel[it.key] = c0.checked; renderMark(); }); td.appendChild(c0); } },
-          { label: "Item", kind: "co", cell: function (it, td) { td.appendChild(el("b", null, it.label)); if (it.sub) sub(td, it.sub); } },
-          { label: "Due", cell: function (it, td) { var late = it.due && it.due < todayYmd(); td.appendChild(el("span", late ? { style: "color:var(--bad);font-weight:600" } : null, fmtDate(it.due))); } },
-          { label: "Payable", cls: "r num", cell: function (it, td) { txt(td, curMoney(g.cur, it.amt)); } },
-          { label: "Pay Now", cls: "r", cell: function (it, td) { var a = el("input", { class: "field num", inputmode: "decimal", style: "max-width:130px", "aria-label": "Amount to pay now for " + it.label }); a.value = MK.pl.amt[it.key] != null ? MK.pl.amt[it.key] : fmtInput(String(it.amt)); a.disabled = !MK.pl.sel[it.key];
-              a.addEventListener("input", function () { MK.pl.amt[it.key] = a.value; }); a.addEventListener("blur", function () { var n0 = num(a.value); if (n0 == null || n0 <= 0) { a.value = fmtInput(String(it.amt)); MK.pl.amt[it.key] = null; } else if (n0 > it.amt + 0.004) { a.value = fmtInput(String(it.amt)); MK.pl.amt[it.key] = null; toast("Up to the payable " + curMoney(g.cur, it.amt) + "."); } else a.value = fmtInput(a.value); renderMark(); }); td.appendChild(a); } }
-        ], g.items, { sortIndex: -1 });
-        card.appendChild(gw);
-      });
+      /* one row per payee: tick, who and what, due, payable, pay now, how, A/C payee. Several items open under "Show items". */
+      function amtBox(it, g) {
+        var a = el("input", { class: "field num", inputmode: "decimal", style: "max-width:130px", "aria-label": "Amount to pay now for " + it.label }); a.value = MK.pl.amt[it.key] != null ? MK.pl.amt[it.key] : fmtInput(String(it.amt)); a.disabled = !MK.pl.sel[it.key];
+        a.addEventListener("input", function () { MK.pl.amt[it.key] = a.value; });
+        a.addEventListener("blur", function () { var n0 = num(a.value); if (n0 == null || n0 <= 0) { a.value = fmtInput(String(it.amt)); MK.pl.amt[it.key] = null; } else if (n0 > it.amt + 0.004) { a.value = fmtInput(String(it.amt)); MK.pl.amt[it.key] = null; toast("Up to the payable amount, " + curMoney(g.cur, it.amt) + "."); } else { a.value = fmtInput(String(n0)); MK.pl.amt[it.key] = a.value; } renderMark(); });
+        return a;
+      }
+      function dueSpan(d) { var late = d && d < todayYmd(); return el("span", late ? { style: "color:var(--bad);font-weight:600" } : null, d ? fmtDate(d) : ""); }
+      MK.pl.open = MK.pl.open || {};
+      var tw = el("div", { class: "list scroll plrows" }); card.appendChild(tw);
+      sortTable(tw, "plco_" + c.id, [
+        { label: "", cls: "ckcol", cell: function (g, td) { var gc = el("input", { type: "checkbox", "aria-label": "Pay " + g.name }); gc.checked = g.items.every(function (it) { return MK.pl.sel[it.key]; }); gc.indeterminate = !gc.checked && g.items.some(function (it) { return MK.pl.sel[it.key]; }); gc.addEventListener("change", function () { g.items.forEach(function (it) { MK.pl.sel[it.key] = gc.checked; }); renderMark(); }); td.appendChild(gc); } },
+        { label: "Pay to", kind: "co", sort: function (g) { return g.name; }, cell: function (g, td) {
+            td.appendChild(el("b", null, g.name));
+            if (g.items.length === 1) { sub(td, g.items[0].label + (g.items[0].sub ? " · " + g.items[0].sub : "")); return; }
+            var op = !!MK.pl.open[g.key], lk = el("button", { type: "button", class: "link-btn", style: "display:block;font-size:calc(12px*var(--ts,1))" }, (op ? "Hide" : "Show") + " " + g.items.length + " items");
+            lk.addEventListener("click", function () { MK.pl.open[g.key] = !op; renderMark(); }); td.appendChild(lk);
+            if (!op) return;
+            var ul = el("div", { style: "margin-top:6px;display:grid;gap:6px" });
+            g.items.forEach(function (it) { var r = el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" }), c0 = el("input", { type: "checkbox", "aria-label": "Pay " + it.label }); c0.checked = !!MK.pl.sel[it.key]; c0.addEventListener("change", function () { MK.pl.sel[it.key] = c0.checked; renderMark(); });
+              r.appendChild(c0); var t = el("span", { class: "grow" }); t.appendChild(el("span", null, it.label + " · ")); t.appendChild(dueSpan(it.due)); t.appendChild(el("span", { class: "tsub" }, " · " + curMoney(g.cur, it.amt))); r.appendChild(t); r.appendChild(amtBox(it, g)); ul.appendChild(r); });
+            td.appendChild(ul); } },
+        { label: "Due", sort: function (g) { return g.due || ""; }, cell: function (g, td) { td.appendChild(dueSpan(g.due)); } },
+        { label: "Payable", cls: "r num", sort: function (g) { return g.items.reduce(function (s0, it) { return s0 + it.amt; }, 0); }, desc: true, cell: function (g, td) { txt(td, curMoney(g.cur, round2(g.items.reduce(function (s0, it) { return s0 + it.amt; }, 0)))); } },
+        { label: "Pay Now", cls: "r", cell: function (g, td) { if (g.items.length === 1) { td.appendChild(amtBox(g.items[0], g)); return; } var st = plSelTotal(g); td.appendChild(el("b", { class: "num" }, st > 0 ? curMoney(g.cur, st) : "\u2014")); } },
+        { label: "Mode", cell: function (g, td) { var md = el("select", { class: "field", style: "width:auto", "aria-label": "How to pay " + g.name }); fillSelect(md, g.cur !== "INR" ? [["neft", "NEFT / RTGS"]] : [["cheque", "Cheque"], ["neft", "NEFT / RTGS"], ["cash", "Cash"]], plMode(g)); md.addEventListener("change", function () { MK.pl.mode[g.key] = md.value; renderMark(); }); td.appendChild(md); } },
+        { label: "A/C Payee", cls: "ckcol", cell: function (g, td) { var m = plMode(g); if (m === "cash") return; var ac = el("input", { type: "checkbox", "aria-label": "A/C Payee for " + g.name }); ac.checked = m === "neft" ? true : !!MK.pl.acp[g.key]; ac.disabled = m === "neft"; ac.addEventListener("change", function () { MK.pl.acp[g.key] = ac.checked; }); td.appendChild(ac); } }
+      ], gs, { sortIndex: 2, sortDir: 1, rowClass: function (g) { return plSelTotal(g) > 0.004 ? "" : "skip"; } });
       box.appendChild(card);
     });
   }
@@ -7898,7 +7905,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     sortTable(tw, "plIssue", cols, lines, {});
     var tl = null; if (mode === "cheque") { tl = el("label", { class: "check", style: "margin-top:10px" }); var tc = el("input", { type: "checkbox", id: "plTest" }); tl.appendChild(tc); tl.appendChild(document.createTextNode(" Test print: put the scan behind the text (plain paper)")); body.appendChild(tl); }
     var title = mode === "cheque" ? "Print " + plural(lines.length, "cheque") : mode === "neft" ? "NEFT / RTGS for " + plural(lines.length, "payee") : "Record " + plural(lines.length, "cash payment");
-    var intro = mode === "cheque" ? "One cheque per payee, numbered from each cheque book. Change a number and the ones after it follow. One PDF holds every cheque, a page each; print at 100%." : mode === "neft" ? "Each takes the cheque number given with the NEFT / RTGS request. The payments are recorded now; the bank's form is printed from Paid." : "Recorded as paid in cash today. Cash stays under ₹10,000 a payee a day (Freight & Transport: up to ₹30,000).";
+    var intro = mode === "cheque" ? "One cheque per payee, numbered from each cheque book. Change a number and the ones after it follow. One PDF holds every cheque, a page each; print at 100%." : mode === "neft" ? "Each takes the cheque number given with the NEFT / RTGS request. The payments are recorded now; the bank's form is printed from Paid." : "Recorded as paid in cash today. Cash stays under ₹10,000 a payee a day (Freight & Transport: up to ₹35,000).";
     popForm(title, intro, body, mode === "cheque" ? "Print and Record" : "Record", function () {
       var d = parseDate($("plDate").value); if (!d) { errOn("plDate", "Choose the date."); return false; }
       if (mode === "cash") { var bad = ""; lines.forEach(function (l) { var vids = l.g.items.filter(function (it) { return MK.pl.sel[it.key]; }).map(function (it) { return it.v ? it.v.id : it.voucherId || ""; }), x = { type: l.g.vid ? "vendor" : "vch", vid: l.g.vid, payee: l.g.name, voucherIds: vids.indexOf("") < 0 ? vids : [] }; bad = bad || payCheck(x, l.amt, d, "cash", ""); }); if (bad) { toast(bad); return false; } }
@@ -9778,7 +9785,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function vPayModeText(v) { var m = vPayMode(v); return m === "cash" ? (v.settle ? "Cash (from cash advance)" : "Cash") : m === "cheque" ? "Cheque" : m === "neft" ? "NEFT / RTGS" : "By financier (not chosen)"; }
   function allVouchers() { var src = (S.raw && S.raw.vouchers) || S.vouchers || {}; return Object.keys(src).map(function (k) { return Object.assign({ id: k }, src[k]); }).filter(function (v) { return v.status !== "deleted"; }); }
   function payeeVouchers(name) { var n = normName(name), c = pyCanon(name), ids = pyIds(name); return n ? allVouchers().filter(function (v) { return pyCanon(v.payee) === c || (v.payeeIdNo && (idNorm(v.payeeIdNo) === ids.pan || idNorm(v.payeeIdNo) === ids.aadhaar)); }).sort(function (a, b) { return natCmp(b.voucherDate || "", a.voucherDate || "") || (b.createdAt || 0) - (a.createdAt || 0); }) : []; }
-  function cashLimit(vtype) { return vtype === "Freight & Transport" ? 35000 : 10000; }
+  function cashLimit(vtype) { return vtype === "Freight & Transport" ? CASH_FREIGHT : CASH_LIMIT; }
   function cashToday(cid, payee, day, exceptId) { return round2(payeeVouchers(payee).filter(function (v) { return v.id !== exceptId && v.companyId === cid && (v.voucherDate || ymdOfMs(v.createdAt || 0)) === day && vPayMode(v) === "cash"; }).reduce(function (s0, v) { return s0 + (Number(v.total) || 0); }, 0)); }
   /* What the payee details clash with: a PAN / Aadhaar already saved for another record, or (for a new name) records that look
      the same. Worked out again only when the name, number or address changes. */

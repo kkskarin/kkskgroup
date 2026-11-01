@@ -292,7 +292,9 @@ provides the same calls, so the app code did not need rewriting:
   or one showing a risky payment, is refused; the payee and details are read from it). A saved payee's Aadhaar / PAN and
   address are shown with Change; a new payee's name, Aadhaar / PAN and address are entered together in the green box.
   Earlier vouchers to the payee (any maker, any company) are listed with date, prepared by, mode of payment and amount.
-  Mode of Payment (Cash, Cheque, NEFT / RTGS) is chosen on the voucher; the cash-advance question shows only for Cash. Cash to
+  Mode of Payment (Cash, Cheque, NEFT / RTGS) starts as Cash while the day's cash to the payee from the company (other
+  vouchers plus this one) stays within \u20B9 10,000 (\u20B9 30,000 for Freight & Transport) and as Cheque above that, until
+  the maker picks one; the cash-advance question shows only for Cash. Cash to
   one payee from one company is refused above ₹ 10,000 a day (₹ 35,000 for Freight & Transport), counting all vouchers.
   Details lines are written like a bill's items and purpose, and the voucher's narration is built in the bill format:
   "Being goods purchased from / services availed from / expenses incurred towards [ledger] from [Payee] vide Voucher [No] dt.

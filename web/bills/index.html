@@ -9615,7 +9615,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var lg0 = ((v && v.ledgers) || [])[0] || {};
     var lines = v ? (v.lines && v.lines.length ? v.lines.map(function (x) { return { d: x.d || "", amt: fmtInput(x.amt), lg: x.lg || ((v.ledgers || []).length === 1 ? lg0.id : ""), touched: true }; }) : [{ d: v.narration || "", amt: fmtInput(v.total), lg: lg0.id || "", touched: true }]) : [{ d: "", amt: "", lg: "", touched: false }];
     VH.D = v ? { companyId: v.companyId, prepBy: v.preparedBy || "", forId: v.preparedBy || "", forNew: "", approverId: v.approverId || "", voucherNo: v.voucherNo || "", voucherDate: v.voucherDate || "", payee: v.payee || "", payeeChoice: v.payee || "", payeeNew: "", settle: v.settle ? "yes" : "no", lines: lines, file: v.file || null, X: Object.assign({}, extOf(v, DIV)),
-        vtype: v.vtype || "", supplyOf: v.supplyOf || "", payeeAddr: v.payeeAddr || "", payeeIdNo: v.payeeIdNo || "", payMode: v.payMode || (v.settle ? "cash" : ""), payeeEdit: false }
+        vtype: v.vtype || "", supplyOf: v.supplyOf || "", payeeAddr: v.payeeAddr || "", payeeIdNo: v.payeeIdNo || "", payMode: v.payMode || (v.settle ? "cash" : ""), payModeSet: !!(v.payMode || v.settle), payeeEdit: false }
       : { companyId: cos.length === 1 ? cos[0].id : "", prepBy: "", approverId: S.isAdmin ? "" : defaultApprover(), voucherNo: "", voucherDate: "", payee: "", payeeChoice: "", payeeNew: "", settle: "", lines: lines, vtype: "", supplyOf: "", payeeAddr: "", payeeIdNo: "", payMode: "", payeeEdit: false };
     $("vfTitle").textContent = v ? "Voucher " + v.voucherNo : "New voucher";
     $("vfSub").textContent = v && v.acct === "back" && v.acctNote ? "Sent back by the accountant: " + v.acctNote : "Paid in full: by cash, or by the financier in cash or cheque. GST and TDS are entered by the accountant.";
@@ -9660,7 +9660,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     drawVchLines();
     var tt = el("div", { class: "f" }); tt.appendChild(el("span", { class: "lb" }, "Total amount")); tt.appendChild(el("div", { class: "field ro num", id: "vfTotV" })); tt.appendChild(el("span", { class: "hint" }, "The lines added up. Paid in full.")); f.appendChild(tt);
     var md = el("select", { class: "field", id: "vfMode" }); fillSelect(md, [["", "Choose how it is paid"]].concat(VPAY_MODES), D.payMode || "");
-    var mf = fld("Mode of Payment", md, "Cash to one person or shop from one company is limited to \u20B9 10,000 a day (\u20B9 35,000 for freight and transport); cheque and NEFT / RTGS have no limit."); mf.id = "vfModeF"; f.appendChild(mf);
+    var mf = fld("Mode of Payment", md, "Set by itself: Cash while the day's cash to this person or shop from this company stays within \u20B9 10,000 (\u20B9 30,000 for freight and transport), Cheque above that. You can change it; cash can never go over \u20B9 10,000 a day (\u20B9 35,000 for freight and transport)."); mf.id = "vfModeF"; f.appendChild(mf);
     var sf = el("div", { class: "f wide", id: "vfSetF" }); sf.appendChild(el("span", { class: "lb", id: "vfSetL" }, "Is this an advance settlement?"));
     var rg = el("div", { class: "radios", role: "radiogroup", "aria-labelledby": "vfSetL", id: "vfSet" });
     [["yes", "Yes, paid from my cash advance"], ["no", "No, the financier pays it"]].forEach(function (o) {
@@ -9784,8 +9784,10 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (D.payeeChoice !== pc0) { D.payeeEdit = false; D.addTo = null; }
     if (D.payeeNew !== D._pn0) { D._pn0 = D.payeeNew; D.dupAns = ""; }
     D.payee = D.payeeChoice === "new" ? D.payeeNew : D.payeeChoice; D.vtype = $("vfType").value; D.payeeAddr = $("vfAddr").value; D.payeeIdNo = idNorm($("vfIdNo").value); D.supplyOf = $("vfSupply").value;
-    D.payMode = $("vfMode").value; if (D.payMode && D.payMode !== "cash") D.settle = "no";
+
     D.lines.forEach(function (x, i) { if ($("vfLd" + i)) { x.d = $("vfLd" + i).value; x.amt = $("vfLa" + i).value; x.lg = $("vfLg" + i).value; } });
+    if (D.payModeSet) D.payMode = $("vfMode").value; else { var dm = vchDefaultMode(D); D.payMode = dm; if ($("vfMode").value !== dm) $("vfMode").value = dm; }
+    if (D.payMode && D.payMode !== "cash") D.settle = "no";
     var r = document.querySelector('input[name="vfSettle"]:checked'); if (!D.payMode || D.payMode === "cash") D.settle = r ? r.value : "";
   }
   /* ---- Voucher payment rules ----
@@ -9798,6 +9800,15 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function allVouchers() { var src = (S.raw && S.raw.vouchers) || S.vouchers || {}; return Object.keys(src).map(function (k) { return Object.assign({ id: k }, src[k]); }).filter(function (v) { return v.status !== "deleted"; }); }
   function payeeVouchers(name) { var n = normName(name), c = pyCanon(name), ids = pyIds(name); return n ? allVouchers().filter(function (v) { return pyCanon(v.payee) === c || (v.payeeIdNo && (idNorm(v.payeeIdNo) === ids.pan || idNorm(v.payeeIdNo) === ids.aadhaar)); }).sort(function (a, b) { return natCmp(b.voucherDate || "", a.voucherDate || "") || (b.createdAt || 0) - (a.createdAt || 0); }) : []; }
   function cashLimit(vtype) { return vtype === "Freight & Transport" ? CASH_FREIGHT : CASH_LIMIT; }
+  /* The mode a voucher starts with, until the maker picks one: Cash while the day's cash to this payee from this company
+     (other vouchers plus this one) stays within ₹ 10,000 (₹ 30,000 for Freight & Transport), Cheque above that. */
+  var CASH_DEFAULT = 10000, CASH_DEFAULT_FREIGHT = 30000;
+  function vchDefaultMode(D) {
+    var t = vchTotal(D); if (!D.companyId || !String(D.payee || "").trim() || t == null) return "";
+    var old0 = VH.id && S.vouchers[VH.id], day0 = old0 && old0.voucherDate ? old0.voucherDate : todayYmd();
+    var lim = D.vtype === "Freight & Transport" ? CASH_DEFAULT_FREIGHT : CASH_DEFAULT;
+    return cashToday(D.companyId, D.payee.trim(), day0, VH.id) + t <= lim + 0.004 ? "cash" : "cheque";
+  }
   function cashToday(cid, payee, day, exceptId) { return round2(payeeVouchers(payee).filter(function (v) { return v.id !== exceptId && v.companyId === cid && (v.voucherDate || ymdOfMs(v.createdAt || 0)) === day && vPayMode(v) === "cash"; }).reduce(function (s0, v) { return s0 + (Number(v.total) || 0); }, 0)); }
   /* What the payee details clash with: a PAN / Aadhaar already saved for another record, or (for a new name) records that look
      the same. Worked out again only when the name, number or address changes. */
@@ -15738,8 +15749,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     $("vhCo").addEventListener("change", renderVch); $("vhQ").addEventListener("input", renderVch);
     $("vfBack").addEventListener("click", backToVch); $("vfCancel").addEventListener("click", backToVch); $("vfSave").addEventListener("click", saveVch);
     $("vfDelete").addEventListener("click", function () { var v = VH.id && S.vouchers[VH.id]; if (v) deleteVch(v, this); });
-    $("vfBody").addEventListener("input", function () { readVchForm(); updVchForm(); });
+    $("vfBody").addEventListener("input", function (e) { if (e.target && e.target.id === "vfMode" && VH.D) VH.D.payModeSet = true; readVchForm(); updVchForm(); });
     $("vfBody").addEventListener("change", function (e) {
+      if (e.target && e.target.id === "vfMode" && VH.D) VH.D.payModeSet = true;
       readVchForm();
       if (e.target && e.target.id === "vfPayeeSel" && e.target.value === "new") setTimeout(function () { $("vfPayee").focus(); }, 0);
       if (e.target && e.target.id === "vfCo" && S.isAdmin) { var ps = $("vfPrep"), np = prepSelect("vfPrep", "vouchers", VH.D.companyId, VH.D.prepBy); ps.parentNode.replaceChild(np, ps); VH.D.prepBy = np.value; }

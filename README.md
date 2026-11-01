@@ -288,6 +288,8 @@ provides the same calls, so the app code did not need rewriting:
   strokes that can be undone, added to or cleared. Saved as ink on a transparent background (`sigs/<id>`: `png`, `src`
   drawn / photo-strokes). A signature with `review: true` (old ones saved straight from a photo) brings up "Please Redo
   Your Signature", which can't be closed until a new one is saved.
+- **Vendors** are one pool for the group. Maintenance & Civil, Renewable Energy and Chemicals each show the vendors tagged
+  for them; Bills & Vouchers (like Accounts and Finance) picks from all of them. Using a vendor in an app tags it there.
 - **Chemicals division** (`div: "chm"`): entered and approved in the Chemicals app, only accounted and paid here; it has
   no entry app of its own (tick it on users, companies and ledgers like any division). A bill sent with `extAppr` gets an
   approved Bill Checking Report (`reports/rx_<bill id>`) as soon as it is accounted; a proforma or import with `instAppr`

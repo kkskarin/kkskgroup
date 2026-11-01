@@ -4582,7 +4582,10 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   /* Vendors and ledgers are kept apart by division: a division app shows only its own (none named means Maintenance & Civil).
      Accounts and Finance see them all. A vendor found by GSTIN from another division joins this one too. */
-  function vendorInApp(v) { if (PV_ALL) return true; return !DIV || ((v && v.apps && v.apps.length) ? v.apps : ["mnt"]).indexOf(DIV) >= 0; }
+  /* One pool of vendors for the group. Each division app shows the vendors tagged for it (Maintenance & Civil, Renewable
+     Energy, Chemicals); Bills & Vouchers, like Accounts and Finance, picks from all of them. Using a vendor in an app tags it
+     there too (vendorJoin), so it is never entered twice. */
+  function vendorInApp(v) { if (PV_ALL || DIV === "bnv") return true; return !DIV || ((v && v.apps && v.apps.length) ? v.apps : ["mnt"]).indexOf(DIV) >= 0; }
   function vendorJoin(v) { if (!v || !DIV || vendorInApp(v)) return; var a = ((v.apps && v.apps.length) ? v.apps : ["mnt"]).concat([DIV]); v.apps = a; retry(function () { return S.db.doc("vendors/" + v.id).update({ apps: a, updatedAt: Date.now(), updatedBy: meId() }); }).catch(function () {}); }
   function vendorOpts(D) {
     var nm = D.vNew.name.trim(), o = [["", "Choose a vendor"], ["new", nm ? "New vendor: " + nm : "New vendor"]];

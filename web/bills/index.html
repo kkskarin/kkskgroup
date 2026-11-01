@@ -5510,6 +5510,11 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var b = $("veGstSaved"), g = vGst(v); b.textContent = ""; b.hidden = !g; if (!g) return;
     b.appendChild(el("b", { class: gstIsBad(g) ? "bad" : "" }, "GST portal, checked " + fmtDay(g.checkedAt) + ": "));
     b.appendChild(document.createTextNode([g.status || "Status not given", g.type, g.constitution, "e-Invoice: " + (g.einv || "not stated")].filter(Boolean).join(" · ")));
+    /* every place of business under this GSTIN (one GSTIN covers all the vendor's places in one state) */
+    var al = gstAddrs(g); if (al.length > 1 || (al.length === 1 && v && addrKey(al[0].address) !== addrKey(v.address || ""))) {
+      b.appendChild(el("div", { class: "lb", style: "margin-top:6px" }, al.length === 1 ? "Place of business on the GST portal:" : al.length + " places of business on the GST portal:"));
+      var ul = el("ul", { style: "margin:2px 0 0 18px" }); al.forEach(function (x) { ul.appendChild(el("li", null, gstAddrLabel(x) + ": " + x.address + (addrKey(x.address) === addrKey((v && v.address) || "") ? " (the vendor's address here)" : ""))); }); b.appendChild(ul);
+    }
   }
   /* ---- Vendor bank details: the IFSC fills in the bank (from Bank Names), branch and branch address. ---- */
   function ifscLook() {
@@ -12229,6 +12234,14 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     body.appendChild(fld("Company", co));
     /* IFSC first: it fills in the bank (its name on Masters › Others › Bank Names), branch, city and address */
     var BK = { name: b ? b.bank : "", code: b ? b.bankCode || String(b.ifsc || "").slice(0, 4) : "" };
+    /* One branch often holds several companies' accounts: a branch already saved is offered, and fills in everything but the account. */
+    var br = {}; Object.keys(S.banks || {}).forEach(function (k) { var a = S.banks[k]; if (!a || !a.ifsc || (b && a.id === b.id)) return; var x = br[a.ifsc] || (br[a.ifsc] = { a: a, cos: [] }); var cl = coLabel(a.companyId); if (cl && x.cos.indexOf(cl) < 0) x.cos.push(cl); });
+    var brl = Object.keys(br).sort(function (x, y) { return natCmp(br[x].a.bank + br[x].a.branch, br[y].a.bank + br[y].a.branch); });
+    if (brl.length) {
+      var bsel = el("select", { class: "field", id: "bkSame" }); fillSelect(bsel, [["", "A new branch: enter the IFSC below"]].concat(brl.map(function (c) { var a = br[c].a; return [c, a.bank + ", " + (a.branch || a.city || "") + " (" + c + ") \u00b7 " + br[c].cos.join(", ")]; })), "");
+      body.appendChild(fld("Same Branch as an Account Already Saved", bsel, "Choose it to fill in the IFSC, bank, branch, city and address."));
+      bsel.addEventListener("change", function () { var x = br[bsel.value]; if (!x) return; var a = x.a; body.querySelector("#bkIfsc").value = bsel.value; BK = { name: a.bank, code: a.bankCode || bsel.value.slice(0, 4) }; bshow.textContent = BK.name; body.querySelector("#bkBranch").value = a.branch || ""; body.querySelector("#bkCity").value = a.city || ""; ba.value = a.address || ""; errClear(body); fillTpl(); var no = body.querySelector("#bkNo"); if (no) no.focus(); });
+    }
     body.appendChild(fld("IFSC", inp("bkIfsc", b ? b.ifsc : "", { maxlength: "11", class: "field mono", spellcheck: "false" }), "The bank's name, branch, city and address fill in from it."));
     var bshow = el("div", { class: "field ro", id: "bkBank" }, BK.name || "From the IFSC"); body.appendChild(fld("Bank Name", bshow, "From Masters › Others › Bank Names, where it can be renamed."));
     [["bkBranch", "Branch", b ? b.branch : "", ""], ["bkCity", "City", b ? b.city : "", "Goes on the salary covering letter."], ["bkName", "Reference Name", b ? b.name : "", "e.g. HDFC current account"], ["bkNo", "Account Number", b ? b.accountNo : "", ""]].forEach(function (x) { body.appendChild(fld(x[1], inp(x[0], x[2] || "", { maxlength: "60", "data-fmt": x[0] === "bkNo" ? "" : "name" }), x[3])); });

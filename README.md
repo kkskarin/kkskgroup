@@ -297,6 +297,10 @@ provides the same calls, so the app code did not need rewriting:
   Details lines are written like a bill's items and purpose, and the voucher's narration is built in the bill format:
   "Being goods purchased from / services availed from / expenses incurred towards [ledger] from [Payee] vide Voucher [No] dt.
   [DD/MM/YYYY]: [details]." (at most 255 characters).
+- **Bank accounts:** a branch already holding one company's account is offered ("Same Branch as an Account Already Saved"),
+  filling in IFSC, bank, branch, city and address for the next company's account.
+- **Vendor locations:** the GST lookup keeps every place of business under the GSTIN (`gst.addresses`, principal and
+  additional, with what each is), listed on the vendor; each bill keeps the address printed on it.
 - **Payees** (people and shops paid by voucher) are one record each in `payees/<key>`: `name`, `aliases` (other names),
   `pan` and/or `aadhaar`, `address`, `notSame`; a record merged into another has `mergedInto` and counts as that one
   everywhere (list, earlier vouchers, cash limit). A PAN or Aadhaar can belong to one record only: typing one already saved

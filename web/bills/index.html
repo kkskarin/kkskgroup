@@ -1229,7 +1229,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     <div class="head">
       <div><h2>Cash Vouchers</h2><p class="sub">Cash paid on the spot, in full, to people who are not on the vendor list. Each voucher is either settled from your cash advance, or sent through a Voucher Checking Report for the financier to pay by cash or cheque.</p></div>
       <span class="grow"></span>
-      <div class="acts2"><button class="btn primary" id="vhNew">New voucher</button></div>
+      <div class="acts2"><button class="btn" id="vhUp">Upload Document</button><button class="btn primary" id="vhNew">Make a Voucher</button><input type="file" id="vhUpF" accept="application/pdf,image/jpeg,image/png,image/webp" hidden></div>
     </div>
     <div class="stats" id="vhBal"></div>
     <div class="filters">
@@ -4229,7 +4229,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       tds: b.entryTds || "", tdsSec: b.entryTdsSection || "",
       termDays: b.termDays == null ? "" : String(b.termDays), termChoice: b.termChoice || "", updateVendorTerm: !!b.updateVendorTerm, narration: b.narration || "", advPick: b.advPick || "", advWhy: b.advWhy || "",
       supplyOf: b.supplyOf || "", einv: { irn: (b.einv && b.einv.irn) || "", ackNo: (b.einv && b.einv.ackNo) || "", ackDate: b.einv && b.einv.ackDate ? fmtDate(b.einv.ackDate) : "" },
-      ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", forId: b.madeBy ? b.preparedBy || "" : "", forNew: "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), approver1Id: b.approver1Id || "", settle: b.settle ? "yes" : "no", X: Object.assign({}, extOf(b, DIV))
+      ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", forId: b.madeBy ? b.preparedBy || "" : "", forNew: "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), approver1Id: b.approver1Id || "", und: b.und || null, settle: b.settle ? "yes" : "no", X: Object.assign({}, extOf(b, DIV))
     };
   }
   function draftFromBill(b) { var D = draftFrom(b); if (!D.ledgers.length && num(D.taxable) != null && num(D.taxable) > 0) D.ledgers.push({ id: "", amt: D.taxable }); return D; }
@@ -4353,7 +4353,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       billNo: D.billNo.trim(), billDate: parseDate(D.billDate),
       termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: narrVendor(D.narration.trim(), D.vendorChoice === "new" ? D.vNew.name : (S.vendors[D.vendorChoice] || {}).name), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
       ledgers: ledLinesOut(D.ledgers), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || "",
-      settle: D.settle === "yes" && billAdvOk(D), supplyOf: D.supplyOf || "", einv: einvOf((D.einv || {}).irn, (D.einv || {}).ackNo, parseDate((D.einv || {}).ackDate || ""))
+      und: D.und || null, settle: D.settle === "yes" && billAdvOk(D), supplyOf: D.supplyOf || "", einv: einvOf((D.einv || {}).irn, (D.einv || {}).ackNo, parseDate((D.einv || {}).ackDate || ""))
     }, amountsOf(D), prepFields(D.prepBy), approverFields(D.approverId, D.approver1Id || ""), extDoc(D.companyId, D.X));
   }
   /* Whose cash a bill would come out of, and whether paying it from that cash advance is offered (rupee bills only). */
@@ -4453,6 +4453,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (!D.billNo.trim()) E("bcNo", "Enter the bill number.");
     if (!D.supplyOf) E("bcSupply", "Choose whether the bill is for goods, services or both.");
     if (narrPayCheck(D.narration)) E("bcNar", narrPayCheck(D.narration));
+    if (riskMsg(D.narration, $("bcNar"))) E("bcNar", riskMsg(D.narration, $("bcNar")));
     if (String(D.narration || "").trim().length > NARR_MAX) E("bcNar", "The narration is " + String(D.narration).trim().length + " characters; keep it to " + NARR_MAX + ".");
     var bd = parseDate(D.billDate);
     if (!D.billDate.trim()) E("bcDate", "Enter the bill date.");
@@ -4475,9 +4476,10 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (td0 > 0 && !D.tdsSec) E("bcTdsSec", "Choose the TDS section.");
     }
     if (foreign && vendorTypeOfCard(D) !== "overseas") E("bcCur", "Only an overseas vendor's bill can be in another currency.");
-    var printed = b.ex && b.ex.printedTotal;
-    if (printed != null && tx != null && ga != null && Math.abs(tx + ga - printed) > 1) warns.push("The bill's printed total is " + cl + amt(printed) + ", but taxable plus GST comes to " + cl + amt(tx + ga) + ". Check for round-off, freight or TDS.");
-    var gn = tx != null && ga != null ? gstRateNote(tx, ga, D.currency) : ""; if (gn) warns.push(gn);
+    /* Hard faults: the bill isn't accepted as it is, unless the purchaser gives an undertaking (takes responsibility, with why). */
+    var hard = [], printed = b.ex && b.ex.printedTotal;
+    if (printed != null && tx != null && ga != null && Math.abs(tx + ga - printed) > 1) hard.push("The bill's printed total is " + cl + amt(printed) + ", but taxable plus GST comes to " + cl + amt(tx + ga) + ".");
+    var gn = tx != null && ga != null ? gstRateNote(tx, ga, D.currency) : ""; if (gn) { if (/isn't a standard rate/.test(gn)) hard.push(gn); else warns.push(gn); }
     if (vt && vt !== "registered" && ga > 0) warns.push("This vendor is " + vtypeLabel(vt).toLowerCase() + ", but the bill charges GST.");
     if (vt === "registered" && ga === 0) warns.push("This vendor is registered, but the bill charges no GST.");
     if (!ti.isNew && v) {
@@ -4493,10 +4495,17 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var oa = openAdvsFor(D, b);
     if (oa.length && !D.advPick) E("bcAdvPick", "Say whether this is the final bill of the open " + (oa[0].kind === "import" ? "import " : "proforma ") + oa[0].piNo + (oa.length > 1 ? " or another open one" : "") + ".");
     else if (oa.length && D.advPick === "no" && String(D.advWhy || "").trim().length < 4) E("bcAdvWhy", "Write why this bill is separate.");
+    var vg = v ? vGst(v) : cardPortal(b, normId((D.vNew || {}).gstin));
+    if (vg && gstEinv(vg) && !irn) { hard.push("The vendor must issue e-invoices (GST portal), but this bill has no IRN. Get the e-invoice with its IRN and QR code."); warns = warns.filter(function (w) { return !/has no IRN/.test(w); }); }
+    if (hard.length) {
+      var un = D.und || {};
+      if (!un.ok) E("bcUnd", "Get a correct bill from the vendor, or give the undertaking below.");
+      else if (String(un.reason || "").trim().length < 4) E("bcUndWhy", "Write why this bill is accepted as it is.");
+    }
     var dup = findDuplicate(D, b);
     if (dup) DUP("bcNo", dup.status === "done" ? "Bill " + dup.billNo + " from this vendor was already submitted on " + fmtDay(dup.submittedAt) + ". Discard this copy."
       : "Bill " + dup.billNo + " from this vendor is already waiting " + (dup.ownerId === meId() ? "in your list" : "in someone else's list") + ". Discard one of them.");
-    return { errs: errs, warns: warns, ti: ti };
+    return { errs: errs, warns: warns, ti: ti, hard: hard };
   }
 
   /* ---- building the card ---- */
@@ -4619,8 +4628,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       var bn = fld("Name", inp("bcForNew", D.forNew || "", { maxlength: "80", autocomplete: "off", "data-fmt": "name" }), "Saved, and offered next time."); bn.hidden = D.forId !== "new"; f.appendChild(bn);
       bf.addEventListener("change", function () { bn.hidden = bf.value !== "new"; });
     }
-    f.appendChild(fld("2nd Approver (final)", approverSelect("bcAppr", D.approverId), APPR_HINT));
-    if (l1List("bcr").length) f.appendChild(fld("1st Approver (optional)", l1Select("bcAppr1", "bcr", D.approver1Id), APPR1_HINT));
+    f.appendChild(fld("Second Approver (final)", approverSelect("bcAppr", D.approverId), APPR_HINT));
+    if (l1List("bcr").length) f.appendChild(fld("First Approver (optional)", l1Select("bcAppr1", "bcr", D.approver1Id), APPR1_HINT));
     var stl = el("select", { class: "field", id: "bcSettle" }); fillSelect(stl, [["no", "No, the financier pays the vendor"], ["yes", "Yes, I paid it from my cash advance"]], D.settle === "yes" ? "yes" : "no");
     var stf = fld("Paid from cash advance?", stl, " "); stf.id = "bcSetF"; stf.hidden = true; f.appendChild(stf);
     var ven = el("select", { class: "field", id: "bcVen" }); fillSelect(ven, vendorOpts(D), D.vendorChoice);
@@ -4666,6 +4675,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var tf = el("div", { class: "f" }); tf.appendChild(el("span", { class: "lb", id: "bcTotL" }, "Total amount")); tf.appendChild(el("div", { class: "field ro num", id: "bcTot" })); tf.appendChild(el("span", { class: "hint", id: "bcTotH" }, "Taxable amount plus GST.")); f.appendChild(tf);
     var pf = el("div", { class: "f" }); pf.appendChild(el("span", { class: "lb" }, "GST percentage")); pf.appendChild(el("div", { class: "field ro num", id: "bcPct" })); pf.appendChild(el("span", { class: "hint" }, "Calculated from the two amounts.")); f.appendChild(pf);
     f.appendChild(el("div", { class: "flags", id: "bcFlags" }));
+    f.appendChild(el("div", { class: "vbox und f wide", id: "bcUndBox", hidden: "", style: "display:block;grid-column:1/-1" }));
     if (b.acct === "back" && b.acctNote) { var bk = el("div", { class: "flag w", style: "margin:0 0 12px" }); bk.innerHTML = WARN_SVG; bk.appendChild(el("span", null, "Sent back by " + (b.acctByName || "the accountant") + ": " + b.acctNote)); f.insertBefore(bk, f.firstChild); }
     body.appendChild(f); card.appendChild(body);
     setTimeout(mountBillLed, 0);
@@ -4878,6 +4888,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     $("bcGst").previousSibling.textContent = gstLabel(B.gstK) + (foreign ? " (" + D.currency + ")" : "");
     Array.prototype.forEach.call(document.querySelectorAll("#bOpen .err"), function (x) { x.hidden = true; });
     Array.prototype.forEach.call(document.querySelectorAll("#bOpen .field.bad"), function (x) { x.classList.remove("bad"); });
+    paintUnd(r.hard || []);
     var fl = $("bcFlags"); fl.textContent = "";
     r.errs.forEach(function (x) {
       if (!B.tried && !x[2]) return;
@@ -4892,6 +4903,22 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var nt = b.ex && b.ex.notes; if (nt) { var d3 = el("div", { class: "flag w" }); d3.innerHTML = WARN_SVG; d3.appendChild(el("span", null, "Claude's note: " + nt)); fl.appendChild(d3); }
     return r;
   }
+  /* The undertaking: the purchaser takes responsibility for a bill with a hard fault (no e-invoice where one is due, or GST that
+     doesn't add up), and says why. Kept on the bill with who and when; the accountant and the approver see it. */
+  function paintUnd(hard) {
+    var bx = $("bcUndBox"), D = B.D; if (!bx || !D) return;
+    var key = hard.join("|"); bx.hidden = !hard.length; if (!hard.length) { bx.textContent = ""; bx._k = ""; if (D.und) { D.und = null; scheduleSave(); } return; }
+    if (bx._k === key) return; bx._k = key; bx.textContent = "";
+    bx.appendChild(el("div", { class: "ttl" }, "This bill can't be submitted as it is:"));
+    var ul = el("ul", { style: "margin:4px 0 8px 18px" }); hard.forEach(function (h) { ul.appendChild(el("li", null, h)); }); bx.appendChild(ul);
+    var lb = el("label", { class: "check" }), cb = el("input", { type: "checkbox", id: "bcUnd" }); cb.checked = !!(D.und && D.und.ok);
+    lb.appendChild(cb); lb.appendChild(document.createTextNode(" Undertaking: I accept this bill as it is and take full responsibility for it."));
+    bx.appendChild(lb); var ue = el("span", { class: "err", id: "bcUndE", hidden: "" }); bx.appendChild(ue);
+    var wf = tidyField("Why it is accepted as it is", tidyBox("bcUndWhy", (D.und && D.und.reason) || "", "reason", 300), "Kept on the bill with your name; the accountant and the approver see it."); wf.id = "bcUndWhyF"; wf.hidden = !cb.checked; bx.appendChild(wf);
+    function set() { D.und = cb.checked ? { ok: true, reason: $("bcUndWhy").value } : null; wf.hidden = !cb.checked; scheduleSave(); updateDynamic(); }
+    cb.addEventListener("change", set); $("bcUndWhy").addEventListener("input", function () { if (cb.checked) { D.und = { ok: true, reason: this.value }; scheduleSave(); } });
+  }
+  function undText(x) { var u = x && x.undertaking; return u ? "Undertaking by " + (pnm(u.byName) || "the purchaser") + (u.at ? " on " + fmtDay(u.at) : "") + ": accepted as it is (" + (u.issues || []).join(" ") + ") Reason: " + (u.reason || "") : ""; }
   function scheduleSave() { if (!B.cardId) return; B.dirty = true; clearTimeout(B.saveTimer); B.saveTimer = setTimeout(doSave, 900); var s = $("bcSaved"); if (s) s.textContent = "Saving"; }
   function doSave() {
     clearTimeout(B.saveTimer); B.saveTimer = null;
@@ -4920,6 +4947,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (!b.file) { var nf = el("div", { class: "flag e" }); nf.innerHTML = WARN_SVG; nf.appendChild(el("span", null, "This bill's file isn't kept yet. Attach the bill file before submitting.")); $("bcFlags").insertBefore(nf, $("bcFlags").firstChild); $("bcFlags").scrollIntoView({ block: "center" }); toast("Attach the bill file before submitting."); return; }
     B.busy = true; setCardBusy(true); clearTimeout(B.saveTimer); B.dirty = false;
     var D = B.D, doc = keepLock(draftToDoc(D), b), now = Date.now(), vid = doc.vendorId, days = r.ti.days, job = B.savePromise || Promise.resolve(), madeVendor = "";
+    doc.undertaking = r.hard && r.hard.length && D.und && D.und.ok ? { by: meId(), byName: pnm(preparedByText()), at: now, issues: r.hard.slice(), reason: sentenceFix(String(D.und.reason || "").trim()) } : null;
     if (D.vendorChoice === "new") {
       var g = normId(D.vNew.gstin), ex = g && vendorByGstin(g);
       if (ex) { vid = ex.id; vendorJoin(ex); }
@@ -5011,6 +5039,15 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   var PAY_WORDS = /\b(paid|pay|payment|payments|cheque|chq|neft|rtgs|imps|upi|gpay|google ?pay|phone ?pe|phonepe|paytm|by cash|in cash|cash paid|advance paid|balance (?:payable|due))\b/i;
   var NO_PAY = "Leave out anything about payment (paid, cash, cheque, NEFT, UPI, advance or balance): it is recorded when paying.";
   function payWords(t) { var m = PAY_WORDS.exec(String(t || "")); return m ? m[0] : ""; }
+  /* Narrations that put the company at risk are never accepted: bribes, kickbacks and other illegal or non-compliant payments.
+     A word list catches the plain cases; Claude, when it tidies a narration, answers BLOCKED for the rest. */
+  var RISK_WORDS = /\b(bribe[sd]?|bribing|bribery|kick-?backs?|speed money|grease money|mamool|mamul|maamool|hafta|under[- ]the[- ]table|black money|unaccounted|gratification|extortion|fake (?:bills?|invoices?|receipts?)|bogus (?:bills?|invoices?)|inflated (?:bills?|invoices?)|without (?:a )?(?:bill|invoice|receipt) to (?:the )?(?:officer|official|inspector|police))\b/i;
+  var RISK_RULE = "If the text describes a bribe, kickback, speed money, a gift or cash to a government official to get something done, a fake, inflated or back-dated bill, or any other illegal or non-compliant payment, do not write it: reply exactly BLOCKED: followed by a short reason in English.";
+  function riskOf(t, ta) {
+    var m = RISK_WORDS.exec(String(t || "")); if (m) return "\u201c" + m[0] + "\u201d";
+    return ta && ta._risk && ta._riskFor === String(t || "").trim() ? ta._risk : "";
+  }
+  function riskMsg(t, ta) { var r = riskOf(t, ta); return r ? "Not accepted: this describes a payment that puts the company at risk (" + r + "). Such expenses can't be recorded." : ""; }
   function narrPayCheck(t) { var w = payWords(t); return w ? "Leave payment details out of the narration (\u201c" + w + "\u201d): payments are recorded in Payment Entry." : ""; }
   /* What a narration box is about, for writing it to the rules: the bill or proforma's vendor, number, date and items. */
   function tidyCtx(ta) {
@@ -5023,9 +5060,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var lang = "Below is " + TIDY.kinds[kind] + ", typed or spoken by a staff member of an Indian company. Work out what language it is in yourself: it may be English, Tamil, Hindi, Urdu, any of them written in English letters, or a mix. Write it in English.\n\n";
     var clean = "Fix spelling, grammar, spacing and punctuation, remove repeated words and filler, keep every fact (items, quantities, units, amounts, names, places, dates) and add nothing. Expand an abbreviation only when its meaning is certain (m/c machine, qty quantity); never guess. Keep exactly as written: names of vendors, people and businesses, model, part and serial numbers, codes, machine identifiers and unfamiliar part names. Keep acronyms and company codes in capitals (KKSK, LLP, GST, ETP); units as kg, L, mm, m, pcs. ";
     var tail = (names.length ? "Names that may appear, spelled correctly: " + names.join("; ") + "\n\n" : "") + "Text:\n" + said.slice(0, 3000);
-    if (kind === "bill") return lang + NARR_RULES + "\n- " + NO_PAY + "\n\nWrite the bill's narration to these rules. The text is the purchaser's words (remarks on the purpose, or a narration to correct); the FIELDS are authoritative for vendor, number and date. Reply with only the narration.\n\n" + (ctx ? "FIELDS: " + JSON.stringify(ctx) + "\n\n" : "") + tail;
-    if (kind === "proforma") return lang + "Write the narration of a " + ((ctx && ctx.kind) || "proforma invoice") + " (an order not yet billed): \"Being [goods / services] ordered from [Vendor] vide Proforma [Number] dt. [DD/MM/YYYY]: [Qty] [Item], [Qty] [Item]; for [Purpose].\" At most 255 characters; never cut a name, number or date; never invent a quantity or purpose; leave out what is unclear. " + clean + NO_PAY + " End with a full stop. Reply with only the narration.\n\n" + (ctx ? "FIELDS: " + JSON.stringify(ctx) + "\n\n" : "") + tail;
-    if (kind === "voucher") return lang + "Write one line of a cash voucher's description: what the expense was for (item or service, quantity, place or purpose), as a short phrase or sentence, at most 160 characters. " + clean + NO_PAY + " End with a full stop. Reply with only the text.\n\n" + tail;
+    if (kind === "bill") return lang + NARR_RULES + "\n- " + NO_PAY + "\n- " + RISK_RULE + "\n\nWrite the bill's narration to these rules. The text is the purchaser's words (remarks on the purpose, or a narration to correct); the FIELDS are authoritative for vendor, number and date. Reply with only the narration.\n\n" + (ctx ? "FIELDS: " + JSON.stringify(ctx) + "\n\n" : "") + tail;
+    if (kind === "proforma") return lang + RISK_RULE + " Otherwise: write the narration of a " + ((ctx && ctx.kind) || "proforma invoice") + " (an order not yet billed): \"Being [goods / services] ordered from [Vendor] vide Proforma [Number] dt. [DD/MM/YYYY]: [Qty] [Item], [Qty] [Item]; for [Purpose].\" At most 255 characters; never cut a name, number or date; never invent a quantity or purpose; leave out what is unclear. " + clean + NO_PAY + " End with a full stop. Reply with only the narration.\n\n" + (ctx ? "FIELDS: " + JSON.stringify(ctx) + "\n\n" : "") + tail;
+    if (kind === "voucher") return lang + RISK_RULE + " Otherwise: write one line of a voucher's details in the item part of an accounting narration, the same as a bill's: \"[Qty] [Item or service], [Qty] [Item]; for [Purpose/Location]\" (e.g. \"2 kg grease, 4 bearings; for Drum 3 repair\"). Quantities and units where meaningful; no amounts, payee, voucher number or date; never invent a quantity or purpose. At most 160 characters. " + clean + NO_PAY + " End with a full stop. Reply with only the text.\n\n" + tail;
     return lang + "Rewrite it in clean, plain English. " + clean + "One to three sentences, under 80 words, ending with a full stop. If it is already clean English, return it unchanged. Reply with only the text.\n\n" + tail;
   }
   function tidyStatus(ta, t) { var s = ta && ta.parentNode && ta.parentNode.querySelector(".tidy-st"); if (s) s.textContent = t; }
@@ -5047,6 +5084,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var id = ta.id, p = S.sample(prompt, { modelTier: "quick" }).then(function (r) {
       var t = String((r && r.text) || "").trim().replace(/^["“]+|["”]+$/g, "");
       if (!ta.isConnected || ta.value.trim() !== said) { tidyStatus(ta, ""); return; }
+      var bk = /^BLOCKED:?\s*/i.exec(t); if (bk) { ta._risk = t.slice(bk[0].length).replace(/\.$/, "") || "flagged by Claude"; ta._riskFor = said; tidyStatus(ta, "Not accepted: " + ta._risk + "."); ta.dispatchEvent(new Event("input", { bubbles: true })); return; }
       if (t) { t = sentenceFix(t).slice(0, Number(ta.getAttribute("maxlength")) || 400); ta._tidied = t; if (t !== ta.value) { ta.value = t; ta.dispatchEvent(new Event("input", { bubbles: true })); ta.dispatchEvent(new Event("change", { bubbles: true })); } tidyStatus(ta, "Tidied into clean English. Edit if needed."); }
       else tidyStatus(ta, "");
     }, function (e) { tidyStatus(ta, e && e.code === "not_granted" ? "Claude isn't allowed here; kept as typed." : "Couldn't tidy it; kept as typed."); })
@@ -6127,7 +6165,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
           var i = el("input", { type: "checkbox", class: "ckinc", "data-id": b.id, "aria-label": "Include bill " + b.billNo }); i.checked = !!CK.sel[b.id]; td.appendChild(i); } },
       { label: "Bill number", kind: "co", sort: function (b) { return b.billNo; }, cell: function (b, td) { td.appendChild(el("b", { class: "mono" }, b.billNo)); if (d && !inDraft(b)) td.appendChild(el("span", { class: "tag stg s-new", style: "margin-left:6px" }, "New")); } },
       { label: "Bill date", cls: "num", sort: function (b) { return b.billDate; }, cell: function (b, td) { txt(td, fmtDate(b.billDate)); sub(td, "Due " + fmtDate(b.dueDate)); } },
-      { label: "Description", cls: "desc", cell: function (b, td) { txt(td, b.narration || "No narration"); } },
+      { label: "Description", cls: "desc", cell: function (b, td) { txt(td, b.narration || "No narration"); if (b.undertaking) sub(td, undText(b), "color:var(--warn)"); } },
       { label: "Taxable", cls: "r num", sort: function (b) { return b.taxable || 0; }, desc: true, cell: function (b, td) { txt(td, bm(b, b.taxable)); } },
       { label: "GST", cls: "r num", sort: function (b) { return b.gstAmt || 0; }, desc: true, cell: function (b, td) { txt(td, bm(b, b.gstAmt)); } },
       { label: "Total amount", cls: "r num", sort: function (b) { return b.total || 0; }, desc: true, cell: function (b, td) { td.appendChild(el("b", null, bm(b, b.total))); var bi0 = crBackInfo(b); if (bi0 && bi0.part) sub(td, "Rest to approve " + bm(b, billRest(b)), "color:var(--warn);font-weight:600"); if (bi0) sub(td, bi0.t); } },
@@ -6307,7 +6345,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       { label: "S.No", cls: "num", cell: function (b, td, i) { txt(td, i + 1); } },
       { label: "Bill number", kind: "co", sort: function (b) { return b.billNo; }, cell: function (b, td) { td.appendChild(docLink(pick, at[b.id], b.billNo)); } },
       { label: "Bill date", cls: "num", sort: function (b) { return b.billDate; }, cell: function (b, td) { txt(td, fmtDate(b.billDate)); sub(td, "Due " + fmtDate(b.dueDate)); } },
-      { label: "Description", cls: "desc", cell: function (b, td) { txt(td, b.narration || "No narration"); } },
+      { label: "Description", cls: "desc", cell: function (b, td) { txt(td, b.narration || "No narration"); if (b.undertaking) sub(td, undText(b), "color:var(--warn)"); } },
       { label: "Taxable", cls: "r num", sort: function (b) { return b.taxable || 0; }, desc: true, cell: function (b, td) { txt(td, bm(b, b.taxable)); } },
       { label: "GST", cls: "r num", sort: function (b) { return b.gstAmt || 0; }, desc: true, cell: function (b, td) { txt(td, bm(b, b.gstAmt)); } },
       { label: "Total amount", cls: "r num", sort: function (b) { return b.total || 0; }, desc: true, cell: function (b, td) { td.appendChild(el("b", null, bm(b, b.total))); } },
@@ -7036,8 +7074,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var co = el("select", { class: "field", id: "adCo" }); fillSelect(co, companyOpts(D.companyId, "adv"), D.companyId);
     f.appendChild(fld("Company", co, D.ex && D.ex.companyName ? "On the file: " + D.ex.companyName : ""));
     if (APP === "re") { D.X = D.X || {}; f.appendChild(ccField("adCc", D.companyId, D.X)); co.addEventListener("change", function () { ccSync("adCc", co.value, D.X || {}); }); }
-    f.appendChild(fld("2nd Approver (final)", approverSelect("adAppr", D.approverId), APPR_HINT));
-    if (l1List("acr").length) f.appendChild(fld("1st Approver (optional)", l1Select("adAppr1", "acr", D.approver1Id), APPR1_HINT));
+    f.appendChild(fld("Second Approver (final)", approverSelect("adAppr", D.approverId), APPR_HINT));
+    if (l1List("acr").length) f.appendChild(fld("First Approver (optional)", l1Select("adAppr1", "acr", D.approver1Id), APPR1_HINT));
     var ven = el("select", { class: "field", id: "adVen" }); fillSelect(ven, advVendorOpts(D), D.vendorChoice);
     f.appendChild(fld("Vendor", ven, D.ex && D.ex.vendorName ? "On the file: " + D.ex.vendorName : imp ? "Overseas vendors only." : ""));
     var vb = el("div", { class: "vbox", id: "adVBox" }); vb.hidden = D.vendorChoice !== "new";
@@ -7174,6 +7212,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (!D.companyId) E("adCo", "Choose the company."); else if (!canStep("adv", D.companyId)) E("adCo", "You don't have access to this company.");
     var cce = ccCheck("adCc", num(D.total)); if (cce) E("adCc", cce);
     if (narrPayCheck(D.narration)) E("adNar", narrPayCheck(D.narration));
+    if (riskMsg(D.narration, $("adNar"))) E("adNar", riskMsg(D.narration, $("adNar")));
     var g = "";
     if (!D.approverId) E("adAppr", "Choose who approves this.");
     if (!D.vendorChoice) E("adVen", "Choose the vendor, or New vendor.");
@@ -9488,7 +9527,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function vchEditable(v) { return !vcrOf(v.id) && (S.isAdmin || ((prepOf(v) === meId() || v.createdBy === meId()) && (within3(v.createdAt) || !!v.sentBack || v.acct === "back"))); }
   function renderVch() {
-    $("vhNew").hidden = !canDo("vouchers");
+    $("vhNew").hidden = $("vhUp").hidden = !canDo("vouchers");
     var sel = $("vhCo"), cur = sel.value;
     fillSelect(sel, [["", "All your companies"]].concat(roleCos("vouchers").map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
     var bal = $("vhBal"); bal.textContent = "";
@@ -9527,7 +9566,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (D.payeeChoice && D.payeeChoice !== "new" && !o.some(function (x) { return x[0] === D.payeeChoice; })) o.push([D.payeeChoice, D.payeeChoice]);
     return o;
   }
-  function payeeNames() { var m = {}; vchList().forEach(function (v) { var n = (v.payee || "").trim(); if (n) m[n.toLowerCase()] = n; }); return Object.keys(m).map(function (k) { return m[k]; }).sort(natCmp); }
+  function payeeNames() { var m = {}; Object.keys(S.payees || {}).forEach(function (k) { var n = String((S.payees[k] || {}).name || "").trim(); if (n) m[n.toLowerCase()] = n; }); allVouchers().forEach(function (v) { var n = (v.payee || "").trim(); if (n) m[n.toLowerCase()] = n; }); return Object.keys(m).map(function (k) { return m[k]; }).sort(natCmp); }
   function openVchForm(id) {
     var v = id ? S.vouchers[id] : null;
     if (id && (!v || !vchEditable(v))) { toast("This voucher can't be changed now."); return; }
@@ -9536,8 +9575,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var lg0 = ((v && v.ledgers) || [])[0] || {};
     var lines = v ? (v.lines && v.lines.length ? v.lines.map(function (x) { return { d: x.d || "", amt: fmtInput(x.amt), lg: x.lg || ((v.ledgers || []).length === 1 ? lg0.id : ""), touched: true }; }) : [{ d: v.narration || "", amt: fmtInput(v.total), lg: lg0.id || "", touched: true }]) : [{ d: "", amt: "", lg: "", touched: false }];
     VH.D = v ? { companyId: v.companyId, prepBy: v.preparedBy || "", forId: v.preparedBy || "", forNew: "", approverId: v.approverId || "", voucherNo: v.voucherNo || "", voucherDate: v.voucherDate || "", payee: v.payee || "", payeeChoice: v.payee || "", payeeNew: "", settle: v.settle ? "yes" : "no", lines: lines, file: v.file || null, X: Object.assign({}, extOf(v, DIV)),
-        vtype: v.vtype || "", supplyOf: v.supplyOf || "", payeeAddr: v.payeeAddr || "", payeeIdNo: v.payeeIdNo || "" }
-      : { companyId: cos.length === 1 ? cos[0].id : "", prepBy: "", approverId: S.isAdmin ? "" : defaultApprover(), voucherNo: "", voucherDate: "", payee: "", payeeChoice: "", payeeNew: "", settle: "", lines: lines, vtype: "", supplyOf: "", payeeAddr: "", payeeIdNo: "" };
+        vtype: v.vtype || "", supplyOf: v.supplyOf || "", payeeAddr: v.payeeAddr || "", payeeIdNo: v.payeeIdNo || "", payMode: v.payMode || (v.settle ? "cash" : ""), payeeEdit: false }
+      : { companyId: cos.length === 1 ? cos[0].id : "", prepBy: "", approverId: S.isAdmin ? "" : defaultApprover(), voucherNo: "", voucherDate: "", payee: "", payeeChoice: "", payeeNew: "", settle: "", lines: lines, vtype: "", supplyOf: "", payeeAddr: "", payeeIdNo: "", payMode: "", payeeEdit: false };
     $("vfTitle").textContent = v ? "Voucher " + v.voucherNo : "New voucher";
     $("vfSub").textContent = v && v.acct === "back" && v.acctNote ? "Sent back by the accountant: " + v.acctNote : "Paid in full: by cash, or by the financier in cash or cheque. GST and TDS are entered by the accountant.";
     $("vfSave").textContent = v ? "Save changes" : "Submit voucher"; $("vfDelete").hidden = !v;
@@ -9554,30 +9593,36 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       var fo = el("select", { class: "field", id: "vfFor" }); fillSelect(fo, vForOpts(D.companyId), D.forId || ""); f.appendChild(fld(APP === "bnv" ? "Prepared by" : "Voucher for", fo, APP === "bnv" ? "Who prepared this voucher: you, or a saved name. It counts as theirs." : "The person whose voucher this is. It counts as theirs: their cash advance and their checking report."));
       var fn = fld("Name", inp("vfForNew", D.forNew || "", { maxlength: "80", autocomplete: "off", "data-fmt": "name" }), "Saved, and offered next time."); fn.id = "vfForNewF"; fn.hidden = D.forId !== "new"; f.appendChild(fn);
     }
-    f.appendChild(fld("2nd Approver (suggested)", approverSelect("vfAppr", D.approverId), l1List("vcr").length ? "Every voucher first goes to " + l1List("vcr").map(function (a) { return a.name; }).join(" and ") + ", who approve it or pass it on to this admin." : APPR_HINT));
+    f.appendChild(fld("Second Approver (suggested)", approverSelect("vfAppr", D.approverId), l1List("vcr").length ? "Every voucher first goes to " + l1List("vcr").map(function (a) { return a.name; }).join(" and ") + ", who approve it or pass it on to this admin." : APPR_HINT));
     var ty = el("select", { class: "field", id: "vfType" }); fillSelect(ty, [["", "Choose the type"]].concat(VTYPES_V), D.vtype); f.appendChild(fld("Type of voucher", ty, "Cash Voucher, Self Invoice, or Freight & Transport."));
     var ps = el("select", { class: "field", id: "vfPayeeSel" }); fillSelect(ps, payeeOpts(D), D.payeeChoice);
     f.appendChild(fld("Paid To", ps, "Someone paid before, or a new person or shop."));
-    var pb = el("div", { class: "vbox", id: "vfPayeeBox" }); pb.hidden = D.payeeChoice !== "new";
-    pb.appendChild(el("div", { class: "ttl" }, "New person or shop. The name and address are offered next time."));
-    pb.appendChild(fld("Name", inp("vfPayee", D.payeeNew, { maxlength: "120", autocomplete: "off", "data-fmt": "name" })));
+    /* A saved payee's Aadhaar / PAN and address are shown, not typed again (Change opens them); a new one's are entered in
+       the green box with the name. */
+    var sm = el("div", { class: "f wide", id: "vfPayeeSum" }); f.appendChild(sm);
+    var pb = el("div", { class: "vbox f wide", id: "vfPayeeBox" }); pb.hidden = D.payeeChoice !== "new";
+    pb.appendChild(el("div", { class: "ttl", id: "vfPayeeTtl" }, "New person or shop. The name, Aadhaar / PAN and address are offered next time."));
+    var nf0 = fld("Name", inp("vfPayee", D.payeeNew, { maxlength: "120", autocomplete: "off", "data-fmt": "name" })); nf0.id = "vfPayeeNameF"; pb.appendChild(nf0);
+    var idi = inp("vfIdNo", D.payeeIdNo || "", { maxlength: "14", autocomplete: "off", class: "field mono", spellcheck: "false" }); var idf = fld("Aadhaar / PAN No.", idi, "Required. Aadhaar (12 digits) or PAN (e.g. ABCDE1234F)."); idf.id = "vfIdF"; pb.appendChild(idf);
+    var ad = el("textarea", { class: "field", id: "vfAddr", rows: "2", maxlength: "240" }); ad.value = D.payeeAddr; var adf = fld("Address", ad, "Required for a Self Invoice or Freight & Transport voucher.", true); adf.id = "vfAddrF"; pb.appendChild(adf);
     f.appendChild(pb);
-    var idi = inp("vfIdNo", D.payeeIdNo || "", { maxlength: "14", autocomplete: "off", class: "field mono", spellcheck: "false" }); var idf = fld("Aadhaar / PAN No.", idi, "Required. Aadhaar (12 digits) or PAN (e.g. ABCDE1234F). Saved with the name; shown here next time."); idf.id = "vfIdF"; f.appendChild(idf);
-    var ad = el("textarea", { class: "field", id: "vfAddr", rows: "2", maxlength: "240" }); ad.value = D.payeeAddr; var adf = fld("Address", ad, "For a Self Invoice or Freight & Transport voucher. Saved with the name and filled in next time.", true); adf.id = "vfAddrF"; f.appendChild(adf);
+    f.appendChild(el("div", { class: "f wide", id: "vfHist" }));
     var sup = el("select", { class: "field", id: "vfSupply" }), sopts = [["", "Choose"]].concat(SUPPLY_OF.map(function (x) { return [x, x]; }));
     if (D.supplyOf && SUPPLY_OF.indexOf(D.supplyOf) < 0) sopts.push([D.supplyOf, D.supplyOf]);
     fillSelect(sup, sopts, D.supplyOf); var so = fld("Supply Of", sup, "Goods, Services, or Composite (goods and services together)."); so.id = "vfSupplyF"; f.appendChild(so);
     var lw = el("div", { class: "f wide" }); lw.appendChild(el("span", { class: "lb" }, "Details and ledger (up to 2 lines)")); var lb = el("div", { id: "vfLines" }); lw.appendChild(lb); lw.appendChild(el("span", { class: "err", id: "vfLinesE", hidden: "" })); f.appendChild(lw);
     /* an optional document (receipt, slip, photo): kept with the voucher, and Claude writes the lines from it */
     var dw = el("div", { class: "f wide" }); dw.appendChild(el("span", { class: "lb" }, "Document (optional)"));
-    var dfi = el("input", { type: "file", accept: "application/pdf,image/jpeg,image/png,image/webp", hidden: "" }), dbn = el("button", { type: "button", class: "btn sm" }, VH.D.file ? "Replace Document" : "Attach Document"), dln = el("span", { class: "hint", id: "vfDocLn" }, VH.D.file ? "Kept: " + VH.D.file.name : "A receipt, slip or photo. The details are written from it" + (S.sample ? " by Claude" : "") + "; check them.");
+    var dfi = el("input", { type: "file", accept: "application/pdf,image/jpeg,image/png,image/webp", hidden: "" }), dbn = el("button", { type: "button", class: "btn sm", id: "vfDocBtn" }, VH.D.file ? "Replace Document" : "Attach Document"), dln = el("span", { class: "hint", id: "vfDocLn" }, VH.D.file ? "Kept: " + VH.D.file.name : "A receipt, slip or photo. The details are written from it" + (S.sample ? " by Claude" : "") + "; check them.");
     dbn.addEventListener("click", function () { dfi.click(); }); dfi.addEventListener("change", function () { vchDoc(dfi.files && dfi.files[0], dbn, dln); dfi.value = ""; });
     var drow = el("div", { class: "row", style: "display:flex;gap:10px;align-items:center;flex-wrap:wrap" }); drow.appendChild(dbn); drow.appendChild(dln); dw.appendChild(drow); dw.appendChild(dfi); f.appendChild(dw);
     drawVchLines();
     var tt = el("div", { class: "f" }); tt.appendChild(el("span", { class: "lb" }, "Total amount")); tt.appendChild(el("div", { class: "field ro num", id: "vfTotV" })); tt.appendChild(el("span", { class: "hint" }, "The lines added up. Paid in full.")); f.appendChild(tt);
+    var md = el("select", { class: "field", id: "vfMode" }); fillSelect(md, [["", "Choose how it is paid"]].concat(VPAY_MODES), D.payMode || "");
+    var mf = fld("Mode of Payment", md, "Cash to one person or shop from one company is limited to \u20B9 10,000 a day (\u20B9 35,000 for freight and transport); cheque and NEFT / RTGS have no limit."); mf.id = "vfModeF"; f.appendChild(mf);
     var sf = el("div", { class: "f wide", id: "vfSetF" }); sf.appendChild(el("span", { class: "lb", id: "vfSetL" }, "Is this an advance settlement?"));
     var rg = el("div", { class: "radios", role: "radiogroup", "aria-labelledby": "vfSetL", id: "vfSet" });
-    [["yes", "Yes, paid from my cash advance"], ["no", "No, the financier pays it (cash or cheque)"]].forEach(function (o) {
+    [["yes", "Yes, paid from my cash advance"], ["no", "No, the financier pays it"]].forEach(function (o) {
       var l = el("label", { class: "check" }), r = el("input", { type: "radio", name: "vfSettle", value: o[0] }); r.checked = D.settle === o[0]; l.appendChild(r); l.appendChild(document.createTextNode(" " + o[1])); rg.appendChild(l);
     });
     sf.appendChild(rg); sf.appendChild(el("div", { class: "vbox", id: "vfBal", hidden: "" }));
@@ -9602,17 +9647,30 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   var SUPPLY_OF = ["Goods", "Services", "Composite"];
   /* Keep a voucher's document and have Claude write its lines from it (descriptions, and amounts where blank). */
-  function vchDoc(f, btn, ln) {
+  function vchDoc(f, btn, ln, fromUpload) {
     var D = VH.D, t = fileType(f); if (!D || !f) return; if (!t) { toast("Choose a PDF or a photo (JPG, PNG or WebP)."); return; }
     readVchForm(); D.docKey = D.docKey || newId("vd"); var lb = btn.textContent; btn.disabled = true; btn.textContent = "Reading…";
     var path = (S.mode === "demo" ? "demo" : "live") + "/vouchers/" + D.docKey + "/" + Date.now().toString(36) + "-" + fileSafeName(f.name);
     var keep = window.bvFiles ? window.bvFiles.put(path, f, t).then(function () { D.file = { path: path, name: str(f.name || "Document", 160), type: t, size: f.size || 0, at: Date.now(), by: meId() }; ln.textContent = "Kept: " + D.file.name; }, function () { ln.textContent = "The document couldn't be kept."; }) : Promise.resolve();
     var read = !S.sample ? Promise.resolve() : prepFile(f).then(function (p) {
-      return S.sample.json(["This file supports a cash voucher of an Indian company (a receipt, slip, handwritten note or photo). Read what the expense was for.",
-        "Return up to " + MAX_LED.voucher + " lines, each {\"description\": what it was for (item or service, quantity, place or purpose), in English, at most 160 characters, ending with a full stop; \"amount\": the rupee amount as a plain number, or null}.",
+      return S.sample.json(["This file supports a voucher of an Indian company (a receipt, slip, handwritten note or photo). One voucher is for one expense only.",
+        "- single_expense: true if the file is about one expense (one receipt, slip or payment to one person or shop); false if it holds several separate receipts, bills or expenses.",
+        "- payee: the person or shop the money went to, as written, or \"\".",
+        "- lines: up to " + MAX_LED.voucher + " lines, each {\"description\": the item part of an accounting narration, like a bill's: \"[Qty] [Item or service], [Qty] [Item]; for [Purpose/Location]\", in English, at most 160 characters, ending with a full stop, no amounts, payee or dates; \"amount\": the rupee amount as a plain number, or null}.",
+        "- risk: \"\" normally; a short reason if it shows a bribe, kickback, gift or cash to an official, a fake or inflated bill, or another illegal or non-compliant payment.",
         "Translate if needed; fix spelling; keep names, part names and codes as written; expand abbreviations only when certain. " + NO_PAY + " Never invent.",
-        "Reply with only JSON: {\"lines\": [{\"description\": \"\", \"amount\": null}]}", p.text ? "PDF TEXT:\n" + p.text : ""].join("\n"), { images: p.images.length ? p.images : undefined, modelTier: "default" });
+        "Reply with only JSON: {\"single_expense\": true, \"payee\": \"\", \"risk\": \"\", \"lines\": [{\"description\": \"\", \"amount\": null}]}", p.text ? "PDF TEXT:\n" + p.text : ""].join("\n"), { images: p.images.length ? p.images : undefined, modelTier: "default" });
     }).then(function (r) {
+      if (r && (r.single_expense === false || String(r.risk || "").trim())) {
+        var why = r.single_expense === false ? "This document holds more than one expense. Upload one receipt or photo of one expense per voucher." : "Not accepted: " + String(r.risk).trim().replace(/\.$/, "") + ". Such expenses can't be recorded.";
+        keep.then(function () { if (D.file && window.bvFiles) window.bvFiles.remove(D.file.path).catch(function () {}); D.file = null; ln.textContent = why; });
+        toast(why); return;
+      }
+      if (r && fromUpload && String(r.payee || "").trim() && !D.payeeChoice) {
+        var pn = str(r.payee, 120), hit = payeeNames().filter(function (n) { return normName(n) === normName(pn); })[0];
+        if (hit) { D.payeeChoice = hit; D.payee = hit; D.payeeAddr = payeeAddrOf(hit); D.payeeIdNo = payeeIdOf(hit); } else { D.payeeChoice = "new"; D.payeeNew = smartCase(pn); D.payee = D.payeeNew; }
+        var ps0 = $("vfPayeeSel"); if (ps0) { fillSelect(ps0, payeeOpts(D), D.payeeChoice); } if ($("vfPayee")) $("vfPayee").value = D.payeeNew || ""; if ($("vfAddr")) $("vfAddr").value = D.payeeAddr || ""; if ($("vfIdNo")) $("vfIdNo").value = D.payeeIdNo || "";
+      }
       var ls = ((r && r.lines) || []).filter(function (x) { return x && String(x.description || "").trim(); }).slice(0, MAX_LED.voucher); if (!ls.length) { if (S.sample) toast("Nothing could be read from it. Type the details."); return; }
       ls.forEach(function (x, i) { var L = D.lines[i] || (D.lines[i] = { d: "", amt: "", lg: "", touched: false }); L.d = sentenceFix(str(x.description, 160)); if (!String(L.amt || "").trim() && num(x.amount) != null) L.amt = fmtInput(num(x.amount)); });
       drawVchLines(); updVchForm(); toast("Details written from the document. Check them.");
@@ -9640,9 +9698,35 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     D.companyId = $("vfCo").value; D.X = extRead("vf", D.X || {}); if ($("vfPrep")) D.prepBy = $("vfPrep").value; if ($("vfFor")) { D.forId = $("vfFor").value; D.forNew = $("vfForNew").value; } if ($("vfAppr")) D.approverId = $("vfAppr").value;
     var pc0 = D.payeeChoice; D.payeeChoice = $("vfPayeeSel").value; D.payeeNew = $("vfPayee").value;
     if (D.payeeChoice !== pc0) { $("vfAddr").value = D.payeeChoice && D.payeeChoice !== "new" ? payeeAddrOf(D.payeeChoice) : ""; $("vfIdNo").value = D.payeeChoice && D.payeeChoice !== "new" ? payeeIdOf(D.payeeChoice) : ""; }
+    if (D.payeeChoice !== pc0) D.payeeEdit = false;
     D.payee = D.payeeChoice === "new" ? D.payeeNew : D.payeeChoice; D.vtype = $("vfType").value; D.payeeAddr = $("vfAddr").value; D.payeeIdNo = idNorm($("vfIdNo").value); D.supplyOf = $("vfSupply").value;
+    D.payMode = $("vfMode").value; if (D.payMode && D.payMode !== "cash") D.settle = "no";
     D.lines.forEach(function (x, i) { if ($("vfLd" + i)) { x.d = $("vfLd" + i).value; x.amt = $("vfLa" + i).value; x.lg = $("vfLg" + i).value; } });
-    var r = document.querySelector('input[name="vfSettle"]:checked'); D.settle = r ? r.value : "";
+    var r = document.querySelector('input[name="vfSettle"]:checked'); if (!D.payMode || D.payMode === "cash") D.settle = r ? r.value : "";
+  }
+  /* ---- Voucher payment rules ----
+     Mode of payment is chosen when the voucher is made. Cash to one person or shop from one company may not go over ₹ 10,000 in
+     a day (₹ 35,000 for freight and transport), counting every voucher anyone made (Income Tax s. 40A(3)); cheque and NEFT / RTGS
+     have no limit. Earlier vouchers to the same payee are shown while making one. */
+  var VPAY_MODES = [["cash", "Cash"], ["cheque", "Cheque"], ["neft", "NEFT / RTGS (bank transfer)"]];
+  function vPayMode(v) { return v.payMode || (v.settle ? "cash" : ""); }
+  function vPayModeText(v) { var m = vPayMode(v); return m === "cash" ? (v.settle ? "Cash (from cash advance)" : "Cash") : m === "cheque" ? "Cheque" : m === "neft" ? "NEFT / RTGS" : "By financier (not chosen)"; }
+  function allVouchers() { var src = (S.raw && S.raw.vouchers) || S.vouchers || {}; return Object.keys(src).map(function (k) { return Object.assign({ id: k }, src[k]); }).filter(function (v) { return v.status !== "deleted"; }); }
+  function payeeVouchers(name) { var n = normName(name); return n ? allVouchers().filter(function (v) { return normName(v.payee) === n; }).sort(function (a, b) { return natCmp(b.voucherDate || "", a.voucherDate || "") || (b.createdAt || 0) - (a.createdAt || 0); }) : []; }
+  function cashLimit(vtype) { return vtype === "Freight & Transport" ? 35000 : 10000; }
+  function cashToday(cid, payee, day, exceptId) { return round2(payeeVouchers(payee).filter(function (v) { return v.id !== exceptId && v.companyId === cid && (v.voucherDate || ymdOfMs(v.createdAt || 0)) === day && vPayMode(v) === "cash"; }).reduce(function (s0, v) { return s0 + (Number(v.total) || 0); }, 0)); }
+  function drawPayeeHist() {
+    var D = VH.D, box = $("vfHist"); if (!box || !D) return; box.textContent = "";
+    var vs = D.payeeChoice && D.payeeChoice !== "new" ? payeeVouchers(D.payee).filter(function (v) { return v.id !== VH.id; }) : []; if (!vs.length) { box.hidden = true; return; }
+    box.hidden = false; box.appendChild(el("span", { class: "lb" }, "Earlier vouchers to " + D.payee + " (" + vs.length + ")"));
+    var card = el("div", { class: "card list scroll", style: "max-height:240px" }); box.appendChild(card);
+    sortTable(card, "vfHist", [
+      { label: "Date", cls: "num", cell: function (v, td) { txt(td, fmtDate(v.voucherDate)); sub(td, coLabel(v.companyId)); } },
+      { label: "Voucher", cell: function (v, td) { td.appendChild(el("b", { class: "mono" }, v.voucherNo || "")); } },
+      { label: "Prepared by", cell: function (v, td) { txt(td, pnm(v.preparedByName) || userLabel(v.preparedBy) || ""); } },
+      { label: "Mode of payment", cell: function (v, td) { txt(td, vPayModeText(v)); } },
+      { label: "Amount", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(v.total))); } }
+    ], vs.slice(0, 25), { sortIndex: -1 });
   }
   /* A Expenses Operator makes vouchers for other people: someone with a login, or a name from the saved list. The voucher counts as
      theirs (cash advance, checking report); who made it is kept too. */
@@ -9690,12 +9774,17 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (D.payeeChoice && other && !String(D.payeeAddr || "").trim()) E("vfAddr", "Enter the address of the person or shop.");
     if (other && !D.supplyOf.trim()) E("vfSupply", "Choose Goods, Services or Composite.");
     var bad = "";
-    D.lines.forEach(function (x, i) { if (bad) return; var n = num(x.amt); if (!String(x.d).trim()) bad = "Describe line " + (i + 1) + "."; else if (narrPayCheck(x.d)) bad = "Line " + (i + 1) + ": " + narrPayCheck(x.d); else if (n == null || n <= 0) bad = "Enter the amount on line " + (i + 1) + ", more than zero."; });
+    D.lines.forEach(function (x, i) { if (bad) return; var n = num(x.amt); if (!String(x.d).trim()) bad = "Describe line " + (i + 1) + "."; else if (riskMsg(x.d, $("vfLd" + i))) bad = "Line " + (i + 1) + ": " + riskMsg(x.d, $("vfLd" + i)); else if (narrPayCheck(x.d)) bad = "Line " + (i + 1) + ": " + narrPayCheck(x.d); else if (n == null || n <= 0) bad = "Enter the amount on line " + (i + 1) + ", more than zero."; });
     if (bad) E("vfLines", bad);
     var t = vchTotal(D);
     if (!bad && D.companyId) D.lines.forEach(function (x, i) { if (bad) return; if (!x.lg) bad = "Choose the ledger on line " + (i + 1) + "."; else if (!ledOk(x.lg, D.companyId)) bad = "The ledger on line " + (i + 1) + " isn't used by " + coLabel(D.companyId) + ". Choose again."; });
     if (bad && !errs.some(function (e) { return e[0] === "vfLines"; })) E("vfLines", bad);
-    if (!D.settle) E("vfSet", "Choose Yes or No.");
+    if (!D.payMode) E("vfMode", "Choose the mode of payment.");
+    else if (D.payMode === "cash" && D.companyId && String(D.payee || "").trim() && t != null) {
+      var old0 = VH.id && S.vouchers[VH.id], day0 = old0 && old0.voucherDate ? old0.voucherDate : todayYmd(), lim = cashLimit(D.vtype), prev = cashToday(D.companyId, D.payee.trim(), day0, VH.id);
+      if (prev + t > lim + 0.004) E("vfMode", "Cash to " + D.payee.trim() + " from " + coLabel(D.companyId) + " on " + fmtDate(day0) + " would come to " + money(round2(prev + t)) + (prev ? " (" + money(prev) + " already in other vouchers)" : "") + ", over the " + money(lim) + " cash limit. Pay by cheque or NEFT / RTGS, or it can't be made.");
+    }
+    if (D.payMode === "cash" && !D.settle) E("vfSet", "Choose Yes or No.");
     else if (D.settle === "yes" && D.companyId && vchPrep(D) && t != null) {
       var b = cashBalance(vchPrep(D), D.companyId, VH.id);
       if (t > b.free + 0.004) E("vfSet", "The total " + money(t) + " is more than the " + money(b.free) + " cash on hand. Choose No, or ask for a cash advance first.");
@@ -9707,14 +9796,20 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     $("vfPayeeBox").hidden = D.payeeChoice !== "new";
     var po = $("vfPayeeSel").options[1]; if (po) po.textContent = D.payeeNew.trim() ? "New person or shop: " + D.payeeNew.trim() : "New person or shop";
     var other = D.vtype && D.vtype !== "Cash Voucher";
-    $("vfAddrF").hidden = !D.payeeChoice || !other; $("vfSupplyF").hidden = !other;
-    /* a saved payee's number is shown, not typed again; asked for when none is on file */
-    var known = D.payeeChoice && D.payeeChoice !== "new" ? payeeIdOf(D.payeeChoice) : ""; $("vfIdF").hidden = !D.payeeChoice; $("vfIdNo").disabled = !!known && idNorm($("vfIdNo").value) === idNorm(known);
+    $("vfSupplyF").hidden = !other;
+    /* a saved payee: its Aadhaar / PAN and address are shown with Change; the box opens when something is missing */
+    var isNew = D.payeeChoice === "new", saved = D.payeeChoice && !isNew, kId = saved ? payeeIdOf(D.payeeChoice) : "", kAd = saved ? payeeAddrOf(D.payeeChoice) : "";
+    var complete = saved && !!idKind(kId) && (!other || !!String(kAd).trim()), boxOn = isNew || (saved && (D.payeeEdit || !complete));
+    $("vfPayeeBox").hidden = !boxOn; $("vfPayeeNameF").hidden = !isNew;
+    $("vfPayeeTtl").textContent = isNew ? "New person or shop. The name, Aadhaar / PAN and address are offered next time." : D.payeeEdit ? "Change " + D.payee + "'s details. Saved for next time." : D.payee + ": fill in what is missing. Saved for next time.";
+    var sm = $("vfPayeeSum"); sm.textContent = ""; sm.hidden = !(saved && !boxOn);
+    if (!sm.hidden) { var sr = el("div", { class: "row", style: "display:flex;gap:12px;align-items:center;flex-wrap:wrap" }); sr.appendChild(el("span", { class: "hint", style: "margin:0" }, [idText(kId, true), kAd].filter(Boolean).join(" \u00b7 "))); var ch = el("button", { type: "button", class: "link-btn" }, "Change"); ch.addEventListener("click", function () { readVchForm(); D.payeeEdit = true; updVchForm(); var x = $("vfIdNo"); if (x) x.focus(); }); sr.appendChild(ch); sm.appendChild(sr); }
+    if (VH.histFor !== (D.payeeChoice || "") + "|" + (VH.id || "")) { VH.histFor = (D.payeeChoice || "") + "|" + (VH.id || ""); drawPayeeHist(); }
     var t = vchTotal(D); $("vfTotV").textContent = t == null ? "" : money(t);
     if ($("vfLg0") && ($("vfLg0").getAttribute("data-co") || "") !== (D.companyId || "")) { drawVchLines(); }
     if (D.companyId) D.lines.forEach(function (x, i) { if (x.touched || !$("vfLg" + i)) return; var sg = suggestVch(D.companyId, D.payee, x.d + " " + D.supplyOf); if (sg && sg !== x.lg) { x.lg = sg; $("vfLg" + i).value = sg; } });
     /* the question only for someone who handles cash advances for the company or holds cash for it; otherwise the financier pays */
-    var relV = advRel(vchPrep(D), D.companyId); $("vfSetF").hidden = !relV;
+    var relV = advRel(vchPrep(D), D.companyId) && D.payMode === "cash"; $("vfSetF").hidden = !relV;
     if (!relV) { if (D.settle !== "no") { D.settle = "no"; D.settleForced = true; } }
     else if (D.settleForced) { D.settle = ""; D.settleForced = false; }
     Array.prototype.forEach.call(document.querySelectorAll('input[name="vfSettle"]'), function (r) { r.checked = r.value === D.settle; });
@@ -9732,6 +9827,16 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (VH.tried) errs.forEach(function (x) { errOn(x[0], x[1]); });
     return errs;
   }
+  /* A voucher's narration, in the same format as a bill's: "Being goods purchased from [Payee] vide Voucher [No] dt. [DD/MM/YYYY]:
+     [details]." The details are the lines, written like a bill's items and purpose. At most 255 characters, never cut mid-item. */
+  function vchNarr(D, no, day, lines) {
+    var other = D.vtype && D.vtype !== "Cash Voucher", sup = String(D.supplyOf || "");
+    var head = D.vtype === "Freight & Transport" ? "Being freight and transport services availed from " : other && /^goods/i.test(sup) ? "Being goods purchased from " : other && /^serv/i.test(sup) ? "Being services availed from " : other && /^comp/i.test(sup) ? "Being goods and services from " : "Being expenses incurred towards " + (String(ledName((lines[0] || {}).lg) || "expenses").replace(/\s*\(.*\)\s*$/, "").toLowerCase() || "expenses") + " from ";
+    var pre = head + String(D.payee || "").trim() + " vide Voucher " + no + " dt. " + String(day || "").split("-").reverse().join("/") + ": ";
+    var parts = lines.map(function (x) { return String(x.d || "").trim().replace(/[.\s]+$/, ""); }).filter(Boolean), out = "";
+    for (var i = 0; i < parts.length; i++) { var cand = out ? out + "; " + parts[i] : parts[i], rest = parts.length - i - 1; if ((pre + cand + (rest ? "; and " + rest + " other item" + (rest > 1 ? "s" : "") : "") + ".").length > NARR_MAX && out) { out += "; and " + (parts.length - i) + " other item" + (parts.length - i > 1 ? "s" : ""); break; } out = cand; }
+    var t = pre + out + "."; return t.length > NARR_MAX ? t.slice(0, NARR_MAX - 1).replace(/\s+\S*$/, "") + "." : t;
+  }
   function saveVch() {
     if (VH.busy) return;
     var D0 = VH.D, pend = null; if (D0) D0.lines.forEach(function (x, i) { pend = pend || tidyPending("vfLd" + i); });
@@ -9747,7 +9852,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     /* A new voucher, or one moved to another company, takes the next number in that company's series. */
     var vn = !old || old.companyId !== D.companyId || !old.voucherNo ? nextVoucherNo(D.companyId, D.voucherDate) : { no: old.voucherNo, seq: old.voucherSeq || null, fy: old.voucherFy || fyOf(D.voucherDate) };
     var doc = Object.assign({ companyId: D.companyId, voucherNo: vn.no, voucherSeq: vn.seq, voucherFy: vn.fy, voucherDate: D.voucherDate, payee: D.payee.trim(), total: total, tds: tds, lines: lines, file: D.file || null,
-      narration: lines.map(function (x) { return x.d; }).join(" "), vtype: D.vtype, gstApp: old && other ? old.gstApp || "N/A" : "N/A", gstRate: old && other && old.gstApp === "RCM" ? old.gstRate : null, taxable: total,
+      narration: vchNarr(D, vn.no, D.voucherDate, lines), payMode: D.payMode, vtype: D.vtype, gstApp: old && other ? old.gstApp || "N/A" : "N/A", gstRate: old && other && old.gstApp === "RCM" ? old.gstRate : null, taxable: total,
       supplyOf: other ? D.supplyOf.trim() : "", payeeAddr: other ? D.payeeAddr.trim() : "", payeeIdNo: idNorm(D.payeeIdNo), payeeIdKind: idKind(D.payeeIdNo), ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
       settle: D.settle === "yes", acct: "pending", acctNote: "", updatedAt: now, updatedBy: meId() }, prepFields(D.prepBy), approverFields(D.approverId), extDoc(D.companyId, D.X));
     var newName = null;
@@ -12682,6 +12787,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   /* Everything doubtful about a saved bill, for the accountant: what was flagged when it was entered, and what the GST portal
      says of its vendor. Shown as alerts; only a composition dealer's GST stops it being accounted. */
   function billAlerts(x) {
+    var u0 = undText(x);
     var v = S.vendors[x.vendorId], tx = Number(x.fcTaxable != null ? x.fcTaxable : x.taxable), ga = Number(x.fcGst != null ? x.fcGst : x.gstAmt) || 0, out = [], pr = x.ex && x.ex.printedTotal;
     if (pr != null && !isNaN(tx) && Math.abs(tx + ga - pr) > 1) out.push("The bill's printed total is " + amt2(pr) + ", but taxable plus GST comes to " + amt2(tx + ga) + ". Check for round-off, freight or TDS.");
     var gn = gstRateNote(tx, ga, x.currency); if (gn) out.push(gn);
@@ -12690,6 +12796,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (v && v.type === "registered" && ga === 0) out.push("The vendor is registered, but the bill charges no GST.");
     if (x.billDate && x.submittedAt && x.billDate < addDays(ymdOfMs(x.submittedAt), -14)) out.push("The bill was dated more than 2 weeks before it was submitted.");
     if (x.ex && x.ex.notes) out.push("Claude's note when reading it: " + x.ex.notes);
+    if (u0) out.unshift(u0);
     return out.concat(gstAlerts(v, x.billDate, ga, x.einv));
   }
   function paintAoAlerts(x) {
@@ -12740,7 +12847,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       return Promise.all(pend).then(function () {
         var up = { narrEditedAt: Date.now(), narrEditedBy: meId(), narrEditedByName: acctWho().acctByName };
         if (lines) { var nl = lines.map(function (l, i) { return Object.assign({}, l, { d: sentenceFix($("neL" + i).value.trim()) }); }); if (nl.some(function (l) { return !l.d; })) { errOn("neL0", "Every line needs a description."); return false; } var pw = nl.map(function (l) { return narrPayCheck(l.d); }).filter(Boolean)[0]; if (pw) { errOn("neL0", pw); return false; } up.lines = nl; up.narration = nl.map(function (l) { return l.d; }).join(" "); }
-        else { var t = isB ? narrVendor(narrFix($("neNar").value), vendorLabelOfBill(x)) : sentenceFix($("neNar").value.trim()); if (!t) { errOn("neNar", "Write the " + (isB ? "narration." : "description.")); return false; } if (isB && t.length > NARR_MAX) { errOn("neNar", "Keep it to " + NARR_MAX + " characters (it is " + t.length + ")."); return false; } if (narrPayCheck(t)) { errOn("neNar", narrPayCheck(t)); return false; } up.narration = t; }
+        else { var t = isB ? narrVendor(narrFix($("neNar").value), vendorLabelOfBill(x)) : sentenceFix($("neNar").value.trim()); if (!t) { errOn("neNar", "Write the " + (isB ? "narration." : "description.")); return false; } if (isB && t.length > NARR_MAX) { errOn("neNar", "Keep it to " + NARR_MAX + " characters (it is " + t.length + ")."); return false; } if (narrPayCheck(t)) { errOn("neNar", narrPayCheck(t)); return false; } if (riskMsg(t, $("neNar"))) { errOn("neNar", riskMsg(t, $("neNar"))); return false; } up.narration = t; }
         if (isB) { if (!$("neSup").value) { errOn("neSup", "Choose the supply."); return false; } up.supplyOf = $("neSup").value; if (x.ex && x.ex.narrReview && x.ex.narrReview.length) up.ex = Object.assign({}, x.ex, { narrReview: [] }); }
         return retry(function () { return S.db.doc((isB ? "bills/" : "vouchers/") + x.id).update(up); }).then(function () { Object.assign(x, up); toast("Saved."); renderAcctOne(); return true; }, function (e) { toast(explain(e)); return false; });
       });
@@ -15443,6 +15550,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     $("ntAdd").addEventListener("click", noteForm); $("ntCo").addEventListener("change", renderNotes); $("ntQ").addEventListener("input", renderNotes);
     $("bkXls").addEventListener("click", function () { downloadBooksXls(this); }); $("bkPdf").addEventListener("click", function () { downloadBooksPdf(this); }); $("vXls").addEventListener("click", function () { downloadVendorsXls(this); }); $("vAdd").addEventListener("click", newVendor); $("txXls").addEventListener("click", function () { downloadTxXls(this); });
     $("vhNew").addEventListener("click", function () { openVchForm(null); });
+    /* Upload Document: one PDF or one photo of one expense; the voucher is written from it, to check and complete */
+    $("vhUp").addEventListener("click", function () { $("vhUpF").value = ""; $("vhUpF").click(); });
+    $("vhUpF").addEventListener("change", function () { var f = this.files && this.files[0]; this.value = ""; if (!f) return; if (this.files.length > 1) { toast("Upload one document at a time: one expense per voucher."); return; } openVchForm(null); var b = $("vfDocBtn"), l = $("vfDocLn"); if (b && l) vchDoc(f, b, l, true); });
     $("vhCo").addEventListener("change", renderVch); $("vhQ").addEventListener("input", renderVch);
     $("vfBack").addEventListener("click", backToVch); $("vfCancel").addEventListener("click", backToVch); $("vfSave").addEventListener("click", saveVch);
     $("vfDelete").addEventListener("click", function () { var v = VH.id && S.vouchers[VH.id]; if (v) deleteVch(v, this); });

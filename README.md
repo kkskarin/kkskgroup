@@ -288,6 +288,22 @@ provides the same calls, so the app code did not need rewriting:
   strokes that can be undone, added to or cleared. Saved as ink on a transparent background (`sigs/<id>`: `png`, `src`
   drawn / photo-strokes). A signature with `review: true` (old ones saved straight from a photo) brings up "Please Redo
   Your Signature", which can't be closed until a new one is saved.
+- **Vouchers:** start with Make a Voucher, or Upload Document (one PDF or photo of one expense; a file with several expenses,
+  or one showing a risky payment, is refused; the payee and details are read from it). A saved payee's Aadhaar / PAN and
+  address are shown with Change; a new payee's name, Aadhaar / PAN and address are entered together in the green box.
+  Earlier vouchers to the payee (any maker, any company) are listed with date, prepared by, mode of payment and amount.
+  Mode of Payment (Cash, Cheque, NEFT / RTGS) is chosen on the voucher; the cash-advance question shows only for Cash. Cash to
+  one payee from one company is refused above ₹ 10,000 a day (₹ 35,000 for Freight & Transport), counting all vouchers.
+  Details lines are written like a bill's items and purpose, and the voucher's narration is built in the bill format:
+  "Being goods purchased from / services availed from / expenses incurred towards [ledger] from [Payee] vide Voucher [No] dt.
+  [DD/MM/YYYY]: [details]." (at most 255 characters).
+- **Risky narrations** (bribes, kickbacks, speed money, gifts or cash to officials, fake or inflated bills, other illegal or
+  non-compliant payments) are refused on bills, proformas, imports and vouchers: a word list, plus Claude answering BLOCKED
+  when it tidies the text.
+- **Bill undertaking:** a bill whose vendor must issue e-invoices but has no IRN, whose printed total doesn't match taxable plus
+  GST, or whose GST isn't a standard rate can't be submitted, unless the purchaser ticks the Undertaking (takes full
+  responsibility) and writes why. It is kept on the bill (`undertaking`: by, when, issues, reason) and shown to the accountant
+  and in the Bill Checking Report.
 - **Vendors** are one pool for the group. Maintenance & Civil, Renewable Energy and Chemicals each show the vendors tagged
   for them; Bills & Vouchers (like Accounts and Finance) picks from all of them. Using a vendor in an app tags it there.
 - **Chemicals division** (`div: "chm"`): entered and approved in the Chemicals app, only accounted and paid here; it has

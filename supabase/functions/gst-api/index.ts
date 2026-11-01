@@ -52,11 +52,15 @@ Deno.serve(async (req) => {
     const d = (j.data ?? j.result ?? j) as Record<string, any>;
     const ok = !!(d && (d.gstin || d.lgnm || d.tradeNam));
     if (!r.ok || !ok) return reply(200, { env, found: false, status: r.status, message: String((j.error as any)?.errorMessage ?? (j.error as any)?.message ?? j.message ?? j.status_desc ?? "Not found"), raw: j });
-    const a = d.pradr?.addr ?? {};
-    const addr = [a.bno, a.bnm, a.flno, a.st, a.loc, a.city, a.dst, a.stcd, a.pncd].filter(Boolean).join(", ") || d.pradr?.adr || "";
+    // Every place of business: the principal one (pradr) and the additional ones (adadr), each with what is done there (ntr).
+    const line = (p: any) => { const a = p?.addr ?? {}; return [a.bno, a.bnm, a.flno, a.st, a.loc, a.city, a.dst, a.stcd, a.pncd].filter(Boolean).join(", ") || p?.adr || ""; };
+    const addr = line(d.pradr);
+    const addresses = [{ kind: "principal", address: addr, nature: String(d.pradr?.ntr ?? "") }]
+      .concat((Array.isArray(d.adadr) ? d.adadr : []).map((p: any) => ({ kind: "additional", address: line(p), nature: String(p?.ntr ?? "") })))
+      .filter((x) => x.address);
     return reply(200, {
       env, found: true, gstin: d.gstin || gstin, legalName: d.lgnm || "", tradeName: d.tradeNam || "", status: d.sts || "",
-      type: d.dty || "", since: d.rgdt || "", cancelledOn: d.cxdt || "", constitution: d.ctb || "", address: addr,
+      type: d.dty || "", since: d.rgdt || "", cancelledOn: d.cxdt || "", constitution: d.ctb || "", address: addr, addresses,
       einvoice: d.einvoiceStatus || "", nba: Array.isArray(d.nba) ? d.nba : [], raw: d,
     });
   }

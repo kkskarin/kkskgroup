@@ -4391,7 +4391,11 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
      type fill in (still editable); if the portal's address differs from the bill's, the purchaser picks one. ---- */
   function cardPortal(b, g) { var x = b && b.ex && b.ex.gst; return x && g && x.gstin === g ? x : null; }
   function addrKey(a) { return String(a || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
-  function cardAddrClash(b, pg) { var ba = (b.ex && b.ex.vendorAddress) || ""; return !!(pg.address && ba && addrKey(pg.address) !== addrKey(ba)); }
+  /* All the vendor's places of business on the GST portal: the principal one first, then the additional ones. */
+  function gstAddrs(g) { var l = g && g.addresses && g.addresses.length ? g.addresses : g && g.address ? [{ kind: "principal", address: g.address }] : []; var seen = {}; return l.filter(function (x) { var k = addrKey(x.address); if (!k || seen[k]) return false; seen[k] = 1; return true; }); }
+  function gstAddrLabel(x) { return (x.kind === "additional" ? "Additional place of business" : "Principal place of business") + (x.nature ? " (" + x.nature + ")" : ""); }
+  /* A choice is asked for when the portal has more than one address, or its only one differs from the bill's. */
+  function cardAddrClash(b, pg) { var ba = (b.ex && b.ex.vendorAddress) || "", l = gstAddrs(pg); if (!l.length) return false; if (l.length > 1) return true; return !!(ba && addrKey(l[0].address) !== addrKey(ba)); }
   function cardGst() {
     var D = B.D, b = S.bills[B.cardId]; if (!D || !b || D.vendorChoice !== "new" || !window.bvGst) return;
     var g = normId(D.vNew.gstin); if (!g || gstinCheck(g) || cardPortal(b, g) || (b.ex && b.ex.gstMiss === g) || B.gstQ === b.id + g) return;
@@ -4415,9 +4419,12 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var hd = el("div", { class: "hint", style: "margin-bottom:6px" }); hd.appendChild(el("b", { class: gstIsBad(pg) ? "bad" : "" }, "GST portal: ")); hd.appendChild(document.createTextNode([pg.legalName, pg.status, pg.type, pg.constitution].filter(Boolean).join(" · "))); box.insertBefore(hd, e);
     if (!cardAddrClash(b, pg)) return;
     var grp = el("div", { class: "checks", role: "radiogroup", "aria-label": "Which address", style: "flex-direction:column;align-items:flex-start;gap:6px" });
-    [["bill", "From the bill: " + b.ex.vendorAddress], ["portal", "From the GST portal: " + pg.address]].forEach(function (o) {
+    var opts = [], ba0 = (b.ex && b.ex.vendorAddress) || "";
+    if (ba0 && !gstAddrs(pg).some(function (x) { return addrKey(x.address) === addrKey(ba0); })) opts.push(["bill", "From the bill: " + ba0, ba0]);
+    gstAddrs(pg).forEach(function (x, i) { opts.push(["portal" + i, "GST portal, " + gstAddrLabel(x).toLowerCase().replace(/^./, function (c) { return c.toUpperCase(); }) + ": " + x.address, x.address]); });
+    opts.forEach(function (o) {
       var lb = el("label", { class: "check" }), rb = el("input", { type: "radio", name: "bcAddrPick", value: o[0] }); rb.checked = D.vNew.addrPick === o[0];
-      rb.addEventListener("change", function () { D.vNew.addrPick = o[0]; D.vNew.addr = o[0] === "bill" ? b.ex.vendorAddress : pg.address; $("bcVAddr").value = D.vNew.addr; scheduleSave(); updateDynamic(); });
+      rb.addEventListener("change", function () { D.vNew.addrPick = o[0]; D.vNew.addr = o[2]; $("bcVAddr").value = D.vNew.addr; scheduleSave(); updateDynamic(); });
       lb.appendChild(rb); lb.appendChild(document.createTextNode(" " + o[1])); grp.appendChild(lb); });
     box.insertBefore(el("span", { class: "lb" }, "Which address?"), e); box.insertBefore(grp, e);
   }
@@ -4442,7 +4449,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (n.type === "registered" && gp === "missing") E("bcVGstin", GSTIN_MSG.missing);
       else if (g && gp) E("bcVGstin", GSTIN_MSG[gp]);
       if (!termOk(n.termDays)) E("bcVTerm", "Enter the payment terms in days, from 0 to 365.");
-      var pg = cardPortal(b, g); if (pg && cardAddrClash(b, pg) && !n.addrPick) E("bcAddrPick", "The bill's address and the GST portal's differ. Choose which to keep.");
+      var pg = cardPortal(b, g); if (pg && cardAddrClash(b, pg) && !n.addrPick) E("bcAddrPick", "The vendor has more than one address (on the bill or the GST portal). Choose the one to keep.");
       if (pg) gstAlerts({ gstin: g, gst: pg }, parseDate(D.billDate), num(D.gstAmt) || 0, { irn: String((D.einv || {}).irn || "").trim() }).forEach(function (w) { warns.push(w); });
       else if (g && !gp && b.ex && b.ex.gstMiss === g) warns.push("This GSTIN wasn't found on the GST portal. Check it against the bill.");
     } else {
@@ -5444,12 +5451,14 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
       if (r.address) box.appendChild(el("div", null, r.address));
       if (r.env === "sandbox") box.appendChild(el("div", { class: "hint" }, "Sandbox (test) data."));
       if (!r.address) box.appendChild(el("div", { class: "hint" }, "The portal gave no address" + (r.env === "sandbox" ? " (the sandbox's test taxpayers have none)" : "") + "; enter it from the bill."));
-      var use = el("button", { type: "button", class: "btn sm", style: "margin-top:6px" }, r.address ? "Use This Name and Address" : "Use This Name");
+      var al = gstAddrs(r), pick = el("div", { class: "checks", role: "radiogroup", "aria-label": "Which address", style: "flex-direction:column;align-items:flex-start;gap:6px;margin-top:6px" });
+      if (al.length > 1) { al.forEach(function (x, i) { var lb = el("label", { class: "check" }), rb = el("input", { type: "radio", name: "veGstAddr", value: String(i) }); rb.checked = i === 0; lb.appendChild(rb); lb.appendChild(document.createTextNode(" " + gstAddrLabel(x) + ": " + x.address)); pick.appendChild(lb); }); box.appendChild(el("div", { class: "lb", style: "margin-top:6px" }, al.length + " addresses on the GST portal. Choose the one for this vendor:")); box.appendChild(pick); }
+      var use = el("button", { type: "button", class: "btn sm", style: "margin-top:6px" }, al.length ? "Use This Name and Address" : "Use This Name");
       use.addEventListener("click", function () {
         if (r.legalName || r.tradeName) $("veName").value = smartCase(gstBizName(r).toLowerCase());
-        if (r.address) $("veAddr").value = r.address;
+        var ch = box.querySelector('input[name="veGstAddr"]:checked'), ad0 = al.length ? al[ch ? Number(ch.value) : 0].address : ""; if (ad0) $("veAddr").value = ad0;
         if (!bad && !$("veType").value) $("veType").value = "registered";
-        toast("Filled in from the GST portal. Check and save."); if (!r.address && !$("veAddr").value.trim()) $("veAddr").focus();
+        toast("Filled in from the GST portal. Check and save."); if (!ad0 && !$("veAddr").value.trim()) $("veAddr").focus();
       });
       box.appendChild(use);
     }, function (e) { box.textContent = ""; box.appendChild(el("b", null, e && e.code === "not_configured" ? "The GST connection isn't set up yet." : "The GST portal couldn't be checked.")); box.appendChild(el("div", null, (e && e.message) || "")); })
@@ -5461,7 +5470,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function vGst(v) { var g = v && v.gst; return g && v.gstin && g.gstin === normId(v.gstin) ? g : null; }
   function gstFromHit(r) {
     return { gstin: normId(r.gstin), legalName: r.legalName || "", tradeName: r.tradeName || "", status: r.status || "", type: r.type || "", constitution: r.constitution || "",
-      since: r.since || "", cancelledOn: r.cancelledOn || "", einv: r.einvoice || "", nba: (r.nba || []).slice(0, 8), address: r.address || "", env: r.env || "", checkedAt: Date.now(), checkedBy: meId() };
+      since: r.since || "", cancelledOn: r.cancelledOn || "", einv: r.einvoice || "", nba: (r.nba || []).slice(0, 8), address: r.address || "", addresses: (r.addresses || []).slice(0, 20).map(function (x) { return { kind: x.kind || "", address: str(x.address, 300), nature: str(x.nature, 120) }; }).filter(function (x) { return x.address; }), env: r.env || "", checkedAt: Date.now(), checkedBy: meId() };
   }
   function gstIsBad(g) { return !!g && !!g.status && !/^active/i.test(g.status); }
   function gstIsComp(g) { return !!g && /composition/i.test(g.type || ""); }

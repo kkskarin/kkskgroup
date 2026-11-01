@@ -297,6 +297,12 @@ provides the same calls, so the app code did not need rewriting:
   Details lines are written like a bill's items and purpose, and the voucher's narration is built in the bill format:
   "Being goods purchased from / services availed from / expenses incurred towards [ledger] from [Payee] vide Voucher [No] dt.
   [DD/MM/YYYY]: [details]." (at most 255 characters).
+- **Payees** (people and shops paid by voucher) are one record each in `payees/<key>`: `name`, `aliases` (other names),
+  `pan` and/or `aadhaar`, `address`, `notSame`; a record merged into another has `mergedInto` and counts as that one
+  everywhere (list, earlier vouchers, cash limit). A PAN or Aadhaar can belong to one record only: typing one already saved
+  shows "Use <name>". A new name that looks like a saved one (similar name, or same address) asks "Same person?": Yes uses
+  the saved record and adds the new name and number to it; No records who said they differ. Masters › Payees lists them;
+  admins and accountants tick two and Merge (refused when the two have different PANs or Aadhaars).
 - **Risky narrations** (bribes, kickbacks, speed money, gifts or cash to officials, fake or inflated bills, other illegal or
   non-compliant payments) are refused on bills, proformas, imports and vouchers: a word list, plus Claude answering BLOCKED
   when it tidies the text.

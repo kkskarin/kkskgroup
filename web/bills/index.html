@@ -834,6 +834,12 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     <div class="head"><div class="grow"><h2>Bank Accounts</h2><p class="sub">Each company's bank accounts, added before any cheque template for that bank. The IFSC fills in the bank's name, branch, city and address. One account is the company's default, and each account has a default cheque book; both fill in when paying and can be changed. The bank's name, city and account number also go on the salary covering letter.</p></div><div class="acts"><button class="btn primary" id="bankAdd" type="button">Add Bank Account</button></div></div>
     <div id="bankList"></div>
   </section>
+  <section id="secPayees" hidden>
+    <div class="head"><div class="grow"><h2>Payees</h2><p class="sub" id="pyeSub">People and shops paid by voucher, one record each, with every name they have gone by and their PAN and Aadhaar. A PAN or Aadhaar belongs to one record only.</p></div>
+      <span class="grow"></span><div class="acts2"><button class="btn" id="pyeMerge" disabled>Merge Ticked</button></div></div>
+    <div class="filters"><input class="field" id="pyeQ" type="search" placeholder="Search name, PAN, Aadhaar or address" aria-label="Search payees" autocomplete="off"></div>
+    <div id="pyeList"></div>
+  </section>
   <section id="secOthers" hidden>
     <div class="head"><div class="grow"><h2>Others</h2><p class="sub">Lists used across the app. A change here updates every place that uses it.</p></div></div>
     <h3>Bank Names</h3>
@@ -1525,7 +1531,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   var S = { staff: {}, salruns: {}, regions: {}, ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
+  var VIEWS = ["secPayees", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1738,8 +1744,8 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Requests", "Advance Requests"], ["Advance Summary", "Advances"], ["Salary", "Salary"]] };
   /* Masters: its own heading. Companies first, then (Renewable Energy) Consumers and PPA Rates, then Vendors and Ledgers. */
   /* Cheque Templates: where the financier pays (Renewable Energy pays its own; Finance pays the other divisions). */
-  var CHQ_TAB = ["Cheques", "Cheque Templates", 0, "m"], BANK_TAB = ["Banks", "Bank Accounts", 0, "m"], OTHERS_TAB = ["Others", "Others", 0, "m"];
-  var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], MASTERS[2]] : APP === "fin" ? [MASTERS[0], MASTERS[1], BANK_TAB, CHQ_TAB, OTHERS_TAB] : MASTERS }; /* Finance: no expense ledgers, only what payments need */
+  var CHQ_TAB = ["Cheques", "Cheque Templates", 0, "m"], BANK_TAB = ["Banks", "Bank Accounts", 0, "m"], OTHERS_TAB = ["Others", "Others", 0, "m"], PAYEE_TAB = ["Payees", "Payees", 0, "m"];
+  var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], PAYEE_TAB, MASTERS[2]] : APP === "fin" ? [MASTERS[0], MASTERS[1], PAYEE_TAB, BANK_TAB, CHQ_TAB, OTHERS_TAB] : MASTERS.concat([PAYEE_TAB]) }; /* Finance: no expense ledgers, only what payments need */
   var SET_ALL = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Activity", "Show Activity", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] };
   var NAV_BY_APP = {
     mnt: [REP_TABS, EXP_TABS, MAS_TABS, SET_ALL],
@@ -1867,6 +1873,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (t === "Cheques") { CQ.id = null; CQ.D = null; renderCheques(); show("secCheques"); return; }
     if (t === "Banks") { renderBanks(); show("secBanks"); return; }
     if (t === "Others") { renderOthers(); show("secOthers"); return; }
+    if (t === "Payees") { renderPayees(); show("secPayees"); return; }
     if (t === "Salary") { renderSalary(); show("secSalary"); return; }
     if (t === "All Entries") { if (dataReady()) { renderAllEnt(); show("secAllEnt"); } else show("vLoading"); return; }
     if (t === "Users" && S.isAdmin) { renderUsers(); renderSupers(); show("secUsers"); }
@@ -9571,11 +9578,11 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   }
   function payeeOpts(D) {
     var nm = (D.payeeNew || "").trim(), o = [["", "Choose who was paid"], ["new", nm ? "New person or shop: " + nm : "New person or shop"]];
-    payeeNames().forEach(function (n) { o.push([n, n]); });
+    payeeNames().forEach(function (n) { var it = pyIdsText(n); o.push([n, n + (it ? " \u00b7 " + it : "")]); });
     if (D.payeeChoice && D.payeeChoice !== "new" && !o.some(function (x) { return x[0] === D.payeeChoice; })) o.push([D.payeeChoice, D.payeeChoice]);
     return o;
   }
-  function payeeNames() { var m = {}; Object.keys(S.payees || {}).forEach(function (k) { var n = String((S.payees[k] || {}).name || "").trim(); if (n) m[n.toLowerCase()] = n; }); allVouchers().forEach(function (v) { var n = (v.payee || "").trim(); if (n) m[n.toLowerCase()] = n; }); return Object.keys(m).map(function (k) { return m[k]; }).sort(natCmp); }
+  function payeeNames() { var m = {}; Object.keys(S.payees || {}).forEach(function (k) { var d = S.payees[k] || {}, n = String(d.name || "").trim(); if (n && !d.mergedInto) m[n.toLowerCase()] = n; }); allVouchers().forEach(function (v) { if (v.payee && pyCanon(v.payee) !== v.payee.trim()) return; var n = (v.payee || "").trim(); if (n) m[n.toLowerCase()] = n; }); return Object.keys(m).map(function (k) { return m[k]; }).sort(natCmp); }
   function openVchForm(id) {
     var v = id ? S.vouchers[id] : null;
     if (id && (!v || !vchEditable(v))) { toast("This voucher can't be changed now."); return; }
@@ -9611,6 +9618,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     var sm = el("div", { class: "f wide", id: "vfPayeeSum" }); f.appendChild(sm);
     var pb = el("div", { class: "vbox f wide", id: "vfPayeeBox" }); pb.hidden = D.payeeChoice !== "new";
     pb.appendChild(el("div", { class: "ttl", id: "vfPayeeTtl" }, "New person or shop. The name, Aadhaar / PAN and address are offered next time."));
+    pb.appendChild(el("div", { id: "vfDup", class: "f wide", hidden: "" }));
     var nf0 = fld("Name", inp("vfPayee", D.payeeNew, { maxlength: "120", autocomplete: "off", "data-fmt": "name" })); nf0.id = "vfPayeeNameF"; pb.appendChild(nf0);
     var idi = inp("vfIdNo", D.payeeIdNo || "", { maxlength: "14", autocomplete: "off", class: "field mono", spellcheck: "false" }); var idf = fld("Aadhaar / PAN No.", idi, "Required. Aadhaar (12 digits) or PAN (e.g. ABCDE1234F)."); idf.id = "vfIdF"; pb.appendChild(idf);
     var ad = el("textarea", { class: "field", id: "vfAddr", rows: "2", maxlength: "240" }); ad.value = D.payeeAddr; var adf = fld("Address", ad, "Required for a Self Invoice or Freight & Transport voucher.", true); adf.id = "vfAddrF"; pb.appendChild(adf);
@@ -9693,21 +9701,64 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function idKind(v) { v = idNorm(v); return /^[2-9][0-9]{11}$/.test(v) ? "aadhaar" : /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(v) ? "pan" : ""; }
   function idText(v, mask) { v = idNorm(v); var k = idKind(v); return k === "aadhaar" ? "Aadhaar " + (mask ? "XXXX XXXX " + v.slice(8) : v.slice(0, 4) + " " + v.slice(4, 8) + " " + v.slice(8)) : k === "pan" ? "PAN " + v : v; }
   function payeeIdOf(n) {
+    if (S.payees) { var ids0 = pyIds(n); if (ids0.pan || ids0.aadhaar) return ids0.pan || ids0.aadhaar; }
     var p = S.payees && S.payees[payeeKey(n)]; if (p && p.idNo) return p.idNo;
     var last = vchList().filter(function (v) { return normName(v.payee) === normName(n) && v.payeeIdNo; }).sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); })[0];
     return last ? last.payeeIdNo : "";
   }
   function payeeAddrOf(n) {
-    var p = S.payees && S.payees[payeeKey(n)]; if (p && p.address) return p.address;
+    var p = S.payees && S.payees[payeeKey(pyCanon(n))]; if (p && p.address) return p.address;
     var last = vchList().filter(function (v) { return normName(v.payee) === normName(n) && v.payeeAddr; }).sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); })[0];
     return last ? last.payeeAddr : "";
   }
+  /* ---- People and shops paid by voucher: one record each (payees/<key>) ----
+     A record has a name, the other names it has gone by, a PAN and/or an Aadhaar, and an address. No PAN or Aadhaar may belong
+     to two records. A record merged into another (mergedInto) counts as that one everywhere: in the list, earlier vouchers and
+     the cash limit. A new name that looks like a saved one (similar name or same address) is asked about first. */
+  function pyDoc(name) { return (S.payees || {})[payeeKey(name)] || null; }
+  function pyCanon(name) { var n = String(name || "").trim(), d = pyDoc(n), k = 0; while (d && d.mergedInto && k++ < 6) { n = d.mergedInto; d = pyDoc(n); } return (d && d.name) || n; }
+  function pyNamesOf(c) {
+    var m = {}; m[normName(c)] = c;
+    Object.keys(S.payees || {}).forEach(function (k) { var d = S.payees[k]; if (d && d.name && pyCanon(d.name) === c) m[normName(d.name)] = d.name; });
+    allVouchers().forEach(function (v) { if (v.payee && pyCanon(v.payee) === c) m[normName(v.payee)] = v.payee; });
+    return Object.keys(m).map(function (k) { return m[k]; });
+  }
+  function pyIds(name) {
+    var c = pyCanon(name), out = { pan: "", aadhaar: "" }, fill = function (no) { no = idNorm(no); var k = idKind(no); if (k && !out[k]) out[k] = no; };
+    pyNamesOf(c).forEach(function (n) { var d = pyDoc(n); if (d) { fill(d.pan); fill(d.aadhaar); fill(d.idNo); } });
+    allVouchers().forEach(function (v) { if (v.payeeIdNo && pyCanon(v.payee) === c) fill(v.payeeIdNo); });
+    return out;
+  }
+  /* Who a PAN or Aadhaar already belongs to (another record than "except"), or "". */
+  function pyIdOwner(no, except) {
+    no = idNorm(no); if (!idKind(no)) return ""; var hit = "";
+    Object.keys(S.payees || {}).forEach(function (k) { var d = S.payees[k]; if (hit || !d || !d.name) return; if ([d.pan, d.aadhaar, d.idNo].map(idNorm).indexOf(no) >= 0) { var c = pyCanon(d.name); if (c !== except) hit = c; } });
+    if (!hit) allVouchers().forEach(function (v) { if (hit || idNorm(v.payeeIdNo) !== no || !v.payee) return; var c = pyCanon(v.payee); if (c !== except) hit = c; });
+    return hit;
+  }
+  function pyKeyName(n) { return String(n || "").toLowerCase().replace(/\bm\/s\b|\bmr\.?|\bmrs\.?|\bms\.?/g, " ").replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter(function (w) { return w && ["the", "and", "co", "company", "traders", "trading", "trader", "stores", "store", "shop", "enterprises", "enterprise", "agencies", "agency", "sons", "brothers", "bros"].indexOf(w) < 0; }).map(function (w) { return w.replace(/s$/, ""); }).join(""); }
+  function pyLev(a, b) { var m = a.length, n = b.length, d = []; for (var i = 0; i <= m; i++) { d[i] = [i]; } for (var j = 1; j <= n; j++) d[0][j] = j; for (i = 1; i <= m; i++) for (j = 1; j <= n; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[m][n]; }
+  /* Saved records that look like this new name or address. */
+  function pySimilar(name, addr, skip) {
+    var k = pyKeyName(name), ak = addrKey(addr || ""), out = [];
+    if (!k && !ak) return out;
+    payeeNames().forEach(function (c) {
+      if ((skip || []).indexOf(c) >= 0 || normName(c) === normName(name)) return;
+      var why = "";
+      pyNamesOf(c).some(function (n) { var kn = pyKeyName(n); if (!k || !kn) return false; if (kn === k || (k.length >= 4 && kn.length >= 4 && (kn.indexOf(k) >= 0 || k.indexOf(kn) >= 0)) || pyLev(k, kn) <= Math.max(1, Math.floor(Math.max(k.length, kn.length) / 6))) { why = "a similar name"; return true; } return false; });
+      if (!why && ak && ak.length > 8 && addrKey(payeeAddrOf(c)) === ak) why = "the same address";
+      if (why) out.push({ name: c, why: why });
+    });
+    return out.slice(0, 3);
+  }
+  function pyIdsText(c) { var i = pyIds(c); return [i.pan ? idText(i.pan, true) : "", i.aadhaar ? idText(i.aadhaar, true) : ""].filter(Boolean).join(", "); }
   function readVchForm() {
     var D = VH.D; if (!D || !$("vfCo")) return;
     D.companyId = $("vfCo").value; D.X = extRead("vf", D.X || {}); if ($("vfPrep")) D.prepBy = $("vfPrep").value; if ($("vfFor")) { D.forId = $("vfFor").value; D.forNew = $("vfForNew").value; } if ($("vfAppr")) D.approverId = $("vfAppr").value;
     var pc0 = D.payeeChoice; D.payeeChoice = $("vfPayeeSel").value; D.payeeNew = $("vfPayee").value;
     if (D.payeeChoice !== pc0) { $("vfAddr").value = D.payeeChoice && D.payeeChoice !== "new" ? payeeAddrOf(D.payeeChoice) : ""; $("vfIdNo").value = D.payeeChoice && D.payeeChoice !== "new" ? payeeIdOf(D.payeeChoice) : ""; }
-    if (D.payeeChoice !== pc0) D.payeeEdit = false;
+    if (D.payeeChoice !== pc0) { D.payeeEdit = false; D.addTo = null; }
+    if (D.payeeNew !== D._pn0) { D._pn0 = D.payeeNew; D.dupAns = ""; }
     D.payee = D.payeeChoice === "new" ? D.payeeNew : D.payeeChoice; D.vtype = $("vfType").value; D.payeeAddr = $("vfAddr").value; D.payeeIdNo = idNorm($("vfIdNo").value); D.supplyOf = $("vfSupply").value;
     D.payMode = $("vfMode").value; if (D.payMode && D.payMode !== "cash") D.settle = "no";
     D.lines.forEach(function (x, i) { if ($("vfLd" + i)) { x.d = $("vfLd" + i).value; x.amt = $("vfLa" + i).value; x.lg = $("vfLg" + i).value; } });
@@ -9721,9 +9772,45 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
   function vPayMode(v) { return v.payMode || (v.settle ? "cash" : ""); }
   function vPayModeText(v) { var m = vPayMode(v); return m === "cash" ? (v.settle ? "Cash (from cash advance)" : "Cash") : m === "cheque" ? "Cheque" : m === "neft" ? "NEFT / RTGS" : "By financier (not chosen)"; }
   function allVouchers() { var src = (S.raw && S.raw.vouchers) || S.vouchers || {}; return Object.keys(src).map(function (k) { return Object.assign({ id: k }, src[k]); }).filter(function (v) { return v.status !== "deleted"; }); }
-  function payeeVouchers(name) { var n = normName(name); return n ? allVouchers().filter(function (v) { return normName(v.payee) === n; }).sort(function (a, b) { return natCmp(b.voucherDate || "", a.voucherDate || "") || (b.createdAt || 0) - (a.createdAt || 0); }) : []; }
+  function payeeVouchers(name) { var n = normName(name), c = pyCanon(name), ids = pyIds(name); return n ? allVouchers().filter(function (v) { return pyCanon(v.payee) === c || (v.payeeIdNo && (idNorm(v.payeeIdNo) === ids.pan || idNorm(v.payeeIdNo) === ids.aadhaar)); }).sort(function (a, b) { return natCmp(b.voucherDate || "", a.voucherDate || "") || (b.createdAt || 0) - (a.createdAt || 0); }) : []; }
   function cashLimit(vtype) { return vtype === "Freight & Transport" ? 35000 : 10000; }
   function cashToday(cid, payee, day, exceptId) { return round2(payeeVouchers(payee).filter(function (v) { return v.id !== exceptId && v.companyId === cid && (v.voucherDate || ymdOfMs(v.createdAt || 0)) === day && vPayMode(v) === "cash"; }).reduce(function (s0, v) { return s0 + (Number(v.total) || 0); }, 0)); }
+  /* What the payee details clash with: a PAN / Aadhaar already saved for another record, or (for a new name) records that look
+     the same. Worked out again only when the name, number or address changes. */
+  function pyDupState(D) {
+    var isNew = D.payeeChoice === "new", own = isNew ? "" : pyCanon(D.payee), key = [D.payeeChoice, D.payeeNew, D.payeeIdNo, D.payeeAddr, D.payeeEdit].join("|");
+    if (VH.dupKey === key) return VH.dup; VH.dupKey = key;
+    var owner = (isNew || D.payeeEdit) && idKind(D.payeeIdNo) ? pyIdOwner(D.payeeIdNo, own) : "";
+    var sims = isNew && !owner && String(D.payeeNew || "").trim().length >= 3 ? pySimilar(D.payeeNew, D.payeeAddr) : [];
+    VH.dup = { owner: owner, sims: sims }; return VH.dup;
+  }
+  function useSavedPayee(name, add) {
+    var D = VH.D; readVchForm();
+    var entered = idNorm(D.payeeIdNo), ids = pyIds(name);
+    D.addTo = add ? { name: name, alias: String(D.payeeNew || "").trim(), idNo: idKind(entered) && !ids[idKind(entered)] ? entered : "", addr: String(D.payeeAddr || "").trim() } : null;
+    D.payeeChoice = name; D.payee = name; D.payeeNew = ""; D.payeeEdit = false; D.dupAns = "";
+    fillSelect($("vfPayeeSel"), payeeOpts(D), name); $("vfPayee").value = "";
+    D.payeeIdNo = D.addTo && D.addTo.idNo ? D.addTo.idNo : payeeIdOf(name); D.payeeAddr = payeeAddrOf(name) || (D.addTo && D.addTo.addr) || "";
+    $("vfIdNo").value = D.payeeIdNo; $("vfAddr").value = D.payeeAddr; VH.dupKey = ""; updVchForm();
+    toast(add ? "Using " + name + "; " + (D.addTo.alias ? "\u201c" + D.addTo.alias + "\u201d is kept as another name" : "") + (D.addTo.idNo ? (D.addTo.alias ? " and " : "") + "the number is added to it" : "") + "." : "Using " + name + ".");
+  }
+  function drawPayeeDup() {
+    var D = VH.D, bx = $("vfDup"); if (!bx || !D) return;
+    var st = pyDupState(D), k = [st.owner, st.sims.map(function (x) { return x.name; }).join(","), D.dupAns || "", D.payeeChoice].join("|"); bx.hidden = !(st.owner || (st.sims.length && D.dupAns !== "new"));
+    if (bx._k === k) return; bx._k = k; bx.textContent = "";
+    if (st.owner) {
+      bx.appendChild(el("div", { class: "flag e" }, "This " + (idKind(D.payeeIdNo) === "pan" ? "PAN" : "Aadhaar") + " is already saved for " + st.owner + (pyIdsText(st.owner) ? " (" + pyIdsText(st.owner) + ")" : "") + ". One number can't belong to two people."));
+      var u = el("button", { type: "button", class: "btn sm primary", style: "margin-top:6px" }, "Use " + st.owner); u.addEventListener("click", function () { useSavedPayee(st.owner, D.payeeChoice === "new"); }); bx.appendChild(u); return;
+    }
+    if (!st.sims.length || D.dupAns === "new") return;
+    bx.appendChild(el("div", { class: "lb" }, "Is this one of these, already saved?"));
+    st.sims.forEach(function (x) {
+      var r = el("div", { class: "row", style: "display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0" });
+      r.appendChild(el("span", null, x.name + " \u2014 " + [pyIdsText(x.name), payeeAddrOf(x.name)].filter(Boolean).join(" \u00b7 ") + " (" + x.why + ")"));
+      var y = el("button", { type: "button", class: "btn sm" }, "Yes, the same: use " + x.name); y.addEventListener("click", function () { useSavedPayee(x.name, true); }); r.appendChild(y); bx.appendChild(r);
+    });
+    var no = el("button", { type: "button", class: "btn sm" }, "No, a different person or shop"); no.addEventListener("click", function () { D.dupAns = "new"; D.notSame = st.sims.map(function (x) { return x.name; }); drawPayeeDup(); updVchForm(); }); bx.appendChild(no);
+  }
   function drawPayeeHist() {
     var D = VH.D, box = $("vfHist"); if (!box || !D) return; box.textContent = "";
     var vs = D.payeeChoice && D.payeeChoice !== "new" ? payeeVouchers(D.payee).filter(function (v) { return v.id !== VH.id; }) : []; if (!vs.length) { box.hidden = true; return; }
@@ -9779,6 +9866,9 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     if (!D.payeeChoice) E("vfPayeeSel", "Choose who was paid, or choose New person or shop.");
     else if (D.payeeChoice === "new" && !D.payeeNew.trim()) E("vfPayee", "Type the name of the person or shop paid.");
     var other = D.vtype && D.vtype !== "Cash Voucher";
+    var dst = pyDupState(D);
+    if (dst.owner) E("vfIdNo", "This number is already saved for " + dst.owner + ". Use " + dst.owner + ", or check the number.");
+    else if (dst.sims.length && D.dupAns !== "new") E("vfPayee", "Say whether this is " + dst.sims.map(function (x) { return x.name; }).join(" or ") + ", or a different person or shop.");
     if (D.payeeChoice && !idKind(D.payeeIdNo)) E("vfIdNo", D.payeeIdNo ? "That isn't a valid Aadhaar (12 digits) or PAN (like ABCDE1234F)." : "Enter their Aadhaar or PAN number.");
     if (D.payeeChoice && other && !String(D.payeeAddr || "").trim()) E("vfAddr", "Enter the address of the person or shop.");
     if (other && !D.supplyOf.trim()) E("vfSupply", "Choose Goods, Services or Composite.");
@@ -9813,6 +9903,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     $("vfPayeeTtl").textContent = isNew ? "New person or shop. The name, Aadhaar / PAN and address are offered next time." : D.payeeEdit ? "Change " + D.payee + "'s details. Saved for next time." : D.payee + ": fill in what is missing. Saved for next time.";
     var sm = $("vfPayeeSum"); sm.textContent = ""; sm.hidden = !(saved && !boxOn);
     if (!sm.hidden) { var sr = el("div", { class: "row", style: "display:flex;gap:12px;align-items:center;flex-wrap:wrap" }); sr.appendChild(el("span", { class: "hint", style: "margin:0" }, [idText(kId, true), kAd].filter(Boolean).join(" \u00b7 "))); var ch = el("button", { type: "button", class: "link-btn" }, "Change"); ch.addEventListener("click", function () { readVchForm(); D.payeeEdit = true; updVchForm(); var x = $("vfIdNo"); if (x) x.focus(); }); sr.appendChild(ch); sm.appendChild(sr); }
+    drawPayeeDup();
     if (VH.histFor !== (D.payeeChoice || "") + "|" + (VH.id || "")) { VH.histFor = (D.payeeChoice || "") + "|" + (VH.id || ""); drawPayeeHist(); }
     var t = vchTotal(D); $("vfTotV").textContent = t == null ? "" : money(t);
     if ($("vfLg0") && ($("vfLg0").getAttribute("data-co") || "") !== (D.companyId || "")) { drawVchLines(); }
@@ -9875,7 +9966,15 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     VH.busy = true; $("vfSave").disabled = true;
     var pk = payeeKey(doc.payee), pOld = S.payees && S.payees[pk];
     (newName ? retry(function () { return S.db.doc("vpeople/" + newName.id).set({ name: newName.name, active: true, createdAt: now, createdBy: meId() }); }).then(function () { S.vpeople = S.vpeople || {}; S.vpeople[newName.id] = { id: newName.id, name: newName.name, active: true }; }) : Promise.resolve()).then(function () { return retry(function () { return old ? S.db.doc("vouchers/" + id).update(doc) : S.db.doc("vouchers/" + id).set(doc); }); }).then(function () {
-      if (doc.payee && (!pOld || (doc.payeeAddr && pOld.address !== doc.payeeAddr) || pOld.name !== doc.payee || pOld.idNo !== doc.payeeIdNo)) S.db.doc("payees/" + pk).set({ name: doc.payee, address: doc.payeeAddr || (pOld && pOld.address) || "", idNo: doc.payeeIdNo, idKind: doc.payeeIdKind, updatedAt: now, by: meId() }).catch(function () {});
+      if (doc.payee) {
+        /* the payee's record: both numbers kept (one of each kind), the address, other names it went by, and who said it isn't someone similar */
+        var pr = Object.assign({}, pOld || {}, { name: doc.payee, address: doc.payeeAddr || (pOld && pOld.address) || "", updatedAt: now, by: meId() });
+        if (doc.payeeIdKind) { pr[doc.payeeIdKind] = doc.payeeIdNo; if (!pr.idNo) { pr.idNo = doc.payeeIdNo; pr.idKind = doc.payeeIdKind; } }
+        if (D.addTo && D.addTo.name === doc.payee) { if (D.addTo.alias && normName(D.addTo.alias) !== normName(doc.payee)) pr.aliases = (pr.aliases || []).filter(function (a) { return normName(a) !== normName(D.addTo.alias); }).concat([D.addTo.alias]); if (D.addTo.idNo) pr[idKind(D.addTo.idNo)] = D.addTo.idNo; }
+        if (D.dupAns === "new" && D.notSame && D.notSame.length) pr.notSame = (pr.notSame || []).concat(D.notSame.map(function (n) { return { name: n, by: meId(), byName: pnm(preparedByText()), at: now }; }));
+        delete pr.id; S.db.doc("payees/" + pk).set(pr).then(function () { S.payees = S.payees || {}; S.payees[pk] = pr; }).catch(function () {});
+        if (D.addTo && D.addTo.alias && D.addTo.name === doc.payee && normName(D.addTo.alias) !== normName(doc.payee)) { var ak = payeeKey(D.addTo.alias); S.db.doc("payees/" + ak).set({ name: D.addTo.alias, mergedInto: doc.payee, mergedAt: now, mergedBy: meId(), updatedAt: now, by: meId() }).then(function () { S.payees[ak] = { name: D.addTo.alias, mergedInto: doc.payee }; }).catch(function () {}); }
+      }
       S.vouchers[id] = Object.assign({ id: id }, old || {}, doc); toast("Voucher " + (old ? "updated" : "submitted") + ". It now goes to the accountant.");
       backToVch(); renderNav();
     }, function (e) { toast(explain(e)); }).then(function () { VH.busy = false; $("vfSave").disabled = false; });
@@ -11817,6 +11916,47 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     Object.keys(S.chqtpl || {}).forEach(function (k) { if (S.chqtpl[k].active !== false && sameBank(S.chqtpl[k].bank, name)) n.tpl++; });
     Object.keys(S.vendors || {}).forEach(function (k) { var b = S.vendors[k].bank; if (b && sameBank(b.bank, name)) n.ven++; });
     return n;
+  }
+  /* ---- Masters › Payees: every payee once; admins and accountants merge two records of the same person or shop ---- */
+  var PYE = { pick: {}, q: "" };
+  function pyeCanMerge() { return !S._adm && (S.isAdmin || canDo("acct") || meChief()); }
+  function renderPayees() {
+    var can = pyeCanMerge(), q = normName($("pyeQ").value || ""), box = $("pyeList"); box.textContent = "";
+    $("pyeMerge").hidden = !can; PYE.pick = PYE.pick || {};
+    var rows = payeeNames().map(function (n) { var vs = payeeVouchers(n), ids = pyIds(n); return { name: n, others: pyNamesOf(n).filter(function (x) { return x !== n; }), pan: ids.pan, aadhaar: ids.aadhaar, addr: payeeAddrOf(n), n: vs.length, total: vs.reduce(function (s0, v) { return s0 + (Number(v.total) || 0); }, 0), last: vs[0] ? vs[0].voucherDate : "" }; })
+      .filter(function (r) { return !q || normName([r.name].concat(r.others, [r.pan, r.aadhaar, r.addr]).join(" ")).indexOf(q) >= 0; });
+    Object.keys(PYE.pick).forEach(function (k) { if (!rows.some(function (r) { return r.name === k; })) delete PYE.pick[k]; });
+    $("pyeMerge").disabled = Object.keys(PYE.pick).length !== 2;
+    if (!rows.length) { box.appendChild(el("div", { class: "card empty" }, q ? "No payees match." : "No payees yet. They are added as vouchers are made.")); return; }
+    var w = el("div", { class: "card list scroll" }); box.appendChild(w);
+    sortTable(w, "pyeList", [can ? { label: "", cls: "ckcol", cell: function (r, td) { var c = el("input", { type: "checkbox", "aria-label": "Tick " + r.name + " to merge" }); c.checked = !!PYE.pick[r.name]; c.addEventListener("change", function () { if (c.checked) PYE.pick[r.name] = 1; else delete PYE.pick[r.name]; if (Object.keys(PYE.pick).length > 2) { delete PYE.pick[r.name]; c.checked = false; toast("Tick two records to merge."); } $("pyeMerge").disabled = Object.keys(PYE.pick).length !== 2; }); td.appendChild(c); } } : null,
+      { label: "Name", kind: "co", sort: function (r) { return r.name; }, cell: function (r, td) { td.appendChild(el("b", null, r.name)); if (r.others.length) sub(td, "Also: " + r.others.join(", ")); } },
+      { label: "PAN / Aadhaar", cell: function (r, td) { txt(td, r.pan ? idText(r.pan) : "No PAN"); sub(td, r.aadhaar ? idText(r.aadhaar, true) : "No Aadhaar"); } },
+      { label: "Address", cls: "desc", cell: function (r, td) { txt(td, r.addr || "Not given"); } },
+      { label: "Vouchers", cls: "r num", sort: function (r) { return r.n; }, desc: true, cell: function (r, td) { td.appendChild(el("b", null, String(r.n))); sub(td, money(round2(r.total))); } },
+      { label: "Last", cls: "num", sort: function (r) { return r.last || ""; }, desc: true, cell: function (r, td) { txt(td, r.last ? fmtDate(r.last) : ""); } }
+    ].filter(Boolean), rows, { sortIndex: can ? 1 : 0, sortDir: 1, limit: 300 });
+  }
+  /* Merging: one record is kept; the other becomes another name of it (mergedInto), with its numbers and address added where
+     the kept one has none. Two different PANs, or two different Aadhaars, can't be the same person, so they aren't merged. */
+  function pyeMergeForm() {
+    var ns = Object.keys(PYE.pick); if (ns.length !== 2 || !pyeCanMerge()) return;
+    var a = pyIds(ns[0]), b = pyIds(ns[1]);
+    if ((a.pan && b.pan && a.pan !== b.pan) || (a.aadhaar && b.aadhaar && a.aadhaar !== b.aadhaar)) { toast("These two have different " + (a.pan && b.pan && a.pan !== b.pan ? "PANs" : "Aadhaar numbers") + ", so they can't be the same person."); return; }
+    var body = el("div", { class: "mform" }), grp = el("div", { class: "checks", role: "radiogroup", style: "flex-direction:column;align-items:flex-start;gap:6px" });
+    ns.forEach(function (n, i) { var lb = el("label", { class: "check" }), r = el("input", { type: "radio", name: "pyeKeep", value: n }); r.checked = i === 0; lb.appendChild(r); lb.appendChild(document.createTextNode(" Keep \u201c" + n + "\u201d (" + plural(payeeVouchers(n).length, "voucher") + (pyIdsText(n) ? ", " + pyIdsText(n) : "") + ")")); grp.appendChild(lb); });
+    body.appendChild(el("span", { class: "lb" }, "Which name to keep")); body.appendChild(grp);
+    popForm("Merge Two Payees", "They become one person or shop: the other name is kept as another name, their PAN, Aadhaar and address are combined, and all their vouchers count together (earlier vouchers, the cash limit).", body, "Merge", function () {
+      var keep = (body.querySelector('input[name="pyeKeep"]:checked') || {}).value, drop = ns.filter(function (n) { return n !== keep; })[0], now = Date.now();
+      var kd = Object.assign({}, pyDoc(keep) || { name: keep }), dd = Object.assign({}, pyDoc(drop) || { name: drop }), di = pyIds(drop);
+      kd.name = keep; if (!kd.pan && di.pan) kd.pan = di.pan; if (!kd.aadhaar && di.aadhaar) kd.aadhaar = di.aadhaar; if (!kd.address) kd.address = payeeAddrOf(drop);
+      kd.aliases = (kd.aliases || []).concat([drop], dd.aliases || []).filter(function (x, i, l) { return normName(x) !== normName(keep) && l.map(normName).indexOf(normName(x)) === i; });
+      kd.updatedAt = now; kd.by = meId(); delete kd.id;
+      dd = Object.assign(dd, { name: drop, mergedInto: keep, mergedAt: now, mergedBy: meId(), mergedByName: pnm(preparedByText()), updatedAt: now, by: meId() }); delete dd.id;
+      return retry(function () { return S.db.doc("payees/" + payeeKey(keep)).set(kd); }).then(function () { return retry(function () { return S.db.doc("payees/" + payeeKey(drop)).set(dd); }); }).then(function () {
+        S.payees[payeeKey(keep)] = kd; S.payees[payeeKey(drop)] = dd; PYE.pick = {}; toast("\u201c" + drop + "\u201d merged into \u201c" + keep + "\u201d."); renderPayees(); return true;
+      }, function (e) { toast(explain(e)); return false; });
+    });
   }
   function renderOthers() {
     var box = $("bnList"), can = chqCan(); $("bnAdd").hidden = !can; box.textContent = "";
@@ -15559,6 +15699,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
     $("ntAdd").addEventListener("click", noteForm); $("ntCo").addEventListener("change", renderNotes); $("ntQ").addEventListener("input", renderNotes);
     $("bkXls").addEventListener("click", function () { downloadBooksXls(this); }); $("bkPdf").addEventListener("click", function () { downloadBooksPdf(this); }); $("vXls").addEventListener("click", function () { downloadVendorsXls(this); }); $("vAdd").addEventListener("click", newVendor); $("txXls").addEventListener("click", function () { downloadTxXls(this); });
     $("vhNew").addEventListener("click", function () { openVchForm(null); });
+    $("pyeQ").addEventListener("input", renderPayees); $("pyeMerge").addEventListener("click", pyeMergeForm);
     /* Upload Document: one PDF or one photo of one expense; the voucher is written from it, to check and complete */
     $("vhUp").addEventListener("click", function () { $("vhUpF").value = ""; $("vhUpF").click(); });
     $("vhUpF").addEventListener("change", function () { var f = this.files && this.files[0]; this.value = ""; if (!f) return; if (this.files.length > 1) { toast("Upload one document at a time: one expense per voucher."); return; } openVchForm(null); var b = $("vfDocBtn"), l = $("vfDocLn"); if (b && l) vchDoc(f, b, l, true); });

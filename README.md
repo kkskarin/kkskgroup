@@ -273,6 +273,22 @@ provides the same calls, so the app code did not need rewriting:
   is Payments): cash advances by person and company: Opening, Paid (advances handed over), Settled (by
   approved vouchers and bills), Returned, Cash on hand, with a total row and Excel download. Cash
   advances are our own cash with the person until an expense uses it, so **All** never includes them.
+- **Bills & Vouchers is one entry desk for the group** (many people's bills and vouchers, entered by a few):
+  - every active company and every ledger (any company, any division) can be used there by anyone who enters
+    bills or vouchers anywhere;
+  - Expenses has only All Bills & Vouchers, Enter Bills, Cash Vouchers and Cash Advance: no Bill, Advance or
+    Voucher Checking Reports, Proformas or Imports;
+  - each B&V bill and voucher goes to Approvals **by itself** once accounted: a one-bill Bill Checking Report
+    (`reports/rb_<bill>`) or a one-voucher record sent without a checking report (`reports/rv_<voucher>`, VCH
+    numbers), made by the first Accounts / Finance / Approvals page or admin to see it (`bnvSync`);
+  - no cash on hand anywhere (voucher list, voucher and bill forms, Cash Advance balances); the checks still run,
+    with messages that give no amounts;
+  - Cash Advance asks **For**: Myself, a saved name, or a new name (the same list as Prepared by on bills and
+    vouchers). A **People** search lists everyone entered for; opening one shows their advance requests,
+    vouchers and bills (each with its amount, no running balance) with Ask for a cash advance, Make a voucher
+    and Enter a bill on their behalf.
+- **Earlier vouchers** on a voucher show only cash already paid to that payee by the chosen company.
+- Narration boxes typed or spoken in another script are written in English as soon as typing pauses.
 - **View As** keeps the admin's own look (mode, colour, text size).
 - **Header**: logo and app name, then the person (picture, name, Viewing As for admins) and a ☰ menu
   with Demo / Live (when allowed), **All Apps** (a scrollable list of the person's apps, each with what

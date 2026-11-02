@@ -71,7 +71,8 @@
   Recorder enters): every bill, proforma, import and voucher names one, and they give the final approval.
   **1st approvers** are people with the Approver job, for what is ticked under **Approver Of** (Bill, Advance and/or Voucher
   Checking Reports). On a bill, proforma or import a 1st approver is optional; they only check and pass on ("Checked, pass on",
-  with an optional note). Every voucher goes to all the voucher 1st approvers, who decide voucher by voucher (or for ticked
+  with an optional note). Every voucher goes to all the voucher 1st approvers (Riswan and Shaheil), whatever its company, including
+  each Bills & Vouchers voucher sent by itself; who decide voucher by voucher (or for ticked
   vouchers / all at once): Approve (final, goes for payment), Pass on to an admin (the maker's suggested 2nd approver,
   changeable), or Send back. Passed-on vouchers of an otherwise approved report move to a new report for that admin.
   Reports carry `l1` ("wait", "passed", "final"), `approver1Id`, `l1By`/`l1ByName`/`l1At`/`l1Note`; Bill Checking Reports
@@ -287,7 +288,9 @@ provides the same calls, so the app code did not need rewriting:
     vouchers). A **People** search lists everyone entered for; opening one shows their advance requests,
     vouchers and bills (each with its amount, no running balance) with Ask for a cash advance, Make a voucher
     and Enter a bill on their behalf.
-- **Earlier vouchers** on a voucher show only cash already paid to that payee by the chosen company.
+- **Cash vouchers for the day** on a voucher: every cash voucher (any stage) to that payee from the chosen company on the
+  voucher's date (today for a new one), with the day's total including this voucher. Over ₹ 10,000 (₹ 35,000 for Freight &
+  Transport) the voucher can't be saved in cash.
 - **Voucher form**: Details and ledger open only once the company, Paid to, the voucher type and (for all but a
   Cash Voucher) Supply Of are chosen. A Narration line under the total shows the bill-style narration as it
   will be saved and changes whenever the type, Supply Of, Paid to or lines change. A bill's narration follows

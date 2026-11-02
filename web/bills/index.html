@@ -4668,12 +4668,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function repKindKey(r) { return r.kind === "vcr" ? "vcr" : r.kind === "inst" ? "acr" : "bcr"; }
   /* A report still waiting for its 1st approver. */
   function l1Wait(r) { var s = stageOf(r); return r.l1 === "wait" && (s === "generated" || s === "printed"); }
-  function l1Names(r) { if (r.kind === "vcr") return l1List("vcr").filter(function (a) { return apprCos(r).some(function (cid) { return l1List("vcr", cid).some(function (b) { return b.id === a.id; }); }); }).map(function (a) { return a.name; }).join(", ") || "the voucher 1st approvers"; return pnm(r.approver1Name) || (l1List().filter(function (a) { return a.id === r.approver1Id; })[0] || {}).name || "the 1st approver"; }
+  function l1Names(r) { if (r.kind === "vcr") return l1List("vcr").map(function (a) { return a.name; }).join(", ") || "the voucher 1st approvers"; return pnm(r.approver1Name) || (l1List().filter(function (a) { return a.id === r.approver1Id; })[0] || {}).name || "the 1st approver"; }
   /* Am I this report's 1st approver? */
   function meL1For(r) {
     var u = S.myUser; if (S.isAdmin || APP !== "apr" || !u || demoAppr()) return false;
     if ((u.jobRoles || []).indexOf("approver") < 0 || apprOfUser(u).indexOf(repKindKey(r)) < 0) return false;
     if (r.kind !== "vcr" && r.approver1Id !== meId()) return false;
+    if (r.kind === "vcr") return true;
     return apprCos(r).some(function (cid) { return canStep("appr", cid); });
   }
   function l1Text(r) {
@@ -10309,19 +10310,25 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     });
     var no = el("button", { type: "button", class: "btn sm" }, "No, a different person or shop"); no.addEventListener("click", function () { D.dupAns = "new"; D.notSame = st.sims.map(function (x) { return x.name; }); drawPayeeDup(); updVchForm(); }); bx.appendChild(no);
   }
+  /* The day this voucher counts under: its saved date, or today for a new one. */
+  function vchDay() { var o = VH.id && S.vouchers[VH.id]; return o && o.voucherDate ? o.voucherDate : todayYmd(); }
   function drawPayeeHist() {
     var D = VH.D, box = $("vfHist"); if (!box || !D) return; box.textContent = "";
-    /* only cash already paid to this payee by the chosen company */
-    var vs = D.payeeChoice && D.payeeChoice !== "new" && D.companyId ? payeeVouchers(D.payee).filter(function (v) { return v.id !== VH.id && v.companyId === D.companyId && (v.payMode || (v.settle ? "cash" : "")) === "cash" && (v.settle ? !!v.approvedAt && !v.sentBack : vchIsPaid(v, vcrOf(v.id))); }) : []; if (!vs.length) { box.hidden = true; return; }
-    box.hidden = false; box.appendChild(el("span", { class: "lb" }, "Cash already paid to " + D.payee + " by " + coLabel(D.companyId) + " (" + vs.length + ")"));
+    /* every cash voucher to this payee from the chosen company on this voucher's date, whatever its stage, with the day's total */
+    var py = String(D.payee || "").trim(), day = vchDay();
+    var vs = py && D.companyId ? payeeVouchers(py).filter(function (v) { return v.id !== VH.id && v.companyId === D.companyId && (v.voucherDate || ymdOfMs(v.createdAt || 0)) === day && vPayMode(v) === "cash"; }) : [];
+    if (!vs.length) { box.hidden = true; return; }
+    var prev = cashToday(D.companyId, py, day, VH.id), t = D.payMode === "cash" ? vchTotal(D) || 0 : 0, all = round2(prev + t), lim = cashLimit(D.vtype);
+    box.hidden = false; box.appendChild(el("span", { class: "lb" }, "Cash vouchers to " + py + " from " + coLabel(D.companyId) + " on " + fmtDate(day) + " (" + vs.length + ")"));
     var card = el("div", { class: "card list scroll", style: "max-height:240px" }); box.appendChild(card);
     sortTable(card, "vfHist", [
-      { label: "Date", cls: "num", cell: function (v, td) { txt(td, fmtDate(v.voucherDate)); sub(td, coLabel(v.companyId)); } },
       { label: "Voucher", cell: function (v, td) { td.appendChild(el("b", { class: "mono" }, v.voucherNo || "")); } },
       { label: "Prepared by", cell: function (v, td) { txt(td, pnm(v.preparedByName) || userLabel(v.preparedBy) || ""); } },
       { label: "Mode of payment", cell: function (v, td) { txt(td, vPayModeText(v)); } },
+      { label: "Status", cell: function (v, td) { var st = vchStatus(v); td.appendChild(el("span", { class: "tag stg " + st.cls }, st.r ? st.r.no : st.text)); if (st.r) sub(td, v.approvedAt ? "Approved" : STAGE[stageOf(st.r)]); } },
       { label: "Amount", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(v.total))); } }
-    ], vs.slice(0, 25), { sortIndex: -1 });
+    ], vs, { sortIndex: -1 });
+    box.appendChild(el("div", { class: all > lim + 0.004 ? "flag e" : "hint", style: "margin-top:6px" }, "Cash for the day: " + money(prev) + " in these" + (t ? " + " + money(t) + " in this voucher = " + money(all) : "") + ", limit " + money(lim) + (all > lim + 0.004 ? ". Over the limit: this voucher can't be made in cash." : ".")));
   }
   /* A Expenses Operator makes vouchers for other people: someone with a login, or a name from the saved list. The voucher counts as
      theirs (cash advance, checking report); who made it is kept too. */
@@ -10403,7 +10410,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var sm = $("vfPayeeSum"); sm.textContent = ""; sm.hidden = !(saved && !boxOn);
     if (!sm.hidden) { var sr = el("div", { class: "row", style: "display:flex;gap:12px;align-items:center;flex-wrap:wrap" }); sr.appendChild(el("span", { class: "hint", style: "margin:0" }, [idText(kId, true), kAd].filter(Boolean).join(" \u00b7 "))); var ch = el("button", { type: "button", class: "link-btn" }, "Change"); ch.addEventListener("click", function () { readVchForm(); D.payeeEdit = true; updVchForm(); var x = $("vfIdNo"); if (x) x.focus(); }); sr.appendChild(ch); sm.appendChild(sr); }
     drawPayeeDup();
-    if (VH.histFor !== (D.payeeChoice || "") + "|" + (VH.id || "")) { VH.histFor = (D.payeeChoice || "") + "|" + (VH.id || ""); drawPayeeHist(); }
+    var hk = [String(D.payee || "").trim(), D.companyId || "", VH.id || "", vchDay(), D.payMode || "", D.vtype || "", vchTotal(D)].join("|"); if (VH.histFor !== hk) { VH.histFor = hk; drawPayeeHist(); }
     var t = vchTotal(D); $("vfTotV").textContent = t == null ? "" : money(t);
     /* Details and ledger open only once the company, Paid to, the voucher type and (except a Cash Voucher) Supply Of are chosen */
     var need = []; if (!D.companyId) need.push("the company"); if (!String(D.payee || "").trim()) need.push("Paid to"); if (!D.vtype) need.push("the voucher type"); if (other && !D.supplyOf) need.push("Supply Of");
@@ -10980,7 +10987,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("vnCreate").disabled = !sel.length || VC.busy;
   }
   /* Vouchers always go to the voucher 1st approvers first, when there are any for these companies. */
-  function vcrL1(cids) { return (cids || []).some(function (cid) { return l1List("vcr", cid).length; }); }
+  /* Every voucher goes first to the voucher 1st approvers (Approver job with Voucher Checking Reports ticked), whatever its company. */
+  function vcrL1() { return l1List("vcr").length > 0; }
   function createVcr() {
     if (VC.busy) return;
     var vs = vcrPicked(); if (!vs.length) { toast("Tick at least one voucher."); return; }

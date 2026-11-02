@@ -4568,7 +4568,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       companyId: b.companyId || "", vendorChoice: b.vendorId || (vn.name || vn.gstin ? "new" : ""),
       vNew: { name: vn.name || "", gstin: vn.gstin || "", pan: vn.pan || "", type: vn.type || "", termDays: vn.termDays == null ? "" : String(vn.termDays), addr: vn.address || "", addrPick: vn.addrPick || "" },
       billNo: b.billNo || "", billDate: fmtDate(b.billDate), currency: curOk(b.currency) ? b.currency : "INR", rate: b.fxRate ? fmtRate(b.fxRate) : "",
-      taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt), roundOff: b.roundOff ? fmtInput(b.roundOff) : "",
+      taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt), roundOff: b.roundOff ? (b.roundOff < 0 ? "-" : "") + fmtInput(Math.abs(b.roundOff)) : "",
       tds: b.entryTds || "", tdsSec: b.entryTdsSection || "",
       termDays: b.termDays == null ? "" : String(b.termDays), termChoice: b.termChoice || "", updateVendorTerm: !!b.updateVendorTerm, narration: b.narration || "", advPick: b.advPick || "", advWhy: b.advWhy || "",
       supplyOf: b.supplyOf || "", einv: { irn: (b.einv && b.einv.irn) || "", ackNo: (b.einv && b.einv.ackNo) || "", ackDate: b.einv && b.einv.ackDate ? fmtDate(b.einv.ackDate) : "" },
@@ -7380,7 +7380,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function blankAdvDraft(kind) {
     return { companyId: "", vendorChoice: "", vNew: { name: "", gstin: "", type: kind === "import" ? "overseas" : "", country: "" }, piNo: "", piDate: "", currency: kind === "import" ? "USD" : "INR", total: "", gst: "", narration: "",
       insts: [{ pct: "30", when: "receipt", days: "" }, { pct: "30", when: "afterPi", days: "" }, { pct: "40", when: "beforeDispatch", days: "" }],
-      dispatch: "", dispConfirmed: false, arrival: "", igst: "", transport: "", duty: "", other: "", taxBillId: "", ex: {}, approverId: S.isAdmin ? "" : defaultApprover() };
+      dispatch: "", dispConfirmed: false, arrival: "", roundOff: "", igst: "", transport: "", duty: "", other: "", taxBillId: "", ex: {}, approverId: S.isAdmin ? "" : defaultApprover() };
   }
   function advToDraft(a) {
     var vn = a.vendorNew || {};
@@ -7388,7 +7388,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       X: Object.assign({}, extOf(a, DIV)), piNo: a.piNo || "", piDate: fmtDate(a.piDate), currency: a.currency || "INR", total: fmtInput(a.total), gst: a.gst == null ? "" : fmtInput(a.gst), narration: a.narration || "",
       insts: (a.installments || []).map(function (it) { return { pct: String(it.pct), when: it.when, days: it.days == null ? "" : String(it.days) }; }),
       dispatch: fmtDate(a.dispatchDate), dispConfirmed: !!a.dispatchConfirmed, arrival: fmtDate(a.arrivalDate),
-      igst: a.igst == null ? "" : fmtInput(a.igst), transport: a.transport == null ? "" : fmtInput(a.transport), duty: a.duty == null ? "" : fmtInput(a.duty), other: a.other == null ? "" : fmtInput(a.other),
+      roundOff: a.roundOff ? (a.roundOff < 0 ? "-" : "") + fmtInput(Math.abs(a.roundOff)) : "", igst: a.igst == null ? "" : fmtInput(a.igst), transport: a.transport == null ? "" : fmtInput(a.transport), duty: a.duty == null ? "" : fmtInput(a.duty), other: a.other == null ? "" : fmtInput(a.other),
       taxBillId: a.taxBillId || "", ex: a.ex || {}, approverId: a.approverId || defaultApprover(a.preparedBy || a.ownerId), approver1Id: a.approver1Id || "" };
   }
   /* What the record would look like if saved now, for working out amounts and due dates while typing. */
@@ -7470,6 +7470,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var tb = inp("adTotal", D.total, { inputmode: "decimal", class: "field num" }); if (locked) tb.disabled = true;
       f.appendChild(fld("Total amount, including GST", tb, locked ? "Fixed once an instalment is in a report." : "The instalments are worked out on this total."));
       f.appendChild(fld("Of which GST", inp("adGst", D.gst, { inputmode: "decimal", class: "field num" }), "For reference only. No GST is claimed on instalments."));
+      f.appendChild(fld("Of which round off", inp("adRound", D.roundOff || "", { inputmode: "decimal", class: "field num", placeholder: "0.00" }), "Only if the proforma rounds its total (for example 0.28 or -0.40; up to \u20B9" + ROUND_MAX + "). For reference; GST is never on the round off."));
     }
     /* instalments */
     var iw = el("div", { class: "f wide" }), ih = el("div", { class: "insthead" });
@@ -7516,8 +7517,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       f.appendChild(el("div", { class: "f" }));
       var cw = el("div", { class: "f wide" }); cw.appendChild(el("span", { class: "lb" }, "Costs paid by us, in rupees")); cw.appendChild(el("span", { class: "hint" }, "Always in INR, entered here as each is paid. They do not go through Payment Entry. The import can be closed only once all four are filled in; enter 0 where there was none."));
       var cg = el("div", { class: "costgrid" });
-      [["adIgst", "IGST", D.igst], ["adTrans", "Transport", D.transport], ["adDuty", "Customs duty", D.duty], ["adOther", "Other fees", D.other]].forEach(function (k) {
-        var w = el("div", { class: "f" }); w.appendChild(el("label", { for: k[0] }, k[1] + " (INR)"));
+      [["adIgst", "IGST", D.igst], ["adTrans", "Transport", D.transport], ["adDuty", "Customs duty", D.duty], ["adOther", "Other fees", D.other], ["adRound", "Round off", D.roundOff]].forEach(function (k) {
+        var w = el("div", { class: "f" }); w.appendChild(el("label", { for: k[0] }, k[1] + (k[0] === "adRound" ? " (INR, if any)" : " (INR)")));
         w.appendChild(inp(k[0], k[2], { inputmode: "decimal", class: "field num" })); var e = el("span", { class: "err", id: k[0] + "E" }); e.hidden = true; w.appendChild(e); cg.appendChild(w);
       });
       cw.appendChild(cg); f.appendChild(cw);
@@ -7547,7 +7548,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     function v(id) { var e = $(id); return e ? e.value : ""; }
     D.companyId = v("adCo"); if ($("adCc")) D.X = extRead("ad", D.X || {}); D.vendorChoice = v("adVen"); D.vNew.name = v("adVName"); D.vNew.addr = v("adVAddr"); D.vNew.termDays = v("adVTerm"); D.approverId = v("adAppr"); if ($("adAppr1")) D.approver1Id = v("adAppr1");
     if (imp) D.vNew.country = v("adVCountry"); else { D.vNew.type = v("adVType"); D.vNew.gstin = v("adVGstin"); }
-    D.piNo = v("adNo"); D.piDate = v("adDate"); if (imp) D.currency = v("adCur"); D.total = v("adTotal"); if (!imp) D.gst = v("adGst");
+    D.piNo = v("adNo"); D.piDate = v("adDate"); if (imp) D.currency = v("adCur"); D.total = v("adTotal"); if (!imp) D.gst = v("adGst"); D.roundOff = v("adRound");
     D.insts = D.insts.map(function (it, i) { return { pct: v("adPct" + i), when: i === 0 ? "receipt" : v("adWhen" + i), days: i === 0 ? "" : v("adDays" + i) }; });
     D.dispatch = v("adDisp"); D.dispConfirmed = !!($("adDispOk") && $("adDispOk").checked); D.narration = v("adNar");
     if (imp) { D.arrival = v("adArr"); D.igst = v("adIgst"); D.transport = v("adTrans"); D.duty = v("adDuty"); D.other = v("adOther"); }
@@ -7598,6 +7599,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!D.piNo.trim()) E("adNo", "Enter the number.");
     var pd = parseDate(D.piDate); if (!pd) E("adDate", D.piDate.trim() ? "Enter the date like 12-Sep-26." : "Enter the date.");
     var tot = num(D.total); if (tot == null || tot <= 0) E("adTotal", "Enter the total amount.");
+    var aro = String(D.roundOff || "").trim() ? num(D.roundOff) : 0; if (aro == null || Math.abs(aro) > ROUND_MAX) E("adRound", "Enter the round off as a number, up to \u20B9" + ROUND_MAX + " either way (a minus if it takes away).");
     if (!imp && D.gst.trim() && (num(D.gst) == null || num(D.gst) < 0 || (tot != null && num(D.gst) > tot))) E("adGst", "Enter the GST as a number, not more than the total.");
     var sum = 0, instErr = "";
     D.insts.forEach(function (it, i) {
@@ -7625,7 +7627,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       }
     } else fillVendorAddr(S.vendors[vid], D.ex && D.ex.vendorAddress, Date.now());
     if (D.ex && D.ex.vendorBank) { var vb1 = vid, src1 = (imp ? "order " : "proforma ") + D.piNo.trim().toUpperCase(); job = job.then(function () { return fillVendorBank(S.vendors[vb1], D.ex.vendorBank, src1); }); }
-    var doc = { kind: ADV.kind, companyId: D.companyId, vendorId: vid, vendorNew: null, piNo: D.piNo.trim().toUpperCase(), piDate: pd, currency: imp ? D.currency : "INR", total: round2(tot), gst: !imp && D.gst.trim() ? round2(num(D.gst)) : null,
+    var doc = { kind: ADV.kind, companyId: D.companyId, vendorId: vid, vendorNew: null, piNo: D.piNo.trim().toUpperCase(), piDate: pd, currency: imp ? D.currency : "INR", total: round2(tot), gst: !imp && D.gst.trim() ? round2(num(D.gst)) : null, roundOff: aro ? round2(aro) : null,
       installments: D.insts.map(function (it, i) { return { pct: round2(num(it.pct)), when: i === 0 ? "receipt" : it.when, days: i === 0 ? 0 : dayCount(it.days) }; }),
       dispatchDate: dd || null, dispatchConfirmed: !!(D.dispConfirmed && dd), narration: sentenceFix(D.narration.trim()), updatedAt: now, updatedBy: meId(),
       approverId: D.approverId || "", approverName: approverFields(D.approverId).approverName, approver1Id: approverFields("", D.approver1Id || "").approver1Id, approver1Name: approverFields("", D.approver1Id || "").approver1Name };
@@ -7672,9 +7674,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var day = fmtDate(todayYmd());
     if (a.kind === "import") {
       var cur = tb.currency || "INR", goods = Number(tb.total) || 0, goodsInr = round2(goods * (cur === "INR" ? 1 : rate)), duty = Number(a.duty) || 0, tr = Number(a.transport) || 0, ot = Number(a.other) || 0, igst = Number(a.igst) || 0;
-      var taxable = round2(goodsInr + duty + tr + ot), total = round2(taxable + igst);
-      var text = "Import " + a.piNo + " closed on " + day + ". Goods " + curMoney(cur, goods) + (cur === "INR" ? "" : " at ₹" + fmtRate(rate) + " = " + money(goodsInr)) + "; customs duty " + money(duty) + "; transport " + money(tr) + "; other fees " + money(ot) + ". Taxable " + money(taxable) + ", GST (IGST) " + money(igst) + ", total " + money(total) + ".";
-      return { text: text, landed: { cur: cur, rate: cur === "INR" ? 1 : rate, goods: goods, goodsInr: goodsInr, duty: duty, transport: tr, other: ot, taxable: taxable, gst: igst, total: total, at: Date.now() } };
+      var ro = Number(a.roundOff) || 0, taxable = round2(goodsInr + duty + tr + ot), total = round2(taxable + igst + ro);
+      var text = "Import " + a.piNo + " closed on " + day + ". Goods " + curMoney(cur, goods) + (cur === "INR" ? "" : " at ₹" + fmtRate(rate) + " = " + money(goodsInr)) + "; customs duty " + money(duty) + "; transport " + money(tr) + "; other fees " + money(ot) + ". Taxable " + money(taxable) + ", GST (IGST) " + money(igst) + (ro ? ", round off " + (ro < 0 ? "minus " : "") + money(Math.abs(ro)) : "") + ", total " + money(total) + ".";
+      return { text: text, landed: { cur: cur, rate: cur === "INR" ? 1 : rate, goods: goods, goodsInr: goodsInr, duty: duty, transport: tr, other: ot, taxable: taxable, gst: igst, roundOff: ro || null, total: total, at: Date.now() } };
     }
     var paid = advPaid(a.id), n = (a.installments || []).filter(function (it, i) { return advPaid(a.id, i) > 0.5; }).length;
     return { text: "Proforma " + a.piNo + " closed on " + day + ". Advance of " + curMoney(a.currency, paid) + " paid in " + plural(n, "instalment") + " is set against this bill.", landed: null };
@@ -12039,7 +12041,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function canLedgers() { return S.isAdmin || canDo("acct"); }
   function ledAll() { return Object.keys(S.ledgers || {}).map(function (k) { return S.ledgers[k]; }); }
   function ledCmp(a, b) { return LED_MAINS.indexOf(a.main) - LED_MAINS.indexOf(b.main) || natCmp(a.sub, b.sub) || natCmp(a.name, b.name); }
-  function ledFor(cid) { return ledAll().filter(function (l) { return !l.tax && l.active !== false && ledInApp(l) && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
+  function ledFor(cid) { return ledAll().filter(function (l) { return !l.tax && !l.roundOff && l.active !== false && ledInApp(l) && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
   /* Accounts decides which divisions may use a ledger; a ledger with none ticked is open to every division. */
   function ledInApp(l) { if (PV_ALL) return true; return !DIV || ((l.apps && l.apps.length) ? l.apps : ["mnt"]).indexOf(DIV) >= 0; }
   function ledAppsText(l) { return ((l.apps && l.apps.length) ? l.apps : ["mnt"]).map(function (k) { return divName(k); }).join(", "); }
@@ -13238,6 +13240,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         { label: "Used", cls: "r num", sort: function (l) { return use[l.id] || 0; }, cell: function (l, td) { txt(td, String(use[l.id] || 0)); } },
         { label: "", kind: "act", cls: "r", cell: function (l, td) {
           /* tax ledgers are changed only in GST or TDS */
+          if (l.locked && l.roundOff) { td.appendChild(el("span", { class: "tsub", title: "Used by every company for the round off on bills; it can't be changed or picked as a ledger line" }, "\uD83D\uDD12 System ledger")); return; }
           if (l.locked) { var g = el("button", { class: "link-btn", type: "button", title: "Made by " + (l.tax === "tds" ? "TDS" : "GST") + "; changed only there" }, "🔒 Set in " + (l.tax === "tds" ? "TDS" : "GST")); g.addEventListener("click", function () { LGM.side = l.tax === "tds" ? "tds" : "gst"; renderLedgers(); }); td.appendChild(g); return; }
           if (!canLedgers()) return; var e = el("button", { class: "btn sm" }, "Edit"); e.addEventListener("click", function () { ledForm(l); }); td.appendChild(e); } }
       ], subs[sb], { sortIndex: 0 });
@@ -13421,7 +13424,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return ledAll().filter(function (l) { var h = gstHead(l); return l.tax === "gst" && l.active !== false && (inter ? h === "igst" : h === "cgst" || h === "sgst"); }).sort(function (a, b) { return ord(a) - ord(b) || natCmp(a.name, b.name); });
   }
   /* The company's Round Off ledger (named Round Off, Rounding Off or Rounded Off). */
-  function roundLedger(cid) { return Object.keys(S.ledgers || {}).map(function (k) { return Object.assign({ id: k }, S.ledgers[k]); }).filter(function (l) { return l.active !== false && /^round(ed|ing)?[\s-]*off$/i.test(String(l.name || "").trim()) && (l.allCos || (l.companyIds || []).indexOf(cid) >= 0); })[0] || null; }
+  /* Round Off: one system ledger (Indirect Expenses › General Expenses) for every company, kept apart from purchase ledgers. */
+  function roundLedger(cid) { var ls = Object.keys(S.ledgers || {}).map(function (k) { return Object.assign({ id: k }, S.ledgers[k]); }).filter(function (l) { return l.active !== false && (l.allCos || (l.companyIds || []).indexOf(cid) >= 0); }); return ls.filter(function (l) { return l.roundOff; })[0] || ls.filter(function (l) { return /^round(ed|ing)?[\s-]*off$/i.test(String(l.name || "").trim()); })[0] || null; }
   function billGst(b) { return Number(b.fcGst != null ? b.fcGst : b.gstAmt) || 0; }
   function coState(cid) { var c = S.companies[cid] || {}; return String(c.stateCode || String(c.gstin || "").slice(0, 2) || ""); }
   /* Interstate when the vendor's GSTIN starts with another state code than the company's (an overseas vendor too); intrastate
@@ -13714,7 +13718,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function renderBooks() {
     var co = $("bkCo"), lg = $("bkLed"), fr = parseDate($("bkFrom").value) || "", to = parseDate($("bkTo").value) || "";
     fillSelect(co, [["", "All your companies"]].concat(acctCos().map(function (c) { return [c.id, c.shortName || c.name]; })), co.value);
-    var ledgers = co.value ? ledFor(co.value).concat(ledAll().filter(function (l) { return l.tax && l.active !== false; })) : ledAll().filter(function (l) { return l.active !== false; }).sort(ledCmp);
+    var ledgers = co.value ? ledFor(co.value).concat(ledAll().filter(function (l) { return (l.tax || l.roundOff) && l.active !== false; })) : ledAll().filter(function (l) { return l.active !== false; }).sort(ledCmp);
     if (lg.value && !ledgers.some(function (l) { return l.id === lg.value; })) lg.value = "";
     ["bills", "proformas", "vouchers"].forEach(function (k) { $("bkSide_" + k).setAttribute("aria-selected", BK.side === k ? "true" : "false"); });
     var es = bookEntries(BK.side, co.value, fr, to), box = $("bkList"); box.textContent = "";

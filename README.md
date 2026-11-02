@@ -258,9 +258,12 @@ provides the same calls, so the app code did not need rewriting:
 - **Round off** (bills): an optional signed amount next to GST, up to ₹10 either way, for bills that round
   their total; the total is taxable + GST + round off and GST % is worked out without it. Reading a bill
   fills it from the printed total when the gap is within ₹10; a printed-total mismatch within ₹10
-  suggests it. Stored as `roundOff`; it carries no GST and posts to the company's Round Off ledger
-  (named Round Off / Rounded Off / Rounding Off) in the ledger books; the accountant sees it in the
-  bill's alerts.
+  suggests it. Stored as `roundOff`; GST is only ever on the taxable value, never on the round off.
+  It posts to **Round Off** (Indirect Expenses › General Expenses), a locked system ledger for every
+  company (`roundOff: true, allCos: true`): it can't be edited or picked as a ledger line, and it shows
+  in the ledger books. The accountant sees the round off in the bill's alerts. Proformas have an
+  "Of which round off" (for reference, like GST); imports have Round off among the rupee costs, added
+  to the landed total and the closing breakup.
 - **View As** keeps the admin's own look (mode, colour, text size).
 - **Header**: logo and app name, then the person (picture, name, Viewing As for admins) and a ☰ menu
   with Demo / Live (when allowed), **All Apps** (a scrollable list of the person's apps, each with what

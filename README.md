@@ -257,7 +257,9 @@ provides the same calls, so the app code did not need rewriting:
   the rows become cards. Long page descriptions fold to three lines on phones (tap to open).
 - **Round off** (bills): an optional signed amount next to GST, up to ₹10 either way, for bills that round
   their total; the total is taxable + GST + round off and GST % is worked out without it. Reading a bill
-  fills it from the printed total when the gap is within ₹10; a printed-total mismatch within ₹10
+  (or proforma) asks Claude for the printed round-off line (`round_off`, never folded into GST) and
+  otherwise fills it from the printed total when the gap is within ₹10; it shows in the accountant's
+  top boxes and on the Bill Checking Report PDF; a printed-total mismatch within ₹10
   suggests it. Stored as `roundOff`; GST is only ever on the taxable value, never on the round off.
   It posts to **Round Off** (Indirect Expenses › General Expenses), a locked system ledger for every
   company (`roundOff: true, allCos: true`): it can't be edited or picked as a ledger line, and it shows

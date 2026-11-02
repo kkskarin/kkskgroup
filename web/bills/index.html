@@ -4068,7 +4068,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       "- vendor_bank: the seller's bank details for payment, only if printed (often in a 'Bank details' block near the foot): {\"account_holder\", \"account_number\", \"ifsc\", \"bank\", \"branch\"}, copied exactly (account number digits only, IFSC 11 characters). null if no bank details are printed.",
       "- bill_date as YYYY-MM-DD. Indian bills write the day first, so 04/05/2026 is 4 May 2026.",
       "- currency: the ISO code of the currency the bill's amounts are in, such as INR, USD or EUR. INR for rupees.",
-      "- Amounts are plain numbers in the bill's currency with no commas or symbols. taxable_amount is the value before tax. gst_amount is CGST plus SGST or UTGST plus IGST, or 0 if no GST is charged. total_amount is the final amount payable as printed, after any round-off.",
+      "- Amounts are plain numbers in the bill's currency with no commas or symbols. taxable_amount is the value before tax. gst_amount is CGST plus SGST or UTGST plus IGST, or 0 if no GST is charged. total_amount is the final amount payable as printed, after any round-off. round_off is the Round Off / Rounded Off / R.O. line printed on the bill: positive if it adds, negative if it takes away, 0 if there is none. Never fold the round off into gst_amount or taxable_amount: gst_amount is exactly the CGST, SGST and IGST printed.",
       "- payment_term_days: only if the bill prints credit or payment terms (such as Net 30 or 45 days credit) or a due date, as whole days from the bill date. null if nothing is printed. Don't guess.",
       "- irn, ack_no, ack_date: only for a GST e-invoice, which prints them near the top, usually beside a QR code. irn is the 64-character IRN (letters a to f and digits) copied exactly; ack_no is the acknowledgement number, digits only; ack_date as YYYY-MM-DD. null for each that isn't printed.",
       "- narration: the accounting narration, following the NARRATION RULES below (in English; translate if the bill is in another language). narration_review: a list of short reasons it needs a person's check, or [].",
@@ -4081,7 +4081,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       "- items_note: one or two sentences on anything you are unsure of in the items (which lines, which figures), or an empty string.",
       "",
       "Reply with only this JSON object (bills holds one object per bill):",
-      '{"bills":[{"pages":[1],"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_bank":null,"vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":null,"irn":null,"ack_no":null,"ack_date":null,"narration":"","narration_review":[],"supply_of":"goods","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}]}',
+      '{"bills":[{"pages":[1],"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_bank":null,"vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"round_off":0,"total_amount":0,"payment_term_days":null,"irn":null,"ack_no":null,"ack_date":null,"narration":"","narration_review":[],"supply_of":"goods","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}]}',
       "",
       NARR_RULES,
       "",
@@ -4162,7 +4162,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var cur = normId(res.currency); if (!curOk(cur)) cur = "INR";
     var tx = num(res.taxable_amount), ga = num(res.gst_amount), printed = num(res.total_amount);
     if (tx != null && ga == null && printed != null && Math.abs(printed - tx) <= 1) ga = 0;
-    var ro0 = tx != null && ga != null && printed != null ? round2(printed - tx - ga) : 0; if (Math.abs(ro0) > ROUND_MAX || Math.abs(ro0) < 0.005) ro0 = 0;
+    /* round off: as printed on the bill, or else the gap (up to ₹10) between the printed total and taxable plus GST */
+    var ro0 = num(res.round_off); if (ro0 == null || Math.abs(ro0) > ROUND_MAX) ro0 = tx != null && ga != null && printed != null ? round2(printed - tx - ga) : 0; if (Math.abs(ro0) > ROUND_MAX || Math.abs(ro0) < 0.005) ro0 = 0;
     var rateFrom = "", A = inrAmounts(cur, 1, tx, ga, ro0);
     var date = ymdOk(res.bill_date) ? res.bill_date : "";
     return {
@@ -6051,7 +6052,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       { foot: [cFoot("Total, " + plural(bills.length, "bill") + " (" + cur + ")", 5), cFoot(M(T.tx), 1, "right"), cFoot(M(T.g), 1, "right"), cFoot(M(T.t), 1, "right")],
         columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 58 }, 2: { cellWidth: 50 }, 3: { cellWidth: 50 }, 5: { cellWidth: 56 }, 6: { cellWidth: 50 }, 7: { cellWidth: 60 } } });
     var tdsN = Number(r.tds) || 0;
-    var rows = [["Taxable amount", CM(T.tx)], ["GST", CM(T.g)], ["Total amount", CM(r.total)]];
+    var roT = round2(bills.reduce(function (s0, b) { return s0 + (Number(b.roundOff) || 0); }, 0));
+    var rows = [["Taxable amount", CM(T.tx)], ["GST", CM(T.g)]].concat(roT ? [["Round off", (roT < 0 ? "- " : "") + CM(Math.abs(roT))]] : []).concat([["Total amount", CM(r.total)]]);
     if (adv) rows.push(["Less advance already paid", "(" + CM(adv) + ")"]);
     rows.push(["Total payable", CM(payableOf(r))]);
     P.mark(P.net(y2 + 4, rows));
@@ -7726,7 +7728,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       "- company_id: the matching id from COMPANIES by the buyer's name, or null.",
       "- proforma_date as YYYY-MM-DD. Indian documents write the day first.",
       "- currency: ISO code of the amounts, such as INR, USD, EUR.",
-      "- total_amount: the grand total payable as printed, including GST or taxes. gst_amount: CGST plus SGST plus IGST if shown, else null.",
+      "- total_amount: the grand total payable as printed, including GST or taxes. gst_amount: CGST plus SGST plus IGST if shown, else null. round_off: the Round Off / R.O. line if printed (negative if it takes away), else 0; never fold it into gst_amount.",
       "- installments: the payment terms as a list in order, each {\"percent\": number, \"when\": one of \"receipt\" (advance with order or on receipt of proforma), \"after_proforma\", \"before_dispatch\", \"after_dispatch\", \"days\": whole number}. Always give days, never weeks or months: a week is 7 days, a month is 30 days. \"Against dispatch\" or \"before shipment\" is before_dispatch with 0 days. \"Against documents\" or \"on B/L\" is after_dispatch with 0 days. The first is usually receipt. Use [] if no terms are printed. Percents must add up to 100.",
       "- dispatch_date and arrival_date (arrival at Indian port) as YYYY-MM-DD only if printed, else null.",
       "- narration: \"Being [goods / services] ordered from [Vendor] vide Proforma [Number] dt. [DD/MM/YYYY]: [Qty] [Item], [Qty] [Item]; for [Purpose].\" in English, at most 255 characters, the purpose only if written on it; no prices, taxes or payment terms; never invent.",
@@ -7735,7 +7737,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       "- items: every line of the item table, in order, as {\"description\", \"hsn\", \"qty\", \"unit\", \"rate\", \"discount\", \"taxable\", \"gst_pct\", \"amount\"}; null for anything not printed; [] if none. items_note: anything unsure in the items, or an empty string.",
       "",
       "Reply with only this JSON object:",
-      '{"readable":true,"company_id":null,"company_name":"","vendor_name":"","vendor_gstin":"","vendor_country":"","vendor_address":"","vendor_bank":null,"proforma_number":"","proforma_date":"YYYY-MM-DD","currency":"INR","total_amount":0,"gst_amount":null,"installments":[],"dispatch_date":null,"arrival_date":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"proforma_number":0,"proforma_date":0,"currency":0,"total_amount":0,"gst_amount":0,"installments":0,"dispatch_date":0,"arrival_date":0,"narration":0},"items":[],"items_note":""}',
+      '{"readable":true,"company_id":null,"company_name":"","vendor_name":"","vendor_gstin":"","vendor_country":"","vendor_address":"","vendor_bank":null,"proforma_number":"","proforma_date":"YYYY-MM-DD","currency":"INR","total_amount":0,"gst_amount":null,"installments":[],"dispatch_date":null,"arrival_date":null,"narration":"","notes":"","confidence":{"company":0,"vendor":0,"proforma_number":0,"proforma_date":0,"currency":0,"total_amount":0,"gst_amount":0,"round_off":0,"installments":0,"dispatch_date":0,"arrival_date":0,"narration":0},"items":[],"items_note":""}',
       "",
       "COMPANIES: " + JSON.stringify(cos),
       "",
@@ -7762,6 +7764,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var cur = normId(res.currency); if (imp) D.currency = curOk(cur) && cur !== "INR" ? cur : "USD";
     if (num(res.total_amount) != null) D.total = fmtInput(num(res.total_amount));
     if (!imp && num(res.gst_amount) != null) D.gst = fmtInput(num(res.gst_amount));
+    var aro = num(res.round_off); if (aro && Math.abs(aro) <= ROUND_MAX) D.roundOff = (aro < 0 ? "-" : "") + fmtInput(Math.abs(aro));
     var ins = Array.isArray(res.installments) ? res.installments : [], map = { receipt: "receipt", after_proforma: "afterPi", before_dispatch: "beforeDispatch", after_dispatch: "afterDispatch" };
     ins = ins.filter(function (x) { return x && num(x.percent) > 0; }).slice(0, 6);
     if (ins.length) D.insts = ins.map(function (x, i) { return { pct: String(round2(num(x.percent))), when: i === 0 ? "receipt" : map[x.when] && map[x.when] !== "receipt" ? map[x.when] : "afterPi", days: i === 0 ? "" : String(intOrNull(x.days) == null ? 0 : Math.min(9999, Math.round(num(x.days) || 0))) }; });
@@ -13500,7 +13503,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var sp = el("div", { class: "ao-split" }), dl = el("div", { class: "ao-doc" }), dm = el("div", { class: "ao-main" });
       dl.appendChild(AC.fv.el); sp.appendChild(dl); sp.appendChild(dm); f.appendChild(sp); f = dm;
     } else if (isB) f.appendChild(el("div", { class: "flag", style: "margin-bottom:12px" }, x.source === "file" || x.fileName ? "This bill's file was not kept (it was added before files were kept)." : "This bill was typed in by hand, with no file attached."));
-    var facts = isB ? [["Company", coLabel(x.companyId)], ["Bill date", fmtDate(x.billDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Taxable", bm2(x, x.fcTaxable != null ? x.fcTaxable : x.taxable)], ["GST", bm2(x, x.fcGst != null ? x.fcGst : x.gstAmt)], ["Total", bm2(x, x.fcTotal != null ? x.fcTotal : x.total)]]
+    var facts = isB ? [["Company", coLabel(x.companyId)], ["Bill date", fmtDate(x.billDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Taxable", bm2(x, x.fcTaxable != null ? x.fcTaxable : x.taxable)], ["GST", bm2(x, x.fcGst != null ? x.fcGst : x.gstAmt)]].concat(Number(x.roundOff) ? [["Round off", (Number(x.roundOff) < 0 ? "- " : "+ ") + bm2(x, Math.abs(Number(x.roundOff)))]] : []).concat([["Total", bm2(x, x.fcTotal != null ? x.fcTotal : x.total)]])
       : [["Company", coLabel(x.companyId)], ["Voucher date", fmtDate(x.voucherDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Total", bm2(null, x.total)], ["GST", x.gstApp === "RCM" ? "RCM " + (x.gstRate || 0) + "%" : "Not applicable"], ["Payment", x.settle ? "From cash advance" : "By Financier"]];
     facts.push(["Approver", approverName(x) || "Not set"]);
     var fb = el("div", { class: "stats" }); facts.forEach(function (k) { var s = el("div", { class: "stat" }); s.appendChild(el("div", { class: "k" }, k[0])); s.appendChild(el("div", { class: "v" }, k[1] || "")); fb.appendChild(s); }); f.appendChild(fb);

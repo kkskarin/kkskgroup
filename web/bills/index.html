@@ -3,7 +3,7 @@
 <script>/* One page, four apps: the address picks which. /bills/ is the old address of Maintenance. */
 (function () { var seg = location.pathname.split("/")[1] || "";
   if (seg === "bills") { location.replace("/maintenance/" + location.search + location.hash); }
-  window.BV_APP = { maintenance: "mnt", renewable: "re", "bills-vouchers": "bnv", accounts: "acc", finance: "fin", approvals: "apr" }[seg] || "mnt"; window.BV_HOME = "../"; })();</script>
+  window.BV_APP = { maintenance: "mnt", renewable: "re", "bills-vouchers": "bnv", accounts: "acc", finance: "fin", approvals: "apr", tally: "tly" }[seg] || "mnt"; window.BV_HOME = "../"; })();</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script src="../supabase-runtime.js"></script>
 <link rel="stylesheet" href="../auth.css"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:calc(14px*var(--ts,1)) -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}@media print{html{--ts:1!important}}</style></head><body>
@@ -1094,6 +1094,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       <div><h2>Enter Bills</h2><p class="sub">Every bill is uploaded and its file is kept with it. Check each one, fill in or correct the details, then submit it.</p></div>
       <span class="grow"></span>
       <div class="acts2">
+        <button class="btn" id="bCopyLive" type="button" hidden title="Bring a bill from Live into Tally (Demo) as a new entry; the Live bill is not touched">Copy a live bill</button>
         <button class="btn primary" id="bUpload">Upload bills (up to 15)</button>
       </div>
       <input type="file" id="bFiles" multiple accept="application/pdf,.pdf,image/jpeg,image/png,image/webp" hidden>
@@ -1813,8 +1814,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var DIVS = { mnt: { name: "Maintenance & Civil", payIn: "fin" }, re: { name: "Renewable Energy", payIn: "fin" }, bnv: { name: "Bills & Vouchers", payIn: "fin" }, chm: { name: "Chemicals", payIn: "fin", ext: true } };
   /* Chemicals (ext) has no entry app here: its purchases, proformas and imports are entered and approved in the Chemicals app
      and only accounted and paid here. */
-  var APP_NAMES = { mnt: "Maintenance & Civil", re: "Renewable Energy", bnv: "Bills & Vouchers", acc: "Accounts", fin: "Finance", apr: "Approvals" };
-  var APP_KEYS = ["apr", "acc", "fin", "re", "mnt", "bnv"]; /* the order apps are listed in everywhere */
+  var APP_NAMES = { mnt: "Maintenance & Civil", re: "Renewable Energy", bnv: "Bills & Vouchers", acc: "Accounts", fin: "Finance", apr: "Approvals", tly: "Tally (Demo)" };
+  /* Tally (Demo): a practice desk for the Tally way of working, for the Super Admin and the Chief Accountant only. Purchase entry,
+     accounting and payment with no approvals; every entry is kept in its own tly__ copy (see nsPre), so nothing reaches Live.
+     Live masters (companies, vendors, ledgers, GST / TDS and the rest) are read through; a change to one here stays here. */
+  function tly() { return APP === "tly"; }
+  var APP_KEYS = ["apr", "acc", "fin", "re", "mnt", "bnv", "tly"]; /* the order apps are listed in everywhere */
   function appName(k) { return APP_NAMES[k || APP] || ""; }
   /* The division this page works in, or null in Accounts and Finance (every division). */
   var DIV = DIVS[APP] ? APP : null;
@@ -1831,7 +1836,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return d;
   }
   /* Payments are recorded in Finance only; elsewhere they are shown, not paid. */
-  function payHere(x) { return APP === "fin"; }
+  function payHere(x) { return APP === "fin" || tly(); }
   /* Headings, each with its own tabs. Tab keys stay the same inside the app; labels are what people see. */
   var SET_TABS = { h: "Settings", tabs: [["Users", "Users", true], ["Roles", "Roles", true], ["Change Log", "Change Log", true], ["Activity", "Show Activity", true], ["Personalise", "Personalise"]] };
   /* Masters: its own menu heading, one tab per master list. The fourth item marks a master. */
@@ -1856,11 +1861,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     bnv: [REP_TABS, EXP_TABS, MAS_TABS, { h: "Settings", tabs: SET_ALL.tabs.slice(0, 4).concat([["Templates", "Templates", true]], SET_ALL.tabs.slice(4)) }],
     acc: [REP_TABS, ACC_TABS, MAS_TABS, SET_ALL],
     fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
-    apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS]
+    apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS],
+    /* Tally (Demo): purchaser, accountant and financier, nothing else; masters to look up */
+    tly: [{ h: "Purchase", tabs: [["Bills", "Purchase Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Ledger Books", "Ledger Statements"]] }, { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"]] }, { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]] }, { h: "Masters", tabs: MASTERS }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
   var LAST_M = "";
-  var HOME_TAB = { acc: "Accounts", fin: "Payables", apr: "Approvals", }[APP] || "Transactions", LAST_IN = {};
+  var HOME_TAB = { acc: "Accounts", fin: "Payables", apr: "Approvals", tly: "Bills" }[APP] || "Transactions", LAST_IN = {};
   var DATA_TABS = ["Advance Requests", "Cash Approvals", "Approvals", "Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
   /* Admins oversee rather than enter: the entry screens (and the accountant's queue) are left out for them.
      Reports > Transactions shows every item, where it stands and who is responsible. "View as" still opens a person's screens. */
@@ -1872,7 +1879,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function navGroups() {
     return NAV.filter(function (g) { return S.isAdmin || !g.admin; }).map(function (g) {
       var fo = finOnly();
-      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]]) return false; if (t[0] === "Personalise") return true; if (meChief() && CHIEF_TABS[t[0]]) return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[0] === "Salary") return APP === "fin" && (S.isAdmin || canDo("txn")); if (t[0] === "Cheques" || t[0] === "Banks" || t[0] === "Others") return S.isAdmin || canDo("txn"); if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && st[0] !== "rec" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (TAB_STEP[t[0]] === "appr" && canDo("rec")) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
+      return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]] && !tly()) return false; if (t[0] === "Personalise") return true; if (tly()) return true; if (meChief() && CHIEF_TABS[t[0]]) return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[0] === "Salary") return APP === "fin" && (S.isAdmin || canDo("txn")); if (t[0] === "Cheques" || t[0] === "Banks" || t[0] === "Others") return S.isAdmin || canDo("txn"); if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && st[0] !== "rec" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (TAB_STEP[t[0]] === "appr" && canDo("rec")) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
         /* The financier's Reports: Payables first, then Payments (Transactions showing payments only). */
         .map(function (t) { return fo && t[0] === "Transactions" ? [t[0], "Payments"] : t; }).sort(function (x, y) { return fo ? (x[0] === "Payables" ? -1 : y[0] === "Payables" ? 1 : 0) : 0; }) };
     }).filter(function (g) { return g.tabs.length; });
@@ -2154,6 +2161,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var BNV_STEPS = { bills: 1, bcr: 1, vouchers: 1, vcr: 1, cash: 1 };
   function userHas(u, step, cid) {
     if (!u || u.active === false) return false;
+    /* Tally (Demo): the Chief Accountant enters, accounts and pays for every company */
+    if (tly()) return isChief(u) && !!(S.companies && S.companies[cid]) && TLY_STEPS[step] === 1;
     if (APP === "bnv" && BNV_STEPS[step] && S.companies && S.companies[cid] && S.companies[cid].active !== false && u.roles && Object.keys(u.roles).some(function (k) { return stepIn(u.roles[k], step) || ((u.jobRoles || []).indexOf("vmaker") >= 0 && stepIn(u.roles[k], step === "bills" ? "vouchers" : step === "bcr" ? "vcr" : step)); })) return true;
     if (step === "acct" && isChief(u) && S.companies && S.companies[cid]) return true;
     /* In Bills & Vouchers a Expenses Operator enters bills (and their checking reports) wherever they make vouchers. */
@@ -2167,6 +2176,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   /* Entering and making the checking report are one tick: Bills & BCR, Vouchers & VCR (Proformas, Imports & ACR was always one).
      Either half saved on an older record gives both. */
+  var TLY_STEPS = { bills: 1, acct: 1, txn: 1 };
   var STEP_PAIR = { bills: "bcr", bcr: "bills", vouchers: "vcr", vcr: "vouchers" };
   function stepIn(list, step) { list = list || []; return list.indexOf(step) >= 0 || (!!STEP_PAIR[step] && list.indexOf(STEP_PAIR[step]) >= 0); }
   /* Checking reports: each person makes them from their own bills and vouchers (and those of the profiles linked to their login,
@@ -2458,7 +2468,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function appsWith(u) {
     var a = (u && u.apps) || {}, bv = a.bv !== false, r = u && u.roles, dv = divsOf(u), chief = isChief(u);
     var div = function (k) { return bv && dv.indexOf(k) >= 0 && rolesFit(r, k); };
-    var o = { mnt: div("mnt"), re: div("re"), bnv: div("bnv"), acc: bv && (rolesFit(r, "acc") || chief), fin: bv && (rolesFit(r, "fin") || chief), apr: bv && rolesFit(r, "apr") };
+    var o = { mnt: div("mnt"), re: div("re"), bnv: div("bnv"), acc: bv && (rolesFit(r, "acc") || chief), fin: bv && (rolesFit(r, "fin") || chief), apr: bv && rolesFit(r, "apr"), tly: bv && chief };
     /* Demo: the apps for the steps practised there too */
     var ds = u && u.demoOk ? demoSteps(u) : []; if (bv && ds.length) { if (ds.indexOf("bills") >= 0) dv.forEach(function (k) { o[k] = true; }); if (ds.indexOf("acct") >= 0) o.acc = true; if (ds.indexOf("txn") >= 0) o.fin = true; if (ds.indexOf("appr") >= 0) o.apr = true; }
     return o;
@@ -2940,7 +2950,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   /* Viewing as someone shows exactly what they see: only their apps (the choice is kept while moving between apps), their tabs
      and their data. Only Demo/Live and the person menu stay the admin's. Nothing can be approved from another person's seat. */
-  var APP_PATH = { mnt: "maintenance", re: "renewable", bnv: "bills-vouchers", acc: "accounts", fin: "finance", apr: "approvals" };
+  var APP_PATH = { mnt: "maintenance", re: "renewable", bnv: "bills-vouchers", acc: "accounts", fin: "finance", apr: "approvals", tly: "tally" };
   function viewAppsOf(u) { var a = appsWith(u); return APP_KEYS.filter(function (k) { return a[k]; }); }
   function vaStore(uid) { try { if (uid) sessionStorage.setItem("bvViewAs", uid); else sessionStorage.removeItem("bvViewAs"); } catch (e) {} }
   function vaResume() { if (S._adm || !S.isAdmin || S.vaTried || !vaStored() || !S.loaded || !Object.keys(S.users || {}).length) return false; S.vaTried = true; if (S.users[vaStored()]) { viewAs(vaStored(), true); return true; } vaStore(""); return false; }
@@ -3564,6 +3574,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var LIDX = null;
   function invalidate() { LIDX = null; RIDX = null; }
   function opening(v, cid) {
+    /* Tally (Demo) starts every vendor at nil: Live opening balances belong to Live's bills */
+    if (tly()) return v ? { balance: 0, overdue: 0, setAt: 0 } : null;
     var o = v && v.openings && v.openings[cid];
     if (!o || o.balance == null) return null;
     return { balance: Number(o.balance) || 0, overdue: Number(o.overdue) || 0, setAt: o.setAt || 0 };
@@ -3593,7 +3605,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function txInr(t) { return Number(t.amount) || 0; }
   function advPaid(aid, inst) { var s = 0; txList().forEach(function (t) { if (t.advanceId === aid && t.kind === "payment" && (inst == null || t.inst === inst)) s += Number(t.amount) || 0; }); return round2(s); }
   function advPaidInr(aid) { return advPaid(aid); }
-  function billSent(b) { var ck = checkOf(b); return !!ck && stageOf(ck.r) === "payment"; }
+  function billSent(b) { if (tly()) return !!b && b.status === "done" && b.acct === "approved"; var ck = checkOf(b); return !!ck && stageOf(ck.r) === "payment"; }
   /* TDS is entered when a bill is accounted; what the vendor is paid is the bill total less its TDS. */
   function tdsShares() {
     var m = {};
@@ -3844,7 +3856,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* Uploads the file and notes it on the bill. Quietly does nothing where files can't be kept. */
   function keepFile(billId, f) {
     var t = fileType(f); if (!window.bvFiles || !f || !t || f.size > 25 * 1024 * 1024) return Promise.resolve(null);
-    var path = (S.mode === "demo" ? "demo" : "live") + "/bills/" + billId + "/" + Date.now().toString(36) + "-" + fileSafeName(f.name);
+    var path = (tly() ? "tly" : S.mode === "demo" ? "demo" : "live") + "/bills/" + billId + "/" + Date.now().toString(36) + "-" + fileSafeName(f.name);
     var meta = { path: path, name: str(f.name || "Bill", 160), type: t, size: f.size || 0, at: Date.now(), by: meId() };
     return window.bvFiles.put(path, f, t).then(function () {
       return retry(function () { return S.db.doc("bills/" + billId).update({ file: meta }); });
@@ -4612,7 +4624,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function fmtRate(n) { var x = num(n); return x == null ? "" : String(Math.round(x * 10000) / 10000); }
   /* Who prepared a bill or voucher: the admin picks someone; anyone else prepares their own. */
   function prepFields(uid) {
-    if (!S.isAdmin) return { preparedBy: meId(), preparedByName: preparedByText() };
+    if (!S.isAdmin || tly()) return { preparedBy: meId(), preparedByName: preparedByText() };
     return { preparedBy: uid || "", preparedByName: uid ? userLabel(uid) : "" };
   }
   function prepOf(x) { return x.preparedBy || x.submittedBy || x.createdBy || x.ownerId || ""; }
@@ -4809,8 +4821,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!D.companyId) E("bcCo", "Choose the company the bill is made out to.");
     if (bnvMaker()) { if (!D.forId) E("bcFor", "Choose who prepared this bill."); else if (D.forId === "new" && !String(D.forNew || "").trim()) E("bcForNew", "Type the name."); }
     else if (!billCanCo(b, D.companyId)) E("bcCo", "You don't have access to this company.");
-    if (S.isAdmin && D.companyId) { if (!D.prepBy) E("bcPrep", "Choose who prepared this bill."); else if (!userHas(S.users[D.prepBy], billStep(b), D.companyId)) E("bcPrep", "That person doesn't hold Bills for this company any more. Choose again."); }
-    if (!D.approverId) E("bcAppr", "Choose who approves this bill.");
+    if (S.isAdmin && !tly() && D.companyId) { if (!D.prepBy) E("bcPrep", "Choose who prepared this bill."); else if (!userHas(S.users[D.prepBy], billStep(b), D.companyId)) E("bcPrep", "That person doesn't hold Bills for this company any more. Choose again."); }
+    if (!D.approverId && !tly()) E("bcAppr", "Choose who approves this bill.");
     var cce = ccCheck("bcCc", num(D.taxable) != null ? round2((num(D.taxable) || 0) + (num(D.gstAmt) || 0)) : null); if (cce) E("bcCc", cce);
     if (D.settle === "yes" && billAdvOk(D)) { var cb0 = cashBalance(billWho(D), D.companyId, b.id), need0 = billAdvAmt(D);
       if (need0 > cb0.free + 0.004) E("bcSettle", APP === "bnv" ? "The bill is more than the cash advance they hold. Choose No, or ask for a cash advance for them first." : "The bill comes to " + money(need0) + ", more than the " + money(cb0.free) + " cash on hand. Choose No, or ask for a cash advance first.");
@@ -5005,14 +5017,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var co = el("select", { class: "field", id: "bcCo" }); fillSelect(co, companyOpts(D.companyId, billStep(b)), D.companyId);
     f.appendChild(fld("Company", co, b.ex && b.ex.companyName ? "On the bill: " + b.ex.companyName : ""));
     D.X = D.X || {}; extFields(f, "bc", D.X, D.companyId);
-    if (S.isAdmin) f.appendChild(fld("Prepared by", prepSelect("bcPrep", billStep(b), D.companyId, D.prepBy), "Whose bill this is. Only people given Bills for this company are listed."));
+    if (S.isAdmin && !tly()) f.appendChild(fld("Prepared by", prepSelect("bcPrep", billStep(b), D.companyId, D.prepBy), "Whose bill this is. Only people given Bills for this company are listed."));
     if (bnvMaker()) {
       var bf = el("select", { class: "field", id: "bcFor" }); fillSelect(bf, prepOpts(), D.forId || ""); f.appendChild(fld("Prepared by", bf, "Who prepared this bill: you, or a saved name. It counts as theirs."));
       var bn = fld("Name", inp("bcForNew", D.forNew || "", { maxlength: "80", autocomplete: "off", "data-fmt": "name" }), "Saved, and offered next time."); bn.hidden = D.forId !== "new"; f.appendChild(bn);
       bf.addEventListener("change", function () { bn.hidden = bf.value !== "new"; });
     }
-    f.appendChild(fld("Second Approver (final)", approverSelect("bcAppr", D.approverId), APPR_HINT));
-    if (l1List("bcr").length) f.appendChild(fld("First Approver (optional)", l1Select("bcAppr1", "bcr", D.approver1Id), APPR1_HINT));
+    /* Tally (Demo) has no approvals */
+    if (!tly()) f.appendChild(fld("Second Approver (final)", approverSelect("bcAppr", D.approverId), APPR_HINT));
+    if (!tly() && l1List("bcr").length) f.appendChild(fld("First Approver (optional)", l1Select("bcAppr1", "bcr", D.approver1Id), APPR1_HINT));
     var stl = el("select", { class: "field", id: "bcSettle" }); fillSelect(stl, [["no", "No, the financier pays the vendor"], ["yes", "Yes, I paid it from my cash advance"]], D.settle === "yes" ? "yes" : "no");
     var stf = fld("Paid from cash advance?", stl, " "); stf.id = "bcSetF"; stf.hidden = true; f.appendChild(stf);
     var ven = el("select", { class: "field", id: "bcVen" }); fillSelect(ven, vendorOpts(D), D.vendorChoice);
@@ -5144,7 +5157,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!t || !t.id) { if (t && t.name === "bcAdvPick") { readCard(); B.D.advPick = t.value; renderAdvPick(); updateDynamic(); scheduleSave(); doSave(); return; } if (t && t.name === "bcTermPick") { readCard(); renderTermBox(); updateDynamic(); scheduleSave(); doSave(); } return; }
     readCard();
     if (t.id === "bcVen") { onVendorChange(); }
-    else if (t.id === "bcCo" && S.isAdmin && committed) { var ps = $("bcPrep"), np = prepSelect("bcPrep", billStep(S.bills[B.cardId]), B.D.companyId, B.D.prepBy); ps.parentNode.replaceChild(np, ps); B.D.prepBy = np.value; }
+    else if (t.id === "bcCo" && S.isAdmin && !tly() && committed) { var ps = $("bcPrep"), np = prepSelect("bcPrep", billStep(S.bills[B.cardId]), B.D.companyId, B.D.prepBy); ps.parentNode.replaceChild(np, ps); B.D.prepBy = np.value; }
     else if (t.id === "bcCur" && committed) onCurrencyChange();
     else if (t.id === "bcVName" && B.D.vendorChoice === "new") { var o = $("bcVen").options[1]; if (o) o.textContent = B.D.vNew.name.trim() ? "New vendor: " + B.D.vNew.name.trim() : "New vendor"; }
     else if (t.id === "bcTerm" && committed) renderTermBox();
@@ -5531,10 +5544,43 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }
     return row;
   }
+  /* Tally (Demo) › Purchase Entry › Copy a live bill: a Live bill (its file, line items, amounts, ledgers and narration) comes in
+     as a new draft to rework the Tally way. Its approvals, accounting and payments stay behind; the Live bill is only read. */
+  var TLY_COPY = ["companyId", "vendorId", "vendorNew", "billNo", "billDate", "currency", "fxRate", "taxable", "gstAmt", "gstPct", "total", "roundOff", "fcTaxable", "fcGst", "fcTotal",
+    "termDays", "termChoice", "ledgers", "narration", "supplyOf", "file", "fileName", "ex", "einv", "und", "undertaking", "cc", "ccT", "source"];
+  function copyLiveForm() {
+    if (!tly() || !S.rawDb || !S.rawDb.live) return;
+    var body = el("div", { class: "mform" }), q = inp("tlyQ", "", { placeholder: "Bill no, vendor or company", autocomplete: "off" }), list = el("div", { class: "card list scroll", style: "max-height:380px;margin-top:10px" });
+    body.appendChild(fld("Find", q)); body.appendChild(list); list.appendChild(el("div", { class: "empty" }, "Loading Live bills…"));
+    var all = [];
+    function draw() {
+      var t = q.value.trim().toLowerCase(); list.textContent = "";
+      var rows = all.filter(function (b) { var v = S.vendors[b.vendorId], hay = [b.billNo, v ? v.name : (b.vendorNew || {}).name, coLabel(b.companyId)].join(" ").toLowerCase(); return !t || hay.indexOf(t) >= 0; }).slice(0, 150);
+      if (!rows.length) { list.appendChild(el("div", { class: "empty" }, all.length ? "No Live bill matches." : "No Live bills.")); return; }
+      sortTable(list, "tlyCopy", [
+        { label: "Bill", cell: function (b, td) { td.appendChild(el("b", { class: "mono" }, b.billNo || "")); sub(td, fmtDate(b.billDate) + " · " + coLabel(b.companyId)); } },
+        { label: "Vendor", cls: "desc", cell: function (b, td) { var v = S.vendors[b.vendorId]; txt(td, v ? v.name : (b.vendorNew || {}).name || ""); sub(td, ((b.ex && b.ex.items) || []).length + " line items"); } },
+        { label: "Total", cls: "r num", cell: function (b, td) { txt(td, curMoney(b.currency || "INR", b.total)); } },
+        { label: "", kind: "act", cls: "r", cell: function (b, td) { var c = el("button", { class: "btn sm primary", type: "button" }, "Copy"); c.addEventListener("click", function () { c.disabled = true; copyLiveBill(b).then(function (id) { var m = document.querySelector(".modal-bg"); if (m) m.remove(); if (id) { S.openBill = id; renderBills(); toast("Copied " + (b.billNo || "the bill") + " into Tally (Demo). Check it and submit."); } else c.disabled = false; }); }); td.appendChild(c); } }
+      ], rows, { sortIndex: -1 });
+    }
+    q.addEventListener("input", draw);
+    S.rawDb.live.collection("bills").get().then(function (sn) {
+      all = sn.docs.map(function (d) { return Object.assign({ id: d.id }, d.data() || {}); }).filter(function (b) { return b.status === "done" && b.companyId && S.companies[b.companyId]; }).sort(function (a, b) { return natCmp(b.billDate || "", a.billDate || "") || natCmp(b.billNo || "", a.billNo || ""); });
+      draw();
+    }, function (e) { list.textContent = ""; list.appendChild(el("div", { class: "empty" }, "Live bills couldn't be read (" + ((e && e.code) || "error") + ").")); });
+    popForm("Copy a live bill", "The copy is a new draft in Tally (Demo) with the Live bill's file, line items, amounts, ledgers and narration. Nothing in Live changes.", body, "Close", function () { return true; });
+  }
+  function copyLiveBill(b) {
+    var id = newId("b"), now = Date.now(), doc = {};
+    TLY_COPY.forEach(function (k) { if (b[k] !== undefined) doc[k] = JSON.parse(JSON.stringify(b[k])); });
+    Object.assign(doc, { status: "draft", ownerId: meId(), uploadedBy: meId(), uploadedAt: now, updatedAt: now, copiedFrom: { id: b.id, billNo: b.billNo || "", at: now, by: meId() } });
+    return retry(function () { return S.db.doc("bills/" + id).set(doc); }).then(function () { S.bills[id] = Object.assign({ id: id }, doc); return id; }, function (e) { toast("The copy couldn't be made (" + ((e && (e.code || e.message)) || "error") + ")."); return null; });
+  }
   function renderBills() {
     if (!$("secBills")) return;
     pickOpen();
-    $("bNoAi").hidden = true; $("bUpload").disabled = false;
+    $("bNoAi").hidden = true; $("bUpload").disabled = false; $("bCopyLive").hidden = !tly(); if (tly()) $("secBills").querySelector("h2").textContent = "Purchase Entry";
     renderLog();
     var q = myQueue(), open = S.openBill && S.bills[S.openBill];
     $("bQCount").textContent = q.length ? "(" + q.length + ")" : "";
@@ -8127,7 +8173,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
      and still unpaid; nothing needs planning. */
   function payReports(b) { var out = []; Object.keys(S.reports).forEach(function (k) { var r = S.reports[k]; if (r.kind !== "vcr" && r.kind !== "inst" && stageOf(r) === "payment" && (r.billIds || []).indexOf(b.id) >= 0) out.push(r); }); return out; }
   /* Approved so far for a bill: Infinity when a report approved it in full. */
-  function billApproved(b) { var rs = payReports(b), t = 0; for (var i = 0; i < rs.length; i++) { var a = rs[i].appr; if (!a || a[b.id] == null) return Infinity; t += Number(a[b.id]) || 0; } return rs.length ? round2(t) : 0; }
+  /* Tally (Demo) has no approvals: a bill is payable in full once it is accounted. */
+  function billApproved(b) { if (tly()) return b && b.status === "done" && b.acct === "approved" ? Infinity : 0; var rs = payReports(b), t = 0; for (var i = 0; i < rs.length; i++) { var a = rs[i].appr; if (!a || a[b.id] == null) return Infinity; t += Number(a[b.id]) || 0; } return rs.length ? round2(t) : 0; }
   function billPayNow(b) { var inf = billInfo(b), ap = billApproved(b); if (!ap) return 0; return round2(Math.max(0, ap === Infinity ? inf.rem : Math.min(inf.rem, ap - inf.pay - inf.disc))); }
   function instReports(a, i) { var out = []; Object.keys(S.reports).forEach(function (k) { var r = S.reports[k]; if (r.kind === "inst" && r.advanceId === a.id && r.inst === i) out.push(r); }); return out.sort(function (x, y) { return (x.createdAt || 0) - (y.createdAt || 0); }); }
   function instApproved(a, i) { var t = 0, any = false; instReports(a, i).forEach(function (r) { if (stageOf(r) !== "payment") return; any = true; t += r.apprAmt != null ? Number(r.apprAmt) || 0 : Number(r.total) || 0; }); return any ? round2(t) : 0; }
@@ -16370,6 +16417,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("uCos").addEventListener("change", function () { $("uECos").hidden = true; });
     $("save").addEventListener("click", save); $("toggle").addEventListener("click", toggleActive);
     $("bUpload").addEventListener("click", function () { $("bFiles").click(); });
+    $("bCopyLive").addEventListener("click", copyLiveForm);
     $("bFiles").addEventListener("change", function () { var fs = this.files; startUpload(fs); this.value = ""; });
     $("ckCo").addEventListener("change", renderChecks); $("ckQ").addEventListener("input", renderChecks);
     $("cnBack").addEventListener("click", backToChecks); $("cnCancel").addEventListener("click", backToChecks); $("cvBack").addEventListener("click", backToChecks);
@@ -16484,6 +16532,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     wire();
     $("failReload").addEventListener("click", function () { location.reload(); });
     if (!window.claude || typeof window.claude.use !== "function") { fail("no-runtime"); return; }
+    /* Tally (Demo) may copy a Live bill with its file: only files kept by the demo itself (tly/…) can ever be removed from here */
+    if (tly() && window.bvFiles) { var bf0 = window.bvFiles; window.bvFiles = Object.freeze(Object.assign({}, bf0, { remove: function (path) { return /^tly\//.test(String(path || "")) ? bf0.remove(path) : Promise.resolve(null); } })); }
     Promise.all([window.claude.use("db"), window.claude.use("user")]).then(function (caps) {
       S.mode = "live"; S.rawDb = caps[0] ? nsDb(caps[0]) : null; S.db = S.rawDb ? auditDb(S.rawDb) : null; S.user = caps[1];
       if (!S.db) {
@@ -16511,6 +16561,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }).catch(function (e) { fail("error", String((e && (e.code || e.message)) || e).slice(0, 120)); });
   }
   function goAdmin() {
+        /* Tally (Demo) is the Super Admin's, not every admin's */
+        if (tly() && !S.isSuper) { location.replace(window.BV_HOME || "../"); return; }
         S.isAdmin = true; S.mode = modeSaved(); renderModeSw();
         $("navbar").hidden = false; startData(); setTab(HOME_TAB); renderAdminMe(); sigGate();
         function adminRefresh() {
@@ -16570,16 +16622,19 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var NS_SHARED = { users: 1, admins: 1, requests: 1, prefs: 1, sigs: 1, roledefs: 1 };
   var NS_LAYER = { companies: 1, locations: 1, departments: 1, ledgers: 1, taxes: 1, chqtpl: 1, regions: 1, banknames: 1, vendors: 1, bankacct: 1, staff: 1, payees: 1, vpeople: 1, tpls: 1, balances: 1, rates: 1, solar_consumers: 1, solar_rates: 1 };
   function nsTop(p) { return String(p).split("/")[0]; }
-  function nsPath(p) { if (S.mode !== "demo") return p; return NS_SHARED[nsTop(p)] ? p : "demo__" + p; }
+  /* The copy this page works in: Tally (Demo) always its own (tly__), Demo its own (demo__), Live none. */
+  function nsPre() { return APP === "tly" ? "tly__" : S.mode === "demo" ? "demo__" : ""; }
+  function nsPath(p) { var pre = nsPre(); if (!pre) return p; return NS_SHARED[nsTop(p)] ? p : pre + p; }
   function nsDb(db) {
     return {
-      doc: function (p) { return S.mode === "demo" && NS_LAYER[nsTop(p)] ? layerDoc(db, p) : db.doc(nsPath(p)); },
-      collection: function (p) { return S.mode === "demo" && NS_LAYER[nsTop(p)] ? layerColl(db, p) : db.collection(nsPath(p)); }
+      doc: function (p) { return nsPre() && NS_LAYER[nsTop(p)] ? layerDoc(db, p) : db.doc(nsPath(p)); },
+      collection: function (p) { return nsPre() && NS_LAYER[nsTop(p)] ? layerColl(db, p) : db.collection(nsPath(p)); },
+      live: db
     };
   }
   function layerGone(d) { return !!(d && d.exists && (d.data() || {})._demoDel); }
   function layerDoc(db, p) {
-    var live = db.doc(p), mine = db.doc("demo__" + p);
+    var live = db.doc(p), mine = db.doc(nsPre() + p);
     return {
       id: live.id, path: p,
       get: function () { return mine.get().then(function (d) { if (layerGone(d)) return { id: live.id, exists: false, data: function () { return undefined; } }; return d.exists ? d : live.get(); }); },
@@ -16599,10 +16654,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return {
       onSnapshot: function (next, error) {
         var L = null, M = null, emit = function () { if (L && M) next(layerSnap(L, M)); };
-        var u1 = db.collection(c).onSnapshot(function (sn) { L = sn; emit(); }, error), u2 = db.collection("demo__" + c).onSnapshot(function (sn) { M = sn; emit(); }, error);
+        var u1 = db.collection(c).onSnapshot(function (sn) { L = sn; emit(); }, error), u2 = db.collection(nsPre() + c).onSnapshot(function (sn) { M = sn; emit(); }, error);
         return function () { u1(); u2(); };
       },
-      get: function () { return Promise.all([db.collection(c).get(), db.collection("demo__" + c).get()]).then(function (r) { return layerSnap(r[0], r[1]); }); },
+      get: function () { return Promise.all([db.collection(c).get(), db.collection(nsPre() + c).get()]).then(function (r) { return layerSnap(r[0], r[1]); }); },
       doc: function (id) { return layerDoc(db, c + "/" + id); }
     };
   }
@@ -16623,6 +16678,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function modeKey() { return "bv_mode_" + ((S.me && S.me.id) || ""); }
   function modeSaved() { try { return localStorage.getItem(modeKey()) === "demo" ? "demo" : "live"; } catch (e) { return "live"; } }
   function renderModeSw() {
+    if (tly()) { S.mode = "live"; $("modeSw").hidden = true; $("demoBar").hidden = false; $("demoBar").textContent = "Tally (Demo): practice entries for the Tally way of working. Live masters are read here; nothing done here reaches Live."; document.body.classList.add("is-demo"); return; }
     var can = S.isAdmin || demoAllowed();
     var w = $("modeSw"); w.textContent = ""; w.hidden = !can; document.body.classList.toggle("is-demo", S.mode === "demo"); $("demoBar").hidden = S.mode !== "demo";
     if (!can) return;

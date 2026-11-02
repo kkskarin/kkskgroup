@@ -6,6 +6,7 @@
 #   /accounts/       Accounts          }
 #   /finance/        Finance           }
 #   /approvals/      Approvals         }
+#   /tally/          Tally (Demo)      }  Super Admin and Chief Accountant only; its own tly__ data
 #   /costing/        W/B Costing (its own usernames and passwords inside; records in wb_* collections)
 #   /production/     Production Planning (hidden for now: the page sends people back home)
 #   /inv/            public (no sign-in), not on the All Apps page
@@ -56,6 +57,14 @@
   status = 200
 [[redirects]]
   from = "/approvals"
+  to = "/bills/index.html"
+  status = 200
+[[redirects]]
+  from = "/tally"
+  to = "/bills/index.html"
+  status = 200
+[[redirects]]
+  from = "/tally/*"
   to = "/bills/index.html"
   status = 200
 [[redirects]]

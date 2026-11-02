@@ -129,6 +129,10 @@
   the Ledgers list but changed or removed only from GST or TDS. Tax ledgers are not offered as expense ledgers. The TDS
   sections are the ones offered when accounting; reverse charge offers 5, 12, 18, 28 and 40%. GST ledgers: CGST, SGST and
   IGST Input, Input (RCM) and Input - Ineligible (migration `20261028170000`); TDS started with the sections the app offered.
+  Input - Ineligible ledgers sit under **Indirect Expenses** (blocked credit is a cost, as in Tally), the rest under Duties &
+  Taxes. CGST / SGST / IGST **RCM Payable** (flavour `pay`) are the liability side of the reverse-charge Journal-GST and are
+  never offered on a bill or voucher. When a bill or voucher is accounted with TDS, `tdsBase` (taxable value, without GST)
+  and `tdsRate` (the rate that amount gives) are kept with `tds` and `tdsSection`.
 - **GST on a bill is spread over the GST ledgers when it is accounted**: tick one or more credit types (Input, ticked to start;
   Input (RCM); Input - Ineligible). Intrastate or interstate is decided from the vendor's and company's GSTIN state codes (not
   chosen; accounting waits if a code is missing). Intrastate each type is a row of CGST and SGST, always equal, with only CGST
@@ -288,9 +292,18 @@ provides the same calls, so the app code did not need rewriting:
     vouchers). A **People** search lists everyone entered for; opening one shows their advance requests,
     vouchers and bills (each with its amount, no running balance) with Ask for a cash advance, Make a voucher
     and Enter a bill on their behalf.
-- **Cash vouchers for the day** on a voucher: every cash voucher (any stage) to that payee from the chosen company on the
-  voucher's date (today for a new one), with the day's total including this voucher. Over ₹ 10,000 (₹ 35,000 for Freight &
-  Transport) the voucher can't be saved in cash.
+- **Cash limit (Income Tax s.40A(3))**: all cash to one party (vendor or payee, matched by name and aliases) from one company
+  on one day counts together: cash vouchers (by voucher date, any stage), bills paid from a cash advance (by bill date) and
+  cash payments in Payment Entry for bills and advances. Over ₹ 10,000 (₹ 35,000 for a Freight & Transport voucher or a
+  vendor ticked **Transporter** on Vendors, `vendors.transporter`) the voucher, the bill paid from a cash advance or the cash
+  payment can't be saved. The voucher form lists that day's cash to the payee with the total. Each saves the check as
+  `cashCheck` {day, before, total, limit, ok, at} on the voucher, bill or payment.
+- **A/c Payee**: every cheque from Pay Now is crossed A/c Payee; a cheque recorded as already paid needs "The cheque is crossed
+  A/c Payee" ticked (`acPayee`). Only the salary self cheque is not crossed.
+- **180 days (GST s.16(2))**: a bill with GST still unpaid 150 days after its date is flagged in Payables and Pay Now with the
+  date to pay by; from 180 days, that its GST input must be reversed until it is paid.
+- **Vendors › Check on the GST portal** checks every vendor with a GSTIN not checked in 30 days, so the composition,
+  cancelled-GSTIN and e-invoice (bill without an IRN) alerts cover every bill.
 - **Voucher form**: Details and ledger open only once the company, Paid to, the voucher type and (for all but a
   Cash Voucher) Supply Of are chosen. A Narration line under the total shows the bill-style narration as it
   will be saved and changes whenever the type, Supply Of, Paid to or lines change. A bill's narration follows
@@ -506,8 +519,7 @@ provides the same calls, so the app code did not need rewriting:
   Cancelling the cheque puts the month back to draft so it can be issued again.
 - **Payment Entry: Plan for Payment / Already Paid.** "To pay" opens on **Plan for Payment**: per company (its bank
   account and cheque book, defaults filled in), per payee (vendor, or voucher payee), every approved item by due date with
-  a tick and the amount to pay now (part payments leave the rest). Per payee: Cheque, NEFT/RTGS or Cash, and A/c Payee
-  (ticked per payment; always on for NEFT/RTGS). "Select all" and **Print Cheques for All Selected** give one cheque per
+  a tick and the amount to pay now (part payments leave the rest). Per payee: Cheque, NEFT/RTGS or Cash; every cheque is crossed A/c Payee. "Select all" and **Print Cheques for All Selected** give one cheque per
   payee, numbered on from each cheque book (editing one number renumbers the ones after it), one PDF with a page per cheque,
   and record the payments (`cheques/*` with number, date, payee, amount, A/c Payee, status; each payment carries
   `chequeId`, `bankAcctId`, `chequeTpl`; a vendor's payment is set against the ticked bills in `billAlloc`). NEFT/RTGS

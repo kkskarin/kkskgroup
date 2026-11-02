@@ -1115,7 +1115,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   <section id="secVendors" hidden>
     <div class="head">
       <div class="grow"><h2>Vendors</h2><p class="sub">Add a vendor here, or it is added when its first bill is submitted. A vendor is flagged until its opening balance is captured for every company it has bills in.</p></div>
-      <div class="acts2"><button class="btn primary" id="vAdd" type="button" hidden>Add Vendor</button><button class="btn" id="vXls" type="button">Download Excel</button><button class="btn" id="vExport" type="button">Export payables PDF</button></div>
+      <div class="acts2"><button class="btn primary" id="vAdd" type="button" hidden>Add Vendor</button><button class="btn" id="vGstAll" type="button" hidden title="Status, composition and e-invoice for vendors not checked in the last 30 days">Check on the GST portal</button><button class="btn" id="vXls" type="button">Download Excel</button><button class="btn" id="vExport" type="button">Export payables PDF</button></div>
     </div>
     <div class="seg" role="tablist" aria-label="Kind of vendor" id="vSeg" style="margin-bottom:12px"><button type="button" role="tab" data-k="reg" aria-selected="true">Registered <span></span></button><button type="button" role="tab" data-k="unreg" aria-selected="false">Unregistered <span></span></button><button type="button" role="tab" data-k="ovs" aria-selected="false">Overseas <span></span></button></div>
     <div class="filters">
@@ -1145,6 +1145,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         <div class="f"><label for="vePan">PAN</label><input class="field mono ro" id="vePan" disabled><span class="hint">Taken from the GSTIN.</span><span class="err" id="vePanE" hidden></span></div>
         <div class="f wide"><label for="veAddr">Address</label><textarea class="field" id="veAddr" rows="2" maxlength="240"></textarea><span class="hint">Street, town and PIN code (with the country for an overseas vendor).</span><span class="err" id="veAddrE" hidden></span></div>
         <div class="f"><label for="veTerm">Payment terms (days)</label><input class="field num" id="veTerm" inputmode="numeric" maxlength="3" autocomplete="off"><span class="hint">Days from the bill date to the due date.</span><span class="err" id="veTermE" hidden></span></div>
+        <div class="f"><label class="check" style="margin-top:22px"><input type="checkbox" id="veTrans"> Transporter (goods carriage)</label><span class="hint">Cash to a transporter can go up to ₹ 35,000 a day (₹ 10,000 for anyone else).</span></div>
         <div class="f wide"><b>Bank details (for NEFT / RTGS)</b><span class="hint">Filled into the bank's NEFT / RTGS form. Needed only when paying this vendor by NEFT / RTGS.</span></div>
         <div class="f"><label for="veBenName">Account holder name</label><input class="field" id="veBenName" maxlength="120" autocomplete="off" data-fmt="name"></div>
         <div class="f"><label for="veBenAcct">Account number</label><input class="field mono" id="veBenAcct" maxlength="24" autocomplete="off" spellcheck="false"><span class="err" id="veBenAcctE" hidden></span></div>
@@ -4705,10 +4706,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!oneStop(D.companyId) || !$("bcTds")) return {};
     var v = S.vendors[vid]; if (!v || vendorNeeds(v).list.some(function (x) { return x.indexOf("opening balance") !== 0; }) || !opening(v, D.companyId)) return {};
     var t = round2(num(D.tds) || 0); B.oneStopDone = true;
-    return Object.assign({ acct: "approved", acctNote: "", tds: t, tdsSection: t > 0 ? D.tdsSec || "" : "" }, acctWho());
+    return Object.assign({ acct: "approved", acctNote: "", tds: t, tdsSection: t > 0 ? D.tdsSec || "" : "" }, tdsBaseRate(t, num(D.taxable)), acctWho());
   }
   function draftToDoc(D) {
-    var doc = draftToDoc0(D);
+    var doc = draftToDoc0(D), cc = doc.settle ? billCash(D, B.cardId) : null; doc.cashCheck = cc ? cashRec(cc) : null;
     if (bnvMaker() && D.forId) { var pr = prepResolve(D); if (pr.id) Object.assign(doc, { preparedBy: pr.id, preparedByName: pr.name, madeBy: meId(), madeByName: preparedByText() }); }
     return doc;
   }
@@ -4725,6 +4726,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* Whose cash a bill would come out of, and whether paying it from that cash advance is offered (rupee bills only). */
   function billWho(D) { return S.isAdmin ? D.prepBy : bnvMaker() ? (D.forId === meId() ? meId() : "") : meId(); }
   function billAdvOk(D) { return (D.currency || "INR") === "INR" && advRel(billWho(D), D.companyId); }
+  /* The cash-limit check for a bill paid from a cash advance: the vendor, the company and the bill date. */
+  function billCash(D, bid) {
+    var day = parseDate(D.billDate || ""), vid = D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : "", nm = vid && S.vendors[vid] ? S.vendors[vid].name : D.vNew ? String(D.vNew.name || "").trim() : "";
+    if (!day || !D.companyId || !(vid || nm)) return null; var sk = {}; if (bid) sk[bid] = 1;
+    var before = cashDayTotal(D.companyId, nm, vid, day, sk), fr = vTransporter(vid) || !!(D.vNew && vid === "" && D.vNew.transporter);
+    return { day: day, before: before, total: round2(before + billAdvAmt(D)), limit: fr ? CASH_FREIGHT : CASH_LIMIT, transporter: fr, name: nm || "the vendor" };
+  }
   function billAdvAmt(D) { var a = amountsOf(D); return round2((a && a.total != null ? Number(a.total) || 0 : (num(D.taxable) || 0) + (num(D.gstAmt) || 0)) - (num(D.tds) || 0)); }
   /* PAN is never typed: it is characters 3 to 12 of the GSTIN. */
   function panOfNew(D) { var g = normId(D.vNew.gstin); return g && gstinCheck(g) !== "format" ? panFromGstin(g) : ""; }
@@ -4805,7 +4813,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!D.approverId) E("bcAppr", "Choose who approves this bill.");
     var cce = ccCheck("bcCc", num(D.taxable) != null ? round2((num(D.taxable) || 0) + (num(D.gstAmt) || 0)) : null); if (cce) E("bcCc", cce);
     if (D.settle === "yes" && billAdvOk(D)) { var cb0 = cashBalance(billWho(D), D.companyId, b.id), need0 = billAdvAmt(D);
-      if (need0 > cb0.free + 0.004) E("bcSettle", APP === "bnv" ? "The bill is more than the cash advance they hold. Choose No, or ask for a cash advance for them first." : "The bill comes to " + money(need0) + ", more than the " + money(cb0.free) + " cash on hand. Choose No, or ask for a cash advance first."); }
+      if (need0 > cb0.free + 0.004) E("bcSettle", APP === "bnv" ? "The bill is more than the cash advance they hold. Choose No, or ask for a cash advance for them first." : "The bill comes to " + money(need0) + ", more than the " + money(cb0.free) + " cash on hand. Choose No, or ask for a cash advance first.");
+      else { var cc0 = billCash(D, b.id); if (cc0 && cc0.total > cc0.limit + 0.004) E("bcSettle", "Cash to " + cc0.name + " from " + coLabel(D.companyId) + " on " + fmtDate(cc0.day) + " would come to " + money(cc0.total) + (cc0.before ? " (" + money(cc0.before) + " already paid or due in cash that day)" : "") + ", over the " + money(cc0.limit) + " cash limit" + (cc0.transporter ? " for a transporter" : "") + ". Choose No: the financier pays it by cheque or NEFT / RTGS."); } }
     if (!D.vendorChoice) E("bcVen", "Choose the vendor, or choose New vendor.");
     else if (D.vendorChoice === "new") {
       var n = D.vNew, g = normId(n.gstin), gp = g ? gstinCheck(g) : "missing"; vt = n.type;
@@ -5608,6 +5617,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function renderVendors() {
     if (IMP.busy) return; /* an upload redraws once it is done */
     var box = $("vList"); box.textContent = ""; if (canImport()) impButtons("vendors", $("vExport").parentNode); $("vAdd").hidden = !canEditVendors();
+    var gb = $("vGstAll"), gn = Object.keys(S.vendors).filter(function (k) { return S.vendors[k].active !== false && gstDue(Object.assign({ id: k }, S.vendors[k])); }).length;
+    if (gb && !gb.disabled) { gb.hidden = !canEditVendors() || !window.bvGst || !gn; gb.textContent = "Check " + plural(gn, "vendor") + " on the GST portal"; }
     var q = $("vQ").value.trim().toLowerCase(), onlyNeeds = $("vNeeds").checked, showOff = $("vOff").checked;
     var vc = $("vCo"), vcv = vc.value; fillSelect(vc, [["", "All companies"]].concat(myCompanies().map(function (c) { return [c.id, c.shortName || c.name]; })), vcv); vcv = vc.value;
     var inCo = {}; if (vcv) ledgersFor(function (r) { return r.cid === vcv && (r.opening || r.bills.length || r.advs.length || r.txs.length); }).forEach(function (r) { inCo[r.vid] = 1; });
@@ -5662,11 +5673,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var v = VE.nv || S.vendors[id]; if (!v) return;
     VE.id = id; veClear();
     $("veName").value = v.name || ""; $("veAddr").value = v.address || ""; fillSelect($("veType"), [["", "Choose a type"]].concat(VTYPES), v.type || "");
-    $("veGstin").value = v.gstin || ""; $("veGstChk").hidden = !window.bvGst || !canEditVendors(); $("veGstRes").hidden = true; VE.gstHit = null; VE.bankNew = null; paintVendorGst(v); $("vePan").value = v.gstin && gstinCheck(v.gstin) !== "format" ? panFromGstin(v.gstin) : ""; $("veTerm").value = v.termDays == null ? "" : String(v.termDays);
+    $("veTrans").checked = !!v.transporter; $("veGstin").value = v.gstin || ""; $("veGstChk").hidden = !window.bvGst || !canEditVendors(); $("veGstRes").hidden = true; VE.gstHit = null; VE.bankNew = null; paintVendorGst(v); $("vePan").value = v.gstin && gstinCheck(v.gstin) !== "format" ? panFromGstin(v.gstin) : ""; $("veTerm").value = v.termDays == null ? "" : String(v.termDays);
     var bk0 = v.bank || {}; $("veBenName").value = bk0.name || ""; $("veBenAcct").value = bk0.acct || ""; $("veBenIfsc").value = bk0.ifsc || ""; vbFill(bk0.bank || ""); $("veBenAddr").value = bk0.address || ""; $("veBenBranch").value = bk0.branch || ""; $("veBenType").value = bk0.type || ""; $("veBenPhone").value = bk0.phone || "";
     renderOpenings(v); renderVendorHead(v); renderVendorStatements();
     var ed = canEditVendors(), eb = canEditVendorBank();
     Array.prototype.forEach.call(document.querySelectorAll("#secVendor .form .field, #veOb input"), function (i) { if (i.id === "vePan") return; var bank = /^veBen/.test(i.id); i.disabled = bank ? !eb : !ed; });
+    $("veTrans").disabled = !ed;
     $("veSave").hidden = !ed && !eb; $("veCancel").textContent = ed || eb ? "Cancel" : "Back";
     if (!ed || !eb) { var nt = el("div", { class: "flag", style: "margin-top:8px" }, ed ? "The bank details for cheques and NEFT / RTGS are filled in by the financier." : eb ? "The vendor's accounting details and opening balances are kept by the accountant. You fill in the bank details for cheques and NEFT / RTGS." : "Vendor details and opening balances are filled in by the accountant; bank details by the financier."); $("vFlags").appendChild(nt); }
     $("veBenIfscH").textContent = bk0.src && bk0.acct ? "Read from " + bk0.src + ". Check them against the vendor's cancelled cheque or letter." : eb ? "Bank, branch and address fill in from the IFSC." : "";
@@ -5764,7 +5776,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       openings[cid] = { balance: round2(bn), overdue: round2(on), setAt: now, setBy: meId() }; changed++;
     });
     if (!ok) { var first = document.querySelector("#secVendor .field.bad"); if (first) first.focus(); return; }
-    var data = { name: name, type: type, gstin: g, pan: pan, address: addr, termDays: intOrNull(term), updatedAt: now, updatedBy: meId() };
+    var data = { name: name, type: type, gstin: g, pan: pan, address: addr, termDays: intOrNull(term), transporter: $("veTrans").checked, updatedAt: now, updatedBy: meId() };
     if (VE.gstHit && VE.gstHit.gstin === g) data.gst = VE.gstHit;
     var bkd = readVendorBank(v);
     if (bkd.acct && !/^[0-9A-Za-z]{6,24}$/.test(bkd.acct)) { veErr("veBenAcct", "Letters and digits only, 6 to 24."); $("veBenAcct").focus(); return; }
@@ -5858,15 +5870,24 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* Section 194C: 1% for an individual or HUF (a proprietorship is an individual), 2% for anyone else. */
   function gstSmallTds(g) { return !!g && /proprietor|individual|huf|hindu undivided/i.test(g.constitution || ""); }
   function gstYmd(s) { var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(s || "")); return m ? m[3] + "-" + m[2] + "-" + m[1] : ""; }
+  function gstDue(v) { if (!v || !v.id || !v.gstin || gstinCheck(v.gstin)) return false; var g = vGst(v); return !g || Date.now() - (g.checkedAt || 0) >= GST_STALE; }
   function gstRefresh(v, then) {
-    if (!window.bvGst || !v || !v.id || !v.gstin || gstinCheck(v.gstin) || GSTQ[v.id]) return;
-    var g = vGst(v); if (g && Date.now() - (g.checkedAt || 0) < GST_STALE) return;
+    if (!window.bvGst || !gstDue(v) || GSTQ[v.id]) return Promise.resolve(false);
     GSTQ[v.id] = 1;
-    window.bvGst.search(normId(v.gstin)).then(function (r) {
-      if (!r || !r.found) return;
+    return window.bvGst.search(normId(v.gstin)).then(function (r) {
+      if (!r || !r.found) return false;
       var gd = gstFromHit(r); v.gst = gd;
-      return retry(function () { return S.db.doc("vendors/" + v.id).update({ gst: gd }); }).then(function () { invalidate(); if (then) then(); });
-    }).catch(function () {});
+      return retry(function () { return S.db.doc("vendors/" + v.id).update({ gst: gd }); }).then(function () { invalidate(); if (then) then(); return true; });
+    }).catch(function () { return false; });
+  }
+  /* Vendors › Check on the GST portal: every vendor with a GSTIN not checked in the last 30 days, one after another, so the
+     e-invoice, composition and cancelled-GSTIN alerts cover every bill. */
+  function gstCheckAll(btn) {
+    var vs = Object.keys(S.vendors).map(function (k) { return S.vendors[k]; }).filter(function (v) { return v.active !== false && gstDue(v); }), n = 0, ok = 0;
+    if (!vs.length || !window.bvGst) return; btn.disabled = true;
+    var step = function () { if (n >= vs.length) { btn.disabled = false; toast("Checked " + plural(ok, "vendor") + " on the GST portal" + (ok < vs.length ? "; " + (vs.length - ok) + " not found or not reachable" : "") + "."); renderVendors(); return; }
+      var v = vs[n++]; btn.textContent = "Checking " + n + " of " + vs.length + "…"; gstRefresh(v).then(function (r) { if (r) ok++; step(); }); };
+    step();
   }
   /* Warnings about a bill from its vendor's GST portal details and its e-invoice details. None of them stops the bill,
      except that a composition dealer's GST can't be accounted (see acctCheck). */
@@ -8064,7 +8085,42 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function modeInfo(m) { for (var i = 0; i < PAYMODES.length; i++) if (PAYMODES[i][0] === m) return PAYMODES[i]; return null; }
   function modesFor(x) { return x.cur && x.cur !== "INR" ? ["swift"] : ["cheque", "neft", "netbank", "card", "cash"]; }
   function modeText(t) { var m = modeInfo(t.mode); return (m ? m[1] : "") + (t.ref ? (m ? " · " : "") + t.ref : ""); }
-  function cashToPayeeOn(payeeKey, date, skipId) { var s = 0; txList().forEach(function (t) { if (t.id !== skipId && t.kind === "payment" && t.mode === "cash" && t.date === date && (t.vendorId ? "v:" + t.vendorId : t.payeeId || normName(t.payee || "")) === payeeKey) s += Number(t.amount) || 0; }); return round2(s); }
+  /* ---- Cash limit, Income Tax s.40A(3) ----
+     All cash to one party (a vendor or a payee, matched by name, aliases too) from one company on one day: cash vouchers (by
+     voucher date), bills paid from a cash advance (by bill date), and cash paid in Payment Entry for bills and advances. Over
+     ₹ 10,000 (₹ 35,000 for a transporter) can't be paid in cash. skip: ids (voucher, bill or payment) to leave out. */
+  function vTransporter(vid) { var v = vid && S.vendors[vid]; return !!(v && v.transporter); }
+  function cashDayItems(cid, name, vid, day, skip) {
+    skip = skip || {}; var ns = {}, out = [];
+    var addN = function (n) { if (n) { ns[normName(n)] = 1; ns[normName(pyCanon(n))] = 1; } }; addN(name); if (vid && S.vendors[vid]) addN(S.vendors[vid].name);
+    var hit = function (n, id) { return (!!vid && id === vid) || (!!n && (!!ns[normName(n)] || !!ns[normName(pyCanon(n))])); };
+    if (!Object.keys(ns).length && !vid) return out;
+    allVouchers().forEach(function (v) {
+      if (skip[v.id] || (cid && v.companyId !== cid) || (v.voucherDate || ymdOfMs(v.createdAt || 0)) !== day || vPayMode(v) !== "cash" || !hit(v.payee)) return;
+      out.push({ k: "Voucher", id: v.id, no: v.voucherNo || "", by: pnm(v.preparedByName) || userLabel(v.preparedBy) || "", mode: vPayModeText(v), x: v, amt: Number(v.total) || 0 });
+    });
+    var B = (S.raw && S.raw.bills) || S.bills || {};
+    Object.keys(B).forEach(function (k) {
+      var b = B[k]; if (!b || skip[k] || b.status === "deleted" || !b.settle || (cid && b.companyId !== cid) || b.billDate !== day) return;
+      var vn = b.vendorId && S.vendors[b.vendorId] ? S.vendors[b.vendorId].name : ""; if (!hit(vn, b.vendorId)) return;
+      out.push({ k: "Bill", id: k, no: b.billNo || "", by: pnm(b.preparedByName) || userLabel(prepOf(b)) || "", mode: "Cash (from cash advance)", x: b, amt: round2((Number(b.total) || 0) - (Number(b.tds) || 0)) });
+    });
+    txList().forEach(function (t) {
+      if (skip[t.id] || t.kind !== "payment" || (t.mode !== "cash" && t.mode !== "advance") || t.date !== day || (cid && t.companyId !== cid) || t.voucherId || t.vcrId) return;
+      var vn = t.vendorId && S.vendors[t.vendorId] ? S.vendors[t.vendorId].name : t.payee || ""; if (!hit(vn, t.vendorId)) return;
+      out.push({ k: "Payment", id: t.id, no: t.ref || "", by: pnm(t.byName) || "", mode: t.mode === "advance" ? "Cash (from cash advance)" : "Cash", x: t, amt: Number(t.amount) || 0 });
+    });
+    return out;
+  }
+  function cashDayTotal(cid, name, vid, day, skip) { return round2(cashDayItems(cid, name, vid, day, skip).reduce(function (s0, it) { return s0 + it.amt; }, 0)); }
+  /* The check for a payment in Payment Entry: what was already paid or due in cash that day, the total with this one, and the limit. */
+  function payCash(x, n, date, skipId) {
+    var cid = (x && (x.cid || x.companyId || (x.v && x.v.companyId) || (x.b && x.b.companyId))) || "", vid = (x && x.vid) || "", skip = {};
+    if (skipId) skip[skipId] = 1; (x ? (x.v ? [x.v.id] : x.voucherId ? [x.voucherId] : x.voucherIds || []) : []).forEach(function (id) { skip[id] = 1; });
+    var nm = (x && (x.payee || x.name)) || (vid && S.vendors[vid] ? S.vendors[vid].name : ""), before = cashDayTotal(cid, nm, vid, date, skip), fr = payFreight(x) || vTransporter(vid);
+    return { day: date, before: before, total: round2(before + (Number(n) || 0)), limit: fr ? CASH_FREIGHT : CASH_LIMIT, transporter: fr, name: nm, cid: cid };
+  }
+  function cashRec(c) { return { day: c.day, before: c.before, total: c.total, limit: c.limit, ok: c.total <= c.limit + 0.004, at: Date.now() }; }
   /* ---- What the admin approved for payment ----
      A bill counts once a Bill Checking Report holding it is approved (sent for payment): in full, or the amount the admin approved for it on that
      report. An instalment counts once its Advance Checking Report is approved, in full or the amount approved. The financier pays what is approved
@@ -8295,7 +8351,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
             g.items.forEach(function (it) { var r = el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" }), c0 = el("input", { type: "checkbox", "aria-label": "Pay " + it.label }); c0.checked = !!MK.pl.sel[it.key]; c0.addEventListener("change", function () { MK.pl.sel[it.key] = c0.checked; renderMark(); });
               r.appendChild(c0); var t = el("span", { class: "grow" }); t.appendChild(el("span", null, it.label)); if (!(it.it && it.it.kind === "opening")) { t.appendChild(document.createTextNode(" · ")); t.appendChild(dueSpan(it.due)); } t.appendChild(el("span", { class: "tsub" }, " · " + curMoney(g.cur, it.amt))); r.appendChild(t); r.appendChild(amtBox(it, g)); ul.appendChild(r); });
             td.appendChild(ul); } },
-        { label: "Due", sort: function (g) { return dueKeyG(g); }, cell: function (g, td) { if (g.opening) td.appendChild(el("span", { style: "color:var(--bad);font-weight:600" }, "Opening balance")); else td.appendChild(dueSpan(g.due)); } },
+        { label: "Due", sort: function (g) { return dueKeyG(g); }, cell: function (g, td) { if (g.opening) td.appendChild(el("span", { style: "color:var(--bad);font-weight:600" }, "Opening balance")); else td.appendChild(dueSpan(g.due)); var wa = g.items.map(function (it) { return it.it && it.it.b ? itcAge(it.it.b) : null; }).filter(Boolean).sort(function (a, b) { return b.d - a.d; })[0]; if (wa) sub(td, (g.items.length > 1 ? "A bill here: " : "") + wa.text, "color:var(--" + (wa.bad ? "bad" : "warn") + ");font-weight:600"); } },
         { label: "Payable", cls: "r num", sort: function (g) { return g.items.reduce(function (s0, it) { return s0 + it.amt; }, 0); }, desc: true, cell: function (g, td) { txt(td, curMoney(g.cur, round2(g.items.reduce(function (s0, it) { return s0 + it.amt; }, 0)))); } },
         { label: "Pay Now", cls: "r", cell: function (g, td) {
             if (g.items.length === 1) { td.appendChild(amtBox(g.items[0], g)); return; }
@@ -8327,12 +8383,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (numbered) cols.push({ label: mode === "neft" ? "Cheque No (with NEFT)" : "Cheque No", cell: function (l, td) { var i = lines.indexOf(l), inEl = inp("plNo_" + i, chqNoText(l.no, l.bk), { inputmode: "numeric", class: "field num", style: "max-width:120px" });
         inEl.addEventListener("change", function () { var n0 = Number(inEl.value.replace(/\D/g, "")); if (!n0) { inEl.value = chqNoText(l.no, l.bk); return; } l.no = n0; inEl.value = chqNoText(n0, l.bk); cascade(i); }); td.appendChild(inEl);
         var lf = chqLeft(l.bk, l.no); if (lf != null && lf <= CHQ_WARN) sub(td, chqLeftText(l.bk, l.no), "color:var(--warn);font-weight:600"); } });
-    if (mode === "cheque") cols.push({ label: "", cls: "ckcol", head: function (th) { var a = el("input", { type: "checkbox", "aria-label": "A/C Payee on every cheque" }); a.checked = lines.every(function (l) { return MK.pl.acp[l.g.key]; }); a.addEventListener("change", function () { lines.forEach(function (l) { MK.pl.acp[l.g.key] = a.checked; }); Array.prototype.forEach.call(tw.querySelectorAll("input.acp"), function (c) { c.checked = a.checked; }); }); th.appendChild(a); th.appendChild(document.createTextNode(" A/C Payee")); },
-      cell: function (l, td) { var c = el("input", { type: "checkbox", class: "acp", "aria-label": "A/C Payee on the cheque to " + l.g.name }); c.checked = !!MK.pl.acp[l.g.key]; c.addEventListener("change", function () { MK.pl.acp[l.g.key] = c.checked; }); td.appendChild(c); } });
     sortTable(tw, "plIssue", cols, lines, {});
     var tl = null; if (mode === "cheque") { tl = el("label", { class: "check", style: "margin-top:10px" }); var tc = el("input", { type: "checkbox", id: "plTest" }); tl.appendChild(tc); tl.appendChild(document.createTextNode(" Test print: put the scan behind the text (plain paper)")); body.appendChild(tl); }
     var title = mode === "cheque" ? "Print " + plural(lines.length, "cheque") : mode === "neft" ? "NEFT / RTGS for " + plural(lines.length, "payee") : "Record " + plural(lines.length, "cash payment");
-    var intro = mode === "cheque" ? "One cheque per payee, numbered from each cheque book. Change a number and the ones after it follow. One PDF per company holds its cheques, an A4 page each; print at 100% (actual size) with no scaling or borders." : mode === "neft" ? "Each takes the cheque number given with the NEFT / RTGS request. The payments are recorded now; the bank's form is printed from Paid." : "Recorded as paid in cash today. Cash stays under ₹10,000 a payee a day (Freight & Transport: up to ₹35,000).";
+    var intro = mode === "cheque" ? "One cheque per payee, crossed A/c Payee, numbered from each cheque book. Change a number and the ones after it follow. One PDF per company holds its cheques, an A4 page each; print at 100% (actual size) with no scaling or borders." : mode === "neft" ? "Each takes the cheque number given with the NEFT / RTGS request. The payments are recorded now; the bank's form is printed from Paid." : "Recorded as paid in cash today. Cash to one payee from one company stays within ₹10,000 a day (₹35,000 for a transporter), counting cash vouchers, bills paid from a cash advance and cash payments.";
     popForm(title, intro, body, mode === "cheque" ? "Print and Record" : "Record", function () {
       var d = mode === "cheque" ? todayYmd() : parseDate($("plDate").value); if (!d) { errOn("plDate", "Choose the date."); return false; }
       if (mode === "cash") { var bad = ""; lines.forEach(function (l) { var vids = l.g.items.filter(function (it) { return MK.pl.sel[it.key]; }).map(function (it) { return it.v ? it.v.id : it.voucherId || ""; }), x = { type: l.g.vid ? "vendor" : "vch", vid: l.g.vid, payee: l.g.name, voucherIds: vids.indexOf("") < 0 ? vids : [] }; bad = bad || payCheck(x, l.amt, d, "cash", ""); }); if (bad) { toast(bad); return false; } }
@@ -8348,7 +8402,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function planRecord(lines, mode, d) {
     var now = Date.now(), made = [], job = Promise.resolve(), maxNo = {};
     lines.forEach(function (l) {
-      var g = l.g, tp = l.tp, bank = plBank(g.cid), ack = mode === "neft" ? true : mode === "cheque" ? !!MK.pl.acp[g.key] : false, chqId = mode === "cash" ? null : newId("cq");
+      var g = l.g, tp = l.tp, bank = plBank(g.cid), ack = mode === "neft" || mode === "cheque", /* every cheque to a party is crossed A/c Payee (Income Tax s.40A(3)) */ chqId = mode === "cash" ? null : newId("cq");
       var ref = l.no != null ? chqNoText(l.no, bank) : "", payee = g.name, txIds = [];
       var vendorAlloc = {}, vendorAmt = 0, others = [];
       g.items.forEach(function (it) { if (!MK.pl.sel[it.key]) return; var a = plAmt(it); if (a <= 0.004) return; if (it.it) { vendorAmt += a; if (it.it.b) vendorAlloc[it.it.b.id] = round2((vendorAlloc[it.it.b.id] || 0) + a); } else others.push({ it: it, a: a }); });
@@ -8357,6 +8411,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var docs = [];
       if (vendorAmt > 0.004) docs.push(txDoc({ companyId: g.cid, vendorId: g.vid, currency: g.cur }, vendorAmt, Object.keys(vendorAlloc).length ? { billAlloc: vendorAlloc } : {}));
       others.forEach(function (o) { docs.push(txDoc(txBase(o.it.row), o.a)); });
+      if (mode === "cash") docs.forEach(function (doc) { doc.cashCheck = cashRec(payCash({ cid: g.cid, vid: g.vid || "", payee: g.name || "", voucherId: doc.voucherId || "" }, doc.amount, d)); });
       docs.forEach(function (doc) { var id = newId("t"); txIds.push(id); job = job.then(function () { return retry(function () { return S.db.doc("transactions/" + id).set(doc); }).then(function () { S.txns[id] = Object.assign({ id: id }, doc); }); }); });
       if (chqId) {
         var cdoc = { companyId: g.cid, bankAcctId: bank ? bank.id : null, tplId: tp ? tp.id : null, no: ref, num: l.no, date: d, payee: payee, vendorId: g.vid || null, amount: round2(l.amt), currency: g.cur, acPayee: ack, mode: mode, status: "issued", txIds: txIds, createdAt: now, createdBy: meId(), byName: preparedByText() };
@@ -8427,10 +8482,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function payCheck(x, n, date, mode, ref, skipId) {
     if (!modeInfo(mode)) return "Choose how it was paid.";
     if (!REF_FREE[mode] && !String(ref || "").trim()) return "Enter the " + modeInfo(mode)[2].toLowerCase() + ".";
-    if (mode === "cash") {
-      var key = x && (x.type === "vcr" || x.type === "vch") ? x.payeeId || normName(x.payee || "") : "v:" + ((x && x.vid) || ""), before = cashToPayeeOn(key, date, skipId);
-      if (payFreight(x)) { if (before + n > CASH_FREIGHT + 0.004) return "Cash to " + (x.payee || "this transporter") + " on " + fmtDate(date) + " would come to " + money(before + n) + (before ? " (" + money(before) + " already paid in cash that day)" : "") + ". Freight & Transport can be paid up to " + money(CASH_FREIGHT) + " in cash a day; pay the rest by cheque."; }
-      else if (before + n >= CASH_LIMIT) return "Cash to " + (x.payee || "this person") + " on " + fmtDate(date) + " would come to " + money(before + n) + (before ? " (" + money(before) + " already paid in cash that day)" : "") + ". Cash must stay under " + money(CASH_LIMIT) + " a person a day; pay by cheque.";
+    if (mode === "cash" || mode === "advance") {
+      var cc = payCash(x, n, date, skipId);
+      if (cc.total > cc.limit + 0.004) return "Cash to " + (cc.name || "this party") + (cc.cid ? " from " + coLabel(cc.cid) : "") + " on " + fmtDate(date) + " would come to " + money(cc.total) + (cc.before ? " (" + money(cc.before) + " already paid or due in cash that day)" : "") + ", over the " + money(cc.limit) + " cash limit" + (cc.transporter ? " for a transporter" : "") + ". Pay by cheque or NEFT / RTGS.";
     }
     return "";
   }
@@ -8474,6 +8528,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var cur = base.currency || "INR";
     var doc = Object.assign({}, base, { kind: f.kind, amount: f.amount, rate: null, inr: null, date: f.date, ref: f.ref || "", mode: f.kind === "discount" ? "" : f.mode || "", reason: f.reason || (old && old.reason) || "", note: f.note || "", billId: f.billId || null, updatedAt: now, updatedBy: meId() });
     if (!old) Object.assign(doc, { createdAt: now, createdBy: meId(), byName: preparedByText() });
+    if (doc.kind === "payment" && doc.mode === "cheque") doc.acPayee = f.acPayee != null ? !!f.acPayee : old && old.acPayee != null ? !!old.acPayee : true;
+    if (doc.kind === "payment" && (doc.mode === "cash" || doc.mode === "advance")) doc.cashCheck = cashRec(payCash(Object.assign({ cid: doc.companyId, vid: doc.vendorId || "", payee: doc.payee || (x && x.payee) || "", voucherId: doc.voucherId || "" }, x && x.voucherIds ? { voucherIds: x.voucherIds } : {}), doc.amount, doc.date, id));
+    else doc.cashCheck = null;
     if (!old && x && x.type === "vendor" && x.items && doc.kind === "payment" && !doc.billId) { var al = mkAlloc(x, doc.amount); if (al) doc.billAlloc = al; }
     id = id || newId("t");
     MK.busy = true;
@@ -8498,14 +8555,18 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var ms = modesFor(px), md = el("select", { class: "field", id: "txMode" }); fillSelect(md, ms.map(function (m) { return [m, modeInfo(m)[1]]; }), t && t.mode && ms.indexOf(t.mode) >= 0 ? t.mode : ms[0]);
     var mf = fld("Paid by", md); body.appendChild(mf);
     var rf = fld("Reference", inp("txRef", t ? t.ref : "", { maxlength: "80" })); body.appendChild(rf);
+    var acl = el("label", { class: "check" }), acb = el("input", { type: "checkbox", id: "txAcp" }); acb.checked = !t || t.acPayee !== false; acl.appendChild(acb); acl.appendChild(document.createTextNode(" The cheque is crossed A/c Payee"));
+    var acf = el("div", { class: "f" }); acf.appendChild(acl); acf.appendChild(el("span", { class: "err", id: "txAcpE", hidden: "" })); body.appendChild(acf);
     var whyF = tidyField("Reason", tidyBox("txWhy", t ? t.reason || "" : "", "reason", 300), "Needed when the amount differs from what was approved."); body.appendChild(whyF);
     var r = isVcr || isInst ? { bills: [], opRem: 0 } : ledger(cid, vid), billsOpen = r.bills.filter(function (b) { return billInfo(b).rem > 0.004 || (t && t.billId === b.id); });
     var forSel = el("select", { class: "field", id: "txFor" }); fillSelect(forSel, [["", "Earliest dues first (opening overdue, opening balance, then bills)"]].concat(billsOpen.map(function (b) { return [b.id, "Bill " + b.billNo + ", " + fmtDate(b.billDate) + ", balance " + bm(b, billInfo(b).rem)]; })), t && t.billId ? t.billId : "");
     var ff = fld("Set against", forSel, " "); ff.id = "txForF"; body.appendChild(ff);
     var ffh = ff.querySelector(".hint");
+    /* the form isn't on the page yet when this first runs: reach the field directly */
+    var refIn = rf.querySelector("input");
     function syncFor() {
-      var disc = ty.value === "discount"; ff.hidden = isInst; rf.hidden = disc || !!REF_FREE[md.value]; mf.hidden = disc; if (REF_FREE[md.value]) $("txRef").value = ""; whyF.hidden = disc || !(x || (t && t.planId));
-      var m = modeInfo(md.value); $("txRef").placeholder = m ? m[2] : "Reference";
+      var disc = ty.value === "discount"; ff.hidden = isInst; rf.hidden = disc || !!REF_FREE[md.value]; mf.hidden = disc; acf.hidden = disc || md.value !== "cheque"; if (REF_FREE[md.value]) refIn.value = ""; whyF.hidden = disc || !(x || (t && t.planId));
+      var m = modeInfo(md.value); refIn.placeholder = m ? m[2] : "Reference";
       if (ffh) ffh.textContent = forSel.value ? "It goes to this bill first; anything left over then follows the earliest dues." : r.opRem > 0.5 ? "Earliest dues pays the opening balance (" + curMoney(cur, r.opRem) + " left) before any bill. Pick a bill to pay that bill directly." : "Earliest dues pays the oldest bill first.";
     }
     forSel.addEventListener("change", syncFor); md.addEventListener("change", syncFor);
@@ -8516,12 +8577,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (!d) { errOn("txDate", "Enter the date like 12-Sep-26."); ok = false; } else if (d > todayYmd()) { errOn("txDate", "The date can't be in the future."); ok = false; }
       if (n == null || n <= 0) { errOn("txAmt", "Enter the amount."); ok = false; }
       if (ok && !disc) { var bad = payCheck(px, n, d, md.value, $("txRef").value, t && t.id); if (bad) { errOn(/reference|number/.test(bad) ? "txRef" : "txMode", bad); ok = false; } }
+      if (ok && !disc && md.value === "cheque" && !$("txAcp").checked) { errOn("txAcp", "Every cheque to a vendor or payee must be crossed A/c Payee (Income Tax s.40A(3)). Cross it, then tick here."); ok = false; }
       var planned = x ? x.pay : t && t.planId && S.payplans[t.planId] ? (function () { var pl = S.payplans[t.planId], it = (pl.items || []).filter(function (i) { return i.key === t.itemKey; })[0]; return it ? planItemRem(pl, it) + (Number(t.amount) || 0) : null; })() : null;
       if (ok && !disc && planned != null && Math.abs(n - planned) > 0.5 && why.length < 4) { errOn("txWhy", n < planned ? "Write why less than the planned " + curMoney(cur, planned) + " is paid." : "Write why more than the planned " + curMoney(cur, planned) + " is paid."); ok = false; }
       if (!ok) return false;
       if (t && !txEditable(t)) { toast("This can no longer be changed. Entries lock after " + REV_DAYS + " days; only the admin can change it now."); return true; }
       return (tidyPending("txWhy") || Promise.resolve()).then(function () {
-        return saveTx(t ? t.id : null, { kind: ty.value, amount: round2(n), date: d, mode: disc ? "" : md.value, ref: disc ? "" : $("txRef").value.trim(), reason: disc ? "" : sentenceFix($("txWhy").value.trim()), billId: !isInst ? forSel.value : "" }, x).then(function (saved) { if (saved && x) MK.amts[x.key] = ""; return saved; });
+        return saveTx(t ? t.id : null, { kind: ty.value, amount: round2(n), date: d, mode: disc ? "" : md.value, ref: disc ? "" : $("txRef").value.trim(), acPayee: !disc && md.value === "cheque" ? $("txAcp").checked : null, reason: disc ? "" : sentenceFix($("txWhy").value.trim()), billId: !isInst ? forSel.value : "" }, x).then(function (saved) { if (saved && x) MK.amts[x.key] = ""; return saved; });
       });
     });
   }
@@ -9043,6 +9105,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }).sort(function (a, b) { return natCmp(a.ven, b.ven) || coCmpId(a.cid, b.cid) || (a.kind === "opening" ? -1 : b.kind === "opening" ? 1 : natCmp(a.due || a.date, b.due || b.date)); });
   }
   /* One line per vendor and company: outstanding split by how overdue it is. The overdue part of an opening balance has no due date, so it has its own column. */
+  /* GST s.16(2): a bill not paid within 180 days of its date loses its GST input (reversed with interest, claimed again once paid).
+     Flagged from day 150 on bills that carry GST and still have something unpaid. */
+  var ITC_WARN = 150, ITC_DAYS = 180;
+  function itcAge(b, rem) {
+    if (!b || !b.billDate || billGst(b) <= 0 || (rem != null ? rem : billInfo(b).rem) <= 0.5) return null;
+    var d = daysBetween(b.billDate, todayYmd()); if (d < ITC_WARN) return null;
+    return d >= ITC_DAYS ? { d: d, bad: true, text: "Unpaid " + d + " days: over 180, its GST input must be reversed until paid" } : { d: d, bad: false, text: "Unpaid " + d + " days: pay by " + fmtDate(addDays(b.billDate, ITC_DAYS)) + " to keep its GST input" };
+  }
+  function itcSub(td, b, rem) { var a = itcAge(b, rem); if (a) sub(td, a.text, "color:var(--" + (a.bad ? "bad" : "warn") + ");font-weight:600"); }
   function payablesAgeing(rows) {
     var m = {};
     rows.forEach(function (r) {
@@ -9094,7 +9165,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     sortTable(box, "pyList", [
       { label: "Bill", kind: "co", sort: function (r) { return r.date; }, cell: function (r, td) { td.appendChild(el("b", { class: "mono" }, r.no)); sub(td, fmtDate(r.date) + " · " + coLabel(r.cid)); } },
       { label: "Vendor", cls: "desc", sort: function (r) { return r.ven; }, cell: function (r, td) { td.appendChild(el("b", null, r.ven)); if (r.x.narration) sub(td, r.x.narration); } },
-      { label: "Due", sort: function (r) { return r.due || "9999"; }, cell: function (r, td) { txt(td, r.due ? fmtDate(r.due) : "Not set"); if (r.late > 0) sub(td, plural(r.late, "day") + " overdue", "color:var(--bad);font-weight:600"); else if (r.due) sub(td, r.late === 0 ? "Due today" : "In " + plural(-r.late, "day")); } },
+      { label: "Due", sort: function (r) { return r.due || "9999"; }, cell: function (r, td) { txt(td, r.due ? fmtDate(r.due) : "Not set"); if (r.late > 0) sub(td, plural(r.late, "day") + " overdue", "color:var(--bad);font-weight:600"); else if (r.due) sub(td, r.late === 0 ? "Due today" : "In " + plural(-r.late, "day")); if (r.kind === "bill") itcSub(td, r.x, r.rem); } },
       { label: "Bill total", cls: "r num", sort: function (r) { return r.total; }, desc: true, cell: function (r, td) { txt(td, curMoney(r.cur, r.total)); } },
       { label: "Balance", cls: "r num", sort: function (r) { return r.rem; }, desc: true, cell: function (r, td) { td.appendChild(el("b", null, curMoney(r.cur, r.rem))); if (r.paid > 0.004) sub(td, "Paid " + curMoney(r.cur, r.paid)); } },
       { label: "Where it is", sort: function (r) { return r.step; }, cell: function (r, td) { td.appendChild(el("span", { class: "tag stg " + r.cls }, r.step)); if (r.ref) sub(td, r.ref); } },
@@ -10273,7 +10344,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var lim = D.vtype === "Freight & Transport" ? CASH_DEFAULT_FREIGHT : CASH_DEFAULT;
     return cashToday(D.companyId, D.payee.trim(), day0, VH.id) + t <= lim + 0.004 ? "cash" : "cheque";
   }
-  function cashToday(cid, payee, day, exceptId) { return round2(payeeVouchers(payee).filter(function (v) { return v.id !== exceptId && v.companyId === cid && (v.voucherDate || ymdOfMs(v.createdAt || 0)) === day && vPayMode(v) === "cash"; }).reduce(function (s0, v) { return s0 + (Number(v.total) || 0); }, 0)); }
+  function cashToday(cid, payee, day, exceptId) { var sk = {}; if (exceptId) sk[exceptId] = 1; return cashDayTotal(cid, payee, "", day, sk); }
   /* What the payee details clash with: a PAN / Aadhaar already saved for another record, or (for a new name) records that look
      the same. Worked out again only when the name, number or address changes. */
   function pyDupState(D) {
@@ -10314,19 +10385,20 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function vchDay() { var o = VH.id && S.vouchers[VH.id]; return o && o.voucherDate ? o.voucherDate : todayYmd(); }
   function drawPayeeHist() {
     var D = VH.D, box = $("vfHist"); if (!box || !D) return; box.textContent = "";
-    /* every cash voucher to this payee from the chosen company on this voucher's date, whatever its stage, with the day's total */
-    var py = String(D.payee || "").trim(), day = vchDay();
-    var vs = py && D.companyId ? payeeVouchers(py).filter(function (v) { return v.id !== VH.id && v.companyId === D.companyId && (v.voucherDate || ymdOfMs(v.createdAt || 0)) === day && vPayMode(v) === "cash"; }) : [];
+    /* all cash to this payee from the chosen company on this voucher's date (vouchers at any stage, bills paid from a cash
+       advance, cash payments), with the day's total against the limit */
+    var py = String(D.payee || "").trim(), day = vchDay(), sk = {}; if (VH.id) sk[VH.id] = 1;
+    var vs = py && D.companyId ? cashDayItems(D.companyId, py, "", day, sk) : [];
     if (!vs.length) { box.hidden = true; return; }
-    var prev = cashToday(D.companyId, py, day, VH.id), t = D.payMode === "cash" ? vchTotal(D) || 0 : 0, all = round2(prev + t), lim = cashLimit(D.vtype);
-    box.hidden = false; box.appendChild(el("span", { class: "lb" }, "Cash vouchers to " + py + " from " + coLabel(D.companyId) + " on " + fmtDate(day) + " (" + vs.length + ")"));
+    var prev = round2(vs.reduce(function (s0, it) { return s0 + it.amt; }, 0)), t = D.payMode === "cash" ? vchTotal(D) || 0 : 0, all = round2(prev + t), lim = cashLimit(D.vtype);
+    box.hidden = false; box.appendChild(el("span", { class: "lb" }, "Cash to " + py + " from " + coLabel(D.companyId) + " on " + fmtDate(day) + " (" + vs.length + ")"));
     var card = el("div", { class: "card list scroll", style: "max-height:240px" }); box.appendChild(card);
     sortTable(card, "vfHist", [
-      { label: "Voucher", cell: function (v, td) { td.appendChild(el("b", { class: "mono" }, v.voucherNo || "")); } },
-      { label: "Prepared by", cell: function (v, td) { txt(td, pnm(v.preparedByName) || userLabel(v.preparedBy) || ""); } },
-      { label: "Mode of payment", cell: function (v, td) { txt(td, vPayModeText(v)); } },
-      { label: "Status", cell: function (v, td) { var st = vchStatus(v); td.appendChild(el("span", { class: "tag stg " + st.cls }, st.r ? st.r.no : st.text)); if (st.r) sub(td, v.approvedAt ? "Approved" : STAGE[stageOf(st.r)]); } },
-      { label: "Amount", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(v.total))); } }
+      { label: "Entry", cell: function (it, td) { td.appendChild(el("b", { class: "mono" }, it.no || "")); sub(td, it.k); } },
+      { label: "Prepared by", cell: function (it, td) { txt(td, it.by); } },
+      { label: "Mode of payment", cell: function (it, td) { txt(td, it.mode); } },
+      { label: "Status", cell: function (it, td) { if (it.k !== "Voucher") { txt(td, it.k === "Payment" ? "Paid" : ""); return; } var st = vchStatus(it.x); td.appendChild(el("span", { class: "tag stg " + st.cls }, st.r ? st.r.no : st.text)); if (st.r) sub(td, it.x.approvedAt ? "Approved" : STAGE[stageOf(st.r)]); } },
+      { label: "Amount", cls: "r num", cell: function (it, td) { td.appendChild(el("b", null, money(it.amt))); } }
     ], vs, { sortIndex: -1 });
     box.appendChild(el("div", { class: all > lim + 0.004 ? "flag e" : "hint", style: "margin-top:6px" }, "Cash for the day: " + money(prev) + " in these" + (t ? " + " + money(t) + " in this voucher = " + money(all) : "") + ", limit " + money(lim) + (all > lim + 0.004 ? ". Over the limit: this voucher can't be made in cash." : ".")));
   }
@@ -10387,7 +10459,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!D.payMode) E("vfMode", "Choose the mode of payment.");
     else if (D.payMode === "cash" && D.companyId && String(D.payee || "").trim() && t != null) {
       var old0 = VH.id && S.vouchers[VH.id], day0 = old0 && old0.voucherDate ? old0.voucherDate : todayYmd(), lim = cashLimit(D.vtype), prev = cashToday(D.companyId, D.payee.trim(), day0, VH.id);
-      if (prev + t > lim + 0.004) E("vfMode", "Cash to " + D.payee.trim() + " from " + coLabel(D.companyId) + " on " + fmtDate(day0) + " would come to " + money(round2(prev + t)) + (prev ? " (" + money(prev) + " already in other vouchers)" : "") + ", over the " + money(lim) + " cash limit. Pay by cheque or NEFT / RTGS, or it can't be made.");
+      if (prev + t > lim + 0.004) E("vfMode", "Cash to " + D.payee.trim() + " from " + coLabel(D.companyId) + " on " + fmtDate(day0) + " would come to " + money(round2(prev + t)) + (prev ? " (" + money(prev) + " already paid or due in cash that day)" : "") + ", over the " + money(lim) + " cash limit. Pay by cheque or NEFT / RTGS, or it can't be made.");
     }
     if (D.payMode === "cash" && !D.settle) E("vfSet", "Choose Yes or No.");
     else if (D.settle === "yes" && D.companyId && vchPrep(D) && t != null) {
@@ -10465,7 +10537,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var doc = Object.assign({ companyId: D.companyId, voucherNo: vn.no, voucherSeq: vn.seq, voucherFy: vn.fy, voucherDate: D.voucherDate, payee: D.payee.trim(), total: total, tds: tds, lines: lines, file: D.file || null,
       narration: vchNarr(D, vn.no, D.voucherDate, lines), payMode: D.payMode, vtype: D.vtype, gstApp: old && other ? old.gstApp || "N/A" : "N/A", gstRate: old && other && old.gstApp === "RCM" ? old.gstRate : null, taxable: total,
       supplyOf: other ? D.supplyOf.trim() : "", payeeAddr: other ? D.payeeAddr.trim() : "", payeeIdNo: idNorm(D.payeeIdNo), payeeIdKind: idKind(D.payeeIdNo), ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
-      settle: D.settle === "yes", acct: "pending", acctNote: "", updatedAt: now, updatedBy: meId() }, prepFields(D.prepBy), approverFields(D.approverId), extDoc(D.companyId, D.X));
+      settle: D.settle === "yes", acct: "pending", acctNote: "", updatedAt: now, updatedBy: meId(),
+      cashCheck: D.payMode === "cash" ? (function () { var bf = cashToday(D.companyId, D.payee.trim(), D.voucherDate, VH.id); return cashRec({ day: D.voucherDate, before: bf, total: round2(bf + total), limit: cashLimit(D.vtype) }); })() : null }, prepFields(D.prepBy), approverFields(D.approverId), extDoc(D.companyId, D.X));
     var newName = null;
     if (vMaker()) {
       var fid = D.forId; if (fid === "new") { var nm0 = smartCase(String(D.forNew || "").trim()), ex0 = solList(S.vpeople || {}).filter(function (x) { return normName(x.name) === normName(nm0); })[0]; if (ex0) fid = ex0.id; else { fid = "n_" + Date.now().toString(36); newName = { id: fid, name: nm0 }; } }
@@ -13569,6 +13642,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var ul = el("ul", { style: "margin:6px 0 0;padding-left:20px" }); al.forEach(function (a) { ul.appendChild(el("li", null, a)); }); c.appendChild(ul); b.appendChild(c);
   }
   /* The TDS rate for a bill under a section: 194C's lower rate for an individual or HUF, from the vendor's constitution on the GST portal. */
+  /* Kept with the TDS for the export and Form 26Q: the amount it is worked on (taxable value, without GST) and the rate that gives. */
+  function tdsBaseRate(tds, base) { base = Number(base) || 0; return tds > 0 && base > 0 ? { tdsBase: round2(base), tdsRate: Math.round(tds / base * 10000) / 100 } : { tdsBase: null, tdsRate: null }; }
   function tdsRateFor(x, sec) {
     var t = taxAll("tds").filter(function (y) { return y.sec === sec; })[0]; if (!t || t.rate == null || t.rate === "") return null;
     var g = vGst(S.vendors[x.vendorId]), two = t.rate2 != null && t.rate2 !== "";
@@ -13632,7 +13707,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* ---- GST on a bill: its GST spread over the GST ledgers. Within the state it is CGST and SGST (equal halves); from another
      state (or from abroad) IGST. The input can be eligible, under reverse charge (RCM) or ineligible, as the ledgers are named. ---- */
   function gstHead(l) { var n = String((l && l.name) || ""); return /IGST/i.test(n) ? "igst" : /CGST/i.test(n) ? "cgst" : /SGST/i.test(n) ? "sgst" : ""; }
-  function gstFlavour(l) { var n = String((l && l.name) || ""); return /ineligible/i.test(n) ? "inel" : /\bRCM\b/i.test(n) ? "rcm" : "in"; }
+  /* in: Input; inel: Input - Ineligible (blocked credit, under Indirect Expenses); rcm: Input (RCM); pay: RCM Payable (the
+     liability side of the Journal-GST for reverse charge, never on a bill or voucher). */
+  function gstFlavour(l) { var n = String((l && l.name) || ""); return /payable/i.test(n) ? "pay" : /ineligible/i.test(n) ? "inel" : /\bRCM\b/i.test(n) ? "rcm" : "in"; }
   function gstLeds(inter) {
     var ord = function (l) { var t = (S.taxes || {})[l.taxId]; return t && t.order != null ? t.order : 1e6; };
     return ledAll().filter(function (l) { var h = gstHead(l); return l.tax === "gst" && l.active !== false && (inter ? h === "igst" : h === "cgst" || h === "sgst"); }).sort(function (a, b) { return ord(a) - ord(b) || natCmp(a.name, b.name); });
@@ -13871,7 +13948,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (AC.kind === "bill" && acctVendorNeeds(S.bills[AC.id])) { toast("Fill in the vendor's details and opening balance first."); return; }
     errClear($("aoBody")); var errs = acctCheck();
     if (errs.length) { errs.forEach(function (e) { errOn(e[0], e[1]); }); var f0 = $(errs[0][0]); if (f0 && f0.scrollIntoView) f0.scrollIntoView({ block: "center" }); return; }
-    var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, tds = round2(num(D.tds) || 0), up = Object.assign({ acct: "approved", acctNote: "", ledgers: ledLinesOut(AC.kind === "bill" ? nonRo(D.lines) : D.lines), tds: tds, tdsSection: tds > 0 ? D.sec : "" }, acctWho());
+    var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, tds = round2(num(D.tds) || 0), up = Object.assign({ acct: "approved", acctNote: "", ledgers: ledLinesOut(AC.kind === "bill" ? nonRo(D.lines) : D.lines), tds: tds, tdsSection: tds > 0 ? D.sec : "" }, tdsBaseRate(tds, D.base), acctWho());
     Object.assign(up, roundUp(x, D));
     if (AC.kind === "bill") { var gG = billGst(x) > 0; up.gstLedgers = gG ? gstLinesOut(x, D) : []; up.gstSupply = gG ? (D.gstInter ? "inter" : "intra") : null; up.gstTypes = gG ? D.gstTypes.slice() : null; }
     if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher", rcm = oth && D.gstApp === "RCM", gl = []; if (rcm) rcmLines(D, gl);
@@ -14004,7 +14081,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var keep = {}, job = retry(function () { return S.db.doc("taxes/" + id).set(doc); });
     taxLedgers(full).forEach(function (x) {
       keep[x[0]] = 1; var cur = (S.ledgers || {})[x[0]] || {};
-      var ld = { main: TAX_MAIN, sub: t.kind === "tds" ? "TDS" : "GST", name: x[1], tax: t.kind, taxId: id, locked: true, allCos: true, companyIds: [], apps: Object.keys(DIVS), active: doc.active !== false, createdAt: cur.createdAt || doc.updatedAt, updatedAt: doc.updatedAt, by: meId() };
+      var inel = t.kind === "gst" && /ineligible/i.test(x[1]);
+      /* blocked GST is a cost: Input - Ineligible sits under Indirect Expenses, as in Tally; every other tax ledger under Duties & Taxes */
+      var ld = { main: inel ? "Indirect Expenses" : TAX_MAIN, sub: inel ? "GST Input - Ineligible" : t.kind === "tds" ? "TDS" : "GST", name: x[1], tax: t.kind, taxId: id, locked: true, allCos: true, companyIds: [], apps: Object.keys(DIVS), active: doc.active !== false, createdAt: cur.createdAt || doc.updatedAt, updatedAt: doc.updatedAt, by: meId() };
       job = job.then(function () { return retry(function () { return S.db.doc("ledgers/" + x[0]).set(ld); }); });
     });
     old.forEach(function (x) { if (!keep[x[0]]) job = job.then(function () { return retry(function () { return S.db.doc("ledgers/" + x[0]).delete(); }); }); });
@@ -14029,7 +14108,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var can = canLedgers(), list = taxAll(kind), use = {};
     if (kind === "tds") [S.raw && S.raw.bills, S.raw && S.raw.vouchers].forEach(function (src) { Object.keys(src || {}).forEach(function (k) { var s0 = src[k].tdsSection; if (s0) use[s0] = (use[s0] || 0) + 1; }); });
     var hd = el("div", { class: "card pcard", style: "margin-bottom:12px" });
-    hd.appendChild(el("p", { class: "sub", style: "margin:0" }, kind === "tds" ? "Each TDS section makes its own ledger under Duties & Taxes, in every company (also any company added later). The sections listed here are the ones offered when a bill or voucher is accounted." : "Each GST ledger is made under Duties & Taxes, in every company (also any company added later)."));
+    hd.appendChild(el("p", { class: "sub", style: "margin:0" }, kind === "tds" ? "Each TDS section makes its own ledger under Duties & Taxes, in every company (also any company added later). The sections listed here are the ones offered when a bill or voucher is accounted." : "Each GST ledger is made in every company (also any company added later): under Duties & Taxes, except Input - Ineligible, which is under Indirect Expenses (blocked credit is a cost). RCM Payable ledgers are for the reverse-charge Journal-GST and are never put on a bill or voucher."));
     if (can) { var ab = el("button", { type: "button", class: "btn primary sm", id: kind === "tds" ? "tdsAdd" : "gstAdd", style: "margin-top:10px" }, kind === "tds" ? "Add TDS Section" : "Add GST Ledger"); ab.addEventListener("click", function () { taxForm(kind, null); }); hd.appendChild(ab); }
     box.appendChild(hd);
     if (!list.length) { box.appendChild(el("div", { class: "card empty" }, kind === "tds" ? "No TDS sections yet." : "No GST ledgers yet.")); return; }
@@ -16324,7 +16403,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("txSt").addEventListener("change", function () { TX.status = this.value; TX.limit = 200; renderTxn(); }); $("txQ").addEventListener("input", function () { TX.limit = 200; renderTxn(); });
     $("txPdf").addEventListener("click", function () { downloadTxPdf(this); });
     $("ntAdd").addEventListener("click", noteForm); $("ntCo").addEventListener("change", renderNotes); $("ntQ").addEventListener("input", renderNotes);
-    $("bkXls").addEventListener("click", function () { downloadBooksXls(this); }); $("bkPdf").addEventListener("click", function () { downloadBooksPdf(this); }); $("vXls").addEventListener("click", function () { downloadVendorsXls(this); }); $("vAdd").addEventListener("click", newVendor); $("txXls").addEventListener("click", function () { downloadTxXls(this); });
+    $("bkXls").addEventListener("click", function () { downloadBooksXls(this); }); $("bkPdf").addEventListener("click", function () { downloadBooksPdf(this); }); $("vGstAll").addEventListener("click", function () { gstCheckAll(this); }); $("vXls").addEventListener("click", function () { downloadVendorsXls(this); }); $("vAdd").addEventListener("click", newVendor); $("txXls").addEventListener("click", function () { downloadTxXls(this); });
     $("vhNew").addEventListener("click", function () { openVchForm(null); });
     $("pyeQ").addEventListener("input", renderPayees); $("pyeMerge").addEventListener("click", pyeMergeForm);
     /* Upload Document: one PDF or one photo of one expense; the voucher is written from it, to check and complete */

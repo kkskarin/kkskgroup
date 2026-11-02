@@ -242,10 +242,19 @@ provides the same calls, so the app code did not need rewriting:
   password box (mouse, touch or keyboard, any number of times; the cursor stays in the box) and a
   Caps Lock warning.
 - **Page width**: every app uses the full width of the screen (side padding grows a little on big
-  monitors). The page's scrollbar has a fixed slot with an equal one on the left
-  (`scrollbar-gutter: stable both-edges`), so nothing shifts or shrinks when a scrollbar appears;
-  scrolling boxes inside pages (pop-ups, lists, file viewers) keep a fixed slot too. Tables use plain
+  monitors). The header and the green menu bars run edge to edge; the page's scrollbar keeps a fixed
+  slot on the right (`scrollbar-gutter: stable`) and the same width is added to the left padding
+  (`100vw - 100%`), so content is evenly spaced and never shifts or shrinks when a scrollbar appears.
+  The logo, the first tab and the first sub-tab start exactly at the content's left edge, and the menu
+  button ends at its right edge. Descriptions use the full width; Personalise lays its cards out in as
+  many columns as fit. Scrolling boxes inside pages keep a fixed scrollbar slot too. Tables use plain
   headings, light row banding and right-aligned numbers.
+- **Header**: logo and app name, then the person (picture, name, Viewing As for admins) and a ☰ menu
+  with Demo / Live (when allowed), **All Apps** (a scrollable list of the person's apps, each with what
+  waits for them there in brackets; the menu button shows the total), **Settings**, **Password** (a
+  pop-up) and **Sign Out**. Settings is no longer a tab in the menu bar: it opens from ☰, with the same
+  tabs in every app (Users, Roles, Change Log, Show Activity, Data & Archive, Personalise; Templates in
+  Bills & Vouchers; Approvals has no Data & Archive). People who aren't admins see Personalise only.
 - **Roles** (Settings › Roles, admins): a role is a named set of access: apps (Bills family, W/B Costing),
   divisions, jobs, Approver Of, companies and the steps for each company (the user form's own fields,
   with a description). People get one or more roles under Users › Edit, each **for good** or **until a

@@ -35,7 +35,7 @@ window.PP_CONFIG = { url: "https://rutrnzxcjtvakllvzpkw.supabase.co", key: "sb_p
 :root[data-theme="dark"]{--bg:#0E1513;--surface:#16201C;--ink:#E4ECE7;--text:#E4ECE7;--muted:#9DB0A6;--line:#2B3B34;--soft:#1B2722;--fieldline:#34463E;--brand-soft:color-mix(in srgb,var(--hl) 22%,#16201C);--brand-text:var(--hl-light);
 --ok:#5CC28E;--ok-bg:#163527;--bad:#F08A7E;--bad-bg:#3A1F1E;--warn:#E7B95A;--warn-bg:#3A301B;--demo:#FCD34D;--demo-bg:#3A2E12;--wb:#8DB8E8;--wb-bg:#1E2E47;--cr:#DDB06A;--cr-bg:#3A2F1C;--fl:#D49A76;--fl-bg:#3A2A22;color-scheme:dark}
 *,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:env(safe-area-inset-top,0px);overflow-y:auto;scrollbar-gutter:stable both-edges}
+html{scroll-padding-top:env(safe-area-inset-top,0px);overflow-y:auto;scrollbar-gutter:stable}
 body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:calc(15px*var(--ts,1));line-height:1.5;-webkit-text-size-adjust:100%}
 button,input,select{font:inherit;color:inherit}button{cursor:pointer}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -44,7 +44,7 @@ h2{font-family:var(--serif);font-size:calc(24px*var(--ts,1));font-weight:400;let
 :root[data-theme="dark"] h2{color:var(--ink)}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) h2{color:var(--ink)}}
 .sheet h2{font-family:var(--serif);font-weight:400}
 h3{font-size:calc(13px*var(--ts,1));font-weight:700}
-.wrap{margin:0 auto;padding-left:clamp(14px,2vw,36px);padding-right:clamp(14px,2vw,36px)}
+.wrap{margin:0 auto;padding-left:calc(clamp(14px,2vw,36px) + max(0px, 100vw - 100%));padding-right:clamp(14px,2vw,36px)}
 main.wrap{padding-top:22px;padding-bottom:56px}
 .top{background:var(--surface);border-bottom:1px solid var(--line)}
 .top .wrap{display:flex;align-items:center;gap:14px;padding-top:10px;padding-bottom:10px}

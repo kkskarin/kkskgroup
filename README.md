@@ -263,7 +263,7 @@ provides the same calls, so the app code did not need rewriting:
   suggests it. Stored as `roundOff`; GST is only ever on the taxable value, never on the round off.
   It posts to **Round Off** (Indirect Expenses › General Expenses), a locked system ledger for every
   company (`roundOff: true, allCos: true`): it can't be edited or picked as a ledger line, and it shows
-  in the ledger books. The accountant sees the round off in the bill's alerts. Proformas have an
+  in the ledger books. The accountant sees it in the top boxes (between GST and Total) and as its own posting line to Round Off, with no alert. Proformas have an
   "Of which round off" (for reference, like GST); imports have Round off among the rupee costs, added
   to the landed total and the closing breakup.
 - **View As** keeps the admin's own look (mode, colour, text size).

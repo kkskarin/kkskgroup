@@ -8331,7 +8331,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     sortTable(tw, "plIssue", cols, lines, {});
     var tl = null; if (mode === "cheque") { tl = el("label", { class: "check", style: "margin-top:10px" }); var tc = el("input", { type: "checkbox", id: "plTest" }); tl.appendChild(tc); tl.appendChild(document.createTextNode(" Test print: put the scan behind the text (plain paper)")); body.appendChild(tl); }
     var title = mode === "cheque" ? "Print " + plural(lines.length, "cheque") : mode === "neft" ? "NEFT / RTGS for " + plural(lines.length, "payee") : "Record " + plural(lines.length, "cash payment");
-    var intro = mode === "cheque" ? "One cheque per payee, numbered from each cheque book. Change a number and the ones after it follow. One PDF holds every cheque, a page each; print at 100%." : mode === "neft" ? "Each takes the cheque number given with the NEFT / RTGS request. The payments are recorded now; the bank's form is printed from Paid." : "Recorded as paid in cash today. Cash stays under ₹10,000 a payee a day (Freight & Transport: up to ₹35,000).";
+    var intro = mode === "cheque" ? "One cheque per payee, numbered from each cheque book. Change a number and the ones after it follow. One PDF per company holds its cheques, an A4 page each; print at 100% (actual size) with no scaling or borders." : mode === "neft" ? "Each takes the cheque number given with the NEFT / RTGS request. The payments are recorded now; the bank's form is printed from Paid." : "Recorded as paid in cash today. Cash stays under ₹10,000 a payee a day (Freight & Transport: up to ₹35,000).";
     popForm(title, intro, body, mode === "cheque" ? "Print and Record" : "Record", function () {
       var d = mode === "cheque" ? todayYmd() : parseDate($("plDate").value); if (!d) { errOn("plDate", "Choose the date."); return false; }
       if (mode === "cash") { var bad = ""; lines.forEach(function (l) { var vids = l.g.items.filter(function (it) { return MK.pl.sel[it.key]; }).map(function (it) { return it.v ? it.v.id : it.voucherId || ""; }), x = { type: l.g.vid ? "vendor" : "vch", vid: l.g.vid, payee: l.g.name, voucherIds: vids.indexOf("") < 0 ? vids : [] }; bad = bad || payCheck(x, l.amt, d, "cash", ""); }); if (bad) { toast(bad); return false; } }
@@ -13400,9 +13400,14 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     put(tx.figures, f.figures.x, f.figures.y);
     if (pay.acPayee) { var w = doc.getTextWidth(tx.acpayee) / P, hgt = T.size * 0.3528; put(tx.acpayee, f.acpayee.x, f.acpayee.y); doc.setLineWidth(0.6); doc.line((ox + f.acpayee.x) * P, (oy + f.acpayee.y - hgt - 1) * P, (ox + f.acpayee.x + w) * P, (oy + f.acpayee.y - hgt - 1) * P); doc.line((ox + f.acpayee.x) * P, (oy + f.acpayee.y + 1.5) * P, (ox + f.acpayee.x + w) * P, (oy + f.acpayee.y + 1.5) * P); }
   }
-  /* One PDF, a page per cheque. */
+  /* One PDF per company, an A4 page per cheque: each company's cheques print from one file. */
   function chequePdfMany(cs, withScan) {
     if (!S.downloads) { toast("Downloads aren't available here."); return Promise.resolve(); }
+    var byCo = {}, order = []; (cs || []).forEach(function (c) { var k = c.companyId || ""; if (!byCo[k]) { byCo[k] = []; order.push(k); } byCo[k].push(c); });
+    if (order.length > 1) { var job = Promise.resolve(); order.forEach(function (k) { job = job.then(function () { return chequePdfOne(byCo[k], withScan, true); }); }); return job.then(function () { toast(plural(order.length, "PDF") + " ready, one per company. Print each at 100% (actual size) on A4, with no scaling or borders."); }); }
+    return chequePdfOne(cs, withScan, false);
+  }
+  function chequePdfOne(cs, withScan, quiet) {
     var tps = {}; cs.forEach(function (c) { var tp = (S.chqtpl || {})[c.tplId]; if (tp) tps[tp.id] = tp; });
     var ids = Object.keys(tps), scans = {};
     return Promise.all([loadScript(JSPDF)].concat(withScan ? ids.map(function (id) { return chqScanUrl(tps[id]).then(function (u) { scans[id] = u; }); }) : [])).then(function () {
@@ -13410,9 +13415,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var doc = newPdf(jsPDF), n = 0;
       cs.forEach(function (c) { var tp = tps[c.tplId]; if (!tp) return; if (n++) doc.addPage(); chequePage(doc, chqCopy(tp), { payee: c.payee, amount: c.amount, date: c.date, acPayee: c.acPayee }, withScan ? scans[tp.id] : null); });
       if (!n) throw { kind: "none" };
-      var nm = cs.length === 1 ? "Cheque " + cs[0].no + " " + safeName(cs[0].payee) : "Cheques " + cs[0].no + "-" + cs[cs.length - 1].no;
+      var co0 = coLabel(cs[0].companyId), nm = cs.length === 1 ? "Cheque " + (co0 ? co0 + " " : "") + cs[0].no + " " + safeName(cs[0].payee) : "Cheques " + (co0 ? co0 + " " : "") + cs[0].no + "-" + cs[cs.length - 1].no;
       return S.downloads.save({ filename: nm + (withScan ? " TEST" : "") + ".pdf", data: doc.output("blob") });
-    }).then(function () { toast((cs.length === 1 ? "Cheque PDF" : plural(cs.length, "cheque") + " in one PDF") + " ready. Print at 100% (actual size)."); }, function (e) { var k = e && (e.code || e.kind); toast(k === "declined" ? "Download cancelled." : "The cheque PDF couldn't be made. Try again."); });
+    }).then(function () { if (!quiet) toast((cs.length === 1 ? "Cheque PDF" : plural(cs.length, "cheque") + " in one PDF") + " ready. Print at 100% (actual size) on A4, with no scaling or borders."); }, function (e) { var k = e && (e.code || e.kind); toast(k === "declined" ? "Download cancelled." : "The cheque PDF couldn't be made. Try again."); });
   }
   function renderLedgers() {
     if (IMP.busy) return; /* an upload redraws once it is done */

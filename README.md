@@ -293,6 +293,10 @@ provides the same calls, so the app code did not need rewriting:
   will be saved and changes whenever the type, Supply Of, Paid to or lines change. A bill's narration follows
   its vendor, invoice number and date when they change.
 - Narration boxes typed or spoken in another script are written in English as soon as typing pauses.
+- **Cheque PDFs**: printing cheques from Payment Entry gives one PDF per company, each holding that company's
+  cheques, one A4 page per cheque. Each cheque template says where the cheque leaf sits on the A4 sheet
+  (from left / from top, in mm; by default centred left to right, at the top edge), so the printer can stay on
+  its A4 profile. Print at 100% / actual size, no scaling, no borders.
 - **View As** keeps the admin's own look (mode, colour, text size).
 - **Header**: logo and app name, then the person (picture, name, Viewing As for admins) and a ☰ menu
   with Demo / Live (when allowed), **All Apps** (a scrollable list of the person's apps, each with what

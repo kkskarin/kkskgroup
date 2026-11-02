@@ -5015,7 +5015,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var sup = el("select", { class: "field", id: "bcSupply" }); fillSelect(sup, [["", "Choose"]].concat(SUPPLY), D.supplyOf || ""); f.appendChild(fld("Supply of", sup, b.source === "file" ? "Read from the bill; change it if needed." : ""));
     f.appendChild(tidyField("Narration", tidyBox("bcNar", D.narration, "bill", NARR_MAX, 3), "What the bill is for, in any language." + (S.sample ? " It is turned into clean English when you leave the box." : "") + (b.narrLock ? " The closing breakup at the end is always kept, even if deleted." : "")));
     var lgf = el("div", { class: "f wide" }); lgf.appendChild(el("span", { class: "lb" }, "Ledgers")); lgf.appendChild(el("div", { id: "bcLedWrap" }));
-    lgf.appendChild(el("span", { class: "hint" }, "Choose the ledger for each part of the bill and enter its amount, before GST. Together they make the taxable amount." + (b.source === "file" ? " The taxable amount read from the bill is filled in on the first line." : "") + " TDS is entered by the accountant."));
+    lgf.appendChild(el("span", { class: "hint" }, "Choose the ledger for each part of the bill and enter its amount, before GST: up to 4 ledgers, which together make the taxable amount. Round Off is its own line below them and doesn't count in the 4." + (b.source === "file" ? " The taxable amount read from the bill is filled in on the first line." : "") + " TDS is entered by the accountant."));
     lgf.appendChild(el("span", { class: "err", id: "bcLedE", hidden: "" })); f.appendChild(lgf);
     if (oneStopAny()) {
       var tf = fld("TDS (₹)", inp("bcTds", D.tds || "", { inputmode: "decimal", class: "field num" }), "You also account bills: enter the TDS (0 if none). The bill is accounted as you submit it.");
@@ -13581,7 +13581,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var lf = el("div", { class: "f wide" }); lf.appendChild(el("span", { class: "lb" }, isB ? "Ledgers" : "Ledger"));
     if (isB && D.roundOff == null) D.roundOff = x.roundOff ? (x.roundOff < 0 ? "-" : "") + fmtInput(Math.abs(x.roundOff)) : "";
     var eo = { id: "aoLed", fixedRo: isB ? function () { return num(D.roundOff) || 0; } : null, roSet: isB && !locked && (x.currency || "INR") === "INR" ? function (v) { D.roundOff = v; } : null, lines: D.lines, max: isB ? MAX_LED.bill : MAX_LED.voucher, cid: function () { return x.companyId; }, base: function () { return D.base; }, baseLabel: isB ? "taxable amount" : "total", suggest: isB ? function () { return suggestBill(x, x.companyId, x.vendorId, D.base); } : null };
-    lf.appendChild(ledEditor(eo)); lf.appendChild(el("span", { class: "hint" }, isB ? "Up to 4 ledgers. The amounts must add up to the taxable amount, " + amt2(D.base) + "." : "Up to 2 ledgers. The amounts must add up to the total, " + amt2(D.base) + ".")); lf.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" }));
+    lf.appendChild(ledEditor(eo)); lf.appendChild(el("span", { class: "hint" }, isB ? "Up to 4 ledgers, plus Round Off. The 4 ledgers must add up to the taxable amount, " + amt2(D.base) + "." : "Up to 2 ledgers. The amounts must add up to the total, " + amt2(D.base) + ".")); lf.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" }));
     var lw = el("div", { class: "form", style: "margin-top:12px" }); lw.appendChild(lf);
     if (isB && billGst(x) > 0) {
       var gf0 = el("div", { class: "f wide" }); gf0.appendChild(el("span", { class: "lb" }, "GST Ledgers"));

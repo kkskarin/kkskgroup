@@ -1440,7 +1440,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       <div class="perjump" id="txJump"></div></div>
     <div class="filters" id="txFilt"></div>
     <div class="filters">
-      <select class="field" id="txSt" aria-label="Status"><option value="open">Open</option><option value="closed">Closed</option><option value="all">Open and closed</option></select>
+      <select class="field" id="txSt" aria-label="Status"><option value="paid">Paid</option><option value="part">Part paid</option><option value="any">Paid and part paid</option></select>
       <input class="field" id="txQ" type="search" placeholder="Search number, vendor, person or step" aria-label="Search" autocomplete="off">
     </div>
     <div class="stats" id="txStats"></div>
@@ -8576,7 +8576,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* ================= Reports › Transactions ================= */
   /* Every bill, proforma or import, voucher and payment, with where it stands now and who is holding it.
      The admin sees everything (a named admin, what they approve); everyone else sees their own work and their profiles'. */
-  var TX = { side: "expenses", view: "exp", expFor: "all", status: "open", limit: 200, per: "all", anchor: "", payFor: "all" };
+  var TX = { side: "expenses", view: "exp", expFor: "all", status: "paid", limit: 200, per: "all", anchor: "", payFor: "all" };
   var TX_PER = [["all", "All Dates"], ["week", "Weekly"], ["month", "Monthly"]], TX_PAYFOR = [["all", "All"], ["bills", "Bills"], ["advances", "Proformas & Imports"], ["vouchers", "Vouchers"], ["cash", "Advances"]];
   /* Weekly (Monday to Sunday) or Monthly sets the date filter to that period; the arrows move it. */
   function txPerRange(kind, anchor) {
@@ -8697,8 +8697,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function txFiltered() {
     var side = TX.side, q = $("txQ").value.trim().toLowerCase();
     return txRows(side).filter(function (r) {
-      if (side !== "payments" && TX.status === "open" && !r.open) return false;
-      if (side !== "payments" && TX.status === "closed" && r.open) return false;
+      /* Transactions are what has been paid: fully paid, part paid, or both. What is still unpaid is under Payables. */
+      if (side !== "payments") { var pd = !r.open, pp = r.open && (Number(r.paid) || 0) > 0.004; if (TX.status === "part" ? !pp : TX.status === "any" ? !(pd || pp) : !pd) return false; }
       if (!msPass("tx", txMs(r))) return false;
       if (side === "payments" && TX.payFor !== "all" && txPayKind(r) !== TX.payFor) return false;
       /* cash advances are our own cash with the person until an expense uses it: only under Advances, never in All */
@@ -8727,7 +8727,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if ((pay ? TX.payFor : TX.expFor) === "cash") { renderTxCash(); return; }
     $("txSt").hidden = pay; $("txPerSeg").hidden = false;
     var rb = $("txRep"); rb.hidden = !anyDate || side === "advances"; rb.textContent = "Download " + (TX.per === "month" ? "Monthly" : TX.per === "week" ? "Weekly" : "Period") + " Report";
-    $("txSub").textContent = (S.isAdmin ? (approverScoped() ? "The bills, proformas, imports and vouchers you approve" : "Every bill, proforma, import and voucher") : canViewPayAny() ? "Every bill, proforma, import and voucher of the companies you pay for, and your own" : "Your bills, proformas, imports and vouchers (and those of profiles on your login)") + ", where each one stands and who has it now. Payments lists every payment and discount recorded.";
+    $("txSub").textContent = (S.isAdmin ? (approverScoped() ? "The bills, proformas, imports and vouchers you approve" : "Every bill, proforma, import and voucher") : canViewPayAny() ? "Every bill, proforma, import and voucher of the companies you pay for, and your own" : "Your bills, proformas, imports and vouchers (and those of profiles on your login)") + " that has been paid: in full (Paid), in part (Part paid), or both. What is still unpaid is under Payables. Payments lists every payment and discount recorded.";
     if (pay) $("txSub").textContent = "Every payment, discount and cash advance paid out" + (S.isAdmin ? "" : " for the companies you pay for, and your own") + ", by what it paid for. Pick Weekly or Monthly to see one period at a time and download its report.";
     else $("txSub").textContent += " Pick Weekly or Monthly to see one period at a time and download its report.";
     var seg = $("txSeg"); seg.textContent = ""; seg.hidden = fo;
@@ -8736,14 +8736,14 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     msBar($("txFilt"), "tx", { co: true, ven: msOpts(base, "ven"), prep: msOpts(base, "prep"), appr: msOpts(base, "appr"), dates: true, words: pay ? { ven: ["All payees", "payees", "Paid to"], prep: ["All people", "people", "Entered by"] } : side === "vouchers" ? { ven: ["All payees", "payees", "Paid to"] } : null }, function () { TX.limit = 200; renderTxn(); });
     var ss = $("txSt"); ss.value = TX.status; ss.hidden = pay;
     var rows = txFiltered(), tot = {}, bal = {}, openN = 0;
-    rows.forEach(function (r) { curAdd(tot, r.cur, r.amount); if (r.open) { openN++; curAdd(bal, r.cur, r.bal); } });
+    var paidT = {}; rows.forEach(function (r) { curAdd(tot, r.cur, r.amount); curAdd(paidT, r.cur, r.open ? Number(r.paid) || 0 : r.amount); if (r.open) { openN++; curAdd(bal, r.cur, r.bal); } });
     var label = { expenses: "Expenses", bills: "Bills", advances: "Proformas & imports", vouchers: "Vouchers", payments: "Payments" }[side];
     statBoxes($("txStats"), pay ? [[label, String(rows.length), ""], ["Total", curSum(tot), ""]]
-      : [[label, String(rows.length), TX.status === "open" ? "Open" : TX.status === "closed" ? "Closed" : "Open and closed"], ["Total amount", curSum(tot), ""], ["Still to pay", curSum(bal), openN ? plural(openN, "open item") : ""], ["Oldest open", (function () { var o = rows.filter(function (r) { return r.open && r.age != null; }).reduce(function (m, r) { return Math.max(m, r.age); }, -1); return o < 0 ? "None" : plural(o, "day"); })(), ""]]);
+      : [[label, String(rows.length), TX.status === "part" ? "Part paid" : TX.status === "any" ? "Paid and part paid" : "Paid"], ["Total amount", curSum(tot), ""], ["Paid", curSum(paidT), ""], ["Still to pay", curSum(bal), openN ? plural(openN, "part-paid item") : ""]]);
     $("txPdf").disabled = !rows.length || !S.downloads; $("txXls").disabled = !rows.length || !S.downloads;
     /* Who has what open: one line per person holding items now, by step. */
     var pb = $("txPeople"); pb.textContent = "";
-    if (!pay) {
+    if (false) {
       var by = {};
       txRows(side).filter(function (r) { return r.open && msPass("tx", txMs(r)); }).forEach(function (r) {
         var key = (r.holder.name || "Unassigned") + "|" + r.step.replace(/^Instalment \d+ of \d+: /, "").replace(/: due .*$/, ": due"), g = by[key] || (by[key] = { who: r.holder.name || "Unassigned", step: r.step.replace(/^Instalment \d+ of \d+: /, "Instalment ").replace(/: due .*$/, " due"), n: 0, amt: {}, oldest: -1 });
@@ -8813,7 +8813,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function txTitle() { return TX.side === "payments" ? (TX.payFor === "all" ? "Payments" : "Payments for " + { bills: "bills", advances: "proformas and imports", vouchers: "vouchers" }[TX.payFor]) : { expenses: "Expenses", bills: "Bills", advances: "Proformas and imports", vouchers: "Vouchers" }[TX.side]; }
   function txFilterText() {
     var parts = [], q = $("txQ").value.trim();
-    if (TX.side !== "payments") parts.push(TX.status === "open" ? "Open items" : TX.status === "closed" ? "Closed items" : "All items");
+    if (TX.side !== "payments") parts.push(TX.status === "part" ? "Part paid" : TX.status === "any" ? "Paid and part paid" : "Paid");
     parts.push(msText("tx")); if (q) parts.push("Search: " + q);
     return parts.join(" · ");
   }

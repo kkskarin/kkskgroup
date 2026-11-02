@@ -266,6 +266,9 @@ provides the same calls, so the app code did not need rewriting:
   in the ledger books. Round Off is an ordinary ledger choice on a bill's ledger lines (pick, remove, add back), except that no GST is on it: it is outside the taxable amount and outside the 4-ledger limit, and is saved as the bill's `roundOff`, not among its `ledgers`. The top Round off box shows it; in accounting a change also changes the bill's total and in the accountant's top boxes, with no alert. Proformas have an
   "Of which round off" (for reference, like GST); imports have Round off among the rupee costs, added
   to the landed total and the closing breakup.
+- **Transactions** (Reports) lists what has been paid: the status choice is **Paid** (in full, the
+  default), **Part paid**, or both; boxes show the total, what is paid and what part-paid items still
+  owe. Anything still unpaid is under Payables (the "who has what open" table is gone from here).
 - **Transactions › Advances** (next to Vouchers, on both Expenses and Payments; for financiers the tab
   is Payments): cash advances by person and company: Opening, Paid (advances handed over), Settled (by
   approved vouchers and bills), Returned, Cash on hand, with a total row and Excel download. Cash

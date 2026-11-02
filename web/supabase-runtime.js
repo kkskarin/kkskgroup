@@ -30,16 +30,27 @@
     (kids || []).forEach(function (c) { if (c) e.appendChild(c); });
     return e;
   }
-  function overlay() {
+  /* Sign-in screen in the ops.kksk.in look: brand panel on the left (on top on phones), the form on the right. */
+  function overlay(title) {
     var o = document.getElementById("bvAuth");
     if (!o) {
       o = h("div", { id: "bvAuth" });
       (document.body || document.documentElement).appendChild(o);
     }
     o.hidden = false; o.textContent = "";
+    var brand = h("section", { class: "bvBrand" }, [
+      h("img", { class: "bvLogo", src: (window.BV_HOME || "") + "favicon.png", alt: "KKSK" }),
+      h("div", { class: "bvCopy" }, [
+        h("div", { class: "bvKick", text: "KKSK Apps" }),
+        h("h1", {}, [document.createTextNode("KKSK"), h("em", { text: "Group" })]),
+        h("p", { class: "bvTag", text: "One sign-in for every KKSK app." })
+      ]),
+      h("div", { class: "bvFoot" }, [h("span", { text: "Developed by Team KKSK" }), h("span", { text: location.host })])
+    ]);
     var card = h("div", { class: "bvCard" });
-    card.appendChild(h("h1", { text: "KKSK Group" }));
-    o.appendChild(card);
+    card.appendChild(h("h2", { text: title || "Sign in" }));
+    o.appendChild(brand);
+    o.appendChild(h("section", { class: "bvMain" }, [card]));
     return card;
   }
   function closeOverlay() { var o = document.getElementById("bvAuth"); if (o) o.hidden = true; }
@@ -65,11 +76,35 @@
   function field(type, ac, ph, label) {
     return h("input", { type: type, required: "", autocomplete: ac, placeholder: ph, class: "bvField", "aria-label": label });
   }
+  /* A field with its label above it. Password fields get a Show / Hide button that can be pressed any number of times
+     (mouse, touch or keyboard); it keeps the cursor in the box so a phone's keyboard stays open. */
+  function lab(inp, text) {
+    var w = h("label", { class: "bvLab" }, [h("span", { text: text || inp.getAttribute("aria-label") || "" })]);
+    if (inp.type !== "password") { w.appendChild(inp); return w; }
+    var box = h("div", { class: "bvPw" }, [inp]);
+    var t = h("button", { type: "button", class: "bvShow", "aria-label": "Show password", "aria-pressed": "false", text: "Show" });
+    t.addEventListener("pointerdown", function (e) { e.preventDefault(); });
+    t.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    t.addEventListener("click", function (e) {
+      e.preventDefault();
+      var show = inp.type === "password", a = inp.selectionStart, b = inp.selectionEnd;
+      inp.type = show ? "text" : "password";
+      t.textContent = show ? "Hide" : "Show";
+      t.setAttribute("aria-pressed", String(show)); t.setAttribute("aria-label", (show ? "Hide" : "Show") + " password");
+      if (document.activeElement === inp) try { inp.setSelectionRange(a, b); } catch (x) {}
+    });
+    box.appendChild(t);
+    var caps = h("div", { class: "bvCaps", role: "status" });
+    var cl = function (e) { caps.textContent = e.getModifierState && e.getModifierState("CapsLock") ? "Caps Lock is on" : ""; };
+    inp.addEventListener("keydown", cl); inp.addEventListener("keyup", cl); inp.addEventListener("blur", function () { caps.textContent = ""; });
+    w.appendChild(box); w.appendChild(caps);
+    return w;
+  }
   function link(text, fn) { var b = h("button", { type: "button", class: "bvLink", text: text }); b.addEventListener("click", fn); return b; }
 
   /* Email and password: "Sign in" for existing accounts, "Create account" for new ones. */
   function signInForm(resolve, mode, note, email0) {
-    var card = overlay(), up = mode === "signup";
+    var up = mode === "signup", card = overlay(up ? "Create account" : "Sign in");
     var tabs = h("div", { class: "bvTabs", role: "tablist" });
     [["signin", "Sign in"], ["signup", "Create account"]].forEach(function (t) {
       var b = h("button", { type: "button", role: "tab", "aria-selected": String(mode === t[0]), class: "bvTab", text: t[1] });
@@ -79,16 +114,16 @@
     card.appendChild(tabs);
     card.appendChild(h("p", { class: "bvSub", text: up
       ? "Any email address works. After you create your account, you ask for access and an admin approves it."
-      : "Sign in with your email and password." }));
+      : "Welcome back. Use the login your administrator gave you." }));
     if (note) card.appendChild(h("p", { class: "bvErr", text: note }));
     var f = h("form", { class: "bvForm" });
     var em = field("email", "email", "you@example.com", "Email");
     if (email0) em.value = email0;
     var pw = field("password", up ? "new-password" : "current-password", up ? "Choose a password (8 or more characters)" : "Password", "Password");
     var pw2 = up ? field("password", "new-password", "Type the password again", "Password again") : null;
-    var go = h("button", { type: "submit", class: "bvBtn", text: up ? "Create account" : "Sign in" });
+    var go = h("button", { type: "submit", class: "bvBtn", text: up ? "Create account →" : "Sign in →" });
     var st = h("p", { class: "bvSub", role: "status" });
-    f.appendChild(em); f.appendChild(pw); if (pw2) f.appendChild(pw2); f.appendChild(go);
+    f.appendChild(lab(em)); f.appendChild(lab(pw)); if (pw2) f.appendChild(lab(pw2)); f.appendChild(go);
     card.appendChild(f); card.appendChild(st);
     if (!up) card.appendChild(link("Forgot password?", function () { forgotForm(resolve, em.value); }));
     card.appendChild(link("Email me a one-time sign-in code instead", function () { otpForm(resolve, em.value); }));
@@ -120,7 +155,7 @@
 
   /* New accounts confirm their email once; after that it's just the password. */
   function confirmNote(resolve, email) {
-    var card = overlay();
+    var card = overlay("Check your email");
     card.appendChild(h("p", { class: "bvSub", text: "We sent an email to " + email + ". Open the link in it once to confirm your address. After that you sign in with your password." }));
     var st = h("p", { class: "bvSub", role: "status" });
     card.appendChild(link("Send the email again", function () {
@@ -132,13 +167,13 @@
   }
 
   function forgotForm(resolve, email0) {
-    var card = overlay();
+    var card = overlay("Forgot password");
     card.appendChild(h("p", { class: "bvSub", text: "Enter your email. We'll send a link to set a new password." }));
     var f = h("form", { class: "bvForm" });
     var em = field("email", "email", "you@example.com", "Email"); if (email0) em.value = email0;
     var go = h("button", { type: "submit", class: "bvBtn", text: "Send the link" });
     var st = h("p", { class: "bvSub", role: "status" });
-    f.appendChild(em); f.appendChild(go); card.appendChild(f); card.appendChild(st);
+    f.appendChild(lab(em)); f.appendChild(go); card.appendChild(f); card.appendChild(st);
     card.appendChild(link("Back to sign in", function () { signInForm(resolve, "signin", "", em.value); }));
     em.focus();
     f.addEventListener("submit", function (ev) {
@@ -153,14 +188,14 @@
   }
 
   function newPasswordForm(resolve) {
-    var card = overlay();
+    var card = overlay("Set a new password");
     card.appendChild(h("p", { class: "bvSub", text: "Choose a new password." }));
     var f = h("form", { class: "bvForm" });
     var pw = field("password", "new-password", "New password (8 or more characters)", "New password");
     var pw2 = field("password", "new-password", "Type it again", "New password again");
     var go = h("button", { type: "submit", class: "bvBtn", text: "Save password" });
     var st = h("p", { class: "bvSub", role: "status" });
-    f.appendChild(pw); f.appendChild(pw2); f.appendChild(go); card.appendChild(f); card.appendChild(st);
+    f.appendChild(lab(pw)); f.appendChild(lab(pw2)); f.appendChild(go); card.appendChild(f); card.appendChild(st);
     pw.focus();
     f.addEventListener("submit", function (ev) {
       ev.preventDefault();
@@ -178,13 +213,13 @@
 
   /* Fallback: a one-time code (or link) by email. */
   function otpForm(resolve, email0) {
-    var card = overlay();
+    var card = overlay("Sign-in code");
     card.appendChild(h("p", { class: "bvSub", text: "We'll email you a sign-in link and code. No password needed." }));
     var f = h("form", { class: "bvForm" });
     var em = field("email", "email", "you@example.com", "Email"); if (email0) em.value = email0;
     var go = h("button", { type: "submit", class: "bvBtn", text: "Email me a sign-in code" });
     var st = h("p", { class: "bvSub", role: "status" });
-    f.appendChild(em); f.appendChild(go); card.appendChild(f); card.appendChild(st);
+    f.appendChild(lab(em)); f.appendChild(go); card.appendChild(f); card.appendChild(st);
     card.appendChild(link("Back to sign in", function () { signInForm(resolve, "signin", "", em.value); }));
     em.focus();
     f.addEventListener("submit", function (ev) {
@@ -200,13 +235,13 @@
   }
 
   function codeForm(email, resolve) {
-    var card = overlay();
+    var card = overlay("Enter the code");
     card.appendChild(h("p", { class: "bvSub", text: "We sent an email to " + email + ". Open its link on this device, or type the code from it here." }));
     var f = h("form", { class: "bvForm" });
     var code = h("input", { inputmode: "numeric", autocomplete: "one-time-code", maxlength: "10", placeholder: "123456", class: "bvField bvCode", "aria-label": "Code from the email" });
     var go = h("button", { type: "submit", class: "bvBtn", text: "Sign in" });
     var st = h("p", { class: "bvSub", role: "status" });
-    f.appendChild(code); f.appendChild(go); card.appendChild(f); card.appendChild(st);
+    f.appendChild(lab(code)); f.appendChild(go); card.appendChild(f); card.appendChild(st);
     card.appendChild(link("Back to sign in", function () { signInForm(resolve, "signin", "", email); }));
     code.focus();
     f.addEventListener("submit", function (ev) {
@@ -238,13 +273,13 @@
   }
 
   function nameForm(resolve) {
-    var card = overlay();
+    var card = overlay("Your name");
     card.appendChild(h("p", { class: "bvSub", text: "One more thing: what name should the app show for you?" }));
     var f = h("form", { class: "bvForm" });
     var nm = h("input", { required: "", maxlength: "80", autocomplete: "name", placeholder: "Full name", class: "bvField", "aria-label": "Your name" });
     var go = h("button", { type: "submit", class: "bvBtn", text: "Continue" });
     var st = h("p", { class: "bvErr", role: "status" });
-    f.appendChild(nm); f.appendChild(go); card.appendChild(f); card.appendChild(st); nm.focus();
+    f.appendChild(lab(nm)); f.appendChild(go); card.appendChild(f); card.appendChild(st); nm.focus();
     f.addEventListener("submit", function (ev) {
       ev.preventDefault();
       var name = nm.value.trim().replace(/\s+/g, " "); if (!name) return;

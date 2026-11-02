@@ -19,11 +19,12 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:calc(15px*var(--ts,1))/1.5 var(--font)}
 header{background:var(--surface);border-bottom:1px solid var(--line);padding:14px 16px}
-header .in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px}
+html{overflow-y:auto;scrollbar-gutter:stable both-edges}
+header .in{max-width:none;margin:0 auto;padding:0 clamp(14px,2vw,36px);display:flex;align-items:center;gap:12px}
 header img{width:40px;height:40px}
 header b{font:calc(22px*var(--ts,1)) var(--serif)}
 nav{background:var(--bar)}
-nav .in,.sub .in{max-width:1180px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding:0 8px}
+nav .in,.sub .in{max-width:none;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding:0 8px}
 nav button,.sub button{border:0;background:none;font:inherit;cursor:pointer;white-space:nowrap;padding:14px 14px 12px;border-bottom:3px solid transparent}
 nav button{color:var(--navtext);font-weight:600}
 nav button[aria-selected="true"]{color:#fff;border-bottom-color:var(--hl)}
@@ -31,7 +32,7 @@ nav button[aria-selected="true"]{color:#fff;border-bottom-color:var(--hl)}
 .sub button{color:var(--muted);font-weight:500}
 .sub button[aria-selected="true"]{color:var(--brand);font-weight:600;border-bottom-color:var(--brand)}
 .sub button.sep{margin-left:auto}
-main{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+main{max-width:none;margin:0 auto;padding:24px clamp(14px,2vw,36px) 60px}
 main h1{margin:0 0 4px;font:calc(28px*var(--ts,1)) var(--serif)}
 .subt{margin:0 0 18px;color:var(--muted)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}

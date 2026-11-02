@@ -34,7 +34,7 @@ window.BV_APP = "wb"; window.BV_HOME = "../";</script>
 }
 *,*::before,*::after{box-sizing:inherit}
 [hidden]{display:none !important}
-html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px);-webkit-text-size-adjust:100%}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px);-webkit-text-size-adjust:100%;overflow-y:auto;scrollbar-gutter:stable both-edges}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:"Jost",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:calc(15px*var(--ts,1));line-height:1.45;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
 h1,h2,h3{font-family:"Jost",system-ui,sans-serif;margin:0;font-weight:600;letter-spacing:.005em}
 button,input,select{font:inherit;color:inherit}
@@ -56,7 +56,7 @@ button,input,select{font:inherit;color:inherit}
 .tabs button[aria-selected="true"]{color:var(--blue);border-bottom-color:var(--blue)}
 .tabs button[aria-selected="true"] svg{opacity:1}
 
-main{max-width:1440px;margin:0 auto;padding:22px clamp(12px,3vw,36px) calc(48px + var(--nav-h))}
+main{max-width:none;margin:0 auto;padding:22px clamp(12px,3vw,36px) calc(48px + var(--nav-h))}
 
 /* ============ Layout ============ */
 .split{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;align-items:start}
@@ -441,15 +441,15 @@ body.locked .topbar,body.locked main,body.locked #printSheet{display:none !impor
 /* ============ KKSK ethos layer ============ */
 body{font-family:"Jost","Inter",system-ui,"Segoe UI",Roboto,Arial,sans-serif;font-size:calc(15px*var(--ts,1));line-height:1.5}
 h1,h2,h3{font-family:"Jost","Inter",system-ui,sans-serif}
-main{max-width:1180px;padding:22px 24px 56px}
+main{max-width:none;padding:22px clamp(14px,2vw,36px) 56px}
 
 /* Header: logo left, person right; forest band with the main headings */
 .topbar{display:block;padding:0;background:var(--panel);border-bottom:0;position:sticky;top:0;z-index:15}
-.apphead{max-width:1180px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.apphead{max-width:none;margin:0 auto;padding:10px clamp(14px,2vw,36px);display:flex;align-items:center;justify-content:space-between;gap:16px}
 .brand{padding:0}
 .brand-logo{width:38px;height:38px}
 .navband{background:var(--forest)}
-.navband .tabs{max-width:1180px;margin:0 auto;padding:0 14px;display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.navband .tabs{max-width:none;margin:0 auto;padding:0 14px;display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .navband .tabs::-webkit-scrollbar{display:none}
 .navband .tabs button{color:rgba(255,255,255,.78);border-bottom:3px solid transparent;padding:13px 16px 12px;font-weight:500;font-size:calc(.96rem*var(--ts,1));letter-spacing:.01em}
 .navband .tabs button svg{opacity:.75}
@@ -613,7 +613,7 @@ input:hover,select:hover{border-color:#a9bbc1}
 .adminbar{background:var(--soft);border-bottom:1px solid var(--line)}
 .adminbar.demo{background:#FFF1CC;border-bottom-color:#f0dcb8}
 .adminbar.as{background:#E8F0FB;border-bottom-color:#c9d9ef}
-.ab-in{max-width:1180px;margin:0 auto;padding:7px 24px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ab-in{max-width:none;margin:0 auto;padding:7px clamp(14px,2vw,36px);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .ab-note{font-size:calc(.88rem*var(--ts,1));font-weight:600;color:var(--ink-2)}
 .ab-grow{flex:1}
 .ab-mode{height:34px}.ab-mode button{padding:0 14px}

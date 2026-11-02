@@ -237,7 +237,15 @@ provides the same calls, so the app code did not need rewriting:
 - **Data**: every record is a JSON document in `public.app_docs` (`path` such as `bills/b_123`).
   Pages see each other's changes live through Supabase Realtime, with a 30-second refresh as a fallback.
 - **Sign-in**: email and password (Create account / Sign in / Forgot password), with an emailed
-  one-time code as a fallback. First sign-in asks for a name.
+  one-time code as a fallback. First sign-in asks for a name. The screen follows ops.kksk.in: brand
+  panel on the left (on top on phones), labelled fields on the right, a Show / Hide button on every
+  password box (mouse, touch or keyboard, any number of times; the cursor stays in the box) and a
+  Caps Lock warning.
+- **Page width**: every app uses the full width of the screen (side padding grows a little on big
+  monitors). The page's scrollbar has a fixed slot with an equal one on the left
+  (`scrollbar-gutter: stable both-edges`), so nothing shifts or shrinks when a scrollbar appears;
+  scrolling boxes inside pages (pop-ups, lists, file viewers) keep a fixed slot too. Tables use plain
+  headings, light row banding and right-aligned numbers.
 - **Who can get in**: anyone can create an account with any email. Until an admin approves their
   request in the app, the database only shows them what the "Ask for Access" screen needs
   (company, location and department lists, and their own request). Approved = an active

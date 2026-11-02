@@ -773,6 +773,13 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
 .mbar{margin-bottom:16px}
 .vamenu a{display:block;padding:8px 12px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:calc(14px*var(--ts,1))}.vamenu a:hover{background:var(--soft)}.vamenu a.on{font-weight:700}.appsw a{display:flex;align-items:center;justify-content:space-between;gap:12px}.appsw a.home{border-top:1px solid var(--line);margin-top:4px;border-radius:0 0 8px 8px;color:var(--muted);font-size:calc(13px*var(--ts,1))}.appsln .count{margin-left:2px}
 
+#secUser[data-mode="role"] .ponly{display:none!important}
+#secUser:not([data-mode="role"]) .ronly{display:none!important}
+.rlrows{display:grid;gap:8px;margin-bottom:8px}.rlrows:empty{display:none}
+.rlrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.rlrow>b{flex:1 1 160px;min-width:0}.rlrow>select.field{width:auto;flex:0 0 auto}.rlrow .rldate{flex:0 1 190px;min-width:150px}.rlrow.ended{opacity:.65}
+select.rladd{max-width:320px}
+.rlock{opacity:.8}.rlock .ck,.rlock .check{cursor:default}
 /* Full-width pages (Nov 2026): the page uses the whole screen on big monitors, small monitors and phones alike.
    The scrollbar has its own fixed slot with an equal one on the left, so nothing moves or shrinks when a scrollbar appears. */
 .wrap{max-width:none;padding-left:clamp(14px,2vw,36px);padding-right:clamp(14px,2vw,36px)}
@@ -968,6 +975,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     <div class="card" id="userList"></div>
   </section>
 
+  <section id="secRoles" hidden>
+    <div class="head"><div class="grow"><h2>Roles</h2><p class="sub">Define what each role may do: apps, divisions, jobs, companies and the steps for each company. Then give people one or more roles under Users, for good or until a date. Changing a role changes everyone who has it.</p></div><div class="acts2"><button class="btn primary" id="rlNew" type="button">New Role</button></div></div>
+    <div class="card list scroll"><table class="t" id="rlList"></table></div>
+  </section>
+
   <section id="secUser" hidden>
     <div class="head"><div><button class="link-btn" id="backUser">Back to Users</button><h2 id="userTitle"></h2><p class="sub" id="userSub"></p></div></div>
     <div class="card">
@@ -975,6 +987,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         <div class="f" id="uAccF" hidden><label for="uAcc">Accounted For</label><select class="field" id="uAcc"></select><span class="hint">Choose the login this person works under, for shop-floor staff who share one phone. Leave it as "No shared login" if they will sign in themselves.</span></div>
         <div class="f" id="uPinF" hidden><label for="uPin">Profile PIN</label><input class="field num" id="uPin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="4 digits"><span class="hint" id="uPinH"></span><button class="link-btn" id="uPinReset" type="button" hidden>Reset PIN</button><span class="err" id="uEPin" hidden></span></div>
         <div class="f wide" id="uLinkF" hidden><label for="uLink">Link to a Person Already Added</label><select class="field" id="uLink"></select><span class="hint">Pick the person you added without a login, if this request is theirs. Everything entered for them moves to this login.</span></div>
+        <div class="f wide" id="uRoleF"><span class="lb">Roles</span><div id="uRoleRows" class="rlrows"></div><select class="field rladd" id="uRoleAdd" aria-label="Add a role"></select><span class="hint" id="uRoleH"></span><span class="err" id="uERole" hidden></span></div>
+        <div class="f wide ronly" id="uDescF"><label for="uDesc">Description (optional)</label><input class="field" id="uDesc" maxlength="160" autocomplete="off" placeholder="For example: Accounts for Maintenance and Bills &amp; Vouchers"></div>
         <div class="f wide" id="uAppsF"><span class="lb">Apps</span>
           <div class="uapps"><label class="check"><input type="checkbox" id="uAppBv"> Bills, Accounts, Finance &amp; Approvals</label><span hidden><input type="checkbox" id="uAppApr"><input type="checkbox" id="uAppAcc"><input type="checkbox" id="uAppFin"></span><label class="check"><input type="checkbox" id="uAppWb"> W/B Costing</label><label class="check" title="Roles and plant are set in Production Planning's own Users tab"><input type="checkbox" id="uAppPp"> Production Planning</label>
             <div class="uapp-pp" hidden><span>Production Planning</span><select class="field" id="uPpRole" aria-label="Production Planning role"><option value="">No access</option><option value="approver">Approver</option><option value="planner">Planner</option><option value="floor">Floor Team</option></select>
@@ -983,10 +997,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         <div class="f wide" id="uDivF" hidden><span class="lb">Divisions</span>
           <div class="uapps"><label class="check"><input type="checkbox" id="uAppMnt"> Maintenance &amp; Civil</label><label class="check"><input type="checkbox" id="uAppRe"> Renewable Energy</label><label class="check"><input type="checkbox" id="uAppBnv"> Bills &amp; Vouchers</label><label class="check"><input type="checkbox" id="uAppChm"> Chemicals</label><label class="check" id="uReCoF" hidden><input type="checkbox" id="uReCo"> Can add and edit companies in Renewable Energy</label></div>
           <span class="hint">The divisions this person works for: where they enter bills and vouchers (Purchaser, Expenses Operator), and whose entries they see in Accounts (Accountant) and Finance (Financier). Sales is Renewable Energy. A Chief Accountant covers every division; an Approver sees what names them.</span><span class="err" id="uEDiv" hidden>Tick at least one division.</span></div>
-        <div class="f"><label for="uName">Name</label><input class="field" id="uName" data-fmt="name" maxlength="60" autocomplete="off"><span class="err" id="uEName" hidden>Enter the user's name.</span></div>
+        <div class="f"><label for="uName" id="uNameL">Name</label><input class="field" id="uName" data-fmt="name" maxlength="60" autocomplete="off"><span class="err" id="uEName" hidden>Enter the user's name.</span></div>
         <div class="f" id="uMailF" hidden><label for="uMail">Login Email</label><input class="field" id="uMail" type="email" autocomplete="off" maxlength="120" placeholder="name@example.com"><span class="hint">Any email: their own, Gmail, Yahoo or kksk.in.</span><span class="err" id="uEMail" hidden></span></div>
         <div class="f" id="uPwF" hidden><label for="uPw" id="uPwL">Password</label><input class="field" id="uPw" type="text" autocomplete="new-password" maxlength="72" spellcheck="false"><span class="hint" id="uPwH">At least 8 characters. Give it to them; they can change it under Settings.</span><span class="err" id="uEPw" hidden></span></div>
-        <div class="f wide"><span class="lb">Role</span><div class="checks" id="uJobs"></div><span class="hint">Tick every role that applies.</span><span class="err" id="uJobsE" hidden>Tick at least one role.</span></div>
+        <div class="f wide"><span class="lb">Jobs</span><div class="checks" id="uJobs"></div><span class="hint">Tick every job that applies.</span><span class="err" id="uJobsE" hidden>Tick at least one role.</span></div>
         <div class="f" id="uApprF" hidden><label for="uAppr">Default Approver</label><select class="field" id="uAppr"></select><span class="hint">Filled in on this purchaser's bills, proformas and vouchers. They can change it on each one.</span><span class="err" id="uEAppr" hidden>Choose the admin who approves this purchaser's work.</span></div>
         <div class="f wide" id="uApOfF" hidden><span class="lb">Approver Of</span><div class="checks" id="uApOf"></div><span class="hint">A person with the Approver job is a 1st approver: they check what names them and pass it on to an admin, who gives the final approval. Every voucher goes to all the voucher 1st approvers, who can also approve it in full.</span><span class="err" id="uEApOf" hidden>Tick at least one.</span></div>
         <div class="f"><label for="usLoc">Location</label><select class="field" id="usLoc"></select>
@@ -1011,7 +1025,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         <div class="card scroll"><table class="t roles" id="uRoles"></table></div>
         <div id="uObWrap" hidden><h3>Opening balances</h3><p class="sub" style="margin-bottom:10px" id="uObSub">The cash this person held for each company when they started. They entered it themselves; only you can change it.</p><div class="card list scroll"><table class="t ob" id="uOb"></table></div></div>
       </div>
-      <div class="form-foot"><button class="btn primary" id="userSave"></button><button class="btn" id="userCancel">Cancel</button></div>
+      <div class="form-foot"><button class="btn primary" id="userSave"></button><button class="btn" id="userCancel">Cancel</button><span class="grow"></span><button class="btn danger" id="uRoleDel" type="button" hidden>Delete role</button></div>
     </div>
   </section>
 
@@ -1548,7 +1562,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var S = { staff: {}, salruns: {}, regions: {}, ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
+  var VIEWS = ["secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1748,7 +1762,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* Payments are recorded in Finance only; elsewhere they are shown, not paid. */
   function payHere(x) { return APP === "fin"; }
   /* Headings, each with its own tabs. Tab keys stay the same inside the app; labels are what people see. */
-  var SET_TABS = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Activity", "Show Activity", true], ["Personalise", "Personalise"]] };
+  var SET_TABS = { h: "Settings", tabs: [["Users", "Users", true], ["Roles", "Roles", true], ["Change Log", "Change Log", true], ["Activity", "Show Activity", true], ["Personalise", "Personalise"]] };
   /* Masters: its own menu heading, one tab per master list. The fourth item marks a master. */
   var MASTERS = [["Companies", "Companies", 0, "m"], ["Vendors", "Vendors", 0, "m"], ["Ledgers", "Ledgers", 0, "m"]];
   var MASTERS_RE = MASTERS.concat([["Consumers", "Consumers", 0, "m"], ["PPA Rates", "PPA Rates", 0, "m"]]);
@@ -1763,11 +1777,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* Cheque Templates: where the financier pays (Renewable Energy pays its own; Finance pays the other divisions). */
   var CHQ_TAB = ["Cheques", "Cheque Templates", 0, "m"], BANK_TAB = ["Banks", "Bank Accounts", 0, "m"], OTHERS_TAB = ["Others", "Others", 0, "m"];
   var MAS_TABS = { h: "Masters", tabs: APP === "re" ? [MASTERS[0], MASTERS_RE[3], MASTERS_RE[4], MASTERS[1], MASTERS[2]] : APP === "fin" ? [MASTERS[0], MASTERS[1], BANK_TAB, CHQ_TAB, OTHERS_TAB] : MASTERS }; /* Finance: no expense ledgers, only what payments need */
-  var SET_ALL = { h: "Settings", tabs: [["Users", "Users", true], ["Change Log", "Change Log", true], ["Activity", "Show Activity", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] };
+  var SET_ALL = { h: "Settings", tabs: [["Users", "Users", true], ["Roles", "Roles", true], ["Change Log", "Change Log", true], ["Activity", "Show Activity", true], ["Archive", "Data & Archive", true], ["Personalise", "Personalise"]] };
   var NAV_BY_APP = {
     mnt: [REP_TABS, EXP_TABS, MAS_TABS, SET_ALL],
     re: [REP_TABS, SALES_TABS, EXP_TABS, MAS_TABS, SET_ALL],
-    bnv: [REP_TABS, EXP_TABS, MAS_TABS, { h: "Settings", tabs: SET_ALL.tabs.slice(0, 3).concat([["Templates", "Templates", true]], SET_ALL.tabs.slice(3)) }],
+    bnv: [REP_TABS, EXP_TABS, MAS_TABS, { h: "Settings", tabs: SET_ALL.tabs.slice(0, 4).concat([["Templates", "Templates", true]], SET_ALL.tabs.slice(4)) }],
     acc: [REP_TABS, ACC_TABS, MAS_TABS, SET_ALL],
     fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS]
@@ -1892,6 +1906,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (t === "Others") { renderOthers(); show("secOthers"); return; }
     if (t === "Salary") { renderSalary(); show("secSalary"); return; }
     if (t === "All Entries") { if (dataReady()) { renderAllEnt(); show("secAllEnt"); } else show("vLoading"); return; }
+    if (t === "Roles" && S.isAdmin) { S.userEditing = null; renderRoles(); show("secRoles"); return; }
     if (t === "Users" && S.isAdmin) { renderUsers(); renderSupers(); show("secUsers"); }
     else if (t === "Change Log" && S.isAdmin) { auditSub(); renderAudit(); show("secAudit"); }
     else if (t === "Templates" && S.isAdmin) { if (dataReady()) { TP.t = null; TP.seen = null; TP.dirty = false; renderTpl(); show("secTpl"); } else show("vLoading"); }
@@ -2163,7 +2178,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     who.appendChild(el("b", null, rec.name || "No name given"));
     if (extra) who.appendChild(extra);
     if (profile && (profile.name || profile.email)) who.appendChild(el("span", { class: "ln" }, "Signed in as " + [profile.name, profile.email].filter(Boolean).join(" · ")));
-    who.appendChild(el("span", { class: "ln" }, "Location: " + (locName(rec.locationId) || "Not set") + " · Department: " + (deptName(rec.deptId) || "Not set") + " · Role: " + (jobsText(jobsOf(rec)) || "Not set") + (jobsOf(rec).indexOf("approver") >= 0 ? " (1st approver of " + apprOfUser(rec).map(function (k) { return APPR_OF.filter(function (x) { return x[0] === k; })[0][2].toLowerCase(); }).join(", ") + ")" : "") + " · Apps: " + (appsOf(rec) || "None")));
+    who.appendChild(el("span", { class: "ln" }, "Location: " + (locName(rec.locationId) || "Not set") + " · Department: " + (deptName(rec.deptId) || "Not set") + " · Jobs: " + (jobsText(jobsOf(rec)) || "Not set") + (jobsOf(rec).indexOf("approver") >= 0 ? " (1st approver of " + apprOfUser(rec).map(function (k) { return APPR_OF.filter(function (x) { return x[0] === k; })[0][2].toLowerCase(); }).join(", ") + ")" : "") + " · Apps: " + (appsOf(rec) || "None")));
+    if (usesRoles(rec)) who.appendChild(el("span", { class: "ln" }, "Roles: " + roleText(rec)));
     who.appendChild(companyTags(rec.companyIds));
     row.appendChild(who);
     return row;
@@ -2303,7 +2319,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function openUserForm(uid, mode) {
     if (mode === "new") uid = newId("p"); if (mode === "login") uid = "";
     var src = mode === "new" || mode === "login" ? {} : mode === "approve" ? S.requests[uid] : S.users[uid]; if (!src) return;
-    S.userEditing = { uid: uid, mode: mode, link: "" }; userErrors();
+    S.userEditing = { uid: uid, mode: mode, link: "", assign: (src.roleIds || []).map(function (a) { return { id: a.id, until: a.until || null }; }) }; userErrors();
+    markUserForm(); $("secUser").setAttribute("data-mode", "user"); $("backUser").textContent = "Back to Users"; $("uRoleDel").hidden = true; $("uEName").textContent = "Enter the user's name."; $("uNameL").textContent = "Name";
     var hasLogin = /^u_[0-9a-f]{32}$/.test(uid || "") && !!window.bvAccount;
     $("uMailF").hidden = mode !== "login"; $("uPwF").hidden = !(mode === "login" || (mode === "edit" && hasLogin)); $("uMail").value = ""; $("uPw").value = ""; $("uEMail").hidden = true; $("uEPw").hidden = true;
     $("uPwL").textContent = mode === "login" ? "Password" : "New Password"; $("uPwH").textContent = mode === "login" ? "At least 8 characters. Give it to them; they can change it under Settings." : "Leave blank to keep their password. Or type a new one (at least 8 characters) and give it to them.";
@@ -2320,6 +2337,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (accOk) fillSelect($("uAcc"), [["", "No shared login"]].concat(shareLogins(uid).map(function (u) { return [u.id, u.name + (locName(u.locationId) ? ", " + locName(u.locationId) : "")]; })), src.accountedFor || "");
     S.userEditing.hadPin = !!src.pinHash; onAccChange();
     fillUserForm(src, mode === "approve" ? null : src.roles || null, uid);
+    paintAssign(); if (S.userEditing.assign.length) applyAssign(); else lockAccess(false);
     show("secUser"); $("uName").focus();
   }
   /* Logins that profiles can sit under: real sign-ins, active, not admins, not profiles themselves. */
@@ -2346,6 +2364,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var id = $("uLink").value, E = S.userEditing; if (!E) return; E.link = id;
     if (id && S.users[id]) fillUserForm(S.users[id], S.users[id].roles || null, id);
     else fillUserForm(S.requests[E.uid] || {}, null, E.uid);
+    E.assign = ((id && S.users[id] && S.users[id].roleIds) || []).map(function (a) { return { id: a.id, until: a.until || null }; }); paintAssign(); if (E.assign.length) applyAssign(); else lockAccess(false);
   }
   /* A purchaser must have a default approver; it is asked for as soon as Purchaser is ticked. */
   /* Bills & Vouchers details (roles, companies, responsibilities) are only asked when Bills & Vouchers is given. */
@@ -2388,9 +2407,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (cf && !cf.hidden) { Array.prototype.forEach.call(cf.children, function (c) { if (c.id !== "uChiefNote") c.style.display = only ? "none" : ""; }); var n = $("uChiefNote"); if (!n) { n = el("p", { class: "sub", id: "uChiefNote", style: "margin:0" }); cf.appendChild(n); } n.textContent = "Chief Accountant: every company, now and later. No need to choose."; n.hidden = !only; }
     if (rs && only) rs.hidden = true; else if (rs && !$("uJobs").closest(".f").hidden) rs.hidden = false;
   }
-  function backToUsers() { S.userEditing = null; renderUsers(); renderNav(); show("secUsers"); }
+  function backToUsers() { if (S.userEditing && S.userEditing.mode === "role") { backToRoles(); return; } S.userEditing = null; $("secUser").removeAttribute("data-mode"); renderUsers(); renderNav(); show("secUsers"); }
   function saveUser() {
     if (S.busy || !S.userEditing) return;
+    if (S.userEditing.mode === "role") return saveRole();
     userErrors();
     var uid = S.userEditing.uid, mode = S.userEditing.mode, name = $("uName").value.trim(), loc = usLoc.value(), cos = readChecks($("uCos")), ok = true, now = Date.now(), by = (S.me && S.me.id) || "", roles = readRoleGrid();
     Object.keys(roles).forEach(function (k) { if (cos.indexOf(k) < 0) delete roles[k]; });
@@ -2419,11 +2439,16 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var mail = $("uMail").value.trim().toLowerCase(), pw = $("uPwF").hidden ? "" : $("uPw").value;
     if (mode === "login") { if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { $("uEMail").textContent = "Enter a valid email address."; $("uEMail").hidden = false; ok = false; } if (pw.length < 8) { $("uEPw").textContent = "The password needs at least 8 characters."; $("uEPw").hidden = false; ok = false; } }
     else if (pw && pw.length < 8) { $("uEPw").textContent = "The password needs at least 8 characters."; $("uEPw").hidden = false; ok = false; }
+    var assign = (S.userEditing.assign || []).filter(function (a) { return S.roleDefs && S.roleDefs[a.id]; }); $("uERole").hidden = true;
+    if (assign.some(function (a) { return a.until && !ymdOk(a.until); })) { $("uERole").textContent = "Choose the last day for each temporary role."; $("uERole").hidden = false; ok = false; }
+    if (assign.length && jobsClash(roleEff(assign).jobRoles)) { $("uERole").textContent = "Together these roles make the person both Purchaser and Approver. One person can't be both: remove one role."; $("uERole").hidden = false; ok = false; }
     if (acc && pin && !/^\d{4}$/.test(pin)) { $("uEPin").textContent = "The PIN must be exactly 4 digits."; $("uEPin").hidden = false; $("uPin").classList.add("bad"); ok = false; }
     if (!ok) return;
     S.busy = true; $("userSave").disabled = true;
     (acc && pin ? pinHash(uid, pin) : Promise.resolve("")).then(function (ph) {
-    var extra = { deptId: dept, jobRoles: jobs, defaultApproverId: defAppr || null, apprOf: apOf, apps: apps, reCompanies: !!(ma.re && $("uReCo").checked) };
+    var extra = { deptId: dept, jobRoles: jobs, defaultApproverId: defAppr || null, apprOf: apOf, apps: apps, reCompanies: !!(ma.re && $("uReCo").checked), roleIds: assign, roleUntil: assign.length ? rolePatch({ roleIds: assign }).roleUntil : null };
+    /* With roles, the access saved is exactly what the roles give (the form only shows it). */
+    if (assign.length) { var rp = rolePatch({ roleIds: assign, apps: { pp: apps.pp } }); extra.jobRoles = jobs = rp.jobRoles; extra.apprOf = apOf = rp.apprOf; extra.apps = apps = rp.apps; extra.reCompanies = rp.reCompanies; cos = rp.companyIds; roles = rp.roles; }
     if (accOn) { extra.accountedFor = acc || null; extra.unlinked = !acc; if (ph) extra.pinHash = ph; else if ((!acc || S.userEditing.resetPin) && cur.pinHash) extra.pinHash = null; }
     var job;
     if (mode === "login") {
@@ -2436,7 +2461,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         .then(function () { if (obs && Object.keys(obs).length) return retry(function () { return S.db.doc("balances/" + uid).set({ openings: obs, name: name, updatedAt: now, updatedBy: by }); }); });
     } else if (mode === "approve" && link) {
       var rq = S.requests[uid] || {};
-      job = relinkPerson(link, uid, { name: name, locationId: loc, deptId: dept, jobRoles: jobs, defaultApproverId: defAppr || null, apprOf: apOf, apps: apps, companyIds: cos, roles: roles, active: true, requestedAt: rq.at || now, approvedAt: now, updatedAt: now, by: by, linkedFrom: link, linkedAt: now }, obs)
+      job = relinkPerson(link, uid, { name: name, locationId: loc, deptId: dept, roleIds: assign, roleUntil: extra.roleUntil, jobRoles: jobs, defaultApproverId: defAppr || null, apprOf: apOf, apps: apps, companyIds: cos, roles: roles, active: true, requestedAt: rq.at || now, approvedAt: now, updatedAt: now, by: by, linkedFrom: link, linkedAt: now }, obs)
         .then(function () { return retry(function () { return S.db.doc("requests/" + uid).update({ status: "approved", decidedAt: now, linkedFrom: link }); }); });
     } else if (mode === "approve") {
       var r = S.requests[uid] || {};
@@ -2447,6 +2472,185 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (pw && mode === "edit") job = job.then(function () { return window.bvAccount.setPassword(uid, pw).catch(function (e) { throw { code: "pw", message: (e && e.message) || "The password couldn't be set." }; }); });
     return job.then(function () { toast(mode === "login" ? name + " can now sign in with " + mail + " and the password you set." : pw && mode === "edit" ? "User saved, with the new password." : acc ? name + " is saved as a profile on " + userLabel(acc) + "'s login." : mode === "new" ? name + " is added. Choose them as Prepared by when entering their bills." : mode === "approve" ? name + " now has access." + (link ? " Everything entered for them is now under their login." : "") : "User saved."); backToUsers(); }, function (e) { if (e && e.quiet) return; if (e && e.code === "pw") { $("uEPw").textContent = e.message; $("uEPw").hidden = false; return; } toast(explain(e)); });
     }).then(function () { S.busy = false; $("userSave").disabled = false; });
+  }
+  /* ================= Roles: named sets of access, given to people for good or until a date =================
+     roledefs/<id>: { name, description, apps {bv, mnt, re, bnv, chm, wb}, reCompanies, jobRoles, apprOf, companyIds,
+     roles {company: steps} }. A person's roleIds: [{ id, until: "YYYY-MM-DD" (last day) | null }]. While a person has a role,
+     their access (apps, divisions, jobs, Approver Of, companies, steps) is the sum of their current roles and is written onto
+     their user record, so everything else keeps reading it there. Changing a role changes everyone who has it; an admin's
+     page brings records up to date when a role changes or a temporary role ends. */
+  var ROLE_APPS = ["mnt", "re", "bnv", "chm", "wb"];
+  function roleOn(a, today) { return !!(a && S.roleDefs && S.roleDefs[a.id] && (!a.until || a.until >= (today || todayYmd()))); }
+  function rolesOfUser(u) { return (u && u.roleIds) || []; }
+  function usesRoles(u) { return rolesOfUser(u).length > 0; }
+  function roleEff(assign) {
+    var today = todayYmd(), act = (assign || []).filter(function (a) { return roleOn(a, today); });
+    var o = { apps: { bv: false, mnt: false, re: false, bnv: false, chm: false, wb: false }, reCompanies: false, jobRoles: [], apprOf: [], companyIds: [], roles: {} }, jm = {}, am = {}, cm = {};
+    act.forEach(function (a) {
+      var r = S.roleDefs[a.id], ap = r.apps || {};
+      if (ap.bv !== false && ((r.jobRoles || []).length || ap.mnt || ap.re || ap.bnv || ap.chm)) o.apps.bv = true;
+      ROLE_APPS.forEach(function (k) { if (ap[k]) o.apps[k] = true; });
+      if (r.reCompanies) o.reCompanies = true;
+      (r.jobRoles || []).forEach(function (j) { jm[j] = 1; }); (r.apprOf || []).forEach(function (k) { am[k] = 1; }); (r.companyIds || []).forEach(function (c) { cm[c] = 1; });
+      Object.keys(r.roles || {}).forEach(function (c) { var cur = o.roles[c] || (o.roles[c] = []); (r.roles[c] || []).forEach(function (st) { if (cur.indexOf(st) < 0) cur.push(st); }); });
+    });
+    o.jobRoles = JOBS.map(function (j) { return j[0]; }).filter(function (k) { return jm[k]; });
+    o.apprOf = o.jobRoles.indexOf("approver") >= 0 ? APPR_OF.map(function (k) { return k[0]; }).filter(function (k) { return am[k]; }) : null;
+    o.companyIds = Object.keys(cm).sort(function (a, b) { return natCmp(coLabel(a), coLabel(b)); });
+    Object.keys(o.roles).forEach(function (c) { if (!cm[c]) delete o.roles[c]; else o.roles[c] = STEPS.map(function (s) { return s[0]; }).filter(function (k) { return o.roles[c].indexOf(k) >= 0; }); });
+    o.apps.acc = o.apps.fin = o.apps.apr = o.apps.bv;
+    return o;
+  }
+  /* The fields a person's roles put on their user record (Production Planning stays the person's own). */
+  function rolePatch(u) {
+    var e = roleEff(rolesOfUser(u)), ends = rolesOfUser(u).filter(function (a) { return roleOn(a) && a.until; }).map(function (a) { return a.until; }).sort();
+    return { apps: Object.assign({}, e.apps, { pp: (u && u.apps && u.apps.pp) || null }), reCompanies: e.reCompanies, jobRoles: e.jobRoles, apprOf: e.apprOf, companyIds: e.companyIds, roles: e.roles, roleUntil: ends[0] || null };
+  }
+  function stableJson(v) { if (Array.isArray(v)) return "[" + v.map(stableJson).join(",") + "]"; if (v && typeof v === "object") return "{" + Object.keys(v).sort().filter(function (k) { return v[k] !== undefined; }).map(function (k) { return JSON.stringify(k) + ":" + stableJson(v[k]); }).join(",") + "}"; return JSON.stringify(v == null ? null : v); }
+  function roleDiff(u) { var p = rolePatch(u), out = {}; Object.keys(p).forEach(function (k) { if (stableJson(p[k]) !== stableJson(u[k] == null ? null : u[k])) out[k] = p[k]; }); return out; }
+  /* The person's own page: a temporary role that ended stops at once, even before an admin's page updates the record. */
+  function withRoles(u) { if (!u || !usesRoles(u) || !S.roleDefsOk) return u; return Object.assign({}, u, rolePatch(u)); }
+  /* Admins' pages keep every record in step with its roles. */
+  var roleSweepT = 0;
+  function roleSweep() {
+    clearTimeout(roleSweepT);
+    roleSweepT = setTimeout(function () {
+      if (!S.isAdmin || S._adm || !S.roleDefsOk || !S.users || S.mode === "demo") return;
+      Object.keys(S.users).forEach(function (k) {
+        var u = S.users[k]; if (!usesRoles(u)) return; var d = roleDiff(u); if (!Object.keys(d).length) return;
+        d.updatedAt = Date.now(); d.rolesBy = meId();
+        retry(function () { return S.db.doc("users/" + u.id).update(d); }).catch(function () {});
+      });
+    }, 400);
+  }
+  setInterval(function () { if (S.roleDefsOk) { roleSweep(); if (S.myUser && usesRoles(S.loginUser || S.myUser)) { var was = stableJson(S.myUser.jobRoles) + stableJson(S.myUser.companyIds); syncMyUser(); if (stableJson(S.myUser.jobRoles) + stableJson(S.myUser.companyIds) !== was) renderNav(); } } }, 60000);
+  function subRoleDefs() {
+    if (S.rdSub) return;
+    S.rdSub = S.db.collection("roledefs").onSnapshot(function (snap) {
+      var m = {}; snap.docs.forEach(function (d) { var r = Object.assign({}, d.data() || {}); r.id = d.id; m[d.id] = r; });
+      S.roleDefs = m; S.roleDefsOk = true;
+      if (!S.isAdmin && (S.loginUser || S.profiles)) syncMyUser();
+      roleSweep();
+      if (S.tab === "Roles" && !$("secRoles").hidden) renderRoles();
+      if (S.userEditing && S.userEditing.assign) paintAssign();
+    }, function () { S.roleDefs = S.roleDefs || {}; });
+  }
+  function roleName(id) { var r = S.roleDefs && S.roleDefs[id]; return r ? r.name : "Deleted role"; }
+  function roleText(u) { return rolesOfUser(u).map(function (a) { return roleName(a.id) + (a.until ? (roleOn(a) ? " (until " + fmtDate(a.until) + ")" : " (ended " + fmtDate(a.until) + ")") : ""); }).join(", "); }
+  function roleUsers(id, onlyOn) { return Object.keys(S.users || {}).map(function (k) { return S.users[k]; }).filter(function (u) { return u.active !== false && rolesOfUser(u).some(function (a) { return a.id === id && (!onlyOn || roleOn(a)); }); }); }
+  function roleList() { return Object.keys(S.roleDefs || {}).map(function (k) { return S.roleDefs[k]; }).sort(function (a, b) { return natCmp(a.name, b.name); }); }
+  function renderRoles() {
+    var t = $("rlList"); t.textContent = ""; var rs = roleList();
+    var th = el("thead"), hr = el("tr"); ["Role", "Description", "Jobs", "Companies", "People"].forEach(function (h, i) { hr.appendChild(el("th", i === 4 ? { class: "r" } : null, h)); }); hr.appendChild(el("th")); th.appendChild(hr); t.appendChild(th);
+    var tb = el("tbody");
+    if (!rs.length) { var er = el("tr"); er.appendChild(el("td", { colspan: "6", class: "empty" }, "No roles yet. Make one with New Role, then give it to people under Users.")); tb.appendChild(er); }
+    rs.forEach(function (r) {
+      var tr = el("tr"), n = roleUsers(r.id, true).length, chiefOnly = (r.jobRoles || []).length === 1 && r.jobRoles[0] === "chiefacct";
+      var a = el("td", { "data-label": "Role" }); a.appendChild(el("b", null, r.name)); tr.appendChild(a);
+      tr.appendChild(el("td", { class: "desc", "data-label": "Description" }, r.description || ""));
+      tr.appendChild(el("td", { "data-label": "Jobs" }, jobsText(r.jobRoles) + ((r.jobRoles || []).indexOf("approver") >= 0 && (r.apprOf || []).length ? " (1st approver of " + r.apprOf.map(function (k) { return APPR_OF.filter(function (x) { return x[0] === k; })[0][2].toLowerCase(); }).join(", ") + ")" : "")));
+      var ct = el("td", { "data-label": "Companies" }); if (chiefOnly) ct.textContent = "Every company"; else ct.appendChild(companyTags(r.companyIds)); tr.appendChild(ct);
+      tr.appendChild(el("td", { class: "r num", "data-label": "People" }, String(n)));
+      var ac = el("td", { class: "c-act" }), eb = el("button", { class: "btn", type: "button" }, "Edit"); eb.addEventListener("click", function () { openRoleForm(r.id); }); ac.appendChild(eb); tr.appendChild(ac);
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+  }
+  /* The person-only parts of the user form are hidden while it edits a role. */
+  function markUserForm() {
+    if (markUserForm.done) return; markUserForm.done = true;
+    ["uAccF", "uPinF", "uLinkF", "uMailF", "uPwF", "uApprF", "uObWrap", "uRoleF"].forEach(function (id) { var x = $(id); if (x) x.classList.add("ponly"); });
+    [$("usLoc").closest(".f"), $("usDept").closest(".f"), $("uAppPp").closest("label"), document.querySelector("#secUser .uapp-pp")].forEach(function (x) { if (x) x.classList.add("ponly"); });
+  }
+  function openRoleForm(id) {
+    var src = id ? S.roleDefs[id] : { apps: { bv: true, mnt: true }, jobRoles: [], companyIds: [] }; if (!src) return;
+    markUserForm(); $("secUser").setAttribute("data-mode", "role");
+    S.userEditing = { uid: id || newId("rl"), mode: "role", isNew: !id, link: "" }; userErrors();
+    $("userTitle").textContent = id ? "Edit Role: " + src.name : "New Role";
+    $("userSub").textContent = "Tick what people with this role may do. Everyone who has it changes as soon as you save.";
+    $("userSave").textContent = id ? "Save role" : "Add role"; $("backUser").textContent = "Back to Roles";
+    $("uRoleDel").hidden = !id;
+    $("uDesc").value = src.description || ""; $("uNameL").textContent = "Role name";
+    fillUserForm(src, src.roles || null, null);
+    $("uObWrap").hidden = true; lockAccess(false);
+    show("secUser"); $("uName").focus();
+  }
+  function saveRole() {
+    var E = S.userEditing; if (S.busy || !E) return; userErrors();
+    var name = $("uName").value.trim().replace(/\s+/g, " "), cos = readChecks($("uCos")), roles = readRoleGrid(), ok = true;
+    Object.keys(roles).forEach(function (k) { if (cos.indexOf(k) < 0) delete roles[k]; });
+    if (!name) { $("uEName").textContent = "Enter the role's name."; $("uEName").hidden = false; ok = false; }
+    else if (roleList().some(function (r) { return r.id !== E.uid && r.name.toLowerCase() === name.toLowerCase(); })) { $("uEName").textContent = "There is already a role called " + name + "."; $("uEName").hidden = false; ok = false; }
+    var ma = readApps(), jobs = readChecks($("uJobs")), chiefOnly = jobs.length === 1 && jobs[0] === "chiefacct";
+    var apps = { bv: ma.bv, mnt: ma.mnt, re: ma.re, bnv: ma.bnv, chm: ma.chm, wb: $("uAppWb").checked };
+    $("uEApps").hidden = true; if (!ma.bv && !apps.wb) { $("uEApps").textContent = "Give at least one app."; $("uEApps").hidden = false; ok = false; }
+    $("uJobsE").textContent = "Choose at least one job."; if (ma.bv && !jobs.length) { $("uJobsE").hidden = false; ok = false; }
+    if (jobsClash(jobs)) { $("uJobsE").textContent = CLASH_MSG; $("uJobsE").hidden = false; ok = false; }
+    else if (rolesClash(roles).length) { $("uJobsE").textContent = "For " + rolesClash(roles).map(coLabel).join(", ") + ", this role both enters purchases and approves. Untick Approval or the purchase steps there."; $("uJobsE").hidden = false; ok = false; }
+    if (jobs.indexOf("recorder") >= 0 && jobs.indexOf("approver") >= 0) { $("uJobsE").textContent = "An Approval Recorder records others' approvals and can't also be an Approver. Untick one."; $("uJobsE").hidden = false; ok = false; }
+    if (ma.bv && !cos.length && !chiefOnly) { $("uECos").hidden = false; ok = false; }
+    var needDiv = ma.bv && jobs.some(function (j) { return ["purchaser", "vmaker", "accountant", "financier", "solar"].indexOf(j) >= 0; }) && !chiefOnly;
+    $("uEDiv").hidden = true; if (needDiv && !(ma.mnt || ma.re || ma.bnv || ma.chm)) { $("uEDiv").hidden = false; ok = false; }
+    var apOf = jobs.indexOf("approver") >= 0 ? readChecks($("uApOf")) : null; $("uEApOf").hidden = true; if (apOf && !apOf.length) { $("uEApOf").hidden = false; ok = false; }
+    if (!ok) return;
+    /* A role that would give someone both Purchaser and Approver, with their other roles, is refused. */
+    var trial = Object.assign({}, S.roleDefs); trial[E.uid] = { id: E.uid, jobRoles: jobs }; var clash = Object.keys(S.users || {}).map(function (k) { return S.users[k]; }).filter(function (u) {
+      if (!rolesOfUser(u).some(function (a) { return a.id === E.uid && roleOn(a); })) return false;
+      var js = {}; rolesOfUser(u).forEach(function (a) { if (a.id === E.uid || roleOn(a)) ((trial[a.id] || {}).jobRoles || []).forEach(function (j) { js[j] = 1; }); }); return js.purchaser && js.approver;
+    });
+    if (clash.length) { $("uJobsE").textContent = "With their other roles, " + clash.map(function (u) { return u.name; }).join(", ") + " would be both Purchaser and Approver. Change their roles first."; $("uJobsE").hidden = false; return; }
+    var now = Date.now(), doc = { name: name, description: $("uDesc").value.trim(), apps: apps, reCompanies: !!(ma.re && $("uReCo").checked), jobRoles: jobs, apprOf: apOf, companyIds: chiefOnly ? [] : cos, roles: chiefOnly ? {} : roles, updatedAt: now, by: meId() };
+    if (E.isNew) { doc.createdAt = now; doc.createdBy = meId(); }
+    S.busy = true; $("userSave").disabled = true;
+    retry(function () { return E.isNew ? S.db.doc("roledefs/" + E.uid).set(doc) : S.db.doc("roledefs/" + E.uid).update(doc); })
+      .then(function () { var n = roleUsers(E.uid, true).length; toast((E.isNew ? name + " is added." : name + " is saved.") + (n ? " " + n + (n === 1 ? " person has" : " people have") + " it and change" + (n === 1 ? "s" : "") + " with it." : " Give it to people under Users.")); backToRoles(); }, function (e) { toast(explain(e)); })
+      .then(function () { S.busy = false; $("userSave").disabled = false; });
+  }
+  function deleteRole() {
+    var E = S.userEditing; if (!E || E.mode !== "role" || E.isNew || S.busy) return;
+    var on = roleUsers(E.uid, true); if (on.length) { toast("Take this role away from " + on.map(function (u) { return u.name; }).join(", ") + " first (Users, Edit)."); return; }
+    if (!armed($("uRoleDel"))) return;
+    S.busy = true;
+    var tidy = roleUsers(E.uid, false).map(function (u) { return retry(function () { return S.db.doc("users/" + u.id).update({ roleIds: rolesOfUser(u).filter(function (a) { return a.id !== E.uid; }), updatedAt: Date.now() }); }); });
+    Promise.all(tidy).then(function () { return retry(function () { return S.db.doc("roledefs/" + E.uid).delete(); }); })
+      .then(function () { toast("Role deleted."); backToRoles(); }, function (e) { toast(explain(e)); }).then(function () { S.busy = false; });
+  }
+  function backToRoles() { S.userEditing = null; $("secUser").removeAttribute("data-mode"); renderRoles(); show("secRoles"); }
+  /* On a person: the roles they hold. With any role, the access below comes from the roles and is locked. */
+  function paintAssign() {
+    var E = S.userEditing; if (!E || !E.assign || E.mode === "role") return;
+    var box = $("uRoleRows"); box.textContent = "";
+    E.assign.forEach(function (a, i) {
+      var on = roleOn(a), row = el("div", { class: "rlrow" + (on ? "" : " ended") });
+      row.appendChild(el("b", null, roleName(a.id)));
+      var mode = el("select", { class: "field", "aria-label": "How long " + roleName(a.id) + " lasts" }); fillSelect(mode, [["", "For good"], ["until", "Until a date"]], a.until ? "until" : "");
+      row.appendChild(mode);
+      var dw = el("span", { class: "rldate" }), db = dateBox("uRu_" + i, a.until || "", { min: todayYmd(), label: "Last day with " + roleName(a.id) }); dw.appendChild(db); dw.hidden = !a.until && mode.value !== "until"; row.appendChild(dw);
+      if (a.until) row.appendChild(el("span", { class: "tsub" }, on ? "Temporary: ends after " + fmtDate(a.until) : "Ended after " + fmtDate(a.until)));
+      var rm = el("button", { class: "btn danger", type: "button" }, "Remove"); row.appendChild(rm);
+      mode.addEventListener("change", function () { if (mode.value === "until") { dw.hidden = false; db.click(); } else { a.until = null; paintAssign(); applyAssign(); } });
+      db.addEventListener("change", function () { a.until = parseDate(db.value) || null; paintAssign(); applyAssign(); });
+      rm.addEventListener("click", function () { E.assign.splice(i, 1); paintAssign(); applyAssign(); });
+      box.appendChild(row);
+    });
+    var add = $("uRoleAdd"), have = {}; E.assign.forEach(function (a) { have[a.id] = 1; });
+    var opts = roleList().filter(function (r) { return !have[r.id]; }).map(function (r) { return [r.id, r.name]; });
+    fillSelect(add, [["", opts.length ? "Add a role…" : roleList().length ? "Every role is given" : "No roles yet (Settings, Roles)"]].concat(opts), ""); add.disabled = !opts.length;
+    $("uRoleH").textContent = E.assign.length ? "The apps, divisions, jobs, companies and steps below come from these roles. Change a role under Settings, Roles; remove every role to set them by hand." : "Give one or more roles, for good or until a date. Or leave this empty and set the access below by hand.";
+  }
+  function applyAssign() {
+    var E = S.userEditing; if (!E || !E.assign) return; $("uERole").hidden = true;
+    if (!E.assign.length) { lockAccess(false); return; }
+    var e = roleEff(E.assign), pp = $("uAppPp").checked ? { role: $("uPpRole").value || "floor", region: $("uPpRegion").value || null } : null;
+    var cur = { name: $("uName").value, locationId: usLoc.value(), deptId: usDept.value(), defaultApproverId: $("uAppr").value || "", apps: Object.assign({}, e.apps, { pp: pp }), reCompanies: e.reCompanies, jobRoles: e.jobRoles, apprOf: e.apprOf, companyIds: e.companyIds };
+    fillUserForm(cur, e.roles, E.balUid); lockAccess(true);
+    if (jobsClash(e.jobRoles)) { $("uERole").textContent = "Together these roles make the person both Purchaser and Approver. One person can't be both: remove one role."; $("uERole").hidden = false; }
+  }
+  function lockAccess(on) {
+    var boxes = [$("uDivF"), $("uJobs"), $("uApOfF"), $("uCos"), $("uRoles")];
+    boxes.forEach(function (b) { Array.prototype.forEach.call(b.querySelectorAll("input"), function (i) { i.disabled = on; }); });
+    $("uAppBv").disabled = on; $("uAppWb").disabled = on;
+    ["uAppsF", "uDivF", "uApOfF"].forEach(function (id) { $(id).classList.toggle("rlock", on); }); [$("uJobs"), $("uCos")].forEach(function (b) { var f = b.closest(".f"); if (f) f.classList.toggle("rlock", on); }); var rs = document.querySelector("#secUser .uresp"); if (rs) rs.classList.toggle("rlock", on);
   }
   /* Move a person added without a login onto a real sign-in: their user record, cash balances and every record made for them. */
   var UID_FIELDS = ["ownerId", "preparedBy", "preparedById", "submittedBy", "createdBy", "uid", "receivedBy", "requestedBy", "uploadedBy", "generatedBy", "printedBy", "updatedBy", "by"];
@@ -2583,6 +2787,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     S.db.collection("locations").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { var l = Object.assign({}, d.data() || {}); l.id = d.id; m[d.id] = l; }); S.locations = m; settle("l"); }, subFail("locations"));
     S.db.doc("requests/" + S.me.id).onSnapshot(function (snap) { S.myReq = snap.exists ? snap.data() : null; settle("r"); }, subFail("request"));
     S.db.doc("users/" + S.me.id).onSnapshot(function (snap) { S.loginUser = snap.exists ? snap.data() : null; syncMyUser(); settle("u"); }, subFail("user"));
+    subRoleDefs();
     /* Profiles: people the admin set to work under this login. */
     /* People with the Approver job, so anyone can name them as the approver of an entry. */
     S.db.collection("users").where("jobRoles", "array-contains", "approver").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data() || {}; }); S.approvers = m; }, function () {});
@@ -2610,7 +2815,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function profileList() { return Object.keys(S.profiles).map(function (k) { return S.profiles[k]; }).sort(function (a, b) { return natCmp(a.name, b.name); }); }
   function syncMyUser() {
     if (S.actId && !S.profiles[S.actId]) { S.actId = ""; S.picked = false; }
-    S.myUser = S.actId ? S.profiles[S.actId] : S.loginUser;
+    S.myUser = withRoles(S.actId ? S.profiles[S.actId] : S.loginUser);
     /* A Chief Accountant sees Show Activity, so they need everyone's names and jobs. */
     if (!S.isAdmin && isChief(S.myUser) && !S.chiefSub) S.chiefSub = S.db.collection("users").onSnapshot(function (snap) { var m = {}; snap.docs.forEach(function (d) { var u = Object.assign({}, d.data() || {}); u.id = d.id; m[d.id] = u; }); S.chiefUsers = m; if (S.tab === "Activity" && !$("secActivity").hidden) renderActivity(); }, function () {});
   }
@@ -15720,7 +15925,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("fName").addEventListener("input", function () { $("eName").hidden = true; this.classList.remove("bad"); });
     $("fShort").addEventListener("input", function () { $("eShort").hidden = true; this.classList.remove("bad"); });
     coLoc = makeLocPicker("co"); usLoc = makeLocPicker("us"); usDept = makeLocPicker("us", "Dept");
-    $("backUser").addEventListener("click", backToUsers); $("userCancel").addEventListener("click", backToUsers); $("userSave").addEventListener("click", saveUser); $("uAcc").addEventListener("change", onAccChange); $("rqJobSave").addEventListener("click", saveMyJobs); $("uPinReset").addEventListener("click", function () { if (S.userEditing) { S.userEditing.resetPin = true; $("uPin").value = ""; onAccChange(); } }); $("uAddLogin").addEventListener("click", function () { openUserForm(null, "login"); }); $("uAddOff").addEventListener("click", function () { openUserForm(null, "new"); }); ["input", "change"].forEach(function (ev) { document.addEventListener(ev, function (e) { if (e.target && e.target.closest && e.target.closest("#secAdv") && ADV.aiSpecs) setTimeout(function () { paintAiFlags(ADV.aiSpecs); }, 0); }, true); }); $("uLink").addEventListener("change", onUserLink);
+    $("backUser").addEventListener("click", backToUsers); $("userCancel").addEventListener("click", backToUsers); $("userSave").addEventListener("click", saveUser); $("uAcc").addEventListener("change", onAccChange); $("rqJobSave").addEventListener("click", saveMyJobs); $("uPinReset").addEventListener("click", function () { if (S.userEditing) { S.userEditing.resetPin = true; $("uPin").value = ""; onAccChange(); } }); $("uAddLogin").addEventListener("click", function () { openUserForm(null, "login"); }); $("uAddOff").addEventListener("click", function () { openUserForm(null, "new"); }); ["input", "change"].forEach(function (ev) { document.addEventListener(ev, function (e) { if (e.target && e.target.closest && e.target.closest("#secAdv") && ADV.aiSpecs) setTimeout(function () { paintAiFlags(ADV.aiSpecs); }, 0); }, true); }); $("uLink").addEventListener("change", onUserLink); $("rlNew").addEventListener("click", function () { openRoleForm(null); }); $("uRoleDel").addEventListener("click", deleteRole); $("uRoleAdd").addEventListener("change", function () { var E = S.userEditing, v = $("uRoleAdd").value; if (!E || !E.assign || !v) return; E.assign.push({ id: v, until: null }); paintAssign(); applyAssign(); });
     $("uName").addEventListener("input", function () { $("uEName").hidden = true; this.classList.remove("bad"); });
     $("rqSend").addEventListener("click", sendRequest);
     $("rqName").addEventListener("input", function () { $("rqEName").hidden = true; });
@@ -15882,10 +16087,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           else if (S.tab === "Companies" && S.loaded && !S.editing && $("secStmt").hidden) renderList();
           else onData();
         }
+        subRoleDefs();
         S.db.collection("users").onSnapshot(function (snap) {
           var m = {}; snap.docs.forEach(function (d) { var u = Object.assign({}, d.data() || {}); u.id = d.id; m[d.id] = u; });
           S.users = m; if (S._adm && S.actId) { if (S.users[S.actId]) S.myUser = S.users[S.actId]; else exitViewAs(); }
-          adminRefresh();
+          adminRefresh(); roleSweep();
         }, function (e) { toast("The user list stopped updating (" + ((e && e.code) || "unknown") + "). Reload the page."); });
         S.db.collection("departments").onSnapshot(function (snap) {
           var m = {}; snap.docs.forEach(function (d) { var x = Object.assign({}, d.data() || {}); x.id = d.id; m[d.id] = x; });
@@ -15927,7 +16133,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
      Masters (companies, vendors, ledgers, GST / TDS, banks and the rest) in Demo are Live's with Demo's own changes on
      top: Demo reads both and writes only to its own copy (demo__…); a Live master removed in Demo is only hidden there.
      Entries (bills, vouchers, payments, reports…) are kept apart. Nothing done in Demo reaches Live. ---- */
-  var NS_SHARED = { users: 1, admins: 1, requests: 1, prefs: 1, sigs: 1 };
+  var NS_SHARED = { users: 1, admins: 1, requests: 1, prefs: 1, sigs: 1, roledefs: 1 };
   var NS_LAYER = { companies: 1, locations: 1, departments: 1, ledgers: 1, taxes: 1, chqtpl: 1, regions: 1, banknames: 1, vendors: 1, bankacct: 1, staff: 1, payees: 1, vpeople: 1, tpls: 1, balances: 1, rates: 1, solar_consumers: 1, solar_rates: 1 };
   function nsTop(p) { return String(p).split("/")[0]; }
   function nsPath(p) { if (S.mode !== "demo") return p; return NS_SHARED[nsTop(p)] ? p : "demo__" + p; }

@@ -246,6 +246,18 @@ provides the same calls, so the app code did not need rewriting:
   (`scrollbar-gutter: stable both-edges`), so nothing shifts or shrinks when a scrollbar appears;
   scrolling boxes inside pages (pop-ups, lists, file viewers) keep a fixed slot too. Tables use plain
   headings, light row banding and right-aligned numbers.
+- **Roles** (Settings › Roles, admins): a role is a named set of access: apps (Bills family, W/B Costing),
+  divisions, jobs, Approver Of, companies and the steps for each company (the user form's own fields,
+  with a description). People get one or more roles under Users › Edit, each **for good** or **until a
+  date** (the last day it works). While a person has any role, their access is the sum of their current
+  roles: the form shows it locked, and it is written onto their user record (`roleIds`, `roleUntil`, plus
+  the usual `apps`, `jobRoles`, `apprOf`, `companyIds`, `roles`), so every other screen and the KKSK Group
+  home read it as before. Name, location, department, default approver and Production Planning stay per
+  person. Saving a role changes everyone who has it; an admin's open page brings records up to date
+  within a minute when a role changes or a temporary role ends, and the person's own page stops a
+  temporary role on its last day even before that. Roles that together give Purchaser and Approver are
+  refused. A role in use can't be deleted. People without roles keep access set by hand. Roles live in
+  `roledefs/*`, shared by Demo and Live.
 - **Who can get in**: anyone can create an account with any email. Until an admin approves their
   request in the app, the database only shows them what the "Ask for Access" screen needs
   (company, location and department lists, and their own request). Approved = an active

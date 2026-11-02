@@ -803,6 +803,24 @@ select.rladd{max-width:320px}
 .hmapps a:hover{background:var(--soft)}.hmapps a.on{font-weight:600;color:var(--brand-text)}
 .hmapps .n{color:var(--muted);font-variant-numeric:tabular-nums}.hmapps .n.has{color:var(--bad);font-weight:600}
 @media (max-width:760px){.top .hmenu{order:3;margin-left:auto}.top .titles{flex:1 1 0;min-width:0}.top .me{order:5}}
+/* Payment Entry: Bills / Vouchers with the company on one line; To Pay / Paid, Pay Now / Record Payment and the dues on the next */
+.mkrow,.mkbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin:0 0 14px}
+.mkrow>.seg,.mkbar>.seg{margin:0}
+.mkrow .mkco-sel{width:auto;min-width:200px;margin-left:auto}
+.mkrow .mkstats{display:flex;flex-wrap:wrap;gap:10px;margin:0;flex:1 1 auto}
+.mkrow .mkstats .stat{flex:0 1 auto;min-width:170px;padding:7px 16px;box-shadow:none}
+.mkrow .mkstats .stat .v{font-size:calc(17px*var(--ts,1))}
+.mkbar .dueseg .tsub{display:inline;margin-left:4px;font-size:inherit;opacity:.8}
+.mkbar .dueseg{flex:0 1 auto;max-width:100%;overflow-x:auto;scrollbar-width:none}.mkbar .dueseg::-webkit-scrollbar{display:none}
+.mkbar .dueseg button{white-space:nowrap}
+@media (max-width:760px){
+  .mkrow>.seg{flex:1 1 auto}.mkrow .mkco-sel{flex:1 1 100%;min-width:0;margin-left:0}
+  .mkbar>.seg{flex:1 1 100%;display:flex}.mkbar>.seg button{flex:1 1 auto}
+  .mkbar .dueseg{display:flex;flex-wrap:nowrap}.mkbar .dueseg button{flex:0 0 auto}
+  .mkrow .mkstats{flex:1 1 100%;order:3}.mkrow .mkstats .stat{flex:1 1 0;min-width:0}
+}
+/* Phones: a long page description folds to three lines; tap it to read the rest. */
+@media (max-width:760px){.head .sub{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}.head .sub.open{display:block;-webkit-line-clamp:unset}}
 /* Full-width pages (Nov 2026): the page uses the whole screen on big monitors, small monitors and phones alike.
    The scrollbar has its own fixed slot with an equal one on the left, so nothing moves or shrinks when a scrollbar appears. */
 /* The bars run edge to edge; the scrollbar keeps a fixed slot on the right, and the same width is added on the left of the
@@ -1253,14 +1271,17 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
 
   <section id="secMark" hidden>
     <div class="head">
-      <div><h2>Payment Entry</h2><p class="sub">Everything approved and not yet paid. <b>Plan for Payment</b>: tick bills by vendor (earliest due first), set what to pay now, choose Cheque, NEFT / RTGS or Cash and A/C Payee, then print every cheque in one go with running numbers. <b>Already Paid</b>: record a payment made outside the app (cheque, NEFT / RTGS, net banking, credit card or cash) with its cheque number or transaction ID. Cash stays under ₹10,000 a payee a day (Freight &amp; Transport vouchers: up to ₹35,000; cheques have no limit).</p></div>
-      <span class="grow"></span>
-      <select class="field" id="mkCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
+      <div class="grow"><h2>Payment Entry</h2><p class="sub">Everything approved and not yet paid, vendor by vendor (opening balance first, then the earliest due). <b>Pay Now</b>: tick what to pay, set the amount, choose Cheque, NEFT / RTGS or Cash, then print every cheque in one go with running numbers (A/C Payee is chosen there). <b>Record Payment</b>: record a payment already made outside the app (cheque, NEFT / RTGS, net banking, credit card or cash) with its cheque number or transaction ID. Cash stays under ₹10,000 a payee a day (Freight &amp; Transport vouchers: up to ₹35,000); cheques have no limit.</p></div>
     </div>
-    <div class="seg" role="tablist" aria-label="Payments for"><button type="button" role="tab" id="mkSideV" aria-selected="true">Bills <span id="mkNV"></span></button><button type="button" role="tab" id="mkSideC" aria-selected="false">Vouchers <span id="mkNC"></span></button><button type="button" role="tab" id="mkSideA" aria-selected="false" hidden>Advances <span id="mkNA"></span></button></div>
-    <div class="stats" id="mkStats"></div>
-    <div class="seg" role="tablist" aria-label="Show"><button type="button" role="tab" id="mkTabPay" aria-selected="true">To pay <span id="mkN"></span></button><button type="button" role="tab" id="mkTabDone" aria-selected="false">Paid, last 14 days <span id="mkDN"></span></button></div>
-    <div id="mkPay"><div class="seg" role="tablist" aria-label="How" id="mkHow" style="margin-bottom:12px"><button type="button" role="tab" id="mkHowPlan" aria-selected="true">Plan for Payment</button><button type="button" role="tab" id="mkHowPaid" aria-selected="false">Already Paid</button></div><div id="mkList"></div></div>
+    <div class="mkrow"><div class="seg" role="tablist" aria-label="Payments for"><button type="button" role="tab" id="mkSideV" aria-selected="true">Bills <span id="mkNV"></span></button><button type="button" role="tab" id="mkSideC" aria-selected="false">Vouchers <span id="mkNC"></span></button><button type="button" role="tab" id="mkSideA" aria-selected="false" hidden>Advances <span id="mkNA"></span></button></div>
+      <div class="stats mkstats" id="mkStats"></div>
+      <select class="field mkco-sel" id="mkCo" aria-label="Filter by company"></select></div>
+    <div class="mkbar">
+      <div class="seg" role="tablist" aria-label="Show"><button type="button" role="tab" id="mkTabPay" aria-selected="true">To Pay <span id="mkN"></span></button><button type="button" role="tab" id="mkTabDone" aria-selected="false">Paid, Last 14 Days <span id="mkDN"></span></button></div>
+      <div class="seg" role="tablist" aria-label="How" id="mkHow"><button type="button" role="tab" id="mkHowPlan" aria-selected="true">Pay Now</button><button type="button" role="tab" id="mkHowPaid" aria-selected="false">Record Payment</button></div>
+      <div class="seg dueseg" role="tablist" aria-label="When it falls due" id="mkBuckets"></div>
+    </div>
+    <div id="mkPay"><div id="mkList"></div></div>
     <div id="mkDoneWrap" hidden>
       <div class="filters"><input class="field" id="mkQ" type="search" placeholder="Search vendor, reference or name" aria-label="Search payments" autocomplete="off"></div>
       <p class="sub" style="margin:-4px 0 10px">Each entry can be changed or undone for 3 days by the person who entered it. After that only the admin can, with a reason.</p>
@@ -1648,8 +1669,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   function initialsOf(n) { var w = String(n || "").trim().split(/\s+/).filter(Boolean); return ((w[0] || "?").charAt(0) + (w.length > 1 ? w[w.length - 1].charAt(0) : "")).toUpperCase(); }
   /* The round picture (or initials) beside the name at the top. */
-  /* Viewing as someone shows the app in their look (mode, colour, text size); the admin's own look comes back on leaving. */
+  /* Viewing as someone keeps the admin's own look (mode, colour, text size); only their picture and name are shown. */
   function vaLook() {
+    return;
     if (!S._adm || !S.actId || S.vaLookFor === S.actId) return; var l = (S.vaLooks || {})[S.actId]; if (!l) return;
     if (!S.vaOwnLook) S.vaOwnLook = S.prefs; S.vaLookFor = S.actId;
     applyPrefs(Object.assign({}, PREF0, l, { avatar: S.vaOwnLook.avatar }));
@@ -3077,6 +3099,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     });
   }
   function hmSignOut() { hmClose(); if (window.bvAccount && window.bvAccount.signOut) window.bvAccount.signOut(); else if (window.bvSupabase) window.bvSupabase.auth.signOut(); }
+  document.addEventListener("click", function (e) { var t = e.target && e.target.closest && e.target.closest(".head .sub"); if (t && window.matchMedia("(max-width:760px)").matches && !e.target.closest("a,button")) t.classList.toggle("open"); });
   function hmWire() {
     if (hmWire.done || !$("hdrMenu")) return; hmWire.done = true;
     $("hmenu").hidden = false;
@@ -7985,7 +8008,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function instApproved(a, i) { var t = 0, any = false; instReports(a, i).forEach(function (r) { if (stageOf(r) !== "payment") return; any = true; t += r.apprAmt != null ? Number(r.apprAmt) || 0 : Number(r.total) || 0; }); return any ? round2(t) : 0; }
   function instPayNow(a, i) { var paid = advPaid(a.id, i), ap = instApproved(a, i); return round2(Math.max(0, Math.min(instAmt(a, i) - paid, ap - paid))); }
   /* When something falls due: overdue and the next 7 days are paid now; later dues are shown week by week. */
-  var DUE_BUCKETS = [["now", "Due in 7 days", "Overdue, and due by "], ["w2", "In 1–2 weeks", ""], ["w3", "In 2–3 weeks", ""], ["w4", "In 3–4 weeks", ""], ["later", "Later", ""]];
+  var DUE_BUCKETS = [["all", "All", ""], ["now", "Due in 7 days", "Overdue, and due by "], ["w2", "In 1–2 weeks", ""], ["w3", "In 2–3 weeks", ""], ["w4", "In 3–4 weeks", ""], ["later", "Later", ""]];
   function dueBucket(d) { var n = ymdOk(d) ? daysBetween(todayYmd(), d) : 0; return n <= 7 ? "now" : n <= 14 ? "w2" : n <= 21 ? "w3" : n <= 28 ? "w4" : "later"; }
   function mkRows(cid, side) {
     var rows = [], t = todayYmd();
@@ -8076,25 +8099,27 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (side === "advances") { renderMarkAdv(); return; }
     var allRows = mkRows(sel.value, side), box = $("mkList"); MK.stale = false;
     $("mkHowPlan").setAttribute("aria-selected", MK.how !== "paid" ? "true" : "false"); $("mkHowPaid").setAttribute("aria-selected", MK.how === "paid" ? "true" : "false");
+    $("mkHow").hidden = MK.view === "done";
+    /* When it falls due: All, the next 7 days (with anything overdue), then week by week. Bills only; in Pay Now and Record Payment. */
+    var bk = side === "vouchers" ? "all" : MK.bucket || "all", bsum = {}; DUE_BUCKETS.forEach(function (b) { bsum[b[0]] = { n: 0, t: {} }; });
+    allRows.forEach(function (x) { [x.bucket, "all"].forEach(function (k) { var q = bsum[k]; if (q) { q.n++; curAdd(q.t, x.cur, x.pay); } }); });
+    var bw = $("mkBuckets"); bw.textContent = ""; bw.hidden = side === "vouchers" || MK.view === "done";
+    DUE_BUCKETS.forEach(function (b) {
+      var q = bsum[b[0]]; if (b[0] !== "all" && b[0] !== "now" && !q.n) return;
+      var bt = el("button", { type: "button", role: "tab", "aria-selected": bk === b[0] ? "true" : "false" });
+      bt.appendChild(document.createTextNode(b[1])); if (q.n) bt.appendChild(el("span", { class: "tsub" }, " " + curSum(q.t)));
+      bt.addEventListener("click", function () { MK.bucket = b[0]; renderMark(); }); bw.appendChild(bt);
+    });
+    var inBk = function (x) { return bk === "all" || x.bucket === bk; };
     if (MK.how !== "paid") {
-      var obw = $("mkBuckets"); if (obw) obw.hidden = true;
+      allRows = allRows.filter(inBk);
       $("mkSideV").setAttribute("aria-selected", side === "vendors" ? "true" : "false"); $("mkSideC").setAttribute("aria-selected", side === "vouchers" ? "true" : "false");
       var nv0 = mkRows(sel.value, "vendors").length, nc0 = mkRows(sel.value, "vouchers").length; $("mkNV").textContent = nv0 ? "(" + nv0 + ")" : ""; $("mkNC").textContent = nc0 ? "(" + nc0 + ")" : "";
       $("mkTabPay").setAttribute("aria-selected", MK.view !== "done" ? "true" : "false"); $("mkTabDone").setAttribute("aria-selected", MK.view === "done" ? "true" : "false");
       $("mkPay").hidden = MK.view === "done"; $("mkDoneWrap").hidden = MK.view !== "done";
       renderPlan(allRows, box); renderDoneTx(); return;
     }
-    /* Bills: the next 7 days (with anything overdue), then the weeks after. */
-    var bk = side === "vouchers" ? "now" : MK.bucket || "now", bsum = {}; DUE_BUCKETS.forEach(function (b) { bsum[b[0]] = { n: 0, t: {} }; });
-    allRows.forEach(function (x) { var q = bsum[x.bucket]; q.n++; curAdd(q.t, x.cur, x.pay); });
-    var bw = $("mkBuckets"); if (!bw) { bw = el("div", { class: "seg dueseg", role: "tablist", "aria-label": "When it falls due", id: "mkBuckets" }); box.parentNode.insertBefore(bw, box); }
-    bw.textContent = ""; bw.hidden = side === "vouchers";
-    DUE_BUCKETS.forEach(function (b) {
-      var q = bsum[b[0]], bt = el("button", { type: "button", role: "tab", "aria-selected": bk === b[0] ? "true" : "false" });
-      bt.appendChild(document.createTextNode(b[0] === "now" ? "Due in 7 days" : b[1])); if (q.n) bt.appendChild(el("span", { class: "tsub" }, " " + curSum(q.t)));
-      bt.addEventListener("click", function () { MK.bucket = b[0]; renderMark(); }); bw.appendChild(bt);
-    });
-    var rows = allRows.filter(function (x) { return x.bucket === bk; });
+    var rows = allRows.filter(inBk).sort(mkPayeeCmp);
     var nv = mkRows(sel.value, "vendors").filter(function (x) { return x.bucket === "now"; }).length, nc = mkRows(sel.value, "vouchers").length;
     $("mkSideV").setAttribute("aria-selected", side === "vendors" ? "true" : "false"); $("mkSideC").setAttribute("aria-selected", side === "vouchers" ? "true" : "false");
     $("mkNV").textContent = nv ? "(" + nv + ")" : ""; $("mkNC").textContent = nc ? "(" + nc + ")" : "";
@@ -8102,12 +8127,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     rows.forEach(function (x) { curAdd(tot, x.cur, x.pay); }); allRows.forEach(function (x) { var o = mkOverdue(x); if (o > 0.5) curAdd(od, x.cur, o); });
     txList().forEach(function (t) { if (t.kind === "payment" && !!(t.vcrId || t.voucherId) === (side === "vouchers") && canStep("txn", t.companyId) && (!sel.value || t.companyId === sel.value) && ymdOk(t.date) && t.date >= ws) curAdd(wk, t.currency, t.amount); });
     statBoxes($("mkStats"), side === "vouchers" ? [["To pay", curSum(tot), plural(rows.length, "item")], ["Paid this week", curSum(wk), "Since " + fmtDate(ws)]]
-      : [[bk === "now" ? "Due in 7 days" : (DUE_BUCKETS.filter(function (b) { return b[0] === bk; })[0] || [])[1], curSum(tot), bk === "now" ? "With anything overdue, due by " + fmtDate(addDays(todayYmd(), 7)) : plural(rows.length, "item")], ["Of which overdue", curSum(od), "", Object.keys(od).length ? "bad" : ""], ["Paid this week", curSum(wk), "Since " + fmtDate(ws)]]);
+      : [[bk === "all" ? "To pay" : bk === "now" ? "Due in 7 days" : (DUE_BUCKETS.filter(function (b) { return b[0] === bk; })[0] || [])[1], curSum(tot), bk === "now" ? "With anything overdue, due by " + fmtDate(addDays(todayYmd(), 7)) : plural(rows.length, "item")], ["Of which overdue", curSum(od), "", Object.keys(od).length ? "bad" : ""], ["Paid this week", curSum(wk), "Since " + fmtDate(ws)]]);
     $("mkN").textContent = rows.length ? "(" + rows.length + ")" : "";
     $("mkTabPay").setAttribute("aria-selected", MK.view !== "done" ? "true" : "false"); $("mkTabDone").setAttribute("aria-selected", MK.view === "done" ? "true" : "false");
     $("mkPay").hidden = MK.view === "done"; $("mkDoneWrap").hidden = MK.view !== "done";
     box.textContent = "";
-    if (!rows.length) box.appendChild(el("div", { class: "card empty" }, side === "vouchers" ? "No cash voucher payments are waiting. Payable vouchers appear here as soon as the admin approves their Voucher Checking Report." : bk === "now" ? "Nothing approved is due in the next 7 days." + (allRows.length ? " Later dues are under the weeks above." : " Bills appear here as soon as the admin approves their Bill Checking Report.") : "Nothing approved falls due in this week."));
+    if (!rows.length) box.appendChild(el("div", { class: "card empty" }, side === "vouchers" ? "No cash voucher payments are waiting. Payable vouchers appear here as soon as the admin approves their Voucher Checking Report." : bk === "all" ? "Nothing approved is waiting to be paid. Bills appear here as soon as the admin approves their Bill Checking Report." : bk === "now" ? "Nothing approved is due in the next 7 days." + (allRows.length ? " Later dues are under the weeks above." : "") : "Nothing approved falls due in this week."));
     sorted().forEach(function (c) {
       var rs = rows.filter(function (x) { return x.cid === c.id; }); if (!rs.length) return;
       var ct = {}; rs.forEach(function (x) { curAdd(ct, x.cur, x.pay); });
@@ -8134,9 +8159,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (x.type === "vendor") x.items.forEach(function (it, i) { gr.items.push({ key: x.key + "|" + (it.b ? it.b.id : it.kind), row: x, it: it, label: it.kind === "opening" ? "Opening balance" : it.kind === "cn" ? "Credit notes" : "Bill " + (it.b.billNo || ""), sub: it.b ? fmtDate(it.b.billDate) : "", due: it.due, amt: it.amt }); });
       else gr.items.push({ key: x.key, row: x, label: x.type === "inst" ? mkFor(x)[0] : "Voucher " + x.v.voucherNo, sub: x.type === "inst" ? mkFor(x)[1] : (x.v.narration || ""), due: x.due, amt: x.pay });
     });
-    return Object.keys(g).map(function (k) { var gr = g[k]; gr.items.sort(function (a, b) { var oa = a.it && a.it.kind === "opening" ? 0 : 1, ob = b.it && b.it.kind === "opening" ? 0 : 1; return oa - ob || natCmp(a.due, b.due); }); gr.due = gr.items[0] ? gr.items[0].due : ""; return gr; })
-      .sort(function (a, b) { return coCmpId(a.cid, b.cid) || natCmp(a.due, b.due) || natCmp(a.name, b.name); });
+    return Object.keys(g).map(function (k) { var gr = g[k]; gr.items.sort(function (a, b) { var oa = a.it && a.it.kind === "opening" ? 0 : 1, ob = b.it && b.it.kind === "opening" ? 0 : 1; return oa - ob || natCmp(a.due, b.due); }); gr.opening = !!(gr.items[0] && gr.items[0].it && gr.items[0].it.kind === "opening"); gr.due = gr.items[0] ? gr.items[0].due : ""; gr.tname = payeeSortName(gr.vid, gr.name); return gr; })
+      .sort(function (a, b) { return coCmpId(a.cid, b.cid) || natCmp(a.tname, b.tname) || dueKeyG(a).localeCompare(dueKeyG(b)); });
   }
+  /* Order of payees: trade name A to Z, then an opening balance (always the earliest due), then the earliest due date. */
+  function payeeSortName(vid, name) { var v = vid && S.vendors[vid]; return String((v && (v.tradeName || v.name)) || name || "").toLowerCase(); }
+  function dueKeyG(g) { return g.opening ? "0000-00-00" : String(g.due || "9999-99-99"); }
+  function mkPayeeCmp(a, b) { var oa = a.items && a.items[0] && a.items[0].kind === "opening", ob = b.items && b.items[0] && b.items[0].kind === "opening"; return natCmp(payeeSortName(a.vid, mkName(a)), payeeSortName(b.vid, mkName(b))) || (oa === ob ? 0 : oa ? -1 : 1) || natCmp(a.due, b.due); }
   function plAmt(it) { var v = MK.pl.amt[it.key]; var n = v == null || v === "" ? it.amt : num(v); return n == null ? 0 : round2(Math.min(n, it.amt)); }
   /* An amount for the whole vendor is spread over its items in order: opening balance first, then the earliest due. */
   function plSpread(gr, total) {
@@ -8187,17 +8216,17 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var tw = el("div", { class: "list scroll plrows" }); card.appendChild(tw);
       sortTable(tw, "plco_" + c.id, [
         { label: "", cls: "ckcol", cell: function (g, td) { var gc = el("input", { type: "checkbox", "aria-label": "Pay " + g.name }); gc.checked = g.items.every(function (it) { return MK.pl.sel[it.key]; }); gc.indeterminate = !gc.checked && g.items.some(function (it) { return MK.pl.sel[it.key]; }); gc.addEventListener("change", function () { g.items.forEach(function (it) { MK.pl.sel[it.key] = gc.checked; }); renderMark(); }); td.appendChild(gc); } },
-        { label: "Pay to", kind: "co", sort: function (g) { return g.name; }, cell: function (g, td) {
-            td.appendChild(el("b", null, g.name));
+        { label: "Pay to", kind: "co", sort: function (g) { return g.tname + "\u0001" + dueKeyG(g); }, cell: function (g, td) {
+            td.appendChild(el("b", null, g.name)); var tv = g.vid && S.vendors[g.vid]; if (tv && tv.tradeName && tv.tradeName.toLowerCase() !== String(g.name).toLowerCase()) sub(td, tv.tradeName);
             if (g.items.length === 1) { sub(td, g.items[0].label + (g.items[0].sub ? " · " + g.items[0].sub : "")); return; }
             var op = !!MK.pl.open[g.key], lk = el("button", { type: "button", class: "link-btn", style: "display:block;font-size:calc(12px*var(--ts,1))" }, (op ? "Hide" : "Show") + " " + g.items.length + " items");
             lk.addEventListener("click", function () { MK.pl.open[g.key] = !op; renderMark(); }); td.appendChild(lk);
             if (!op) return;
             var ul = el("div", { style: "margin-top:6px;display:grid;gap:6px" });
             g.items.forEach(function (it) { var r = el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" }), c0 = el("input", { type: "checkbox", "aria-label": "Pay " + it.label }); c0.checked = !!MK.pl.sel[it.key]; c0.addEventListener("change", function () { MK.pl.sel[it.key] = c0.checked; renderMark(); });
-              r.appendChild(c0); var t = el("span", { class: "grow" }); t.appendChild(el("span", null, it.label + " · ")); t.appendChild(dueSpan(it.due)); t.appendChild(el("span", { class: "tsub" }, " · " + curMoney(g.cur, it.amt))); r.appendChild(t); r.appendChild(amtBox(it, g)); ul.appendChild(r); });
+              r.appendChild(c0); var t = el("span", { class: "grow" }); t.appendChild(el("span", null, it.label)); if (!(it.it && it.it.kind === "opening")) { t.appendChild(document.createTextNode(" · ")); t.appendChild(dueSpan(it.due)); } t.appendChild(el("span", { class: "tsub" }, " · " + curMoney(g.cur, it.amt))); r.appendChild(t); r.appendChild(amtBox(it, g)); ul.appendChild(r); });
             td.appendChild(ul); } },
-        { label: "Due", sort: function (g) { return g.due || ""; }, cell: function (g, td) { td.appendChild(dueSpan(g.due)); } },
+        { label: "Due", sort: function (g) { return dueKeyG(g); }, cell: function (g, td) { if (g.opening) td.appendChild(el("span", { style: "color:var(--bad);font-weight:600" }, "Opening balance")); else td.appendChild(dueSpan(g.due)); } },
         { label: "Payable", cls: "r num", sort: function (g) { return g.items.reduce(function (s0, it) { return s0 + it.amt; }, 0); }, desc: true, cell: function (g, td) { txt(td, curMoney(g.cur, round2(g.items.reduce(function (s0, it) { return s0 + it.amt; }, 0)))); } },
         { label: "Pay Now", cls: "r", cell: function (g, td) {
             if (g.items.length === 1) { td.appendChild(amtBox(g.items[0], g)); return; }
@@ -8206,7 +8235,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
             t.addEventListener("change", go); t.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); t.blur(); } });
             td.appendChild(t); sub(td, "Opening balance, then earliest due first"); } },
         { label: "Mode", cell: function (g, td) { var md = el("select", { class: "field", style: "width:auto", "aria-label": "How to pay " + g.name }); fillSelect(md, g.cur !== "INR" ? [["neft", "NEFT / RTGS"]] : [["cheque", "Cheque"], ["neft", "NEFT / RTGS"], ["cash", "Cash"]], plMode(g)); md.addEventListener("change", function () { MK.pl.mode[g.key] = md.value; renderMark(); }); td.appendChild(md); } },
-      ], gs, { sortIndex: 2, sortDir: 1, rowClass: function (g) { return plSelTotal(g) > 0.004 ? "" : "skip"; } });
+      ], gs, { sortIndex: 1, sortDir: 1, rowClass: function (g) { return plSelTotal(g) > 0.004 ? "" : "skip"; } });
       box.appendChild(card);
     });
   }
@@ -8277,7 +8306,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* Cancels a cheque: the cheque and its payments are marked cancelled, and the bills go back to the list for a new cheque. */
   function chequeCancel(c) {
     var body = el("div", { class: "mform" }); body.appendChild(tidyField("Why is it cancelled?", tidyBox("cqWhy", "", "note", 200), "For example: wrong amount, spoilt, lost."));
-    popForm("Cancel cheque " + c.no, c.payee + " · " + money(c.amount) + " · " + fmtDate(c.date) + ". Its payments are cancelled and the bills come back to Plan for Payment.", body, "Cancel Cheque", function () {
+    popForm("Cancel cheque " + c.no, c.payee + " · " + money(c.amount) + " · " + fmtDate(c.date) + ". Its payments are cancelled and the bills come back to Pay Now.", body, "Cancel Cheque", function () {
       var why = $("cqWhy").value.trim(); if (why.length < 3) { errOn("cqWhy", "Write the reason."); return false; }
       var now = Date.now(), up = { cancelled: true, cancelledAt: now, cancelledBy: meId(), cancelReason: sentenceFix(why) };
       return Promise.all((c.txIds || []).map(function (id) { return retry(function () { return S.db.doc("transactions/" + id).update(up); }).then(function () { if (S.txns[id]) Object.assign(S.txns[id], up); }); }))

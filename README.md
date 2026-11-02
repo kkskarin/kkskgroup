@@ -249,6 +249,13 @@ provides the same calls, so the app code did not need rewriting:
   button ends at its right edge. Descriptions use the full width; Personalise lays its cards out in as
   many columns as fit. Scrolling boxes inside pages keep a fixed scrollbar slot too. Tables use plain
   headings, light row banding and right-aligned numbers.
+- **Payment Entry** (Finance): Bills / Vouchers, the totals and the company filter on one line; To Pay /
+  Paid, **Pay Now** / **Record Payment** and the due filter (All, Due in 7 days, then week by week, each
+  with its amount) on the next, in both Pay Now and Record Payment. Payees are listed by trade name A to
+  Z; a vendor's opening balance always counts as its earliest due (shown as "Opening balance"), then
+  bills by earliest due; the column sorts still work. On phones each control takes the full width and
+  the rows become cards. Long page descriptions fold to three lines on phones (tap to open).
+- **View As** keeps the admin's own look (mode, colour, text size).
 - **Header**: logo and app name, then the person (picture, name, Viewing As for admins) and a ☰ menu
   with Demo / Live (when allowed), **All Apps** (a scrollable list of the person's apps, each with what
   waits for them there in brackets; the menu button shows the total), **Settings**, **Password** (a

@@ -821,7 +821,7 @@ select.rladd{max-width:320px}
 }
 /* Phones: a long page description folds to three lines; tap it to read the rest. */
 @media (max-width:760px){.head .sub{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}.head .sub.open{display:block;-webkit-line-clamp:unset}}
-.rorow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}
+.ledfix .field.ro{flex:2 1 220px;background:var(--soft);display:flex;align-items:center}.ledfix .field.ro.num{flex:1 1 120px;max-width:170px;justify-content:flex-end}.ledfix .hint{flex:1 1 100%;margin-top:-4px}
 /* Full-width pages (Nov 2026): the page uses the whole screen on big monitors, small monitors and phones alike.
    The scrollbar has its own fixed slot with an equal one on the left, so nothing moves or shrinks when a scrollbar appears. */
 /* The bars run edge to edge; the scrollbar keeps a fixed slot on the right, and the same width is added on the left of the
@@ -5087,7 +5087,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function billSuggestNow() { return []; }
   function mountBillLed() {
     var w = $("bcLedWrap"); if (!w || !B.D) return;
-    B.ledO = { id: "bcLed", lines: B.D.ledgers, max: MAX_LED.bill, cid: function () { return B.D ? B.D.companyId : ""; }, base: function () { return B.D ? num(B.D.taxable) : null; }, baseLabel: "taxable amount",
+    B.ledO = { id: "bcLed", fixedRo: function () { return B.D ? num(B.D.roundOff) : 0; }, lines: B.D.ledgers, max: MAX_LED.bill, cid: function () { return B.D ? B.D.companyId : ""; }, base: function () { return B.D ? num(B.D.taxable) : null; }, baseLabel: "taxable amount",
       touched: function () { B.ledTouched = true; B.touched = true; scheduleSave(); }, sumMode: true, onSum: billTaxFromLines };
     w.textContent = ""; w.appendChild(ledEditor(B.ledO)); B.ledCo = B.D.companyId; billLedSync();
   }
@@ -5231,6 +5231,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     B.gstK = gk; if (gf) { var gh = gf.querySelector(".hint"); if (gh) gh.textContent = gk ? (num(D.gstAmt) != null ? gstSplitText(gk, num(D.gstAmt), D.currency) + "." : (gk === "cgst" ? "Vendor and company are in the same state: CGST plus SGST." : "Vendor is in another state: IGST.")) + " Enter 0 if none." : "CGST plus SGST, or IGST. Enter 0 if none."; }
     var ftot = num(D.taxable) != null && num(D.gstAmt) != null ? round2(num(D.taxable) + num(D.gstAmt) + (num(D.roundOff) || 0)) : null;
     $("bcTot").textContent = ftot == null ? "" : foreign ? fcAmt(D.currency, ftot) : money(ftot);
+    if (B.ledO && B.ledO.info) B.ledO.info();
     $("bcTotH").textContent = (num(D.roundOff) ? "Taxable amount plus GST and round off" : "Taxable amount plus GST") + (foreign ? ", in " + D.currency + "." : ".");
     billLedSync();
     $("bcRateF").hidden = true;
@@ -12162,6 +12163,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         if (lines.length > 1) { var rm = el("button", { class: "btn sm", type: "button", "aria-label": "Remove line " + (i + 1) }, "Remove"); rm.addEventListener("click", function () { lines.splice(i, 1); o.touched && o.touched(); if (o.onSum) o.onSum(); draw(); }); row.appendChild(rm); }
         box.appendChild(row);
       });
+      /* Round Off: a fixed line of its own (the Round Off ledger), outside the taxable amount */
+      if (o.fixedRo) { var rr = el("div", { class: "ledrow ledfix", id: o.id + "Ro" }); rr.appendChild(el("div", { class: "field ro" }, "Round Off")); rr.appendChild(el("div", { class: "field ro num", id: o.id + "RoA" })); rr.appendChild(el("span", { class: "hint" }, "Posted to the Round Off ledger; not part of the taxable amount.")); box.appendChild(rr); }
       var ft = el("div", { class: "ledfoot" });
       if (lines.length < o.max) {
         var add = el("button", { class: "link-btn", type: "button" }, "+ Add a ledger line");
@@ -12173,6 +12176,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       box.appendChild(ft); info();
     }
     function info() {
+      if (o.fixedRo) { var rv = Number(o.fixedRo()) || 0, rw = $(o.id + "Ro"), ra = $(o.id + "RoA"); if (rw) rw.hidden = !rv; if (ra) ra.textContent = rv ? (rv < 0 ? "- " : "") + amt2(Math.abs(rv)) : ""; }
       var base = o.base(), sum = o.lines.reduce(function (s0, x) { return s0 + (num(x.amt) || 0); }, 0), t = $(o.id + "Sum"); if (!t) return;
       if (o.sumMode) { t.textContent = "Taxable amount " + amt2(sum); t.className = "ledsum"; return; }
       var ok = base != null && Math.abs(round2(sum) - round2(base)) <= 0.004;
@@ -13561,7 +13565,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     ts.addEventListener("change", function () { D.sec = ts.value; var r = tdsRateFor(x, D.sec); if (r && r.rate != null && !locked) { var a = Math.round((Number(D.base) || 0) * r.rate / 100); D.tds = fmtInput(String(a)); ti.value = D.tds; } aoTdsHint(); });
     var tsf = fld("TDS section", ts, " "); tsf.querySelector(".hint").id = "aoSecH"; form.appendChild(tsf);
     var lf = el("div", { class: "f wide" }); lf.appendChild(el("span", { class: "lb" }, isB ? "Ledgers" : "Ledger"));
-    var eo = { id: "aoLed", lines: D.lines, max: isB ? MAX_LED.bill : MAX_LED.voucher, cid: function () { return x.companyId; }, base: function () { return D.base; }, baseLabel: isB ? "taxable amount" : "total", suggest: isB ? function () { return suggestBill(x, x.companyId, x.vendorId, D.base); } : null };
+    var eo = { id: "aoLed", fixedRo: isB ? function () { return Number(x.roundOff) || 0; } : null, lines: D.lines, max: isB ? MAX_LED.bill : MAX_LED.voucher, cid: function () { return x.companyId; }, base: function () { return D.base; }, baseLabel: isB ? "taxable amount" : "total", suggest: isB ? function () { return suggestBill(x, x.companyId, x.vendorId, D.base); } : null };
     lf.appendChild(ledEditor(eo)); lf.appendChild(el("span", { class: "hint" }, isB ? "Up to 4 ledgers. The amounts must add up to the taxable amount, " + amt2(D.base) + "." : "Up to 2 ledgers. The amounts must add up to the total, " + amt2(D.base) + ".")); lf.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" }));
     var lw = el("div", { class: "form", style: "margin-top:12px" }); lw.appendChild(lf);
     if (isB && billGst(x) > 0) {
@@ -13605,8 +13609,6 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       drawG();
       gf0.appendChild(el("span", { class: "hint" }, "The bill's GST, " + amt2(billGst(x)) + ", goes to the GST ledgers of the credit types ticked."));
       gf0.appendChild(el("span", { class: "err", id: "aoGstLedE", hidden: "" })); lw.appendChild(gf0);
-      /* the bill's round off: posted by itself to the Round Off ledger, nothing to choose */
-      if (Number(x.roundOff)) { var rl0 = roundLedger(x.companyId), rf0 = el("div", { class: "f wide" }); rf0.appendChild(el("span", { class: "lb" }, "Round Off")); var rr0 = el("div", { class: "rorow" }); rr0.appendChild(el("span", null, rl0 ? rl0.name + (rl0.sub ? " (" + rl0.main + ", " + rl0.sub + ")" : "") : "Round Off")); rr0.appendChild(el("b", { class: "num" }, (Number(x.roundOff) < 0 ? "- " : "") + amt2(Math.abs(Number(x.roundOff))))); rf0.appendChild(rr0); lw.appendChild(rf0); }
     }
     if (itCard) f.insertBefore(itCard, det); f.insertBefore(lw, det); if (eo.info) eo.info(); /* the running totals, now that they are on the page */
     f.appendChild(form); aoTdsHint();

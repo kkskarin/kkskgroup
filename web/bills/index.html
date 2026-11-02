@@ -2549,7 +2549,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return { apps: Object.assign({}, e.apps, { pp: (u && u.apps && u.apps.pp) || null }), reCompanies: e.reCompanies, jobRoles: e.jobRoles, apprOf: e.apprOf, companyIds: e.companyIds, roles: e.roles, roleUntil: ends[0] || null };
   }
   function stableJson(v) { if (Array.isArray(v)) return "[" + v.map(stableJson).join(",") + "]"; if (v && typeof v === "object") return "{" + Object.keys(v).sort().filter(function (k) { return v[k] !== undefined; }).map(function (k) { return JSON.stringify(k) + ":" + stableJson(v[k]); }).join(",") + "}"; return JSON.stringify(v == null ? null : v); }
-  function roleDiff(u) { var p = rolePatch(u), out = {}; Object.keys(p).forEach(function (k) { if (stableJson(p[k]) !== stableJson(u[k] == null ? null : u[k])) out[k] = p[k]; }); return out; }
+  function roleDiff(u) { var p = rolePatch(u), out = {}; Object.keys(p).forEach(function (k) { var a = p[k], b = u[k] == null ? null : u[k]; if (k === "companyIds") { a = (a || []).slice().sort(); b = (b || []).slice().sort(); } if (stableJson(a) !== stableJson(b)) out[k] = p[k]; }); return out; }
   /* The person's own page: a temporary role that ended stops at once, even before an admin's page updates the record. */
   function withRoles(u) { if (!u || !usesRoles(u) || !S.roleDefsOk) return u; return Object.assign({}, u, rolePatch(u)); }
   /* Admins' pages keep every record in step with its roles. */

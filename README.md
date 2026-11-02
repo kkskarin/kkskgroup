@@ -264,7 +264,9 @@ provides the same calls, so the app code did not need rewriting:
   home read it as before. Name, location, department, default approver and Production Planning stay per
   person. Saving a role changes everyone who has it; an admin's open page brings records up to date
   within a minute when a role changes or a temporary role ends, and the person's own page stops a
-  temporary role on its last day even before that. Roles that together give Purchaser and Approver are
+  temporary role on its last day even before that. On the server, `private.apply_user_roles()` (migration
+  20261102120000, pg_cron job `apply-user-roles`, hourly at :02) does the same, so the KKSK Group home
+  also drops an ended role within the hour after midnight (India time) with no admin online. Roles that together give Purchaser and Approver are
   refused. A role in use can't be deleted. People without roles keep access set by hand. Roles live in
   `roledefs/*`, shared by Demo and Live.
 - **Who can get in**: anyone can create an account with any email. Until an admin approves their

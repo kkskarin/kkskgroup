@@ -3441,12 +3441,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function curOk(c) { return /^[A-Z]{3}$/.test(c || ""); }
   function fcAmt(cur, n) { return cur + " " + amt(n); }
   /* Amounts are kept in the bill's own currency. No exchange rate is used anywhere in the app. */
-  function inrAmounts(cur, rate, tx, ga) {
-    var foreign = cur && cur !== "INR", k = 1, tot = tx != null && ga != null ? round2(tx + ga) : null;
+  /* Round off: the paise (or few rupees) a bill adds or takes away so its total is a round figure; it carries no GST. */
+  var ROUND_MAX = 10;
+  function inrAmounts(cur, rate, tx, ga, ro) {
+    ro = Number(ro) || 0;
+    var foreign = cur && cur !== "INR", k = 1, tot = tx != null && ga != null ? round2(tx + ga + ro) : null;
     function c(x) { return x == null || !k ? null : round2(x * k); }
     return {
       currency: foreign ? cur : "INR", fxRate: null, fcTaxable: null, fcGst: null, fcTotal: null,
-      taxable: c(tx), gstAmt: c(ga), total: c(tot), gstPct: tx && ga != null ? round2(ga / tx * 100) : null
+      taxable: c(tx), gstAmt: c(ga), roundOff: ro ? c(ro) : null, total: c(tot), gstPct: tx && ga != null ? round2(ga / tx * 100) : null
     };
   }
   var GST_RATES = [0, 0.1, 0.25, 1, 1.5, 3, 5, 6, 7.5, 12, 18, 28, 40];
@@ -4159,14 +4162,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var cur = normId(res.currency); if (!curOk(cur)) cur = "INR";
     var tx = num(res.taxable_amount), ga = num(res.gst_amount), printed = num(res.total_amount);
     if (tx != null && ga == null && printed != null && Math.abs(printed - tx) <= 1) ga = 0;
-    var rateFrom = "", A = inrAmounts(cur, 1, tx, ga);
+    var ro0 = tx != null && ga != null && printed != null ? round2(printed - tx - ga) : 0; if (Math.abs(ro0) > ROUND_MAX || Math.abs(ro0) < 0.005) ro0 = 0;
+    var rateFrom = "", A = inrAmounts(cur, 1, tx, ga, ro0);
     var date = ymdOk(res.bill_date) ? res.bill_date : "";
     return {
       status: "draft", ownerId: meId(), uploadedBy: meId(), uploadedAt: now, updatedAt: now, source: "file", fileName: str(it.name, 160),
       companyId: cid || null, vendorId: v ? v.id : null,
       vendorNew: v ? { name: "", gstin: "", pan: "", type: "", termDays: null } : { name: smartCase(str(res.vendor_name, 140)), gstin: g, pan: pan, type: type, termDays: term, address: aiAddr(res.vendor_address) },
       billNo: str(res.bill_number, 60).toUpperCase(), billDate: date, currency: A.currency, fxRate: A.fxRate, fcTaxable: A.fcTaxable, fcGst: A.fcGst, fcTotal: A.fcTotal,
-      taxable: A.taxable, gstAmt: A.gstAmt, gstPct: A.gstPct, total: A.total,
+      taxable: A.taxable, gstAmt: A.gstAmt, roundOff: A.roundOff, gstPct: A.gstPct, total: A.total,
       termDays: v ? (v.termDays != null ? v.termDays : term) : term, termChoice: "", updateVendorTerm: false,
       narration: narrFix(res.narration), supplyOf: supplyOk(res.supply_of), einv: einvOf(res.irn, res.ack_no, res.ack_date),
       ex: { narrReview: narrReview(res), companyName: str(res.company_name_on_bill, 160), vendorName: str(res.vendor_name, 160), vendorGstin: g, vendorAddress: aiAddr(res.vendor_address), vendorBank: bankFromRead(res.vendor_bank), billTermDays: term, printedTotal: printed, rateFrom: rateFrom, notes: str(res.notes, 300), aiUnsure: aiUnsure(res, ["company", "vendor", "vendor_gstin", "bill_number", "bill_date", "currency", "taxable_amount", "gst_amount", "payment_term_days", "narration"]), items: aiItems(res.items), itemsNote: str(res.items_note, 400), aiLedger: str(res.ledger_id, 40) }
@@ -4564,7 +4568,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       companyId: b.companyId || "", vendorChoice: b.vendorId || (vn.name || vn.gstin ? "new" : ""),
       vNew: { name: vn.name || "", gstin: vn.gstin || "", pan: vn.pan || "", type: vn.type || "", termDays: vn.termDays == null ? "" : String(vn.termDays), addr: vn.address || "", addrPick: vn.addrPick || "" },
       billNo: b.billNo || "", billDate: fmtDate(b.billDate), currency: curOk(b.currency) ? b.currency : "INR", rate: b.fxRate ? fmtRate(b.fxRate) : "",
-      taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt),
+      taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt), roundOff: b.roundOff ? fmtInput(b.roundOff) : "",
       tds: b.entryTds || "", tdsSec: b.entryTdsSection || "",
       termDays: b.termDays == null ? "" : String(b.termDays), termChoice: b.termChoice || "", updateVendorTerm: !!b.updateVendorTerm, narration: b.narration || "", advPick: b.advPick || "", advWhy: b.advWhy || "",
       supplyOf: b.supplyOf || "", einv: { irn: (b.einv && b.einv.irn) || "", ackNo: (b.einv && b.einv.ackNo) || "", ackDate: b.einv && b.einv.ackDate ? fmtDate(b.einv.ackDate) : "" },
@@ -4668,7 +4672,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* A final bill started from a proforma or import counts under Proformas, imports, Advance Checking Report as well as Bills. */
   function billStep(b) { return b && b.advanceId ? "adv" : "bills"; }
   function billCanCo(b, cid) { return canStep("bills", cid) || (!!(b && b.advanceId) && canStep("adv", cid)); }
-  function amountsOf(D) { return inrAmounts(D.currency, 1, num(D.taxable), num(D.gstAmt)); }
+  function amountsOf(D) { return inrAmounts(D.currency, 1, num(D.taxable), num(D.gstAmt), num(D.roundOff) || 0); }
   /* Someone who both enters and accounts bills for a company does it in one go: the bill is accounted as it is submitted,
      with its ledgers and TDS, provided its vendor's details are complete. It still goes to approval. */
   /* Accounting happens only in Accounts, so a bill is never accounted while it is entered (bills are entered in the division apps). */
@@ -4814,7 +4818,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (a[1] == null) E(a[0], String(a[2]).trim() ? "Enter the " + a[3] + " as a number." : "Enter the " + a[3] + (a[0] === "bcGst" ? ". Enter 0 if no GST is charged." : "."));
       else if (a[1] < 0) E(a[0], "The " + a[3] + " can't be negative.");
     });
-    if (tx != null && ga != null && tx + ga <= 0) E("bcLed", "The total must be more than zero.");
+    var ro = 0; if (String(D.roundOff || "").trim()) { ro = num(D.roundOff); if (ro == null) { E("bcRound", "Enter the round off as a number, like 0.28 or -0.40."); ro = 0; } else if (Math.abs(ro) > ROUND_MAX) { E("bcRound", "Round off is only for a bill's last paise or rupees: up to \u20B9" + ROUND_MAX + " either way. Anything more is a charge (freight, cartage), entered on a ledger line."); ro = 0; } }
+    if (tx != null && ga != null && tx + ga + ro <= 0) E("bcLed", "The total must be more than zero.");
     if (D.companyId && tx != null && tx > 0) { var le = ledCheck(D.ledgers, tx, D.companyId, MAX_LED.bill); if (le) E("bcLed", le); }
     if (oneStop(D.companyId) && $("bcTds")) {
       var td0 = num(D.tds), tot0 = (tx || 0) + (num(D.gstAmt) || 0);
@@ -4824,7 +4829,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (foreign && vendorTypeOfCard(D) !== "overseas") E("bcCur", "Only an overseas vendor's bill can be in another currency.");
     /* Hard faults: the bill isn't accepted as it is, unless the purchaser gives an undertaking (takes responsibility, with why). */
     var hard = [], printed = b.ex && b.ex.printedTotal;
-    if (printed != null && tx != null && ga != null && Math.abs(tx + ga - printed) > 1) hard.push("The bill's printed total is " + cl + amt(printed) + ", but taxable plus GST comes to " + cl + amt(tx + ga) + ".");
+    if (printed != null && tx != null && ga != null && Math.abs(tx + ga + ro - printed) > 1) hard.push("The bill's printed total is " + cl + amt(printed) + ", but taxable plus GST" + (ro ? " and round off" : "") + " comes to " + cl + amt(tx + ga + ro) + "." + (Math.abs(printed - tx - ga) <= ROUND_MAX ? " If the bill rounds its total, enter the difference under Round off." : ""));
     var gn = tx != null && ga != null ? gstRateNote(tx, ga, D.currency) : ""; if (gn) { if (/isn't a standard rate/.test(gn)) hard.push(gn); else warns.push(gn); }
     if (vt && vt !== "registered" && ga > 0) warns.push("This vendor is " + vtypeLabel(vt).toLowerCase() + ", but the bill charges GST.");
     if (vt === "registered" && ga === 0) warns.push("This vendor is registered, but the bill charges no GST.");
@@ -5018,7 +5023,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var rf = fld("Exchange rate", inp("bcRate", D.rate, { inputmode: "decimal", class: "field num" }), " "); rf.id = "bcRateF"; rf.className = "f wide"; f.appendChild(rf);
     f.appendChild(fld("Taxable amount", inp("bcTax", D.taxable, { inputmode: "decimal", class: "field num ro", readonly: "", tabindex: "-1" }), "The total of the ledger lines."));
     f.appendChild(fld("GST amount", inp("bcGst", D.gstAmt, { inputmode: "decimal", class: "field num" }), "CGST plus SGST, or IGST. Enter 0 if none."));
-    var tf = el("div", { class: "f" }); tf.appendChild(el("span", { class: "lb", id: "bcTotL" }, "Total amount")); tf.appendChild(el("div", { class: "field ro num", id: "bcTot" })); tf.appendChild(el("span", { class: "hint", id: "bcTotH" }, "Taxable amount plus GST.")); f.appendChild(tf);
+    f.appendChild(fld("Round off", inp("bcRound", D.roundOff || "", { inputmode: "decimal", class: "field num", placeholder: "0.00" }), "Only if the bill rounds its total: what it adds (or, with a minus, takes away), for example 0.28 or -0.40. Up to \u20B9" + ROUND_MAX + " either way."));
+    var tf = el("div", { class: "f" }); tf.appendChild(el("span", { class: "lb", id: "bcTotL" }, "Total amount")); tf.appendChild(el("div", { class: "field ro num", id: "bcTot" })); tf.appendChild(el("span", { class: "hint", id: "bcTotH" }, "Taxable amount plus GST and round off.")); f.appendChild(tf);
     var pf = el("div", { class: "f" }); pf.appendChild(el("span", { class: "lb" }, "GST percentage")); pf.appendChild(el("div", { class: "field ro num", id: "bcPct" })); pf.appendChild(el("span", { class: "hint" }, "Calculated from the two amounts.")); f.appendChild(pf);
     f.appendChild(el("div", { class: "flags", id: "bcFlags" }));
     f.appendChild(el("div", { class: "vbox und f wide", id: "bcUndBox", hidden: "", style: "display:block;grid-column:1/-1" }));
@@ -5040,6 +5046,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var t = e.target; if (!t) return;
       if (t.id === "bcVGstin") tidyIds(t.id);
       else if (t.id === "bcTax" || t.id === "bcGst" || t.id === "bcTds") { t.value = fmtInput(t.value); }
+      else if (t.id === "bcRound") { var r0 = num(t.value); t.value = r0 ? (r0 < 0 ? "-" : "") + fmtInput(String(Math.abs(r0))) : ""; readCard(); updateDynamic(); }
       else if (t.id === "bcDate") { var d = parseDate(t.value); if (d) { t.value = fmtDate(d); readCard(); updateDynamic(); } }
       else if (t.id === "bcAckD") { var d2 = parseDate(t.value); if (d2) { t.value = fmtDate(d2); readCard(); updateDynamic(); } }
       else if (t.id === "bcIrn") { t.value = t.value.replace(/\s+/g, "").toLowerCase(); readCard(); updateDynamic(); }
@@ -5051,7 +5058,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     D.companyId = $("bcCo").value; D.vendorChoice = $("bcVen").value; D.X = extRead("bc", D.X || {}); if ($("bcAdvWhy")) D.advWhy = $("bcAdvWhy").value;
     D.vNew.name = $("bcVName").value; D.vNew.type = $("bcVType").value; D.vNew.gstin = $("bcVGstin").value; D.vNew.termDays = $("bcVTerm").value; D.vNew.addr = $("bcVAddr").value;
     D.billNo = $("bcNo").value; D.billDate = $("bcDate").value; D.currency = $("bcCur").value || "INR"; D.rate = $("bcRate").value;
-    D.taxable = $("bcTax").value; D.gstAmt = $("bcGst").value;
+    D.taxable = $("bcTax").value; D.gstAmt = $("bcGst").value; if ($("bcRound")) D.roundOff = $("bcRound").value;
     if ($("bcIrn")) D.einv = { irn: $("bcIrn").value, ackNo: $("bcAck").value, ackDate: $("bcAckD").value };
     if ($("bcSupply")) D.supplyOf = $("bcSupply").value;
     D.narration = $("bcNar").value; if ($("bcPrep")) D.prepBy = $("bcPrep").value; if ($("bcFor")) { D.forId = $("bcFor").value; D.forNew = $("bcForNew").value; } if ($("bcAppr")) D.approverId = $("bcAppr").value; if ($("bcAppr1")) D.approver1Id = $("bcAppr1").value; if ($("bcSettle")) D.settle = $("bcSettle").value;
@@ -5220,9 +5227,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("bcPct").textContent = A.gstPct != null ? A.gstPct + "%" : "";
     var gv = D.vendorChoice && D.vendorChoice !== "new" ? (S.vendors[D.vendorChoice] || {}).gstin : (D.vNew || {}).gstin, gk = gstKind(D.companyId, gv, vendorTypeOfCard(D) === "overseas"), gf = $("bcGst").closest(".f");
     B.gstK = gk; if (gf) { var gh = gf.querySelector(".hint"); if (gh) gh.textContent = gk ? (num(D.gstAmt) != null ? gstSplitText(gk, num(D.gstAmt), D.currency) + "." : (gk === "cgst" ? "Vendor and company are in the same state: CGST plus SGST." : "Vendor is in another state: IGST.")) + " Enter 0 if none." : "CGST plus SGST, or IGST. Enter 0 if none."; }
-    var ftot = num(D.taxable) != null && num(D.gstAmt) != null ? round2(num(D.taxable) + num(D.gstAmt)) : null;
+    var ftot = num(D.taxable) != null && num(D.gstAmt) != null ? round2(num(D.taxable) + num(D.gstAmt) + (num(D.roundOff) || 0)) : null;
     $("bcTot").textContent = ftot == null ? "" : foreign ? fcAmt(D.currency, ftot) : money(ftot);
-    $("bcTotH").textContent = foreign ? "Taxable amount plus GST, in " + D.currency + "." : "Taxable amount plus GST.";
+    $("bcTotH").textContent = (num(D.roundOff) ? "Taxable amount plus GST and round off" : "Taxable amount plus GST") + (foreign ? ", in " + D.currency + "." : ".");
     billLedSync();
     $("bcRateF").hidden = true;
     if (foreign) {
@@ -13327,7 +13334,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function billAlerts(x) {
     var u0 = undText(x);
     var v = S.vendors[x.vendorId], tx = Number(x.fcTaxable != null ? x.fcTaxable : x.taxable), ga = Number(x.fcGst != null ? x.fcGst : x.gstAmt) || 0, out = [], pr = x.ex && x.ex.printedTotal;
-    if (pr != null && !isNaN(tx) && Math.abs(tx + ga - pr) > 1) out.push("The bill's printed total is " + amt2(pr) + ", but taxable plus GST comes to " + amt2(tx + ga) + ". Check for round-off, freight or TDS.");
+    var ro = Number(x.roundOff) || 0;
+    if (pr != null && !isNaN(tx) && Math.abs(tx + ga + ro - pr) > 1) out.push("The bill's printed total is " + amt2(pr) + ", but taxable plus GST" + (ro ? " and round off" : "") + " comes to " + amt2(tx + ga + ro) + ". Check for round-off, freight or TDS.");
+    if (ro) out.push("Round off of " + (ro < 0 ? "minus " : "") + amt2(Math.abs(ro)) + " is posted to " + (roundLedger(x.companyId) ? roundLedger(x.companyId).name : "a Round Off ledger, which this company doesn't have yet (Masters, Ledgers)") + ".");
     var gn = gstRateNote(tx, ga, x.currency); if (gn) out.push(gn);
     if (x.extAppr) out.push(extApprText(x.extAppr) + " for " + curMoney(x.currency, x.extAppr.amount || x.total) + ". Once accounted it goes straight to Payment Entry." + extDiscText(x.extAppr));
     if (v && v.type && v.type !== "registered" && ga > 0) out.push("The vendor is " + vtypeLabel(v.type).toLowerCase() + ", but the bill charges GST.");
@@ -13411,6 +13420,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var ord = function (l) { var t = (S.taxes || {})[l.taxId]; return t && t.order != null ? t.order : 1e6; };
     return ledAll().filter(function (l) { var h = gstHead(l); return l.tax === "gst" && l.active !== false && (inter ? h === "igst" : h === "cgst" || h === "sgst"); }).sort(function (a, b) { return ord(a) - ord(b) || natCmp(a.name, b.name); });
   }
+  /* The company's Round Off ledger (named Round Off, Rounding Off or Rounded Off). */
+  function roundLedger(cid) { return Object.keys(S.ledgers || {}).map(function (k) { return Object.assign({ id: k }, S.ledgers[k]); }).filter(function (l) { return l.active !== false && /^round(ed|ing)?[\s-]*off$/i.test(String(l.name || "").trim()) && (l.allCos || (l.companyIds || []).indexOf(cid) >= 0); })[0] || null; }
   function billGst(b) { return Number(b.fcGst != null ? b.fcGst : b.gstAmt) || 0; }
   function coState(cid) { var c = S.companies[cid] || {}; return String(c.stateCode || String(c.gstin || "").slice(0, 2) || ""); }
   /* Interstate when the vendor's GSTIN starts with another state code than the company's (an overseas vendor too); intrastate
@@ -13695,6 +13706,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       /* the bill's GST, as the accountant spread it over the GST ledgers (in rupees) */
       var gb = Number(b.fcGst != null ? b.fcGst : b.gstAmt) || 0, gi = Number(b.gstAmt) || 0;
       (b.gstLedgers || []).forEach(function (x) { out.push({ lg: x.id, cid: b.companyId, d: b.billDate, no: b.billNo, who: vendorLabelOfBill(b), what: b.narration || "", amt: round2(gb ? gi * (Number(x.amt) || 0) / gb : Number(x.amt) || 0), tds: 0, sec: "", prep: pnm(b.preparedByName), type: "GST" }); });
+      /* the bill's round off, to the company's Round Off ledger */
+      var rl = Number(b.roundOff) ? roundLedger(b.companyId) : null; if (rl) out.push({ lg: rl.id, cid: b.companyId, d: b.billDate, no: b.billNo, who: vendorLabelOfBill(b), what: b.narration || "", amt: round2(Number(b.roundOff)), tds: 0, sec: "", prep: pnm(b.preparedByName), type: "Round Off" });
     });
     return out;
   }

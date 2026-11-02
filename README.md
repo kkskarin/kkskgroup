@@ -255,6 +255,12 @@ provides the same calls, so the app code did not need rewriting:
   Z; a vendor's opening balance always counts as its earliest due (shown as "Opening balance"), then
   bills by earliest due; the column sorts still work. On phones each control takes the full width and
   the rows become cards. Long page descriptions fold to three lines on phones (tap to open).
+- **Round off** (bills): an optional signed amount next to GST, up to ₹10 either way, for bills that round
+  their total; the total is taxable + GST + round off and GST % is worked out without it. Reading a bill
+  fills it from the printed total when the gap is within ₹10; a printed-total mismatch within ₹10
+  suggests it. Stored as `roundOff`; it carries no GST and posts to the company's Round Off ledger
+  (named Round Off / Rounded Off / Rounding Off) in the ledger books; the accountant sees it in the
+  bill's alerts.
 - **View As** keeps the admin's own look (mode, colour, text size).
 - **Header**: logo and app name, then the person (picture, name, Viewing As for admins) and a ☰ menu
   with Demo / Live (when allowed), **All Apps** (a scrollable list of the person's apps, each with what

@@ -4574,7 +4574,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       tds: b.entryTds || "", tdsSec: b.entryTdsSection || "",
       termDays: b.termDays == null ? "" : String(b.termDays), termChoice: b.termChoice || "", updateVendorTerm: !!b.updateVendorTerm, narration: b.narration || "", advPick: b.advPick || "", advWhy: b.advWhy || "",
       supplyOf: b.supplyOf || "", einv: { irn: (b.einv && b.einv.irn) || "", ackNo: (b.einv && b.einv.ackNo) || "", ackDate: b.einv && b.einv.ackDate ? fmtDate(b.einv.ackDate) : "" },
-      ledgers: ledLinesIn(b.ledgers), prepBy: b.preparedBy || "", forId: b.madeBy ? b.preparedBy || "" : "", forNew: "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), approver1Id: b.approver1Id || "", und: b.und || null, settle: b.settle ? "yes" : "no", X: Object.assign({}, extOf(b, DIV))
+      ledgers: ledLinesIn(b.ledgers).concat(roLineIn(b.companyId, b.roundOff)), prepBy: b.preparedBy || "", forId: b.madeBy ? b.preparedBy || "" : "", forNew: "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), approver1Id: b.approver1Id || "", und: b.und || null, settle: b.settle ? "yes" : "no", X: Object.assign({}, extOf(b, DIV))
     };
   }
   function draftFromBill(b) { var D = draftFrom(b); if (!D.ledgers.length && num(D.taxable) != null && num(D.taxable) > 0) D.ledgers.push({ id: "", amt: D.taxable }); return D; }
@@ -4697,7 +4697,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       vendorNew: { name: D.vNew.name.trim(), gstin: normId(D.vNew.gstin), pan: panOfNew(D), type: D.vNew.type || "", termDays: intOrNull(D.vNew.termDays), address: String(D.vNew.addr || "").trim(), addrPick: D.vNew.addrPick || "" },
       billNo: D.billNo.trim(), billDate: parseDate(D.billDate),
       termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: narrVendor(D.narration.trim(), D.vendorChoice === "new" ? D.vNew.name : (S.vendors[D.vendorChoice] || {}).name), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
-      ledgers: ledLinesOut(D.ledgers), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || "",
+      ledgers: ledLinesOut(nonRo(D.ledgers)), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || "",
       und: D.und || null, settle: D.settle === "yes" && billAdvOk(D), supplyOf: D.supplyOf || "", einv: einvOf((D.einv || {}).irn, (D.einv || {}).ackNo, parseDate((D.einv || {}).ackDate || ""))
     }, amountsOf(D), prepFields(D.prepBy), approverFields(D.approverId, D.approver1Id || ""), extDoc(D.companyId, D.X));
   }
@@ -4831,7 +4831,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (foreign && vendorTypeOfCard(D) !== "overseas") E("bcCur", "Only an overseas vendor's bill can be in another currency.");
     /* Hard faults: the bill isn't accepted as it is, unless the purchaser gives an undertaking (takes responsibility, with why). */
     var hard = [], printed = b.ex && b.ex.printedTotal;
-    if (printed != null && tx != null && ga != null && Math.abs(tx + ga + ro - printed) > 1) hard.push("The bill's printed total is " + cl + amt(printed) + ", but taxable plus GST" + (ro ? " and round off" : "") + " comes to " + cl + amt(tx + ga + ro) + "." + (Math.abs(printed - tx - ga) <= ROUND_MAX ? " If the bill rounds its total, enter the difference under Round off." : ""));
+    if (printed != null && tx != null && ga != null && Math.abs(tx + ga + ro - printed) > 1) hard.push("The bill's printed total is " + cl + amt(printed) + ", but taxable plus GST" + (ro ? " and round off" : "") + " comes to " + cl + amt(tx + ga + ro) + "." + (Math.abs(printed - tx - ga) <= ROUND_MAX ? " If the bill rounds its total, add a Round Off ledger line for the difference." : ""));
     var gn = tx != null && ga != null ? gstRateNote(tx, ga, D.currency) : ""; if (gn) { if (/isn't a standard rate/.test(gn)) hard.push(gn); else warns.push(gn); }
     if (vt && vt !== "registered" && ga > 0) warns.push("This vendor is " + vtypeLabel(vt).toLowerCase() + ", but the bill charges GST.");
     if (vt === "registered" && ga === 0) warns.push("This vendor is registered, but the bill charges no GST.");
@@ -5025,7 +5025,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var rf = fld("Exchange rate", inp("bcRate", D.rate, { inputmode: "decimal", class: "field num" }), " "); rf.id = "bcRateF"; rf.className = "f wide"; f.appendChild(rf);
     f.appendChild(fld("Taxable amount", inp("bcTax", D.taxable, { inputmode: "decimal", class: "field num ro", readonly: "", tabindex: "-1" }), "The total of the ledger lines."));
     f.appendChild(fld("GST amount", inp("bcGst", D.gstAmt, { inputmode: "decimal", class: "field num" }), "CGST plus SGST, or IGST. Enter 0 if none."));
-    f.appendChild(fld("Round off", inp("bcRound", D.roundOff || "", { inputmode: "decimal", class: "field num", placeholder: "0.00" }), "Only if the bill rounds its total: what it adds (or, with a minus, takes away), for example 0.28 or -0.40. Up to \u20B9" + ROUND_MAX + " either way."));
+    f.appendChild(fld("Round off", inp("bcRound", D.roundOff || "", { inputmode: "decimal", class: "field num ro", readonly: "", tabindex: "-1", placeholder: "0.00" }), "From the Round Off ledger line, if the bill rounds its total. No GST is on it."));
     var tf = el("div", { class: "f" }); tf.appendChild(el("span", { class: "lb", id: "bcTotL" }, "Total amount")); tf.appendChild(el("div", { class: "field ro num", id: "bcTot" })); tf.appendChild(el("span", { class: "hint", id: "bcTotH" }, "Taxable amount plus GST and round off.")); f.appendChild(tf);
     var pf = el("div", { class: "f" }); pf.appendChild(el("span", { class: "lb" }, "GST percentage")); pf.appendChild(el("div", { class: "field ro num", id: "bcPct" })); pf.appendChild(el("span", { class: "hint" }, "Calculated from the two amounts.")); f.appendChild(pf);
     f.appendChild(el("div", { class: "flags", id: "bcFlags" }));
@@ -5048,7 +5048,6 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var t = e.target; if (!t) return;
       if (t.id === "bcVGstin") tidyIds(t.id);
       else if (t.id === "bcTax" || t.id === "bcGst" || t.id === "bcTds") { t.value = fmtInput(t.value); }
-      else if (t.id === "bcRound") { var r0 = num(t.value); t.value = r0 ? (r0 < 0 ? "-" : "") + fmtInput(String(Math.abs(r0))) : ""; readCard(); updateDynamic(); }
       else if (t.id === "bcDate") { var d = parseDate(t.value); if (d) { t.value = fmtDate(d); readCard(); updateDynamic(); } }
       else if (t.id === "bcAckD") { var d2 = parseDate(t.value); if (d2) { t.value = fmtDate(d2); readCard(); updateDynamic(); } }
       else if (t.id === "bcIrn") { t.value = t.value.replace(/\s+/g, "").toLowerCase(); readCard(); updateDynamic(); }
@@ -5087,14 +5086,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function billSuggestNow() { return []; }
   function mountBillLed() {
     var w = $("bcLedWrap"); if (!w || !B.D) return;
-    B.ledO = { id: "bcLed", fixedRo: function () { return B.D ? num(B.D.roundOff) : 0; }, roSet: function (v) { if (!B.D) return; B.D.roundOff = v; var tb = $("bcRound"); if (tb) tb.value = v; updateDynamic(); }, lines: B.D.ledgers, max: MAX_LED.bill, cid: function () { return B.D ? B.D.companyId : ""; }, base: function () { return B.D ? num(B.D.taxable) : null; }, baseLabel: "taxable amount",
+    B.ledO = { id: "bcLed", withRo: true, lines: B.D.ledgers, max: MAX_LED.bill, cid: function () { return B.D ? B.D.companyId : ""; }, base: function () { return B.D ? num(B.D.taxable) : null; }, baseLabel: "taxable amount",
       touched: function () { B.ledTouched = true; B.touched = true; scheduleSave(); }, sumMode: true, onSum: billTaxFromLines };
     w.textContent = ""; w.appendChild(ledEditor(B.ledO)); B.ledCo = B.D.companyId; billLedSync();
   }
   /* The taxable amount is the total of the ledger lines. */
   function billTaxFromLines() {
     var D = B.D; if (!D) return;
-    var amts = D.ledgers.map(function (x) { return num(x.amt); }).filter(function (n) { return n != null; });
+    var amts = nonRo(D.ledgers).map(function (x) { return num(x.amt); }).filter(function (n) { return n != null; }), ro = roSum(D.ledgers);
+    D.roundOff = ro ? (ro < 0 ? "-" : "") + fmtInput(Math.abs(ro)) : ""; if ($("bcRound")) $("bcRound").value = D.roundOff;
     D.taxable = amts.length ? fmtInput(round2(amts.reduce(function (s0, n) { return s0 + n; }, 0))) : "";
     if ($("bcTax")) $("bcTax").value = D.taxable;
     updateDynamic(); scheduleSave();
@@ -12056,11 +12056,20 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var k = normName(l.name), twin = ledAll().some(function (x) { return x.id !== l.id && normName(x.name) === k; });
     return twin ? l.name + " (" + l.sub + ")" : l.name;
   }
-  function ledOk(id, cid) { var l = S.ledgers && S.ledgers[id]; return !!l && l.active !== false && (l.companyIds || []).indexOf(cid) >= 0; }
+  function ledOk(id, cid) { var l = S.ledgers && S.ledgers[id]; return !!l && l.active !== false && (l.allCos || (l.companyIds || []).indexOf(cid) >= 0); }
+  /* Round Off on a bill is a ledger line like any other, except that no GST is on it: it is outside the taxable amount and
+     outside the 4-ledger limit. It is saved as the bill's round off (roundOff), not among its ledgers. */
+  function isRoLed(id) { var l = id && S.ledgers && S.ledgers[id]; return !!l && (!!l.roundOff || /^round(ed|ing)?[\s-]*off$/i.test(String(l.name || "").trim())); }
+  function nonRo(lines) { return (lines || []).filter(function (x) { return !isRoLed(x.id); }); }
+  function roSum(lines) { var t = 0, any = false; (lines || []).forEach(function (x) { if (isRoLed(x.id)) { var n = num(x.amt); if (n != null) { t += n; any = true; } } }); return any ? round2(t) : 0; }
+  function roLineIn(cid, ro) { var r = Number(ro) ? roundLedger(cid) : null; return r ? [{ id: r.id, amt: (ro < 0 ? "-" : "") + fmtInput(Math.abs(ro)) }] : []; }
   function ledText(lines) { return (lines || []).map(function (x) { return ledName(x.id) || "Unknown ledger"; }).join(", "); }
   /* A ledger dropdown for one company, grouped by main group and sub group. */
   /* Ledger lookup: type any part of the name or sub group and pick from the matches, or open the full list with the arrow.
      The returned element behaves like a select: .value, .disabled and a bubbling "change" event. */
+  function ledSelectRo(cid, cur, attrs) {
+    return ledCombo({ list: function () { var ls = ledFor(cid), r = cid ? roundLedger(cid) : null; if (r) ls = ls.concat([Object.assign({}, S.ledgers[r.id], { id: r.id })]); if (cur && !ls.some(function (l) { return l.id === cur; }) && S.ledgers[cur]) ls = ls.concat([Object.assign({}, S.ledgers[cur], { id: cur })]); return ls; }, cur: cur, attrs: attrs, placeholder: cid ? "Type to search, or open the list" : "Choose the company first" });
+  }
   function ledSelect(cid, cur, attrs) {
     return ledCombo({ list: function () { var ls = ledFor(cid); if (cur && !ledOk(cur, cid) && S.ledgers[cur]) ls = ls.concat([S.ledgers[cur]]); return ls; }, cur: cur, attrs: attrs, placeholder: cid ? "Type to search, or open the list" : "Choose the company first" });
   }
@@ -12125,6 +12134,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* Lines are [{id, amt}] in the bill's own currency. They must add up exactly to the base (taxable value, or a voucher's total). */
   function ledCheck(lines, base, cid, max) {
     lines = lines || [];
+    var ros = lines.filter(function (x) { return isRoLed(x.id); });
+    if (ros.length > 1) return "Round Off is chosen twice. Put its amount on one line.";
+    if (ros.length) { var rn = num(ros[0].amt); if (rn == null || !rn) return "Enter the round off amount (a minus if the bill takes away)."; if (Math.abs(rn) > ROUND_MAX) return "Round off is only for a bill's last paise or rupees: up to \u20B9" + ROUND_MAX + " either way."; }
+    lines = nonRo(lines);
+    if (lines.length > max) return "Use at most " + max + (max === 1 ? " ledger" : " ledgers") + (ros.length || max > 1 ? ", plus Round Off." : ".");
     if (!lines.length) return "Choose the ledger.";
     if (lines.length > max) return "Use at most " + max + (max === 1 ? " ledger." : " ledgers.");
     var seen = {}, sum = 0;
@@ -12153,30 +12167,21 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (!lines.length) lines.push({ id: "", amt: o.sumMode ? "" : base != null && base > 0 ? fmtInput(base) : "" });
       lines.forEach(function (x, i) {
         var row = el("div", { class: "ledrow" });
-        var s = o.pick ? o.pick(x.id, { "aria-label": "Ledger, line " + (i + 1) }) : ledSelect(o.cid(), x.id, { "aria-label": "Ledger, line " + (i + 1) });
-        s.addEventListener("change", function () { x.id = s.value; o.touched && o.touched(); info(); });
+        var s = o.pick ? o.pick(x.id, { "aria-label": "Ledger, line " + (i + 1) }) : (o.withRo ? ledSelectRo : ledSelect)(o.cid(), x.id, { "aria-label": "Ledger, line " + (i + 1) });
+        s.addEventListener("change", function () { x.id = s.value; o.touched && o.touched(); if (o.onSum) o.onSum(); info(); });
         var a = inp(o.id + "_a" + i, x.amt, { inputmode: "decimal", class: "field num", "aria-label": "Amount, line " + (i + 1), placeholder: "Amount" });
-        if (o.max === 1) { a.disabled = true; x.amt = base == null ? "" : fmtInput(base); a.value = x.amt; }
+        if (o.max === 1 && !o.withRo) { a.disabled = true; x.amt = base == null ? "" : fmtInput(base); a.value = x.amt; }
         a.addEventListener("input", function () { x.amt = a.value; o.touched && o.touched(); if (o.onSum) o.onSum(); info(); });
-        a.addEventListener("blur", function () { if (num(a.value) != null) { a.value = fmtInput(a.value); x.amt = a.value; } });
+        a.addEventListener("blur", function () { var n0 = num(a.value); if (n0 != null) { a.value = (n0 < 0 ? "-" : "") + fmtInput(String(Math.abs(n0))); x.amt = a.value; } });
         row.appendChild(s); row.appendChild(a);
         if (lines.length > 1) { var rm = el("button", { class: "btn sm", type: "button", "aria-label": "Remove line " + (i + 1) }, "Remove"); rm.addEventListener("click", function () { lines.splice(i, 1); o.touched && o.touched(); if (o.onSum) o.onSum(); draw(); }); row.appendChild(rm); }
         box.appendChild(row);
       });
-      /* Round Off: a fixed line of its own (the Round Off ledger), outside the taxable amount */
-      if (o.fixedRo) {
-        var rr = el("div", { class: "ledrow ledfix", id: o.id + "Ro" }); rr.appendChild(el("div", { class: "field ro" }, "Round Off"));
-        var rv0 = Number(o.fixedRo()) || 0, ri = inp(o.id + "RoA", rv0 ? (rv0 < 0 ? "-" : "") + fmtInput(Math.abs(rv0)) : "", { inputmode: "decimal", class: "field num", placeholder: "0.00", "aria-label": "Round off" });
-        if (!o.roSet) ri.disabled = true;
-        ri.addEventListener("input", function () { if (o.roSet) o.roSet(ri.value); });
-        ri.addEventListener("blur", function () { var r0 = num(ri.value); ri.value = r0 ? (r0 < 0 ? "-" : "") + fmtInput(String(Math.abs(r0))) : ""; if (o.roSet) o.roSet(ri.value); });
-        rr.appendChild(ri); rr.appendChild(el("span", { class: "hint" }, "Posted to the Round Off ledger; not part of the taxable amount. A minus if the bill takes away. Up to \u20B9" + ROUND_MAX + " either way."));
-        rr.appendChild(el("span", { class: "err", id: o.id + "RoAE", hidden: "" })); box.appendChild(rr);
-      }
       var ft = el("div", { class: "ledfoot" });
-      if (lines.length < o.max) {
-        var add = el("button", { class: "link-btn", type: "button" }, "+ Add a ledger line");
-        add.addEventListener("click", function () { var left = o.sumMode || base == null ? null : round2(base - lines.reduce(function (s0, x) { return s0 + (num(x.amt) || 0); }, 0)); lines.push({ id: "", amt: left != null && left > 0 ? fmtInput(left) : "" }); o.touched && o.touched(); draw(); });
+      var nr = o.withRo ? nonRo(lines).length : lines.length, hasRo = o.withRo && lines.some(function (x) { return isRoLed(x.id); });
+      if (nr < o.max || (o.withRo && !hasRo)) {
+        var add = el("button", { class: "link-btn", type: "button" }, nr < o.max ? "+ Add a ledger line" : "+ Add Round Off");
+        add.addEventListener("click", function () { if (nr >= o.max) { var rl = roundLedger(o.cid()); lines.push({ id: rl ? rl.id : "", amt: "" }); o.touched && o.touched(); draw(); return; } var left = o.sumMode || base == null ? null : round2(base - nonRo(lines).reduce(function (s0, x) { return s0 + (num(x.amt) || 0); }, 0)); lines.push({ id: "", amt: left != null && left > 0 ? fmtInput(left) : "" }); o.touched && o.touched(); draw(); });
         ft.appendChild(add);
       }
       if (o.suggest) { var sg = el("button", { class: "link-btn", type: "button" }, "Suggest again"); sg.addEventListener("click", function () { var s0 = o.suggest(); if (s0 && s0.length) { o.lines.length = 0; s0.forEach(function (x) { o.lines.push(x); }); draw(); } else toast("No suggestion yet for this one. Choose the ledger."); }); ft.appendChild(sg); }
@@ -12184,11 +12189,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       box.appendChild(ft); info();
     }
     function info() {
-      if (o.fixedRo) { var rv = Number(o.fixedRo()) || 0, ra = $(o.id + "RoA"); if (ra && document.activeElement !== ra) ra.value = rv ? (rv < 0 ? "-" : "") + fmtInput(Math.abs(rv)) : ""; }
-      var base = o.base(), sum = o.lines.reduce(function (s0, x) { return s0 + (num(x.amt) || 0); }, 0), t = $(o.id + "Sum"); if (!t) return;
-      if (o.sumMode) { t.textContent = "Taxable amount " + amt2(sum); t.className = "ledsum"; return; }
+      var base = o.base(), ls = o.withRo ? nonRo(o.lines) : o.lines, sum = ls.reduce(function (s0, x) { return s0 + (num(x.amt) || 0); }, 0), t = $(o.id + "Sum"); if (!t) return;
+      var rt = o.withRo ? roSum(o.lines) : 0, rtx = rt ? " · Round off " + (rt < 0 ? "-" : "") + amt2(Math.abs(rt)) + " (no GST)" : "";
+      if (o.sumMode) { t.textContent = "Taxable amount " + amt2(sum) + rtx; t.className = "ledsum"; return; }
       var ok = base != null && Math.abs(round2(sum) - round2(base)) <= 0.004;
-      t.textContent = base == null ? "Enter the " + (o.baseLabel || "taxable amount") + " first." : "Allocated " + amt2(sum) + " of " + amt2(base) + (ok ? "" : ", " + amt2(round2(base - sum)) + " left");
+      t.textContent = base == null ? "Enter the " + (o.baseLabel || "taxable amount") + " first." : "Allocated " + amt2(sum) + " of " + amt2(base) + (ok ? "" : ", " + amt2(round2(base - sum)) + " left") + rtx;
       t.className = "ledsum" + (base != null && !ok ? " bad" : "");
     }
     o.redraw = draw; o.info = info; draw();
@@ -13443,8 +13448,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function roundLedger(cid) { var ls = Object.keys(S.ledgers || {}).map(function (k) { return Object.assign({ id: k }, S.ledgers[k]); }).filter(function (l) { return l.active !== false && (l.allCos || (l.companyIds || []).indexOf(cid) >= 0); }); return ls.filter(function (l) { return l.roundOff; })[0] || ls.filter(function (l) { return /^round(ed|ing)?[\s-]*off$/i.test(String(l.name || "").trim()); })[0] || null; }
   /* The accountant's round off, when changed: the bill's total follows it (taxable + GST + round off). */
   function roundUp(x, D) {
-    if (AC.kind !== "bill" || D.roundOff == null || (x.currency || "INR") !== "INR") return {};
-    var r = round2(num(D.roundOff) || 0); if (Math.abs(r) > ROUND_MAX || r === round2(Number(x.roundOff) || 0)) return {};
+    if (AC.kind !== "bill" || (x.currency || "INR") !== "INR") return {};
+    var r = roSum(D.lines); if (Math.abs(r) > ROUND_MAX || r === round2(Number(x.roundOff) || 0)) return {};
     return { roundOff: r || null, total: round2((Number(x.taxable) || 0) + (Number(x.gstAmt) || 0) + r) };
   }
   function billGst(b) { return Number(b.fcGst != null ? b.fcGst : b.gstAmt) || 0; }
@@ -13501,7 +13506,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var x = kind === "bill" ? S.bills[id] : S.vouchers[id]; if (!x) return;
     AC.kind = kind; AC.id = id;
     var base = kind === "bill" ? (x.fcTaxable != null ? x.fcTaxable : x.taxable) : x.total;
-    var lines = ledLinesIn(x.ledgers);
+    var lines = ledLinesIn(x.ledgers).concat(kind === "bill" && (x.currency || "INR") === "INR" ? roLineIn(x.companyId, x.roundOff) : []);
     if (!lines.length) { if (kind === "bill") lines = suggestBill(x, x.companyId, x.vendorId, Number(base)); else { var sv = suggestVch(x.companyId, x.payee, x.narration); if (sv) lines = [{ id: sv, amt: fmtInput(base) }]; } }
     AC.D = { lines: lines, tds: x.tds == null ? "" : fmtInput(x.tds), sec: x.tdsSection || "", vtype: x.vtype || "", gstApp: x.gstApp || "N/A", gstRate: x.gstRate != null && RCM_RATES.some(function (r) { return r[0] === String(x.gstRate); }) ? String(x.gstRate) : "5", gstType: x.gstType || "intra", rcmA: {}, base: Number(base) || 0 };
     if (kind === "voucher") { if ((x.gstLedgers || []).length) x.gstLedgers.forEach(function (g) { var l = (S.ledgers || {})[g.id]; if (l) AC.D.rcmA[gstHead(l)] = fmtInput(g.amt); }); else rcmFill(AC.D); }
@@ -13579,8 +13584,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     ts.addEventListener("change", function () { D.sec = ts.value; var r = tdsRateFor(x, D.sec); if (r && r.rate != null && !locked) { var a = Math.round((Number(D.base) || 0) * r.rate / 100); D.tds = fmtInput(String(a)); ti.value = D.tds; } aoTdsHint(); });
     var tsf = fld("TDS section", ts, " "); tsf.querySelector(".hint").id = "aoSecH"; form.appendChild(tsf);
     var lf = el("div", { class: "f wide" }); lf.appendChild(el("span", { class: "lb" }, isB ? "Ledgers" : "Ledger"));
-    if (isB && D.roundOff == null) D.roundOff = x.roundOff ? (x.roundOff < 0 ? "-" : "") + fmtInput(Math.abs(x.roundOff)) : "";
-    var eo = { id: "aoLed", fixedRo: isB ? function () { return num(D.roundOff) || 0; } : null, roSet: isB && !locked && (x.currency || "INR") === "INR" ? function (v) { D.roundOff = v; } : null, lines: D.lines, max: isB ? MAX_LED.bill : MAX_LED.voucher, cid: function () { return x.companyId; }, base: function () { return D.base; }, baseLabel: isB ? "taxable amount" : "total", suggest: isB ? function () { return suggestBill(x, x.companyId, x.vendorId, D.base); } : null };
+    var eo = { id: "aoLed", withRo: isB && (x.currency || "INR") === "INR", lines: D.lines, max: isB ? MAX_LED.bill : MAX_LED.voucher, cid: function () { return x.companyId; }, base: function () { return D.base; }, baseLabel: isB ? "taxable amount" : "total", suggest: isB ? function () { return suggestBill(x, x.companyId, x.vendorId, D.base); } : null };
     lf.appendChild(ledEditor(eo)); lf.appendChild(el("span", { class: "hint" }, isB ? "Up to 4 ledgers, plus Round Off. The 4 ledgers must add up to the taxable amount, " + amt2(D.base) + "." : "Up to 2 ledgers. The amounts must add up to the total, " + amt2(D.base) + ".")); lf.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" }));
     var lw = el("div", { class: "form", style: "margin-top:12px" }); lw.appendChild(lf);
     if (isB && billGst(x) > 0) {
@@ -13649,7 +13653,6 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   function acctCheck() {
     var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, errs = [];
-    if (AC.kind === "bill" && String(D.roundOff || "").trim() && (num(D.roundOff) == null || Math.abs(num(D.roundOff)) > ROUND_MAX)) errs.push(["aoLedRoA", "Round off is a number up to \u20B9" + ROUND_MAX + " either way (a minus if the bill takes away)."]);
     var le = ledCheck(D.lines, D.base, x.companyId, AC.kind === "bill" ? MAX_LED.bill : MAX_LED.voucher); if (le) errs.push(["aoLed", le + (/must equal/.test(le) ? " These are the purchaser's figures: if the bill says otherwise, send it back." : "")]);
     var t = num(D.tds); if (!String(D.tds).trim()) errs.push(["aoTds", "Enter the TDS. Enter 0 if none is deducted."]); else if (t == null || t < 0) errs.push(["aoTds", "Enter the TDS as a number, 0 or more."]); else if (t > (Number(AC.kind === "bill" ? (x.fcTaxable != null ? x.fcTaxable + (x.fcGst || 0) : x.total) : x.total) || 0)) errs.push(["aoTds", "TDS can't be more than the total."]);
     if (t > 0 && !D.sec) errs.push(["aoSec", "Choose the TDS section."]);
@@ -13674,7 +13677,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (AC.kind === "bill" && acctVendorNeeds(S.bills[AC.id])) { toast("Fill in the vendor's details and opening balance first."); return; }
     errClear($("aoBody")); var errs = acctCheck();
     if (errs.length) { errs.forEach(function (e) { errOn(e[0], e[1]); }); var f0 = $(errs[0][0]); if (f0 && f0.scrollIntoView) f0.scrollIntoView({ block: "center" }); return; }
-    var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, tds = round2(num(D.tds) || 0), up = Object.assign({ acct: "approved", acctNote: "", ledgers: ledLinesOut(D.lines), tds: tds, tdsSection: tds > 0 ? D.sec : "" }, acctWho());
+    var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, tds = round2(num(D.tds) || 0), up = Object.assign({ acct: "approved", acctNote: "", ledgers: ledLinesOut(AC.kind === "bill" ? nonRo(D.lines) : D.lines), tds: tds, tdsSection: tds > 0 ? D.sec : "" }, acctWho());
     Object.assign(up, roundUp(x, D));
     if (AC.kind === "bill") { var gG = billGst(x) > 0; up.gstLedgers = gG ? gstLinesOut(x, D) : []; up.gstSupply = gG ? (D.gstInter ? "inter" : "intra") : null; up.gstTypes = gG ? D.gstTypes.slice() : null; }
     if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher", rcm = oth && D.gstApp === "RCM", gl = []; if (rcm) rcmLines(D, gl);
@@ -13693,7 +13696,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     popForm("Postpone", "It stays with you, under Postponed, until you approve or send it back. What you have chosen so far is kept.", body, "Postpone", function () {
       var tp = tidyPending("aoHoldWhy");
       return (tp || Promise.resolve()).then(function () {
-        var up = Object.assign({ acct: "held", acctNote: sentenceFix($("aoHoldWhy").value.trim()), ledgers: ledLinesOut(D.lines) }, acctWho(), roundUp(x, D)); var t = num(D.tds); if (t != null) up.tds = round2(t); if (D.sec) up.tdsSection = D.sec; if (AC.kind === "voucher" && D.vtype) { up.vtype = D.vtype; up.gstApp = D.vtype !== "Cash Voucher" ? D.gstApp : "N/A"; if (up.gstApp === "RCM") { var gl0 = []; if (!rcmLines(D, gl0)) { up.gstType = D.gstType; up.gstRate = Number(D.gstRate); up.gstLedgers = gl0; } } }
+        var up = Object.assign({ acct: "held", acctNote: sentenceFix($("aoHoldWhy").value.trim()), ledgers: ledLinesOut(AC.kind === "bill" ? nonRo(D.lines) : D.lines) }, acctWho(), roundUp(x, D)); var t = num(D.tds); if (t != null) up.tds = round2(t); if (D.sec) up.tdsSection = D.sec; if (AC.kind === "voucher" && D.vtype) { up.vtype = D.vtype; up.gstApp = D.vtype !== "Cash Voucher" ? D.gstApp : "N/A"; if (up.gstApp === "RCM") { var gl0 = []; if (!rcmLines(D, gl0)) { up.gstType = D.gstType; up.gstRate = Number(D.gstRate); up.gstLedgers = gl0; } } }
         if (AC.kind === "bill" && billGst(x) > 0 && !gstCheck(x, D)) { up.gstLedgers = gstLinesOut(x, D); up.gstSupply = D.gstInter ? "inter" : "intra"; up.gstTypes = D.gstTypes.slice(); }
         return retry(function () { return S.db.doc((AC.kind === "bill" ? "bills/" : "vouchers/") + x.id).update(up); }).then(function () { Object.assign(x, up); toast("Postponed."); backToAcct(); renderNav(); return true; }, function (e) { toast(explain(e)); return false; });
       });

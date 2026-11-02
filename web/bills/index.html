@@ -8577,7 +8577,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* Every bill, proforma or import, voucher and payment, with where it stands now and who is holding it.
      The admin sees everything (a named admin, what they approve); everyone else sees their own work and their profiles'. */
   var TX = { side: "expenses", view: "exp", expFor: "all", status: "open", limit: 200, per: "all", anchor: "", payFor: "all" };
-  var TX_PER = [["all", "All Dates"], ["week", "Weekly"], ["month", "Monthly"]], TX_PAYFOR = [["all", "All"], ["bills", "Bills"], ["advances", "Proformas & Imports"], ["vouchers", "Vouchers"]];
+  var TX_PER = [["all", "All Dates"], ["week", "Weekly"], ["month", "Monthly"]], TX_PAYFOR = [["all", "All"], ["bills", "Bills"], ["advances", "Proformas & Imports"], ["vouchers", "Vouchers"], ["cash", "Advances"]];
   /* Weekly (Monday to Sunday) or Monthly sets the date filter to that period; the arrows move it. */
   function txPerRange(kind, anchor) {
     var d0 = anchor || todayYmd();
@@ -8594,7 +8594,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     else if (TX.per === "week") txSetPer("week", addDays(TX.anchor, 7 * n));
   }
   /* What a payment paid for: bills (and opening balances), proformas and imports, or vouchers (with cash advances). */
-  function txPayKind(r) { if (r.kind === "cashadv") return "vouchers"; var t = r.x; return t.advanceId ? "advances" : t.voucherId || t.vcrId ? "vouchers" : "bills"; }
+  function txPayKind(r) { if (r.kind === "cashadv") return "cash"; var t = r.x; return t.advanceId ? "advances" : t.voucherId || t.vcrId ? "vouchers" : "bills"; }
   function txCashRow(a) {
     var mi = modeInfo(a.payMode);
     return { kind: "cashadv", x: a, id: a.id, no: "Cash advance", date: a.receivedDate || "", cid: a.companyId, party: caName(a), desc: "Cash advance" + (a.purpose ? " · " + a.purpose : ""), cur: "INR",
@@ -8701,6 +8701,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (side !== "payments" && TX.status === "closed" && r.open) return false;
       if (!msPass("tx", txMs(r))) return false;
       if (side === "payments" && TX.payFor !== "all" && txPayKind(r) !== TX.payFor) return false;
+      /* cash advances are our own cash with the person until an expense uses it: only under Advances, never in All */
+      if (side === "payments" && TX.payFor === "all" && txPayKind(r) === "cash") return false;
       if (q && [r.no, r.party, r.desc, r.step, r.ref, r.holder.name, r.prep, r.appr, coLabel(r.cid)].join(" ").toLowerCase().indexOf(q) < 0) return false;
       return true;
     }).sort(function (a, b) { return natCmp(b.date, a.date) || natCmp(a.no, b.no); });
@@ -8722,6 +8724,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }
     var pfs = $("txPaySeg"); pfs.hidden = false; pfs.textContent = ""; pfs.setAttribute("aria-label", pay ? "Paid for" : "Expenses");
     TX_PAYFOR.forEach(function (o) { var cur = pay ? TX.payFor : TX.expFor, b = el("button", { type: "button", role: "tab", "aria-selected": cur === o[0] ? "true" : "false" }, o[1]); b.addEventListener("click", function () { if (pay) TX.payFor = o[0]; else TX.expFor = o[0]; TX.limit = 200; renderTxn(); }); pfs.appendChild(b); });
+    if ((pay ? TX.payFor : TX.expFor) === "cash") { renderTxCash(); return; }
+    $("txSt").hidden = pay; $("txPerSeg").hidden = false;
     var rb = $("txRep"); rb.hidden = !anyDate || side === "advances"; rb.textContent = "Download " + (TX.per === "month" ? "Monthly" : TX.per === "week" ? "Weekly" : "Period") + " Report";
     $("txSub").textContent = (S.isAdmin ? (approverScoped() ? "The bills, proformas, imports and vouchers you approve" : "Every bill, proforma, import and voucher") : canViewPayAny() ? "Every bill, proforma, import and voucher of the companies you pay for, and your own" : "Your bills, proformas, imports and vouchers (and those of profiles on your login)") + ", where each one stands and who has it now. Payments lists every payment and discount recorded.";
     if (pay) $("txSub").textContent = "Every payment, discount and cash advance paid out" + (S.isAdmin ? "" : " for the companies you pay for, and your own") + ", by what it paid for. Pick Weekly or Monthly to see one period at a time and download its report.";
@@ -8772,6 +8776,40 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!pay) cols.push({ label: "Approver", sort: function (r) { return r.appr; }, cell: function (r, td) { txt(td, r.appr || "Not set"); } });
     sortTable(box, "txList_" + side, cols, rows, { sortIndex: 0, sortDir: -1, limit: TX.limit, more: function (m, n) { var mb = el("button", { class: "btn" }, "Show " + Math.min(200, n) + " more of " + n); mb.addEventListener("click", function () { TX.limit += 200; renderTxn(); }); m.appendChild(mb); } });
   }
+  /* Advances: cash advances to people, one row per person and company: opening balance, advances paid to them, settled by
+     their approved vouchers and bills, returned, and the cash still with them. */
+  function txCashRows() { return asPeople().filter(function (p) { return msPass("tx", p, true) && (Math.abs(p.cb.opening) + p.cb.received + p.cb.settled + p.cb.returned + Math.abs(p.cb.balance)) > 0.004; }); }
+  function renderTxCash() {
+    var ppl0 = asPeople();
+    $("txRep").hidden = true; $("txSt").hidden = true; $("txPerSeg").hidden = true; $("txPerNav").hidden = true; $("txPeople").textContent = "";
+    $("txSub").textContent = "Cash advances to people, by person and company: the opening cash they held, advances paid to them, what their approved vouchers and bills settled, what they returned, and the cash still with them.";
+    msBar($("txFilt"), "tx", { co: true, prep: msOpts(ppl0, "prep"), words: { prep: ["All people", "people", "Person"] } }, function () { renderTxn(); });
+    var rows = txCashRows(), q = $("txQ").value.trim().toLowerCase();
+    if (q) rows = rows.filter(function (p) { return (p.name + " " + coLabel(p.cid)).toLowerCase().indexOf(q) >= 0; });
+    var T = { op: 0, rec: 0, set: 0, ret: 0, bal: 0 }; rows.forEach(function (p) { T.op += p.cb.opening; T.rec += p.cb.received; T.set += p.cb.settled; T.ret += p.cb.returned; T.bal += p.cb.balance; }); Object.keys(T).forEach(function (k) { T[k] = round2(T[k]); });
+    statBoxes($("txStats"), [["People", String(rows.length), ""], ["Paid", money(T.rec), "Advances paid out"], ["Settled", money(T.set), "By approved vouchers and bills"], ["Cash on hand", money(T.bal), T.ret ? money(T.ret) + " returned" : ""]]);
+    $("txPdf").disabled = true; $("txXls").disabled = !rows.length || !S.downloads;
+    var box = $("txList"); if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "No cash advances for these filters.")); return; }
+    var M = function (n, neg) { return neg && n ? "(" + money(n) + ")" : money(n); };
+    sortTable(box, "txCash", [
+      { label: "Person", kind: "co", sort: function (p) { return p.name; }, cell: function (p, td) { td.appendChild(el("b", null, p.name)); } },
+      { label: "Company", sort: function (p) { return coLabel(p.cid); }, cell: function (p, td) { txt(td, coLabel(p.cid)); } },
+      { label: "Opening", cls: "r num", sort: function (p) { return p.cb.opening; }, desc: true, cell: function (p, td) { var o = openingOf(p.uid, p.cid); txt(td, o == null ? "Not entered" : money(o)); } },
+      { label: "Paid", cls: "r num", sort: function (p) { return p.cb.received; }, desc: true, cell: function (p, td) { txt(td, money(p.cb.received)); } },
+      { label: "Settled", cls: "r num", sort: function (p) { return p.cb.settled; }, desc: true, cell: function (p, td) { txt(td, M(p.cb.settled, true)); if (p.cb.pending) sub(td, money(p.cb.pending) + " waiting for approval"); } },
+      { label: "Returned", cls: "r num", sort: function (p) { return p.cb.returned; }, desc: true, cell: function (p, td) { txt(td, M(p.cb.returned, true)); } },
+      { label: "Cash on hand", cls: "r num", sort: function (p) { return p.cb.balance; }, desc: true, cell: function (p, td) { td.appendChild(el("b", p.cb.balance < 0 ? { style: "color:var(--bad)" } : null, money(p.cb.balance))); } }
+    ], rows, { sortIndex: 0, foot: function () {
+      var tf = el("tfoot"), tr = el("tr"), l = el("td", { class: "c-co", colspan: "2" }); l.appendChild(el("b", null, "Total, " + plural(rows.length, "person"))); tr.appendChild(l);
+      [[T.op, false, "Opening"], [T.rec, false, "Paid"], [T.set, true, "Settled"], [T.ret, true, "Returned"], [T.bal, false, "Cash on hand"]].forEach(function (k) { var td = el("td", { class: "r num", "data-label": k[2] }); td.appendChild(el("b", null, M(k[0], k[1]))); tr.appendChild(td); });
+      tf.appendChild(tr); return tf; } });
+  }
+  function downloadTxCashXls(btn) {
+    var rows = txCashRows(); if (!rows.length) return;
+    xlDownload(btn, "Advances " + fmtDate(todayYmd()) + ".xlsx", [{ name: "Advances", title: "Advances · by person", sub: msText("tx", true) + " · As on " + fmtDate(todayYmd()),
+      rows: rows.map(function (p) { return [p.name, coLabel(p.cid), p.cb.opening, p.cb.received, p.cb.settled, p.cb.returned, p.cb.balance]; }),
+      cols: [{ h: "Person", w: 24 }, { h: "Company", w: 10 }, { h: "Opening", t: "money", w: 13, sum: true }, { h: "Paid", t: "money", w: 13, sum: true }, { h: "Settled", t: "money", w: 13, sum: true }, { h: "Returned", t: "money", w: 13, sum: true }, { h: "Cash on hand", t: "money", w: 14, sum: true }] }]);
+  }
   function txTitle() { return TX.side === "payments" ? (TX.payFor === "all" ? "Payments" : "Payments for " + { bills: "bills", advances: "proformas and imports", vouchers: "vouchers" }[TX.payFor]) : { expenses: "Expenses", bills: "Bills", advances: "Proformas and imports", vouchers: "Vouchers" }[TX.side]; }
   function txFilterText() {
     var parts = [], q = $("txQ").value.trim();
@@ -8803,6 +8841,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       .then(function () { btn.disabled = false; btn.textContent = label; });
   }
   function downloadTxXls(btn) {
+    if ((TX.side === "payments" ? TX.payFor : TX.expFor) === "cash") { downloadTxCashXls(btn); return; }
     var rows = txFiltered(), pay = TX.side === "payments"; if (!rows.length) return;
     var cols = pay ? [{ h: "Date", t: "date", w: 12 }, { h: "Company", w: 10 }, { h: "Paid to", w: 30 }, { h: "For", w: 46 }, { h: "Currency", w: 9 }, { h: "Amount", t: "money", w: 14, sum: true }, { h: "Paid by", w: 24 }, { h: "Reference", w: 18 }, { h: "Entered by", w: 18 }, { h: "Reason", w: 30 }]
       : [{ h: "Number", w: 18 }, { h: "Date", t: "date", w: 12 }, { h: "Company", w: 10 }, { h: TX.side === "vouchers" ? "Paid to" : "Vendor", w: 30 }, { h: "Description", w: 40 }, { h: "Currency", w: 9 }, { h: "Amount", t: "money", w: 14, sum: true }, { h: "Paid", t: "money", w: 14, sum: true }, { h: "Still to pay", t: "money", w: 14, sum: true }, { h: "Where it is", w: 32 }, { h: "Report", w: 22 }, { h: "With", w: 22 }, { h: "Days old", t: "int", w: 9 }, { h: "Prepared by", w: 20 }, { h: "Approver", w: 20 }, { h: "Open", w: 7 }];

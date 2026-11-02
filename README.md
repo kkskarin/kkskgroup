@@ -266,6 +266,10 @@ provides the same calls, so the app code did not need rewriting:
   in the ledger books. Round Off is an ordinary ledger choice on a bill's ledger lines (pick, remove, add back), except that no GST is on it: it is outside the taxable amount and outside the 4-ledger limit, and is saved as the bill's `roundOff`, not among its `ledgers`. The top Round off box shows it; in accounting a change also changes the bill's total and in the accountant's top boxes, with no alert. Proformas have an
   "Of which round off" (for reference, like GST); imports have Round off among the rupee costs, added
   to the landed total and the closing breakup.
+- **Transactions › Advances** (next to Vouchers, on both Expenses and Payments; for financiers the tab
+  is Payments): cash advances by person and company: Opening, Paid (advances handed over), Settled (by
+  approved vouchers and bills), Returned, Cash on hand, with a total row and Excel download. Cash
+  advances are our own cash with the person until an expense uses it, so **All** never includes them.
 - **View As** keeps the admin's own look (mode, colour, text size).
 - **Header**: logo and app name, then the person (picture, name, Viewing As for admins) and a ☰ menu
   with Demo / Live (when allowed), **All Apps** (a scrollable list of the person's apps, each with what

@@ -821,6 +821,7 @@ select.rladd{max-width:320px}
 }
 /* Phones: a long page description folds to three lines; tap it to read the rest. */
 @media (max-width:760px){.head .sub{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}.head .sub.open{display:block;-webkit-line-clamp:unset}}
+.rorow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}
 /* Full-width pages (Nov 2026): the page uses the whole screen on big monitors, small monitors and phones alike.
    The scrollbar has its own fixed slot with an equal one on the left, so nothing moves or shrinks when a scrollbar appears. */
 /* The bars run edge to edge; the scrollbar keeps a fixed slot on the right, and the same width is added on the left of the
@@ -13342,7 +13343,6 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var v = S.vendors[x.vendorId], tx = Number(x.fcTaxable != null ? x.fcTaxable : x.taxable), ga = Number(x.fcGst != null ? x.fcGst : x.gstAmt) || 0, out = [], pr = x.ex && x.ex.printedTotal;
     var ro = Number(x.roundOff) || 0;
     if (pr != null && !isNaN(tx) && Math.abs(tx + ga + ro - pr) > 1) out.push("The bill's printed total is " + amt2(pr) + ", but taxable plus GST" + (ro ? " and round off" : "") + " comes to " + amt2(tx + ga + ro) + ". Check for round-off, freight or TDS.");
-    if (ro) out.push("Round off of " + (ro < 0 ? "minus " : "") + amt2(Math.abs(ro)) + " is posted to " + (roundLedger(x.companyId) ? roundLedger(x.companyId).name : "a Round Off ledger, which this company doesn't have yet (Masters, Ledgers)") + ".");
     var gn = gstRateNote(tx, ga, x.currency); if (gn) out.push(gn);
     if (x.extAppr) out.push(extApprText(x.extAppr) + " for " + curMoney(x.currency, x.extAppr.amount || x.total) + ". Once accounted it goes straight to Payment Entry." + extDiscText(x.extAppr));
     if (v && v.type && v.type !== "registered" && ga > 0) out.push("The vendor is " + vtypeLabel(v.type).toLowerCase() + ", but the bill charges GST.");
@@ -13605,6 +13605,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       drawG();
       gf0.appendChild(el("span", { class: "hint" }, "The bill's GST, " + amt2(billGst(x)) + ", goes to the GST ledgers of the credit types ticked."));
       gf0.appendChild(el("span", { class: "err", id: "aoGstLedE", hidden: "" })); lw.appendChild(gf0);
+      /* the bill's round off: posted by itself to the Round Off ledger, nothing to choose */
+      if (Number(x.roundOff)) { var rl0 = roundLedger(x.companyId), rf0 = el("div", { class: "f wide" }); rf0.appendChild(el("span", { class: "lb" }, "Round Off")); var rr0 = el("div", { class: "rorow" }); rr0.appendChild(el("span", null, rl0 ? rl0.name + (rl0.sub ? " (" + rl0.main + ", " + rl0.sub + ")" : "") : "Round Off")); rr0.appendChild(el("b", { class: "num" }, (Number(x.roundOff) < 0 ? "- " : "") + amt2(Math.abs(Number(x.roundOff))))); rf0.appendChild(rr0); lw.appendChild(rf0); }
     }
     if (itCard) f.insertBefore(itCard, det); f.insertBefore(lw, det); if (eo.info) eo.info(); /* the running totals, now that they are on the page */
     f.appendChild(form); aoTdsHint();

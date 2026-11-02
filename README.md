@@ -288,6 +288,10 @@ provides the same calls, so the app code did not need rewriting:
     vouchers and bills (each with its amount, no running balance) with Ask for a cash advance, Make a voucher
     and Enter a bill on their behalf.
 - **Earlier vouchers** on a voucher show only cash already paid to that payee by the chosen company.
+- **Voucher form**: Details and ledger open only once the company, Paid to, the voucher type and (for all but a
+  Cash Voucher) Supply Of are chosen. A Narration line under the total shows the bill-style narration as it
+  will be saved and changes whenever the type, Supply Of, Paid to or lines change. A bill's narration follows
+  its vendor, invoice number and date when they change.
 - Narration boxes typed or spoken in another script are written in English as soon as typing pauses.
 - **View As** keeps the admin's own look (mode, colour, text size).
 - **Header**: logo and app name, then the person (picture, name, Viewing As for admins) and a ☰ menu

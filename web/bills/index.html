@@ -3537,6 +3537,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     t = String(t || ""); name = String(name || "").trim(); if (!t || !name) return t;
     return t.replace(/^(Being\b.*?\b(?:from|with)\s+)(.+?)(\s+vide\b)/i, function (m0, a, v, b) { return a + name + b; });
   }
+  /* ...and its invoice number and date as now entered. */
+  function narrInv(t, no, ymd) {
+    t = String(t || ""); if (!t) return t;
+    if (no) t = t.replace(/(\bvide Inv\.\s+)(\S+?)(\s+dt\.)/i, function (m0, a, x, b) { return a + String(no).trim() + b; });
+    if (ymdOk(ymd)) t = t.replace(/(\bdt\.\s+)(\d{2}\/\d{2}\/\d{4})/i, function (m0, a) { return a + ymd.split("-").reverse().join("/"); });
+    return t;
+  }
   function vendorLabelOfBill(b) { var v = vendorOfBill(b); return v ? v.name : (b.vendorNew && b.vendorNew.name) || ""; }
   function keyMissing(b) { return !b.companyId || !vendorLabelOfBill(b) || !ymdOk(b.billDate) || !String(b.billNo || "").trim(); }
   /* Company, then vendor, then bill date, then bill number. Anything missing one of those goes last. */
@@ -4709,7 +4716,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       companyId: D.companyId || null, vendorId: D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : null,
       vendorNew: { name: D.vNew.name.trim(), gstin: normId(D.vNew.gstin), pan: panOfNew(D), type: D.vNew.type || "", termDays: intOrNull(D.vNew.termDays), address: String(D.vNew.addr || "").trim(), addrPick: D.vNew.addrPick || "" },
       billNo: D.billNo.trim(), billDate: parseDate(D.billDate),
-      termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: narrVendor(D.narration.trim(), D.vendorChoice === "new" ? D.vNew.name : (S.vendors[D.vendorChoice] || {}).name), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
+      termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: narrInv(narrVendor(D.narration.trim(), D.vendorChoice === "new" ? D.vNew.name : (S.vendors[D.vendorChoice] || {}).name), D.billNo.trim(), parseDate(D.billDate)), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
       ledgers: ledLinesOut(nonRo(D.ledgers)), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || "",
       und: D.und || null, settle: D.settle === "yes" && billAdvOk(D), supplyOf: D.supplyOf || "", einv: einvOf((D.einv || {}).irn, (D.einv || {}).ackNo, parseDate((D.einv || {}).ackDate || ""))
     }, amountsOf(D), prepFields(D.prepBy), approverFields(D.approverId, D.approver1Id || ""), extDoc(D.companyId, D.X));
@@ -10098,7 +10105,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var sup = el("select", { class: "field", id: "vfSupply" }), sopts = [["", "Choose"]].concat(SUPPLY_OF.map(function (x) { return [x, x]; }));
     if (D.supplyOf && SUPPLY_OF.indexOf(D.supplyOf) < 0) sopts.push([D.supplyOf, D.supplyOf]);
     fillSelect(sup, sopts, D.supplyOf); var so = fld("Supply Of", sup, "Goods, Services, or Composite (goods and services together)."); so.id = "vfSupplyF"; f.appendChild(so);
-    var lw = el("div", { class: "f wide" }); lw.appendChild(el("span", { class: "lb" }, "Details and ledger (up to 2 lines)")); var lb = el("div", { id: "vfLines" }); lw.appendChild(lb); lw.appendChild(el("span", { class: "err", id: "vfLinesE", hidden: "" })); f.appendChild(lw);
+    var lw = el("div", { class: "f wide" }); lw.appendChild(el("span", { class: "lb" }, "Details and ledger (up to 2 lines)")); lw.appendChild(el("span", { class: "hint", id: "vfLinesWait", hidden: "" })); var lb = el("div", { id: "vfLines" }); lw.appendChild(lb); lw.appendChild(el("span", { class: "err", id: "vfLinesE", hidden: "" })); f.appendChild(lw);
     /* an optional document (receipt, slip, photo): kept with the voucher, and Claude writes the lines from it */
     var dw = el("div", { class: "f wide" }); dw.appendChild(el("span", { class: "lb" }, "Document (optional)"));
     var dfi = el("input", { type: "file", accept: "application/pdf,image/jpeg,image/png,image/webp", hidden: "" }), dbn = el("button", { type: "button", class: "btn sm", id: "vfDocBtn" }, VH.D.file ? "Replace Document" : "Attach Document"), dln = el("span", { class: "hint", id: "vfDocLn" }, VH.D.file ? "Kept: " + VH.D.file.name : "A receipt, slip or photo. The details are written from it" + (S.sample ? " by Claude" : "") + "; check them.");
@@ -10106,6 +10113,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var drow = el("div", { class: "row", style: "display:flex;gap:10px;align-items:center;flex-wrap:wrap" }); drow.appendChild(dbn); drow.appendChild(dln); dw.appendChild(drow); dw.appendChild(dfi); f.appendChild(dw);
     drawVchLines();
     var tt = el("div", { class: "f" }); tt.appendChild(el("span", { class: "lb" }, "Total amount")); tt.appendChild(el("div", { class: "field ro num", id: "vfTotV" })); tt.appendChild(el("span", { class: "hint" }, "The lines added up. Paid in full.")); f.appendChild(tt);
+    var nw = el("div", { class: "f wide" }); nw.appendChild(el("span", { class: "lb" }, "Narration")); nw.appendChild(el("div", { class: "field ro", id: "vfNarV", style: "min-height:44px;height:auto;line-height:1.45;white-space:normal" })); nw.appendChild(el("span", { class: "hint" }, "Written like a bill's, from the voucher type, Supply Of, Paid to and the lines; it changes whenever they do. The voucher number and date are filled in when it is saved.")); f.appendChild(nw);
     var md = el("select", { class: "field", id: "vfMode" }); fillSelect(md, [["", "Choose how it is paid"]].concat(VPAY_MODES), D.payMode || "");
     var mf = fld("Mode of Payment", md, "Set by itself: Cash while the day's cash to this person or shop from this company stays within \u20B9 10,000 (\u20B9 30,000 for freight and transport), Cheque above that. You can change it; cash can never go over \u20B9 10,000 a day (\u20B9 35,000 for freight and transport)."); mf.id = "vfModeF"; f.appendChild(mf);
     var sf = el("div", { class: "f wide", id: "vfSetF" }); sf.appendChild(el("span", { class: "lb", id: "vfSetL" }, "Is this an advance settlement?"));
@@ -10116,6 +10124,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     sf.appendChild(rg); sf.appendChild(el("div", { class: "vbox", id: "vfBal", hidden: "" }));
     var se = el("span", { class: "err", id: "vfSetE" }); se.hidden = true; sf.appendChild(se); f.appendChild(sf);
     updVchForm();
+  }
+  function vchLinesLock(need) {
+    VH.lockNeed = need; var off = need.length > 0, w = $("vfLinesWait"); if (w) { w.hidden = !off; w.textContent = off ? "Choose " + need.join(", ").replace(/, ([^,]*)$/, " and $1") + " first." : ""; }
+    var box = $("vfLines"); if (!box) return; box.classList.toggle("rlock", off);
+    Array.prototype.forEach.call(box.querySelectorAll("textarea, input, button, select"), function (x) { x.disabled = off; });
+    Array.prototype.forEach.call(box.querySelectorAll(".lcombo"), function (c) { c.disabled = off; });
+    var db = $("vfDocBtn"); if (db) db.disabled = off;
   }
   /* Each line: what it was for, its amount and its ledger (suggested from earlier vouchers). At most 2 lines. */
   function drawVchLines() {
@@ -10131,6 +10146,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (D.lines.length > 1) { var rm = el("button", { class: "btn sm", type: "button" }, "Remove"); rm.addEventListener("click", function () { readVchForm(); D.lines.splice(i, 1); drawVchLines(); updVchForm(); }); row.appendChild(rm); }
       box.appendChild(row);
     });
+    if (VH.D && VH.lockNeed) setTimeout(function () { vchLinesLock(VH.lockNeed); }, 0);
     if (D.lines.length < MAX_LED.voucher) { var add = el("button", { class: "link-btn", type: "button" }, "+ Add a line"); add.addEventListener("click", function () { readVchForm(); D.lines.push({ d: "", amt: "", lg: "", touched: false }); drawVchLines(); updVchForm(); var n = $("vfLd" + (D.lines.length - 1)); if (n) n.focus(); }); box.appendChild(add); }
   }
   var SUPPLY_OF = ["Goods", "Services", "Composite"];
@@ -10389,6 +10405,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     drawPayeeDup();
     if (VH.histFor !== (D.payeeChoice || "") + "|" + (VH.id || "")) { VH.histFor = (D.payeeChoice || "") + "|" + (VH.id || ""); drawPayeeHist(); }
     var t = vchTotal(D); $("vfTotV").textContent = t == null ? "" : money(t);
+    /* Details and ledger open only once the company, Paid to, the voucher type and (except a Cash Voucher) Supply Of are chosen */
+    var need = []; if (!D.companyId) need.push("the company"); if (!String(D.payee || "").trim()) need.push("Paid to"); if (!D.vtype) need.push("the voucher type"); if (other && !D.supplyOf) need.push("Supply Of");
+    vchLinesLock(need);
+    var old0 = VH.id && S.vouchers[VH.id], nl = D.lines.map(function (x) { return { d: sentenceFix(String(x.d || "").trim()), lg: x.lg }; });
+    $("vfNarV").textContent = need.length || !nl.some(function (x) { return x.d; }) ? "" : vchNarr(D, old0 && old0.voucherNo ? old0.voucherNo : "[No.]", old0 && old0.voucherDate ? old0.voucherDate : todayYmd(), nl);
     if ($("vfLg0") && ($("vfLg0").getAttribute("data-co") || "") !== (D.companyId || "")) { drawVchLines(); }
     if (D.companyId) D.lines.forEach(function (x, i) { if (x.touched || !$("vfLg" + i)) return; var sg = suggestVch(D.companyId, D.payee, x.d + " " + D.supplyOf); if (sg && sg !== x.lg) { x.lg = sg; $("vfLg" + i).value = sg; } });
     /* the question only for someone who handles cash advances for the company or holds cash for it; otherwise the financier pays */

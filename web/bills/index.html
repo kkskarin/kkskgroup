@@ -664,7 +664,7 @@ table.itbl .itdash{color:var(--muted);text-align:center}table.itbl tr.itbad>td{b
 .dv-pick{all:unset;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.dv-pick:focus-visible{outline:2px solid var(--accent,#2563eb)}
 @media (max-width:980px){.dv-split.on{grid-template-columns:minmax(0,1fr)}.dv-split.on .dv-doc{position:static;height:80vh}}
 @media (min-width:1300px){#secCheckView:has(.dv-split.on),#secVcrView:has(.dv-split.on),#secVcrApprove:has(.dv-split.on){width:min(1640px,calc(100vw - 48px));margin-left:calc(50% - min(820px,calc(50vw - 24px)))}}
-@media (min-width:1300px){#secAcctOne:has(.ao-split){width:min(1640px,calc(100vw - 48px));margin-left:calc(50% - min(820px,calc(50vw - 24px)))}}
+@media (min-width:1300px){#secAcctOne:has(.ao-split){width:min(1640px,calc(100vw - 48px));margin-left:calc(50% - min(820px,calc(50vw - 24px)))}body.tly #secAcctOne:has(.ao-split){width:auto;margin-left:0}}
 @media (max-width:980px){.ao-split{grid-template-columns:1fr}.ao-doc{position:static;height:70vh}}
 .appsln{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:calc(12.5px*var(--ts,1));font-weight:600;color:var(--brand-text);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:var(--surface)}
 .appsln:hover{border-color:var(--kk,#009256)}.appsln[hidden]{display:none}
@@ -5602,7 +5602,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     heads.forEach(function (h) { hr.appendChild(el("th", h === "Description" ? { class: "itd" } : h === "Amount (₹)" ? { class: "r" } : null, h)); });
     var th = el("thead"); th.appendChild(hr); tb.appendChild(th); var bd = el("tbody"); tb.appendChild(bd);
     /* each column as wide as its widest value or heading */
-    var wide = { hsn: "HSN / SAC".length, gst: 6, tx: "Amount (₹)".length, led: "Ledger".length, rcm: 3, itc: 8 };
+    var wide = { hsn: "HSN / SAC".length, gst: 6, tx: "Amount (₹)".length, led: "Ledger".length, rcm: 5, itc: 8 };
     its.forEach(function (x) { wide.hsn = Math.max(wide.hsn, String(x.hsn || "").length); wide.gst = Math.max(wide.gst, String(x.gst || "").length + 1); wide.tx = Math.max(wide.tx, String(x.tx || "").length); wide.led = Math.max(wide.led, x.k === "charge" && x.to ? 22 : x.k === "ro" ? 9 : (lname(x.lg).length || 17)); if (x.rcm) wide.rcm = Math.max(wide.rcm, 7); if (x.itc === "inel") wide.itc = 10; });
     var ch = function () { c.changed(); c.redraw(); }, idp = c.acct ? "aoIt" : "bcIt", allIss = [], manual = [];
     its.forEach(function (it, i) {
@@ -5922,6 +5922,17 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
      Dr each expense ledger (one line per ledger, HSN, GST rate, RCM and ITC); Dr CGST + SGST Input (or IGST Input) on the
      eligible lines; Dr Input - Ineligible on blocked ones; nothing for RCM lines (their tax goes by a Journal-GST); Round Off;
      Cr TDS; Cr the party for the rest, bill-wise New Ref. In the purchaser's view RCM, ITC and TDS are not shown. */
+  /* 1,2,3,4,5,9,11,12,13,14 -> "Line Items 1 to 5, 9 and 11 to 14" */
+  function lineRanges(ns) {
+    var out = [], i = 0; while (i < ns.length) { var j = i; while (j + 1 < ns.length && ns[j + 1] === ns[j] + 1) j++; out.push(j - i >= 2 ? ns[i] + " to " + ns[j] : j > i ? ns[i] + ", " + ns[j] : String(ns[i])); i = j + 1; }
+    var txt = out.length > 1 ? out.slice(0, -1).join(", ") + " and " + out[out.length - 1] : out[0] || "";
+    return (ns.length === 1 ? "Line Item " : "Line Items ") + txt;
+  }
+  /* the lines TDS is worked on, as in tdsBaseOf: the services (SAC 99…), else every line but round off */
+  function tdsLines(items) {
+    var its = items || [], sv = [], all = []; its.forEach(function (x, i) { if (x.k === "ro" || (x.k === "charge" && x.to)) return; all.push(i + 1); if (/^99/.test(hsnNorm(x.hsn))) sv.push(i + 1); });
+    return sv.length ? lineRanges(sv) : "all Line Items";
+  }
   function tallyVoucher(o) {
     var its = effItems(o.items), cid = o.cid, inter = !!o.inter, rows = [], grp = {}, gk = [], acct = o.acct !== false;
     var nm = function (id) { return ((S.ledgers || {})[id] || {}).name || "Choose a ledger"; };
@@ -5932,24 +5943,28 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var heads = inter ? ["igst"] : ["cgst", "sgst"];
       heads.forEach(function (h) {
         var by = {}, order = [], nmsOf = {};
-        its.forEach(function (x) { if (x.k === "ro" || x.rcm || (x.itc || "elig") !== flav || !(num(x.gst) > 0)) return; var r = inter ? num(x.gst) : num(x.gst) / 2; if (!by[r]) { by[r] = []; nmsOf[r] = []; order.push(r); } by[r].push(num(x.tx) || 0); var ln = nm(x.lg); if (nmsOf[r].indexOf(ln) < 0) nmsOf[r].push(ln); });
+        var lnOf = {}; (o.items || []).forEach(function (x, i) { if (x.id) lnOf[x.id] = i + 1; });
+        var nItems = (o.items || []).filter(function (x) { return x.k !== "ro" && !roLike(x) && !(x.k === "charge" && x.to); }).length, nos = {};
+        its.forEach(function (x) { if (x.k === "ro" || x.rcm || (x.itc || "elig") !== flav || !(num(x.gst) > 0)) return; var r = inter ? num(x.gst) : num(x.gst) / 2; if (!by[r]) { by[r] = []; nmsOf[r] = []; nos[r] = []; order.push(r); } by[r].push(num(x.tx) || 0); if (lnOf[x.id]) nos[r].push(lnOf[x.id]); var ln = nm(x.lg); if (nmsOf[r].indexOf(ln) < 0) nmsOf[r].push(ln); });
         if (!order.length) return;
-        var amt = 0, parts = order.map(function (r) { var tot = round2(by[r].reduce(function (a, b2) { return a + b2; }, 0)); amt += round2(tot * r / 100); return pct(r) + " on " + by[r].map(amt2).join(" + ") + (flav === "inel" ? " (" + nmsOf[r].join(", ") + ")" : ""); });
-        var l = gstLedFor(inter, flav === "elig" ? "in" : "inel", h); rows.push({ dc: "Dr", led: l ? l.name : (h.toUpperCase() + " Input" + (flav === "inel" ? " - Ineligible" : "")), lid: l ? l.id : "", gst: true, amt: round2(amt), sub: parts.join(" and ") + (flav === "inel" ? " · blocked credit" : ""), noLed: !l });
+        /* by line numbers, the higher rate first: "9% on Line Items 1 to 5, 9 and 11 to 14; 2.5% on Line Item 10" */
+        order.sort(function (a, b) { return b - a; });
+        var amt = 0, parts = order.map(function (r) { var tot = round2(by[r].reduce(function (a, b2) { return a + b2; }, 0)); amt += round2(tot * r / 100); var ls = nos[r].sort(function (a, b) { return a - b; }); return pct(r) + " on " + (ls.length === nItems && order.length === 1 ? "all Line Items" : lineRanges(ls)) + (flav === "inel" ? " (" + nmsOf[r].join(", ") + ")" : ""); });
+        var l = gstLedFor(inter, flav === "elig" ? "in" : "inel", h); rows.push({ dc: "Dr", led: l ? l.name : (h.toUpperCase() + " Input" + (flav === "inel" ? " - Ineligible" : "")), lid: l ? l.id : "", gst: true, amt: round2(amt), sub: parts.join("; ") + (flav === "inel" ? " · blocked credit" : ""), noLed: !l });
       });
     }
     gstRows("elig"); gstRows("inel");
     var ro = round2(its.reduce(function (a, x) { return a + (x.k === "ro" ? num(x.tx) || 0 : 0); }, 0));
     if (ro) { var rl = roundLedger(cid); rows.push({ dc: ro > 0 ? "Dr" : "Cr", led: rl ? rl.name : "Round Off", lid: rl ? rl.id : "", amt: Math.abs(ro), sub: "" }); }
     var tds = acct ? num(o.tds) || 0 : 0;
-    if (tds > 0) { var tt = taxAll("tds").filter(function (t) { return t.sec === o.tdsSec; })[0]; rows.push({ dc: "Cr", led: tt ? tdsLedName(tt) : "TDS Payable u/s " + (o.tdsSec || ""), amt: tds, sub: o.tdsBase ? "On " + amt2(o.tdsBase) + " (without GST)" + (o.tdsBase > 0 ? " at " + pct(Math.round(tds / o.tdsBase * 10000) / 100) : "") : "" }); }
+    if (tds > 0) { var tt = taxAll("tds").filter(function (t) { return t.sec === o.tdsSec; })[0]; rows.push({ dc: "Cr", led: tt ? tdsLedName(tt) : "TDS Payable u/s " + (o.tdsSec || ""), amt: tds, sub: o.tdsBase > 0 ? pct(Math.round(tds / o.tdsBase * 10000) / 100) + " on " + tdsLines(o.items) + " (without GST)" : "" }); }
     var dr = round2(rows.reduce(function (a, r) { return a + (r.dc === "Dr" ? r.amt : 0); }, 0)), cr = round2(rows.reduce(function (a, r) { return a + (r.dc === "Cr" ? r.amt : 0); }, 0)), party = round2(dr - cr);
     rows.push({ dc: "Cr", led: o.party || "The vendor", amt: party, sub: "Bill-wise: New Ref " + (o.billNo || "(bill no)") + "  " + amt2(party) + " Cr", party: true });
     return { rows: rows, dr: dr, cr: round2(cr + party), party: party };
   }
   function tallyTable(v) {
     var tb = el("table", { class: "t tallyv" }), th = el("thead"), hr = el("tr"); [["", ""], ["Particulars", ""], ["Debit", "r"], ["Credit", "r"]].forEach(function (h) { hr.appendChild(el("th", h[1] ? { class: h[1] } : null, h[0])); }); th.appendChild(hr); tb.appendChild(th);
-    var bd = el("tbody"); v.rows.forEach(function (r) { var tr = el("tr"); tr.appendChild(el("td", { class: "tsub", style: "width:30px;font-weight:600" }, r.dc)); var p = el("td"); p.appendChild(el("b", r.noLed ? { style: "color:var(--bad)" } : null, r.led)); if (r.sub) p.appendChild(el("div", { class: "tsub", style: "font-style:italic" }, r.sub)); tr.appendChild(p); tr.appendChild(el("td", { class: "r num" }, r.dc === "Dr" ? amt2(r.amt) : "")); tr.appendChild(el("td", { class: "r num" }, r.dc === "Cr" ? amt2(r.amt) : "")); bd.appendChild(tr); }); tb.appendChild(bd);
+    var bd = el("tbody"); v.rows.forEach(function (r) { var tr = el("tr"); tr.appendChild(el("td", { style: "width:30px;font-weight:600;font-size:calc(12.5px*var(--ts,1));color:var(--muted)" }, r.dc)); var p = el("td"); p.appendChild(el("b", r.noLed ? { style: "color:var(--bad)" } : null, r.led)); if (r.sub) p.appendChild(el("div", { class: "tsub", style: "font-style:italic" }, r.sub)); tr.appendChild(p); tr.appendChild(el("td", { class: "r num" }, r.dc === "Dr" ? amt2(r.amt) : "")); tr.appendChild(el("td", { class: "r num" }, r.dc === "Cr" ? amt2(r.amt) : "")); bd.appendChild(tr); }); tb.appendChild(bd);
     var tf = el("tfoot"), fr = el("tr"); fr.appendChild(el("td")); fr.appendChild(elc("td", null, el("b", null, "Total"))); fr.appendChild(elc("td", { class: "r num" }, el("b", null, amt2(v.dr)))); fr.appendChild(elc("td", { class: "r num" }, el("b", null, amt2(v.cr)))); tf.appendChild(fr); tb.appendChild(tf);
     var c = el("div", { class: "card list scroll" }); c.appendChild(tb); return c;
   }

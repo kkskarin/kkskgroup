@@ -254,6 +254,7 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .meter{height:8px;border-radius:99px;background:var(--soft);overflow:hidden;min-width:120px;max-width:240px}.meter span{display:block;height:100%;background:var(--ok)}.meter span.mid{background:#B07A2A}.meter span.hi{background:var(--bad)}
 .arsteps{margin:4px 0 0;padding-left:20px;font-size:calc(13.5px*var(--ts,1));line-height:1.55;color:var(--muted)}.arsteps b{color:var(--ink)}
 .seg{display:inline-flex;gap:4px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:3px;margin:0 0 14px}
+.seg{max-width:100%;flex-wrap:wrap;box-sizing:border-box}
 .seg button{all:unset;cursor:pointer;padding:7px 14px;border-radius:7px;font-weight:600;font-size:calc(13px*var(--ts,1));color:var(--muted)}
 .seg button[aria-selected="true"]{background:var(--ink);color:#fff}
 .seg button:focus-visible{outline:2px solid var(--focus)}
@@ -298,7 +299,7 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .stat .v .tsub{font-weight:500}
 .tsub{display:block;font-size:calc(12.5px*var(--ts,1));color:var(--muted);font-weight:500;margin-top:2px}
 .late{color:var(--bad);font-weight:700}
-.t tr.skip td{opacity:.45}
+.t tr.skip td{opacity:1}
 .t th.ckcol,.t td.ckcol{width:44px;text-align:center}
 .t input[type=checkbox]{width:18px;height:18px;accent-color:var(--brand);vertical-align:middle}
 .acts{display:flex;gap:6px;justify-content:flex-end;flex-wrap:nowrap}
@@ -836,6 +837,7 @@ select.rladd{max-width:320px}
 .mkrow .mkstats .stat{flex:0 1 auto;min-width:170px;padding:7px 16px;box-shadow:none}
 .mkrow .mkstats .stat .v{font-size:calc(17px*var(--ts,1))}
 .mkbar .dueseg .tsub{display:inline;margin-left:4px;font-size:inherit;opacity:.8}
+.seg button[aria-selected="true"] .tsub,.seg button[aria-checked="true"] .tsub{color:inherit;opacity:.85}
 .mkbar .dueseg{flex:0 1 auto;max-width:100%;overflow-x:auto;scrollbar-width:none}.mkbar .dueseg::-webkit-scrollbar{display:none}
 .mkbar .dueseg button{white-space:nowrap}
 @media (max-width:760px){
@@ -949,7 +951,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     <div class="card list" id="hsnList"></div>
   </section>
   <section id="secVerify" hidden>
-    <div class="head"><div class="grow"><h2>Verification</h2><p class="sub">Bills sent with Verify with Chief Accountant from Accounting, with the lines the app marks red. The Chief Accountant approves (the line can then go through as it is, while it stays unchanged) or rejects, with a reply the sender sees on the bill.</p></div></div>
+    <div class="head"><div class="grow"><h2>Verification</h2><p class="sub">Bills sent with Verify with Chief Accountant from Accounting, with the lines the app marks red. The Chief Accountant answers Confirm Correct (Always: the item is kept as correct under its HSN / SAC), Allow This Once (this bill only, while the lines stay unchanged) or Reject, with a reply the sender sees on the bill.</p></div></div>
     <div id="verifyList"></div>
   </section>
   <section id="secOthers" hidden>
@@ -1919,7 +1921,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       return { h: g.h, tabs: g.tabs.filter(function (t) { if (S.isAdmin && ADMIN_HIDE[t[0]] && !tly()) return false; if (t[0] === "Personalise") return true; if (tly()) return true; if (meChief() && CHIEF_TABS[t[0]]) return true; if (fo && !FIN_TABS[t[0]]) return false; if (t[0] === "Salary") return APP === "fin" && (S.isAdmin || canDo("txn")); if (t[0] === "Cheques" || t[0] === "Banks" || t[0] === "Others") return S.isAdmin || canDo("txn"); if (t[3] === "m") return S.isAdmin || STEPS.some(function (st) { return st[0] !== "appr" && st[0] !== "rec" && canDo(st[0]); }); return S.isAdmin || (!t[2] && (TAB_STEP[t[0]] ? canDo(TAB_STEP[t[0]]) || (TAB_STEP[t[0]] === "appr" && canDo("rec")) || (t[0] === "Bills" && canDo("adv")) : nonAcct() || (t[0] === "Vendors" && canDo("acct")))); })
         /* The financier's Reports: Payables first, then Payments (Transactions showing payments only). */
         .map(function (t) { return fo && t[0] === "Transactions" ? [t[0], "Payments"] : t; }).sort(function (x, y) { return fo ? (x[0] === "Payables" ? -1 : y[0] === "Payables" ? 1 : 0) : 0; }) };
-    }).filter(function (g) { return g.tabs.length; });
+    }).filter(function (g) { return g.tabs.length; }).reduce(function (all, g) {
+      /* Tally (Demo): every tab sits in the top bar; no second row of sub-tabs */
+      if (tly() && !g.tabs.some(function (t) { return t[0] === "Personalise"; })) g.tabs.forEach(function (t) { all.push({ h: t[1], tabs: [t] }); }); else all.push(g); return all;
+    }, []);
   }
   /* Reports other than Ledgers are for people who do more than accounts. */
   function nonAcct() { return STEPS.some(function (st) { return st[0] !== "acct" && canDo(st[0]); }); }

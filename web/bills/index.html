@@ -823,6 +823,14 @@ select.rladd{max-width:320px}
 .hmbtn:hover,.hmbtn[aria-expanded="true"]{border-color:var(--brand);background:var(--soft)}
 .hmbtn .count{position:absolute;top:-6px;right:-6px}
 .hmpanel{position:absolute;right:0;top:calc(100% + 8px);z-index:70;width:min(340px,calc(100vw - 24px));background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px rgba(16,40,31,.2);padding:8px}
+.hmapp{display:none}
+@media (max-width:760px){
+  .top .titles,.top .wrap > .me{display:none}
+  .hmapp{display:block;padding:10px 10px 8px;font-family:var(--serif,inherit);font-size:calc(18px*var(--ts,1));color:var(--ink);border-bottom:1px solid var(--line);margin-bottom:4px}
+  .hmpanel .me{display:flex;align-items:center;gap:10px;text-align:left;padding:6px 8px 8px;border-bottom:1px solid var(--line);margin-bottom:4px}
+  .hmpanel .me .mebtn{text-align:left}
+  .top .wrap{justify-content:space-between}
+}
 .hmrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);margin-bottom:4px}
 .hmrow:has(#modeSw[hidden]){display:none}
 .hml{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
@@ -892,6 +900,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   <div class="me" id="me" hidden></div>
   <div class="hmenu" id="hmenu" hidden><button class="hmbtn" id="hdrMenu" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="hdrPanel" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="count info" id="hdrMenuCt" hidden></span></button>
     <div class="hmpanel" id="hdrPanel" role="menu" hidden>
+      <div class="hmapp" id="hmAppName"></div>
       <div class="hmrow" id="hmMode"><span class="hml">Data</span><div class="modesw" id="modeSw" role="group" aria-label="Data" hidden></div></div>
       <button class="hmi" id="hmApps" type="button" role="menuitem" aria-expanded="false" aria-controls="hmAppsList"><span>All Apps</span><span class="count info" id="hmAppsCt" hidden></span><span class="chev" aria-hidden="true">&#9662;</span></button>
       <div class="hmapps" id="hmAppsList" hidden></div>
@@ -2006,6 +2015,17 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     /* on a phone the open heading and tab are scrolled into sight */
     [[nav, nav.querySelector(".grp-on")], [subn, subn.querySelector('[aria-current="page"]')], [bar, bar.querySelector('[aria-selected="true"]')]].forEach(function (x) { var c = x[1] && x[1].parentNode; if (x[1] && c && c.scrollWidth > c.clientWidth + 2) c.scrollLeft = Math.max(0, x[1].offsetLeft - c.offsetLeft - 24); });
   }
+  /* Phone: the app name and the person (View As) go into the three-line menu: app name, All Apps, View As, then the rest */
+  var PHONE_MQ = window.matchMedia ? window.matchMedia("(max-width:760px)") : null;
+  function phoneHeader() {
+    var me = $("me"), panel = $("hdrPanel"), apps = $("hmAppsList"), hm = $("hmenu"), an = $("hmAppName"); if (!me || !panel || !apps || !hm) return;
+    if (an) an.textContent = ($("appTitle") || {}).textContent || "";
+    var ph = !!(PHONE_MQ && PHONE_MQ.matches);
+    var md = $("hmMode");
+    if (ph && me.parentNode !== panel) { panel.insertBefore(me, apps.nextSibling); if (md) panel.insertBefore(md, me.nextSibling); }
+    else if (!ph && me.parentNode === panel) { hm.parentNode.insertBefore(me, hm); if (md && an) panel.insertBefore(md, an.nextSibling); }
+  }
+  if (PHONE_MQ) { if (PHONE_MQ.addEventListener) PHONE_MQ.addEventListener("change", phoneHeader); else if (PHONE_MQ.addListener) PHONE_MQ.addListener(phoneHeader); }
   function setTab(t) {
     if (S.prefDraft && t !== "Personalise") dropPrefDraft();
     if (S.tab === "Bills" && t !== "Bills") { readCard(); doSave(); }
@@ -3188,7 +3208,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function hmWire() {
     if (hmWire.done || !$("hdrMenu")) return; hmWire.done = true;
     $("hmenu").hidden = false;
-    $("hdrMenu").addEventListener("click", function (e) { e.stopPropagation(); hmOpen(); });
+    $("hdrMenu").addEventListener("click", function (e) { e.stopPropagation(); phoneHeader(); hmOpen(); });
     $("hmApps").addEventListener("click", hmApps); $("hmSet").addEventListener("click", hmSettings); $("hmPw").addEventListener("click", hmPassword); $("hmOut").addEventListener("click", hmSignOut);
   }
   /* Anyone on the shared login can ask the admin for a new profile under it. */

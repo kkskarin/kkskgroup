@@ -633,9 +633,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:cal
 body.tly .bcard{overflow:visible}body.tly .bc-body{align-items:start}
 body.tly .bc-prev{position:sticky;top:12px;align-self:start;height:calc(100vh - 24px);max-height:none;border-radius:12px 0 0 12px}
 body.tly .bc-fv{height:calc(100vh - 24px)}
-/* Tally (Demo) takes the TARS Creations look: leather and paper, IBM Plex Sans 15px, Spectral headings, 6px corners */
-body.tly{--font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--serif:"Spectral",Georgia,"Times New Roman",serif;font-family:var(--font);font-size:calc(15px*var(--ts,1));line-height:1.5}
-body.tly h2{font-family:var(--serif);font-weight:600}body.tly .field{border-radius:6px;padding:.55rem .7rem;border-color:#cdbcad}body.tly .card{border-radius:6px}body.tly .btn{border-radius:6px}
+/* Tally (Demo) takes the TARS Creations layout (cards, 6px corners) in the app's own fonts and colours */
+body.tly{line-height:1.5}body.tly .field{border-radius:6px;padding:.55rem .7rem;border-color:#cdbcad}body.tly .card{border-radius:6px}body.tly .btn{border-radius:6px}
 body.tly .t th{background:var(--brand-soft);color:var(--brand-dark);font-size:calc(13px*var(--ts,1));font-weight:600}body.tly .t td{border-bottom:1px solid var(--line)}
 .tlysecs{padding:12px 14px 14px;display:grid;gap:16px}
 .scanwrap{position:relative;overflow:hidden}.scanbar{position:absolute;left:0;right:0;height:90px;top:-90px;background:linear-gradient(180deg,transparent,rgba(201,149,77,.35) 70%,rgba(201,149,77,.9) 96%,transparent);box-shadow:0 2px 14px rgba(201,149,77,.55);animation:scanmove 2.2s cubic-bezier(.45,0,.55,1) infinite;pointer-events:none;z-index:5}
@@ -644,7 +643,7 @@ body.tly .t th{background:var(--brand-soft);color:var(--brand-dark);font-size:ca
 .scansteps{list-style:none;padding:0;margin:6px 0 0;display:grid;gap:8px}.scansteps li{opacity:.35;padding-left:22px;position:relative;animation:scanstep 8s ease infinite}.scansteps li::before{content:"";position:absolute;left:0;top:.45em;width:10px;height:10px;border-radius:50%;background:var(--rule,#c9954d)}
 @keyframes scanstep{0%,10%{opacity:.35}20%,100%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.scanbar,.scanspin,.scansteps li{animation:none}.scansteps li{opacity:1}}.tlysec{border:1px solid var(--line);border-radius:6px;background:var(--surface);overflow:visible;box-shadow:0 1px 3px rgba(61,38,24,.08);border-left:4px solid var(--rule,var(--brand))}
-.tlysec>h3,.tlysec>summary{text-transform:none;letter-spacing:0;margin:0;padding:11px 18px;font-family:var(--serif);font-size:calc(17px*var(--ts,1));font-weight:600;color:var(--brand-dark,var(--brand));background:var(--brand-soft,var(--soft));border-bottom:1px solid var(--line);border-radius:0 6px 0 0}
+.tlysec>h3,.tlysec>summary{text-transform:none;letter-spacing:0;margin:0;padding:11px 18px;font-family:var(--serif);font-size:calc(18px*var(--ts,1));font-weight:400;color:var(--brand-dark,var(--brand));background:var(--brand-soft,var(--soft));border-bottom:1px solid var(--line);border-radius:0 6px 0 0}
 details.tlysec:not([open])>summary{border-bottom:0}details.tlysec>summary{cursor:pointer;list-style-position:inside}details.tlysec>summary .hint{font-family:var(--font);font-weight:400;margin-left:8px}
 .tlysec>.form{padding:18px 20px 20px!important;gap:16px 20px}.tlysec>div:not(.form){padding:16px 20px 20px}.tlysec .lb,.tlysec label{font-weight:600}
 .tlysec>.form{padding:14px 16px 16px}.tlysec>div:not(.form){padding:12px 16px 16px}.ao-tly{padding:0;margin:12px 0}
@@ -942,8 +941,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     <div id="bankList"></div>
   </section>
   <section id="secHsn" hidden>
-    <div class="head"><div class="grow"><h2>HSN / SAC</h2><p class="sub" id="hsnSub">The official HSN list (CBIC) and SAC codes, with the GST rate of each. Line items are checked against it: a code not in it, or a rate that differs, turns the line red.</p></div></div>
-    <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><input class="field" id="hsnQ" placeholder="Search by code or words (e.g. 3917, ball valve)" autocomplete="off" style="max-width:420px"><select class="field" id="hsnK" style="max-width:220px"><option value="">HSN and SAC</option><option value="h">HSN (goods)</option><option value="s">SAC (services)</option><option value="e">Rates changed here</option><option value="l">Used on accounted bills</option></select><span class="hint" id="hsnN" style="margin:0"></span></div>
+    <div class="head"><div class="grow"><h2>HSN / SAC</h2><p class="sub" id="hsnSub">The official HSN list and SAC codes, with the GST rate of each on the date of the bill. Line items are checked against it: a code not in it, or a rate that differs, turns the line red. Once a month the accountant uploads the official documents below: the HSN list from the GST portal and the CBIC rate notifications, which Claude reads into rates with the date they are in force from.</p></div></div>
+    <div class="card" id="hsnDocs" style="padding:14px 16px;margin-bottom:12px"></div>
+    <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><input class="field" id="hsnQ" placeholder="Search by code or words (e.g. 3917, ball valve)" autocomplete="off" style="max-width:420px"><select class="field" id="hsnK" style="max-width:220px"><option value="">HSN and SAC</option><option value="h">HSN (goods)</option><option value="s">SAC (services)</option><option value="o">Rates from official documents</option><option value="e">Rates changed here</option><option value="l">Used on accounted bills</option><option value="n">New in the official list</option><option value="g">Not in the official list</option></select><span class="hint" id="hsnN" style="margin:0"></span></div>
     <div class="card list" id="hsnList"></div>
   </section>
   <section id="secOthers" hidden>
@@ -3574,6 +3574,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function vendorOfBill(b) { return b.vendorId && S.vendors[b.vendorId] ? S.vendors[b.vendorId] : null; }
   /* The name a vendor goes by in our books: the business, never its owner. For a proprietorship (or an individual or HUF) the
      GST "legal name" is the owner's own name, so the trade name is used; companies, LLPs and firms use their legal name. */
+  /* the names exactly as the GST portal gives them: legal name, then trade name when it differs */
+  function gstAsIs(g) { if (!g) return []; var lg = String(g.legalName || "").replace(/\s+/g, " ").trim(), tr = String(g.tradeName || "").replace(/\s+/g, " ").trim(), o = []; if (lg) o.push(["Legal name", lg]); if (tr && tr !== lg) o.push(["Trade name", tr]); return o; }
+  /* puts a portal name in a name box as is (the box's tidying leaves it alone until it is changed) */
+  function setAsIs(inpEl, name) { inpEl.dataset.asis = name; inpEl.value = name; inpEl.dispatchEvent(new Event("input", { bubbles: true })); }
   function gstBizName(g) {
     if (!g) return ""; var lg = String(g.legalName || "").trim(), tr = String(g.tradeName || "").trim();
     if (tr && (/propriet|individual|huf|hindu undivided/i.test(g.constitution || "") || !lg)) return tr;
@@ -3821,6 +3825,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return s;
   }
   function applyFmt(t) {
+    /* a name taken as is from the GST portal keeps the portal's spelling and case until it is typed over */
+    if (t.dataset && t.dataset.asis && t.value === t.dataset.asis) return;
     var k = t.getAttribute("data-fmt"), v = t.value, out = k === "name" ? smartCase(v) : k === "upper" ? v.replace(/\s+/g, " ").trim().toUpperCase() : k === "sentence" ? sentenceFix(v) : v;
     if (out !== v) { t.value = out; t.dispatchEvent(new Event("input", { bubbles: true })); }
   }
@@ -4698,7 +4704,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var vn = b.vendorNew || {};
     return {
       companyId: b.companyId || "", vendorChoice: b.vendorId || (vn.name || vn.gstin ? "new" : ""),
-      vNew: { name: vn.name || "", gstin: vn.gstin || "", pan: vn.pan || "", type: vn.type || "", termDays: vn.termDays == null ? "" : String(vn.termDays), addr: vn.address || "", addrPick: vn.addrPick || "" },
+      vNew: { name: vn.name || "", gstin: vn.gstin || "", pan: vn.pan || "", type: vn.type || "", termDays: vn.termDays == null ? "" : String(vn.termDays), addr: vn.address || "", addrPick: vn.addrPick || "", asis: !!vn.asis },
       billNo: b.billNo || "", billDate: fmtDate(b.billDate), currency: curOk(b.currency) ? b.currency : "INR", rate: b.fxRate ? fmtRate(b.fxRate) : "",
       taxable: fmtInput(b.fcTaxable != null ? b.fcTaxable : b.taxable), gstAmt: fmtInput(b.fcGst != null ? b.fcGst : b.gstAmt), roundOff: b.roundOff ? (b.roundOff < 0 ? "-" : "") + fmtInput(Math.abs(b.roundOff)) : "",
       tds: b.entryTds || "", tdsSec: b.entryTdsSection || "",
@@ -4826,7 +4832,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function draftToDoc0(D) {
     return Object.assign({
       companyId: D.companyId || null, vendorId: D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : null,
-      vendorNew: { name: D.vNew.name.trim(), gstin: normId(D.vNew.gstin), pan: panOfNew(D), type: D.vNew.type || "", termDays: intOrNull(D.vNew.termDays), address: String(D.vNew.addr || "").trim(), addrPick: D.vNew.addrPick || "" },
+      vendorNew: { name: D.vNew.name.trim(), gstin: normId(D.vNew.gstin), pan: panOfNew(D), type: D.vNew.type || "", termDays: intOrNull(D.vNew.termDays), address: String(D.vNew.addr || "").trim(), addrPick: D.vNew.addrPick || "", asis: !!D.vNew.asis },
       billNo: D.billNo.trim(), billDate: parseDate(D.billDate),
       termDays: intOrNull(D.termDays), termChoice: D.termChoice || "", updateVendorTerm: !!D.updateVendorTerm, narration: narrInv(narrVendor(D.narration.trim(), D.vendorChoice === "new" ? D.vNew.name : (S.vendors[D.vendorChoice] || {}).name), D.billNo.trim(), parseDate(D.billDate)), updatedAt: Date.now(), advPick: D.advPick || "", advWhy: (D.advWhy || "").trim(),
       ledgers: ledLinesOut(nonRo(D.ledgers)), entryTds: String(D.tds == null ? "" : D.tds).trim(), entryTdsSection: D.tdsSec || "",
@@ -4901,6 +4907,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var e = $("bcAddrPickE"); Array.prototype.slice.call(box.childNodes).forEach(function (n) { if (n !== e) n.remove(); });
     var g = normId(D.vNew.gstin), pg = cardPortal(b, g); if (!pg) return;
     var hd = el("div", { class: "hint", style: "margin-bottom:6px" }); hd.appendChild(el("b", { class: gstIsBad(pg) ? "bad" : "" }, "GST portal: ")); hd.appendChild(document.createTextNode([pg.legalName, pg.status, pg.type, pg.constitution].filter(Boolean).join(" · "))); box.insertBefore(hd, e);
+    /* the vendor's name exactly as on the portal, instead of the tidied one */
+    var asis = (tly() ? gstAsIs(pg) : []).filter(function (n) { return n[1] !== D.vNew.name; });
+    if (asis.length) { var nr = el("div", { style: "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px" }); asis.forEach(function (n) { var nb = el("button", { type: "button", class: "btn sm" }, "Use " + n[0].toLowerCase() + " as is: " + n[1]); nb.addEventListener("click", function () { setAsIs($("bcVName"), n[1]); D.vNew.name = n[1]; D.vNew.asis = true; scheduleSave(); updateDynamic(); }); nr.appendChild(nb); }); box.insertBefore(nr, e); }
     if (!cardAddrClash(b, pg)) return;
     var grp = el("div", { class: "checks", role: "radiogroup", "aria-label": "Which address", style: "flex-direction:column;align-items:flex-start;gap:6px" });
     var opts = [], ba0 = (b.ex && b.ex.vendorAddress) || "";
@@ -5130,12 +5139,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     /* what Masters holds next to what the portal says; anything different can be taken from the portal */
     var upd = function (patch, what) { return retry(function () { return S.db.doc("vendors/" + v.id).update(patch); }).then(function () { Object.assign(v, patch); invalidate(); toast("The vendor's " + what + " is updated."); bx._k = ""; updateDynamic(); }, function (e) { toast(explain(e)); }); };
     var biz = gstBizName(g), pan = panFromGstin(normId(v.gstin)), cmp = [
-      ["Name", v.name || "", biz, biz && normName(biz) !== normName(v.name || "") ? function () { return upd({ name: biz }, "name"); } : null],
+      ["Name", v.name || "", smartCase(biz.toLowerCase()), biz && smartCase(biz.toLowerCase()) !== (v.name || "") ? function () { return upd({ name: smartCase(biz.toLowerCase()) }, "name"); } : null]].concat(gstAsIs(g).map(function (n) {
+        return [n[0] + " as on the portal", "", n[1], n[1] !== (v.name || "") ? function () { return upd({ name: n[1] }, "name"); } : null, "Use as is"]; })).concat([
       ["PAN", v.pan || "", pan, pan && pan !== (v.pan || "") ? function () { return upd({ pan: pan }, "PAN"); } : null],
       ["Status", "", g.status || "Not given", null], ["Taxpayer type", vtypeLabel(v.type) || "", [g.type, g.constitution].filter(Boolean).join(", "), null],
-      ["e-Invoice", "", gstEinv(g) ? "Must issue e-invoices" : /^n/i.test(g.einv || "") ? "Need not issue e-invoices" : "Not stated (taken as No)", null]];
+      ["e-Invoice", "", gstEinv(g) ? "Must issue e-invoices" : /^n/i.test(g.einv || "") ? "Need not issue e-invoices" : "Not stated (taken as No)", null]]);
     var tb = el("table", { class: "t", style: "margin-top:10px" }), hr = el("tr"); ["", "In Masters", "On the GST portal", ""].forEach(function (h) { hr.appendChild(el("th", null, h)); }); var th0 = el("thead"); th0.appendChild(hr); tb.appendChild(th0); var bd0 = el("tbody"); tb.appendChild(bd0);
-    cmp.forEach(function (r) { var tr = el("tr"); tr.appendChild(elc("td", null, el("b", null, r[0]))); tr.appendChild(el("td", null, r[1] || "—")); tr.appendChild(el("td", r[3] ? { style: "color:var(--warn);font-weight:600" } : null, r[2] || "—")); var td = el("td"); if (r[3]) { var ub = el("button", { type: "button", class: "btn sm" }, "Update"); ub.addEventListener("click", function () { ub.disabled = true; r[3](); }); td.appendChild(ub); } tr.appendChild(td); bd0.appendChild(tr); });
+    cmp.forEach(function (r) { var tr = el("tr"); tr.appendChild(elc("td", null, el("b", null, r[0]))); tr.appendChild(el("td", null, r[1] || "—")); tr.appendChild(el("td", r[3] ? { style: "color:var(--warn);font-weight:600" } : null, r[2] || "—")); var td = el("td"); if (r[3]) { var ub = el("button", { type: "button", class: "btn sm" }, r[4] || "Update"); ub.addEventListener("click", function () { ub.disabled = true; r[3](); }); td.appendChild(ub); } tr.appendChild(td); bd0.appendChild(tr); });
     var ads = (g.addresses || []).length ? g.addresses : g.address ? [{ kind: "principal", address: g.address, nature: "" }] : [], cur = normName(v.address || "");
     var atr = el("tr"); atr.appendChild(elc("td", null, el("b", null, "Address"))); atr.appendChild(el("td", null, v.address || "—")); var atd = el("td"), btd = el("td");
     ads.forEach(function (a, k) { var same = normName(a.address) === cur, dv = el("div", { style: "margin-bottom:6px" + (same ? "" : ";color:var(--warn)") }); dv.appendChild(el("b", null, (a.kind === "principal" ? "Principal place" : "Additional place") + (a.nature ? " · " + a.nature : ""))); dv.appendChild(el("div", null, a.address)); atd.appendChild(dv);
@@ -5209,7 +5219,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var cf = fld("Currency", cs); cf.appendChild(el("span", { class: "hint", id: "bcCurH" })); f.appendChild(cf);
     var vbox = el("div", { class: "vbox", id: "bcVBox" });
     vbox.appendChild(el("div", { class: "ttl" }, "New vendor. It is saved when you submit this bill."));
-    vbox.appendChild(fld("Vendor name", inp("bcVName", D.vNew.name, { maxlength: "140", "data-fmt": "name" })));
+    vbox.appendChild(fld("Vendor name", inp("bcVName", D.vNew.name, Object.assign({ maxlength: "140", "data-fmt": "name" }, D.vNew.asis ? { "data-asis": D.vNew.name } : {}))));
     var vt = el("select", { class: "field", id: "bcVType" }); fillSelect(vt, [["", "Choose a type"]].concat(VTYPES), D.vNew.type);
     vbox.appendChild(fld("Vendor type", vt));
     vbox.appendChild(fld("GSTIN", inp("bcVGstin", D.vNew.gstin, { maxlength: "20", class: "field mono", spellcheck: "false" })));
@@ -5279,7 +5289,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function readCard() {
     var D = B.D; if (!D || !$("bcCo")) return;
     D.companyId = $("bcCo").value; D.vendorChoice = $("bcVen").value; D.X = extRead("bc", D.X || {}); if ($("bcAdvWhy")) D.advWhy = $("bcAdvWhy").value;
-    D.vNew.name = $("bcVName").value; D.vNew.type = $("bcVType").value; D.vNew.gstin = $("bcVGstin").value; D.vNew.termDays = $("bcVTerm").value; D.vNew.addr = $("bcVAddr").value;
+    D.vNew.name = $("bcVName").value; if (D.vNew.asis && D.vNew.name !== $("bcVName").dataset.asis) D.vNew.asis = false; D.vNew.type = $("bcVType").value; D.vNew.gstin = $("bcVGstin").value; D.vNew.termDays = $("bcVTerm").value; D.vNew.addr = $("bcVAddr").value;
     D.billNo = $("bcNo").value; D.billDate = $("bcDate").value; D.currency = $("bcCur").value || "INR"; D.rate = $("bcRate").value;
     D.taxable = $("bcTax").value; D.gstAmt = $("bcGst").value; if ($("bcRound")) D.roundOff = $("bcRound").value;
     if ($("bcIrn")) D.einv = { irn: $("bcIrn").value, ackNo: $("bcAck").value, ackDate: $("bcAckD").value };
@@ -5358,7 +5368,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var m = { list: (j.h || []).map(function (x) { return [x[0], x[1], x[2], "h"]; }).concat((j.s || []).map(function (x) { return [x[0], x[1], x[2], "s"]; })), by: {}, src: j.src || "" }; m.list.forEach(function (x) { m.by[x[0]] = x; });
       /* rates the accountant changed (Masters › HSN / SAC), kept in this app */
       var lq = S.db ? S.db.collection("hsnlearn").get().then(function (sn) { var L = {}; sn.docs.forEach(function (d) { L[d.id] = d.data() || {}; }); S.hsnLearn = L; S.hsnMem = null; }, function () { S.hsnLearn = S.hsnLearn || {}; }) : Promise.resolve();
-      return lq.then(function () { return S.db ? S.db.collection("hsnrates").get() : null; }).then(function (sn) { if (!sn) return; sn.docs.forEach(function (d) { var o = d.data() || {}, x = m.by[d.id]; if (x && o.rate != null) { x[4] = x[4] == null ? x[2] : x[4]; x[2] = Number(o.rate); x[5] = o; } }); }).catch(function () {}).then(function () { HSNM = m; return m; });
+      /* the latest official HSN list uploaded (GST portal Excel): codes added and descriptions changed since hsn.json */
+      var oq = lq.then(function () { return S.db ? S.db.doc("hsnmeta/list").get() : null; }).then(function (d) { var o = d && d.exists ? d.data() || {} : null; if (o) hsnListApply(m, o); }).catch(function () {});
+      /* rates read from official rate documents, each with the date it is in force from; and the documents register */
+      oq = oq.then(function () { return S.db ? S.db.collection("hsnoff").get() : null; }).then(function (sn) { var O = {}; if (sn) sn.docs.forEach(function (d) { O[d.id] = (d.data() || {}).e || []; }); S.hsnOff = O; }).catch(function () { S.hsnOff = S.hsnOff || {}; })
+        .then(function () { return S.db ? S.db.collection("hsndocs").get() : null; }).then(function (sn) { var R = []; if (sn) sn.docs.forEach(function (d) { R.push(Object.assign({ id: d.id }, d.data() || {})); }); S.hsnDocs = R; }).catch(function () { S.hsnDocs = S.hsnDocs || []; });
+      return oq.then(function () { return S.db ? S.db.collection("hsnrates").get() : null; }).then(function (sn) { if (!sn) return; sn.docs.forEach(function (d) { var o = d.data() || {}, x = m.by[d.id]; if (x && o.rate != null) { x[4] = x[4] == null ? x[2] : x[4]; x[2] = Number(o.rate); x[5] = o; } }); }).catch(function () {}).then(function () { HSNM = m; return m; });
     }).catch(function () { HSNQ = null; return null; }); return HSNQ; }
   /* the master's entry for a code, or for the code it starts (3917 -> first 3917xxxx) */
   function hsnInfo(code) { if (!HSNM || !code) return null; if (HSNM.by[code]) return HSNM.by[code]; for (var i = 0; i < HSNM.list.length; i++) if (HSNM.list[i][0].indexOf(code) === 0) return HSNM.list[i]; return null; }
@@ -5371,7 +5386,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         if (!m || document.activeElement !== t) return; var q = t.value.trim().toLowerCase(), dg = q.replace(/[^0-9]/g, ""), words = q.split(/\s+/).filter(Boolean);
         shown = (dg && dg === q.replace(/\s+/g, "") ? m.list.filter(function (x) { return x[0].indexOf(dg) === 0; }) : words.length ? m.list.filter(function (x) { var h = x[1].toLowerCase(); return words.every(function (k) { return h.indexOf(k) >= 0; }); }) : []).slice(0, 40);
         pop.textContent = ""; hi = 0; if (!shown.length) { pop.hidden = true; return; }
-        shown.forEach(function (x, k) { var op = el("div", { class: "lcopt" + (k === hi ? " on" : ""), role: "option" }); op.appendChild(el("b", null, x[0] + (x[2] != null ? "  ·  " + x[2] + "%" : ""))); op.appendChild(el("span", null, x[1])); op.addEventListener("mousedown", function (e) { e.preventDefault(); pick(x); }); pop.appendChild(op); });
+        shown.forEach(function (x, k) { var op = el("div", { class: "lcopt" + (k === hi ? " on" : ""), role: "option" }); var rt0 = hsnRates(x[0]); op.appendChild(el("b", null, x[0] + (rt0.length ? "  ·  " + rt0.join(" or ") + "%" : ""))); op.appendChild(el("span", null, x[1])); op.addEventListener("mousedown", function (e) { e.preventDefault(); pick(x); }); pop.appendChild(op); });
         pop.hidden = false;
       });
     }
@@ -5551,13 +5566,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var dtd = el("td", { class: "itd" }); dtd.appendChild(dta); tr.appendChild(dtd);
       /* HSN / SAC: typed or picked from the master; picking fills an empty GST rate */
       var htd = el("td");
-      if (it.k === "item") { var hc = hsnCombo(it.hsn || "", "HSN / SAC, line " + (i + 1), function (code, rate) { if (code === (it.hsn || "") && rate == null) return; it.hsn = code; if (rate != null && (it.gst === "" || it.gst == null)) it.gst = String(rate); if (!it.man) { it.lg = ""; suggestItems(sd, false); } ch(); }, wide.hsn); if (off) hc.disabled = true; htd.appendChild(hc); var hi0 = hsnInfo(hsnNorm(it.hsn)); if (hi0) { htd.title = hi0[0] + ": " + hi0[1]; } }
+      if (it.k === "item") { var hc = hsnCombo(it.hsn || "", "HSN / SAC, line " + (i + 1), function (code, rate) { if (code === (it.hsn || "") && rate == null) return; it.hsn = code; var rs0 = hsnRates(code, c.day); rate = rs0.length === 1 ? rs0[0] : rs0.length ? null : rate; if (rate != null && (it.gst === "" || it.gst == null)) it.gst = String(rate); if (!it.man) { it.lg = ""; suggestItems(sd, false); } ch(); }, wide.hsn); if (off) hc.disabled = true; htd.appendChild(hc); var hi0 = hsnInfo(hsnNorm(it.hsn)); if (hi0) { htd.title = hi0[0] + ": " + hi0[1]; } }
       else { var hx = el("div", { class: "field ro itdash" }, "—"); fitWidth(hx, wide.hsn); htd.appendChild(hx); }
       tr.appendChild(htd);
       /* GST %: picked from the rates */
       var gtd = el("td");
       if (ro || fits) { var gx = el("div", { class: "field ro itdash", title: fits ? "Spread or added to items: it takes their GST rate" : "" }, ro ? "—" : (it.gst || "0") + "%"); fitWidth(gx, wide.gst); gtd.appendChild(gx); }
-      else { var gs = el("select", { class: "field num", "aria-label": "GST %, line " + (i + 1) }); var rIn = gstRatesOn(c.day), rH = it.k === "item" ? hsnRates(hsnNorm(it.hsn)).filter(function (r) { return rIn.indexOf(r) >= 0; }) : [], rts = rH.length ? rH : rIn, opts = rts.map(function (r) { return [String(r), r + "%"]; }); if (it.gst === "" || it.gst == null) opts.unshift(["", "–"]); else if (rts.indexOf(num(it.gst)) < 0) opts.push([String(num(it.gst)), it.gst + "% (" + (rIn.indexOf(num(it.gst)) < 0 ? "not in force" : "not for this HSN") + ")"]); fillSelect(gs, opts, it.gst === "" || it.gst == null ? "" : String(num(it.gst))); fitWidth(gs, wide.gst); gs.disabled = off; gs.addEventListener("change", function () { it.gst = gs.value; ch(); }); gtd.appendChild(gs); }
+      else { var gs = el("select", { class: "field num", "aria-label": "GST %, line " + (i + 1) }); var rIn = gstRatesOn(c.day), rH = it.k === "item" ? hsnRates(hsnNorm(it.hsn), c.day).filter(function (r) { return rIn.indexOf(r) >= 0; }) : [], rts = rH.length ? rH : rIn, opts = rts.map(function (r) { return [String(r), r + "%"]; }); if (it.gst === "" || it.gst == null) opts.unshift(["", "–"]); else if (rts.indexOf(num(it.gst)) < 0) opts.push([String(num(it.gst)), it.gst + "% (" + (rIn.indexOf(num(it.gst)) < 0 ? "not in force" : "not for this HSN") + ")"]); fillSelect(gs, opts, it.gst === "" || it.gst == null ? "" : String(num(it.gst))); fitWidth(gs, wide.gst); gs.disabled = off; gs.addEventListener("change", function () { it.gst = gs.value; ch(); }); gtd.appendChild(gs); }
       tr.appendChild(gtd);
       if (c.acct) {
         var sel2 = function (cur, opts, on, lab, wd) { var sl = el("select", { class: "field", "aria-label": lab + ", line " + (i + 1) }); fillSelect(sl, opts, cur); fitWidth(sl, wd); if (ro || off || fits) { sl.disabled = true; if (ro || fits) fillSelect(sl, [["", "—"]], ""); } sl.addEventListener("change", function () { on(sl.value); ch(); }); var td = el("td"); td.appendChild(sl); return td; };
@@ -5629,7 +5644,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (it.k === "item") {
       var h = hsnNorm(it.hsn);
       if (!h && num(it.gst) > 0) bad("hsn", "No HSN / SAC.");
-      else if (h && HSNM) { var e = hsnEntry(h); if (!e) bad("hsn", "HSN / SAC " + h + " isn't in the official list: check it against the bill."); else { var ok = hsnRates(h); if (it.gst !== "" && it.gst != null && ok.length && ok.indexOf(num(it.gst)) < 0) bad("gst", "The HSN master gives " + ok.join(" or ") + "% for " + h + "; this line has " + it.gst + "%."); } }
+      else if (h && HSNM) { var e = hsnEntry(h); if (!e) bad("hsn", "HSN / SAC " + h + " isn't in the official list: check it against the bill."); else { if (e[7] && e[0] === h) { r.warn.push("HSN / SAC " + h + " isn't in the latest official HSN list: check it."); r.wcells.hsn = 1; } var ok = hsnRates(h, c.day), offs = hsnOffRates(h, c.day).src[0]; if (it.gst !== "" && it.gst != null && ok.length && ok.indexOf(num(it.gst)) < 0) bad("gst", (offs ? (offs.notif || "The official rate document") + " gives " : "The HSN master gives ") + ok.join(" or ") + "% for " + h + (offs ? " from " + fmtDate(offs.from) : "") + "; this line has " + it.gst + "%."); } }
       if (h && !it.hsnBill) { r.warn.push("HSN / SAC typed in: not on the bill (see the attestation below the lines)."); r.wcells.hsn = 1; }
       else if (h && it.hsnBill && h !== it.hsnBill) { r.warn.push("HSN / SAC corrected from " + it.hsnBill + " as read."); r.wcells.hsn = 1; }
     }
@@ -5637,7 +5652,27 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return r;
   }
   /* the GST rates the master has under a code (3917 -> every 3917xxxx), as rates in force */
-  function hsnRates(h) { if (!HSNM || !h) return []; var m = {}; (HSNM.by[h] ? [HSNM.by[h]] : HSNM.list.filter(function (x) { return x[0].indexOf(h) === 0; })).forEach(function (x) { if (x[2] != null) m[x[2]] = 1; }); return Object.keys(m).map(Number).sort(function (a, b) { return a - b; }); }
+  /* rates from the official documents for a code on a date: the most specific code with an entry in force wins
+     (tariff item over sub-heading over heading); for a short code, every code under it counts. Per code and
+     description, the latest entry in force on the date applies; an omitted entry ends it. */
+  function hsnOffRates(h, ymd) {
+    var O = S.hsnOff || {}, day = ymd || todayYmd(), best = -1, set = {}, at = 0, src = [];
+    Object.keys(O).forEach(function (c) {
+      var len = h.indexOf(c) === 0 ? c.length : c.indexOf(h) === 0 ? 99 : -1; if (len < 0 || len < best) return;
+      var grp = {}; (O[c] || []).forEach(function (e) { if (!e || !e.from || e.from > day) return; var k = String(e.desc || "").toLowerCase().slice(0, 60); if (!grp[k] || grp[k].from <= e.from) grp[k] = e; });
+      var live = Object.keys(grp).map(function (k) { return grp[k]; }).filter(function (e) { return !e.omit && e.rate != null; }); if (!live.length) return;
+      if (len > best && len !== 99) { set = {}; src = []; at = 0; best = len; }
+      live.forEach(function (e) { set[e.rate] = 1; src.push(e); at = Math.max(at, e.at || 0); });
+    });
+    return { rates: Object.keys(set).map(Number).sort(function (a, b) { return a - b; }), src: src, at: at };
+  }
+  function hsnRates(h, ymd) {
+    if (!HSNM || !h) return []; var off = hsnOffRates(h, ymd), x = HSNM.by[h];
+    /* a rate set by hand in Masters wins over the documents only when it was set after them */
+    if (off.rates.length && !(x && x[5] && (x[5].at || 0) > off.at)) return off.rates;
+    return hsnBaseRates(h);
+  }
+  function hsnBaseRates(h) { var m = {}; (HSNM.by[h] ? [HSNM.by[h]] : HSNM.list.filter(function (x) { return x[0].indexOf(h) === 0; })).forEach(function (x) { if (x[2] != null) m[x[2]] = 1; }); return Object.keys(m).map(Number).sort(function (a, b) { return a - b; }); }
   function hsnEntry(h) { if (!HSNM || !h) return null; if (HSNM.by[h]) return HSNM.by[h]; if (h.length < 4) return null; for (var i = 0; i < HSNM.list.length; i++) if (HSNM.list[i][0].indexOf(h) === 0) return HSNM.list[i]; return null; }
   /* a short code (3917) is checked against the master's rate only when every code under it has the same rate */
   function hsnSameRate(h) { if (!HSNM) return false; if (HSNM.by[h]) return true; var r = null, ok = true; HSNM.list.forEach(function (x) { if (ok && x[0].indexOf(h) === 0) { if (r === null) r = x[2]; else if (x[2] !== r) ok = false; } }); return ok && r !== null; }
@@ -6336,7 +6371,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!(VE.nv && VE.nv.id === id)) VE.nv = null;
     var v = VE.nv || S.vendors[id]; if (!v) return;
     VE.id = id; veClear();
-    $("veName").value = v.name || ""; $("veAddr").value = v.address || ""; fillSelect($("veType"), [["", "Choose a type"]].concat(VTYPES), v.type || "");
+    $("veName").value = v.name || ""; $("veName").dataset.asis = v.name || ""; $("veAddr").value = v.address || ""; fillSelect($("veType"), [["", "Choose a type"]].concat(VTYPES), v.type || "");
     $("veTrans").checked = !!v.transporter; $("veGstin").value = v.gstin || ""; $("veGstChk").hidden = !window.bvGst || !canEditVendors(); $("veGstRes").hidden = true; VE.gstHit = null; VE.bankNew = null; paintVendorGst(v); $("vePan").value = v.gstin && gstinCheck(v.gstin) !== "format" ? panFromGstin(v.gstin) : ""; $("veTerm").value = v.termDays == null ? "" : String(v.termDays);
     var bk0 = v.bank || {}; $("veBenName").value = bk0.name || ""; $("veBenAcct").value = bk0.acct || ""; $("veBenIfsc").value = bk0.ifsc || ""; vbFill(bk0.bank || ""); $("veBenAddr").value = bk0.address || ""; $("veBenBranch").value = bk0.branch || ""; $("veBenType").value = bk0.type || ""; $("veBenPhone").value = bk0.phone || "";
     renderOpenings(v); renderVendorHead(v); renderVendorStatements();
@@ -6509,9 +6544,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (!r.address) box.appendChild(el("div", { class: "hint" }, "The portal gave no address" + (r.env === "sandbox" ? " (the sandbox's test taxpayers have none)" : "") + "; enter it from the bill."));
       var al = gstAddrs(r), pick = el("div", { class: "checks", role: "radiogroup", "aria-label": "Which address", style: "flex-direction:column;align-items:flex-start;gap:6px;margin-top:6px" });
       if (al.length > 1) { al.forEach(function (x, i) { var lb = el("label", { class: "check" }), rb = el("input", { type: "radio", name: "veGstAddr", value: String(i) }); rb.checked = i === 0; lb.appendChild(rb); lb.appendChild(document.createTextNode(" " + gstAddrLabel(x) + ": " + x.address)); pick.appendChild(lb); }); box.appendChild(el("div", { class: "lb", style: "margin-top:6px" }, al.length + " addresses on the GST portal. Choose the one for this vendor:")); box.appendChild(pick); }
+      /* the name: tidied (the usual way) or exactly as the portal has it */
+      var tidy = smartCase(gstBizName(r).toLowerCase()), nms = [["tidy", "Tidied: " + tidy, tidy]].concat((tly() ? gstAsIs(r) : []).map(function (n, i) { return ["asis" + i, n[0] + " as on the portal: " + n[1], n[1]]; }));
+      if (tidy && nms.length > 1) { var np = el("div", { class: "checks", role: "radiogroup", "aria-label": "Which name", style: "flex-direction:column;align-items:flex-start;gap:6px;margin-top:6px" }); nms.forEach(function (n, i) { var lb = el("label", { class: "check" }), rb = el("input", { type: "radio", name: "veGstName", value: String(i) }); rb.checked = i === 0; lb.appendChild(rb); lb.appendChild(document.createTextNode(" " + n[1])); np.appendChild(lb); }); box.appendChild(el("div", { class: "lb", style: "margin-top:6px" }, "Which name?")); box.appendChild(np); }
       var use = el("button", { type: "button", class: "btn sm", style: "margin-top:6px" }, al.length ? "Use This Name and Address" : "Use This Name");
       use.addEventListener("click", function () {
-        if (r.legalName || r.tradeName) $("veName").value = smartCase(gstBizName(r).toLowerCase());
+        var nc = box.querySelector('input[name="veGstName"]:checked'), nk = nms[nc ? Number(nc.value) : 0];
+        if (tidy) { if (nk[0] === "tidy") { delete $("veName").dataset.asis; $("veName").value = tidy; } else setAsIs($("veName"), nk[2]); }
         var ch = box.querySelector('input[name="veGstAddr"]:checked'), ad0 = al.length ? al[ch ? Number(ch.value) : 0].address : ""; if (ad0) $("veAddr").value = ad0;
         if (!bad && !$("veType").value) $("veType").value = "registered";
         toast("Filled in from the GST portal. Check and save."); if (!ad0 && !$("veAddr").value.trim()) $("veAddr").focus();
@@ -13302,20 +13341,179 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var box = $("hsnList"); if (!box) return;
     if (!HSNM) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Loading the HSN / SAC list…")); hsnMaster().then(function (m) { if (m) renderHsn(); else { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "The HSN / SAC list couldn't be loaded. Reload the page.")); } }); return; }
     if (!$("hsnQ")._on) { $("hsnQ")._on = 1; var tm = 0; $("hsnQ").addEventListener("input", function () { clearTimeout(tm); tm = setTimeout(renderHsn, 200); }); $("hsnK").addEventListener("change", renderHsn); }
+    renderHsnDocs();
     var q = $("hsnQ").value.trim().toLowerCase(), k = $("hsnK").value, dg = q.replace(/[^0-9]/g, ""), words = q.split(/\s+/).filter(Boolean), can = S.isAdmin || canDo("acct");
-    var rows = HSNM.list.filter(function (x) { if (k === "h" || k === "s") { if (x[3] !== k) return false; } else if (k === "e" && !x[5]) return false; else if (k === "l" && !(S.hsnLearn || {})[x[0]]) return false; if (!q) return true; if (dg && dg === q.replace(/\s+/g, "")) return x[0].indexOf(dg) === 0; var h = (x[0] + " " + x[1]).toLowerCase(); return words.every(function (w0) { return h.indexOf(w0) >= 0; }); });
+    var rows = HSNM.list.filter(function (x) { if (k === "h" || k === "s") { if (x[3] !== k) return false; } else if (k === "e" && !x[5]) return false; else if (k === "l" && !(S.hsnLearn || {})[x[0]]) return false; else if (k === "n" && !x[6]) return false; else if (k === "g" && !x[7]) return false; else if (k === "o" && !hsnOffRates(x[0]).src.length) return false; if (!q) return true; if (dg && dg === q.replace(/\s+/g, "")) return x[0].indexOf(dg) === 0; var h = (x[0] + " " + x[1]).toLowerCase(); return words.every(function (w0) { return h.indexOf(w0) >= 0; }); });
     $("hsnN").textContent = rows.length + " of " + HSNM.list.length + (rows.length > 300 ? ", the first 300 shown: search to narrow" : "");
     $("hsnSub").title = HSNM.src;
     sortTable(box, "hsnT", [
-      { label: "Code", sort: function (x) { return x[0]; }, cell: function (x, td) { td.appendChild(el("b", { class: "mono" }, x[0])); sub(td, x[3] === "s" ? "SAC" : "HSN"); } },
+      { label: "Code", sort: function (x) { return x[0]; }, cell: function (x, td) { td.appendChild(el("b", { class: "mono" }, x[0])); sub(td, (x[3] === "s" ? "SAC" : "HSN") + (x[6] ? " · new in the official list" : x[7] ? " · not in the official list" : ""), x[7] ? "color:#7a4f00;font-weight:600" : ""); } },
       { label: "Description", cls: "desc", cell: function (x, td) { txt(td, x[1]); } },
       { label: "From accounted bills", cls: "desc", cell: function (x, td) { var L = (S.hsnLearn || {})[x[0]]; if (!L) { txt(td, ""); return; } var ln = Object.keys(L.ledgers || {}); txt(td, ln.map(function (k) { return k + " (" + L.ledgers[k] + ")"; }).join(", ")); if (ln.length >= 2) sub(td, ln.length + " ledgers: chosen by hand on a bill", "color:#7a4f00;font-weight:600"); if ((L.descs || []).length) sub(td, L.descs.slice(0, 4).join(" · ")); } },
+      { label: "From Rate Documents", cls: "desc", cell: function (x, td) { var o = hsnOffRates(x[0]); if (!o.src.length) { txt(td, ""); return; } txt(td, o.rates.join(" or ") + "%"); o.src.slice(0, 3).forEach(function (e) { sub(td, (e.notif || "Rate document") + ", from " + fmtDate(e.from) + (o.src.length > 1 && e.desc ? ": " + e.desc : "")); }); if (x[5] && (x[5].at || 0) > o.at) sub(td, "The rate set here is newer and is used", "color:#7a4f00;font-weight:600"); } },
       { label: "GST %", cls: "r", sort: function (x) { return x[2] == null ? -1 : x[2]; }, cell: function (x, td) {
-        if (!can) { txt(td, x[2] == null ? "Not given" : x[2] + "%"); if (x[5]) sub(td, "Changed here (was " + (x[4] == null ? "not given" : x[4] + "%") + ")"); return; }
-        var sl = el("select", { class: "field num", "aria-label": "GST rate of " + x[0], style: "width:auto" }), rts = gstRatesOn(todayYmd()), op = [["", "Not given"]].concat(rts.map(function (r) { return [String(r), r + "%"]; })); if (x[2] != null && rts.indexOf(x[2]) < 0) op.push([String(x[2]), x[2] + "% (not in force)"]); fillSelect(sl, op, x[2] == null ? "" : String(x[2]));
+        if (!can) { var use0 = hsnRates(x[0]); txt(td, use0.length ? use0.join(" or ") + "%" : "Not given"); if (x[5]) sub(td, "Changed here (was " + (x[4] == null ? "not given" : x[4] + "%") + ")"); return; }
+        var sl = el("select", { class: "field num", "aria-label": "GST rate of " + x[0], style: "width:auto" }), rts = gstRatesOn(todayYmd()), op = [["", "Not given"]].concat(rts.map(function (r) { return [String(r), r + "%"]; })); var use = hsnRates(x[0]), cur = use.length === 1 ? use[0] : x[2]; if (cur != null && rts.indexOf(cur) < 0) op.push([String(cur), cur + "% (not in force)"]); fillSelect(sl, op, cur == null ? "" : String(cur));
         sl.addEventListener("change", function () { var v = sl.value === "" ? null : Number(sl.value); sl.disabled = true; retry(function () { return S.db.doc("hsnrates/" + x[0]).set({ rate: v, was: x[4] == null ? x[2] : x[4], by: meId(), byName: pnm(preparedByText()), at: Date.now() }); }).then(function () { if (x[4] == null) x[4] = x[2]; x[2] = v; x[5] = { rate: v }; toast(x[0] + ": GST " + (v == null ? "not given" : v + "%") + "."); renderHsn(); }, function (e) { sl.disabled = false; toast(explain(e)); }); });
         td.appendChild(sl); if (x[5]) sub(td, "Changed here (was " + (x[4] == null ? "not given" : x[4] + "%") + ")"); } }
     ], rows.slice(0, 300), { sortIndex: -1 });
+  }
+  /* ---- Official documents for the HSN / SAC master, uploaded once a month by the accountant:
+     the HSN list from the GST portal (Excel: codes and descriptions, no rates) and CBIC rate notifications (PDF),
+     which Claude reads into dated rates that are checked here before they are applied.
+     Kept in hsndocs (the register), hsnmeta/list (the list's changes against hsn.json) and hsnoff (rates by date). ---- */
+  var HSN_DUE_DAYS = 31;
+  function hsnListApply(m, o) {
+    if (!m.base) { m.base = {}; m.list.forEach(function (x) { m.base[x[0]] = 1; }); }
+    (o.add || []).forEach(function (a) {
+      var x = m.by[a[0]]; if (x) { x[1] = a[1]; return; }
+      var pr = null; for (var n = a[0].length - 2; n >= 2 && !pr; n -= 2) pr = m.by[a[0].slice(0, n)] || null;
+      var nx = [a[0], a[1], pr ? pr[2] : null, a[0].indexOf("99") === 0 ? "s" : "h"]; nx[6] = 1; m.list.push(nx); m.by[a[0]] = nx;
+    });
+    (o.desc || []).forEach(function (a) { var x = m.by[a[0]]; if (x) x[1] = a[1]; });
+    (o.gone || []).forEach(function (c) { var x = m.by[c]; if (x) x[7] = 1; });
+    m.list.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
+    m.off = o;
+  }
+  function hsnCanUpload() { return S.isAdmin || canDo("acct"); }
+  function hsnLastDoc() { return (S.hsnDocs || []).slice().sort(function (a, b) { return (b.at || 0) - (a.at || 0); })[0] || null; }
+  function hsnDocsDue() { var l = hsnLastDoc(); return !l || Date.now() - (l.at || 0) > HSN_DUE_DAYS * 864e5; }
+  function hsnDocLink(d) { if (!d.path || !window.bvFiles) return null; var a = el("button", { type: "button", class: "link-btn" }, d.name || "Open"); a.addEventListener("click", function () { window.bvFiles.link(d.path).then(function (u) { window.open(u, "_blank", "noopener"); }, function (e) { toast(explain(e)); }); }); return a; }
+  function renderHsnDocs() {
+    var box = $("hsnDocs"); if (!box) return; box.textContent = "";
+    var last = hsnLastDoc(), due = hsnDocsDue(), can = hsnCanUpload();
+    var top = el("div", { style: "display:flex;gap:10px;flex-wrap:wrap;align-items:center" });
+    top.appendChild(el("div", { class: "grow", style: "min-width:240px" + (due ? ";color:var(--warn);font-weight:600" : "") }, last ? "Last checked " + fmtDay(last.at) + " by " + (last.byName || "someone") + (due ? ". This month's check is due: upload the latest documents, or mark that nothing changed." : ". Next due by " + fmtDay(last.at + HSN_DUE_DAYS * 864e5) + ".") : "No official documents yet. Upload the HSN list and the rate notifications in force, then once a month."));
+    if (can) {
+      var b1 = el("button", { type: "button", class: "btn sm" }, "Upload HSN List (Excel)"), b2 = el("button", { type: "button", class: "btn sm primary" }, "Upload Rate Document (PDF)"), b3 = el("button", { type: "button", class: "btn sm" }, "Nothing New This Month");
+      b1.addEventListener("click", function () { pickFile(".xlsx,.xls", function (f) { hsnListUpload(f); }); });
+      b2.addEventListener("click", function () { pickFile(".pdf,application/pdf", function (f) { hsnRateDoc(f); }); });
+      b3.addEventListener("click", function () { if (!armed(b3)) return; b3.disabled = true; hsnDocSave({ kind: "none", name: "No new documents", note: "Checked the GST portal and CBIC: nothing new" }).then(function () { toast("Marked as checked for this month."); renderHsnDocs(); }, function (e) { b3.disabled = false; toast(explain(e)); }); });
+      [b1, b2, b3].forEach(function (b) { top.appendChild(b); });
+    }
+    box.appendChild(top);
+    box.appendChild(el("p", { class: "hint", style: "margin:8px 0 0" }, "Where to get them: the HSN list from gst.gov.in › Services › User Services › Search HSN Code › Download HSN Directory in Excel Format (codes and descriptions, no rates). The rates from cbic-gst.gov.in › GST › Notifications › Central Tax (Rate) and Integrated Tax (Rate): the rate notifications and their amendments, as PDF."));
+    var rows = (S.hsnDocs || []).slice().sort(function (a, b) { return (b.at || 0) - (a.at || 0); }); if (!rows.length) return;
+    var w = el("div", { class: "list", style: "margin-top:10px" }); box.appendChild(w);
+    sortTable(w, "hsnDocT", [
+      { label: "Uploaded", sort: function (d) { return d.at || 0; }, cell: function (d, td) { txt(td, fmtDay(d.at)); sub(td, d.byName || ""); } },
+      { label: "Document", cls: "desc", cell: function (d, td) { var a = hsnDocLink(d); if (a) td.appendChild(a); else txt(td, d.name || ""); sub(td, d.kind === "list" ? "HSN list (GST portal)" : d.kind === "rate" ? [d.notif, d.issued ? "issued " + fmtDate(d.issued) : ""].filter(Boolean).join(", ") || "Rate document" : d.note || ""); } },
+      { label: "In Force From", sort: function (d) { return d.from || ""; }, cell: function (d, td) { txt(td, d.from ? fmtDate(d.from) : ""); } },
+      { label: "Result", cls: "desc", cell: function (d, td) { txt(td, d.kind === "list" ? [plural(d.rows || 0, "code"), d.added ? d.added + " new" : "", d.changed ? d.changed + " descriptions changed" : "", d.gone ? d.gone + " not in it" : ""].filter(Boolean).join(", ") : d.kind === "rate" ? plural(d.applied || 0, "rate") + " applied of " + (d.read || 0) + " read" : ""); } }
+    ], rows, { sortIndex: 0, sortDir: -1 });
+  }
+  function pickFile(accept, then) { var f = el("input", { type: "file", accept: accept, hidden: "" }); document.body.appendChild(f); f.addEventListener("change", function () { var x = f.files && f.files[0]; f.remove(); if (x) then(x); }); f.click(); }
+  function hsnDocSave(d) { var id = d.id || newId("hd"); d = Object.assign({}, d, { at: Date.now(), by: meId(), byName: pnm(preparedByText()) }); delete d.id; return retry(function () { return S.db.doc("hsndocs/" + id).set(d); }).then(function () { S.hsnDocs = (S.hsnDocs || []).filter(function (x) { return x.id !== id; }).concat([Object.assign({ id: id }, d)]); return id; }); }
+  function hsnKeepFile(id, file, ext) { if (!window.bvFiles) return Promise.resolve(""); var path = "hsn-docs/" + id + "." + ext; return window.bvFiles.put(path, file, file.type || (ext === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).then(function () { return path; }, function () { return ""; }); }
+  /* the HSN list from the GST portal: every sheet with a code column and a description column */
+  function hsnXlRows(XLSX, wb) {
+    var out = [], seen = {};
+    wb.SheetNames.forEach(function (sn) {
+      var aoa = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: false, defval: "" }), hc = -1, dc = -1, start = 0;
+      for (var i = 0; i < Math.min(aoa.length, 15) && hc < 0; i++) { var h0 = -1, d0 = -1; (aoa[i] || []).forEach(function (v, k) { var t = String(v).toLowerCase().trim(); if (!t) return; if (d0 < 0 && /desc/.test(t)) d0 = k; else if (h0 < 0 && /\b(hsn|sac)/.test(t.replace(/_/g, " "))) h0 = k; }); if (h0 >= 0 && d0 >= 0) { hc = h0; dc = d0; start = i + 1; } }
+      if (hc < 0) return;
+      for (var r = start; r < aoa.length; r++) { var c = String((aoa[r] || [])[hc] || "").replace(/[^0-9]/g, ""), d = String((aoa[r] || [])[dc] || "").replace(/\s+/g, " ").trim(); if (c.length % 2) c = "0" + c; if (c.length >= 2 && c.length <= 8 && d && !seen[c]) { seen[c] = 1; out.push([c, d.slice(0, 400)]); } }
+    });
+    return out;
+  }
+  function hsnListUpload(file) {
+    toast("Reading " + file.name + "…");
+    Promise.all([loadScript(XLSX_URL), file.arrayBuffer(), hsnMaster()]).then(function (r) {
+      var XLSX = window.XLSX, m = r[2]; if (!XLSX || !m) throw { kind: "lib" };
+      var rows = hsnXlRows(XLSX, XLSX.read(new Uint8Array(r[1]), { type: "array" }));
+      if (rows.length < 100) { toast("No HSN list found in " + file.name + ": it needs a code column (HSN or SAC) and a description column."); return; }
+      if (!m.base) { m.base = {}; m.list.forEach(function (x) { if (!x[6]) m.base[x[0]] = 1; }); }
+      var by = {}, add = [], desc = [], gone = [], key = function (t) { return String(t || "").toLowerCase().replace(/[^a-z0-9]/g, ""); };
+      rows.forEach(function (x) { by[x[0]] = 1; var cur = m.by[x[0]]; if (!m.base[x[0]]) add.push(x); else if (cur && key(cur[1]) !== key(x[1])) desc.push(x); });
+      Object.keys(m.base).forEach(function (c) { if (!by[c]) gone.push(c); });
+      var body = el("div", { class: "mform" });
+      body.appendChild(el("p", null, plural(rows.length, "code") + " in the official list. Against the app's list: " + add.length + " new, " + desc.length + " with a different description, " + gone.length + " of the app's codes not in it (kept, and marked in the list)."));
+      body.appendChild(el("p", { class: "hint" }, "The official list has no GST rates: a new code takes the rate of the code above it until a rate document gives its own."));
+      popForm("Official HSN List", file.name, body, "Use This List", function () {
+        var id = newId("hd"), o = { at: Date.now(), by: meId(), name: file.name, rows: rows.length, add: add, desc: desc, gone: gone };
+        return hsnKeepFile(id, file, /\.xls$/i.test(file.name) ? "xls" : "xlsx").then(function (path) {
+          return retry(function () { return S.db.doc("hsnmeta/list").set(o); }).then(function () {
+            return hsnDocSave({ id: id, kind: "list", name: file.name, path: path, rows: rows.length, added: add.length, changed: desc.length, gone: gone.length });
+          });
+        }).then(function () { HSNM = null; HSNQ = null; toast("The official HSN list is in use."); renderHsn(); }, function (e) { toast(explain(e)); return false; });
+      });
+    }).catch(function (e) { toast(e && e.kind === "lib" ? "The Excel reader couldn't be loaded. Check the connection and try again." : "That file couldn't be read as Excel."); });
+  }
+  /* a CBIC rate document (PDF with text): Claude lists every rate entry in it, part by part */
+  var HSN_DOC_PROMPT = [
+    "You are reading part of an official Indian GST rate document: a CBIC notification (Central Tax (Rate), Integrated Tax (Rate) or Union Territory Tax (Rate)), an amendment to one, or a rate schedule.",
+    "List every entry in THIS PART that sets, changes or omits the GST rate of goods or services by HSN or SAC code.",
+    "Reply with JSON: {\"doc\":{\"number\":\"the notification number as printed, e.g. 9/2025-Central Tax (Rate)\",\"issued\":\"YYYY-MM-DD the date it was issued, or empty\",\"from\":\"YYYY-MM-DD the date it comes into force, or empty\",\"tax\":\"CGST|IGST|UTGST|SGST|unknown\"},",
+    "\"entries\":[{\"code\":\"the chapter, heading, sub-heading or tariff item, digits only (one code per entry: an entry naming several codes becomes several entries)\",\"desc\":\"the description of goods or services, at most 120 characters\",\"rate\":the rate printed for that entry as a number (exempt or nil is 0),\"omit\":true only if the entry is omitted or deleted}]}",
+    "Rules: copy codes exactly; skip entries with no code (such as 'any chapter'); for an amendment ('for the entry … substitute …'), list the entry as it reads after the change; if this part has no entries, give \"entries\":[]. Leave doc fields empty when this part doesn't show them."
+  ].join("\n");
+  function hsnRateDoc(file) {
+    if (!S.sample) { toast("Reading with Claude isn't available here."); return; }
+    var bg = el("div", { class: "modal-bg" }), m = el("div", { class: "modal", role: "dialog", "aria-modal": "true", "aria-label": "Reading the rate document" }), st = el("p", { class: "sub" }, "Opening " + file.name + "…"), cancel = el("button", { type: "button", class: "btn" }, "Cancel"), stop = false;
+    m.appendChild(el("h3", null, "Reading the Rate Document")); m.appendChild(st); var ft = el("div", { class: "form-foot" }); ft.appendChild(cancel); m.appendChild(ft); bg.appendChild(m); document.body.appendChild(bg);
+    cancel.addEventListener("click", function () { stop = true; bg.remove(); });
+    var texts = [];
+    Promise.all([pdfLib(), file.arrayBuffer()]).then(function (r) { return r[0].getDocument({ data: new Uint8Array(r[1]) }).promise; }).then(function (pdf) {
+      var chain = Promise.resolve();
+      for (var i = 1; i <= pdf.numPages; i++) (function (k) { chain = chain.then(function () { if (stop) return; st.textContent = "Reading page " + k + " of " + pdf.numPages + "…"; return pdf.getPage(k).then(function (pg) { return pg.getTextContent(); }).then(function (tc) { var line = "", out = [], y = null; tc.items.forEach(function (it) { var yy = Math.round(it.transform[5]); if (y !== null && Math.abs(yy - y) > 2) { out.push(line); line = ""; } line += (line ? " " : "") + it.str; y = yy; }); out.push(line); texts.push("--- page " + k + " ---\n" + out.join("\n").replace(/[ \t]+/g, " ")); }); }); })(i);
+      return chain;
+    }).then(function () {
+      if (stop) return;
+      var all = texts.join("\n"); if (all.replace(/--- page \d+ ---|\s/g, "").length < 300) throw { kind: "scan" };
+      var parts = [], cur = ""; texts.forEach(function (t) { if (cur && cur.length + t.length > 9000) { parts.push(cur); cur = ""; } if (t.length > 9000) { for (var j = 0; j < t.length; j += 9000) parts.push(t.slice(j, j + 9000)); } else cur += (cur ? "\n" : "") + t; }); if (cur) parts.push(cur);
+      var res = new Array(parts.length), done = 0, next = 0;
+      function one() { if (stop || next >= parts.length) return Promise.resolve(); var k = next++; return S.sample.json(HSN_DOC_PROMPT + "\n\nPart " + (k + 1) + " of " + parts.length + ":\n\n" + parts[k], { modelTier: "default" }).then(function (j) { res[k] = j; }, function () { res[k] = { failed: true }; }).then(function () { done++; st.textContent = "Claude is reading the document: part " + done + " of " + parts.length + " done…"; return one(); }); }
+      st.textContent = "Claude is reading the document: " + plural(parts.length, "part") + "…";
+      return Promise.all([one(), one(), one()]).then(function () { return res; });
+    }).then(function (res) {
+      if (stop || !res) return; bg.remove();
+      var meta = {}, ents = [], seen = {}, failed = res.filter(function (j) { return !j || j.failed; }).length;
+      res.forEach(function (j) { if (!j || j.failed) return; var d = j.doc || {}; ["number", "issued", "from", "tax"].forEach(function (k) { if (!meta[k] && d[k] && d[k] !== "unknown") meta[k] = String(d[k]); });
+        (j.entries || []).forEach(function (e) { var c = String(e.code || "").replace(/[^0-9]/g, ""); if (c.length % 2) c = "0" + c; var rt = e.omit ? null : num(e.rate); if (c.length < 2 || c.length > 8 || (!e.omit && rt == null)) return; var k = c + "|" + rt + "|" + String(e.desc || "").toLowerCase().slice(0, 60); if (seen[k]) return; seen[k] = 1; ents.push({ code: c, desc: str(e.desc, 160), rate: rt, omit: !!e.omit }); }); });
+      if (!ents.length) { toast("No rate entries were found in " + file.name + (failed ? " (" + plural(failed, "part") + " couldn't be read)" : "") + "."); return; }
+      hsnRateReview(file, meta, ents, failed);
+    }).catch(function (e) { if (bg.parentNode) bg.remove(); toast(e && e.kind === "scan" ? "This PDF has no text in it (a scan). Download the notification PDF from cbic-gst.gov.in, which has text." : "The PDF couldn't be read."); });
+  }
+  /* the entries read, checked against the master before anything is applied */
+  function hsnRateReview(file, meta, ents, failed) {
+    var half = /^(CGST|SGST|UTGST)$/i.test(meta.tax || "") || /central tax|union territory tax|state tax/i.test(meta.number || "");
+    var body = el("div", { class: "mform" }), g = el("div", { class: "form" });
+    var nt = inp("hrNo", meta.number || "", { maxlength: "80" }), isd = inp("hrIss", ymdOk(meta.issued) ? meta.issued : "", { type: "date" }), frm = inp("hrFrom", ymdOk(meta.from) ? meta.from : "", { type: "date" });
+    var tx = el("select", { class: "field", id: "hrTax" }); fillSelect(tx, [["half", "Central Tax / UT Tax (Rate): the rate printed is half the GST; doubled"], ["full", "Integrated Tax (Rate): the rate printed is the full GST"]], half ? "half" : "full");
+    g.appendChild(fld("Notification", nt)); g.appendChild(fld("Issued on", isd)); g.appendChild(fld("In force from", frm, "Rates apply to bills dated on or after this.")); g.appendChild(fld("The rates printed are", tx)); body.appendChild(g);
+    if (failed) body.appendChild(el("p", { class: "flag warn" }, plural(failed, "part") + " of the document couldn't be read: entries in it are missing here. Upload it again to retry."));
+    var only = el("label", { class: "check", style: "margin:10px 0" }), oc = el("input", { type: "checkbox" }); oc.checked = true; only.appendChild(oc); only.appendChild(document.createTextNode(" Show only rates that differ from the master")); body.appendChild(only);
+    var cnt = el("p", { class: "hint" }), wrap = el("div", { class: "list", style: "max-height:50vh;overflow:auto" }); body.appendChild(cnt); body.appendChild(wrap);
+    ents.forEach(function (e) { e.on = true; });
+    function gstOf(e) { return e.omit ? null : tx.value === "half" ? Math.round(e.rate * 2 * 100) / 100 : e.rate; }
+    function draw() {
+      wrap.textContent = ""; var day = frm.value || todayYmd(), ok = gstRatesOn(day), list = ents.filter(function (e) { if (!oc.checked) return true; var now = hsnRates(e.code, day); return e.omit || !(now.length === 1 && now[0] === gstOf(e)); });
+      cnt.textContent = (ents.length === 1 ? "1 entry" : ents.length + " entries") + " read, " + ents.filter(function (e) { return e.on; }).length + " ticked to apply" + (oc.checked ? "; " + list.length + " shown" : "") + ".";
+      var tb = el("table", { class: "t" }), hr = el("tr"); ["Apply", "Code", "In the master", "In the document", "GST now", "GST from the document"].forEach(function (h) { hr.appendChild(el("th", null, h)); }); var th = el("thead"); th.appendChild(hr); tb.appendChild(th); var bd = el("tbody"); tb.appendChild(bd);
+      list.slice(0, 600).forEach(function (e) {
+        var x = HSNM && (HSNM.by[e.code] || hsnEntry(e.code)), now = hsnRates(e.code, day), gr = gstOf(e), badR = gr != null && ok.indexOf(gr) < 0, noC = !hsnEntry(e.code), tr = el("tr", badR || noC ? { class: "itbad" } : null);
+        var cb = el("input", { type: "checkbox", "aria-label": "Apply " + e.code }); cb.checked = e.on; cb.addEventListener("change", function () { e.on = cb.checked; cnt.textContent = (ents.length === 1 ? "1 entry" : ents.length + " entries") + " read, " + ents.filter(function (q) { return q.on; }).length + " ticked to apply."; }); tr.appendChild(elc("td", null, cb));
+        var c1 = el("td"); c1.appendChild(el("b", { class: "mono" }, e.code)); if (noC) sub(c1, "Not in the HSN list", "color:var(--bad);font-weight:600"); tr.appendChild(c1);
+        tr.appendChild(el("td", { class: "desc" }, x ? x[1] : "")); tr.appendChild(el("td", { class: "desc" }, e.desc));
+        tr.appendChild(el("td", { class: "r" }, now.length ? now.join(" or ") + "%" : "Not given"));
+        var c5 = el("td", { class: "r" }); c5.appendChild(el("b", null, e.omit ? "Entry omitted" : gr + "%")); if (badR) sub(c5, "Not a GST rate on that date", "color:var(--bad);font-weight:600"); tr.appendChild(c5);
+        bd.appendChild(tr);
+      });
+      wrap.appendChild(tb); if (list.length > 600) wrap.appendChild(el("p", { class: "hint" }, "The first 600 are shown; all ticked entries are applied."));
+    }
+    oc.addEventListener("change", draw); frm.addEventListener("change", draw); tx.addEventListener("change", draw); draw();
+    popForm("Rates From " + (meta.number || file.name), file.name + ": check the entries Claude read against the document before applying them.", body, "Apply Ticked Rates", function (btn) {
+      var from = frm.value; if (!ymdOk(from)) { toast("Enter the date it is in force from."); frm.focus(); return false; }
+      var pick = ents.filter(function (e) { return e.on; }); if (!pick.length) { toast("Nothing is ticked."); return false; }
+      var id = newId("hd"), notif = nt.value.trim(), at = Date.now(), byCode = {};
+      pick.forEach(function (e) { (byCode[e.code] = byCode[e.code] || []).push({ rate: gstOf(e), omit: e.omit || undefined, from: from, desc: e.desc, notif: notif, doc: id, at: at }); });
+      var codes = Object.keys(byCode), k = 0, n = 0;
+      function one() { if (k >= codes.length) return Promise.resolve(); var c = codes[k++], prev = (S.hsnOff || {})[c] || [], e2 = prev.filter(function (p) { return p.doc !== id && !byCode[c].some(function (q) { return q.from === p.from && q.notif === p.notif && String(q.desc).toLowerCase() === String(p.desc).toLowerCase(); }); }).concat(byCode[c]);
+        return retry(function () { return S.db.doc("hsnoff/" + c).set({ e: e2 }); }).then(function () { (S.hsnOff = S.hsnOff || {})[c] = e2; n++; btn.textContent = "Applying " + n + " of " + codes.length + "…"; return one(); }); }
+      return hsnKeepFile(id, file, "pdf").then(function (path) { return Promise.all([one(), one(), one(), one()]).then(function () { return hsnDocSave({ id: id, kind: "rate", name: file.name, path: path, notif: notif, issued: isd.value || "", from: from, read: ents.length, applied: pick.length }); }); })
+        .then(function () { toast(plural(pick.length, "rate") + " applied from " + (notif || file.name) + ", for bills from " + fmtDate(from) + "."); renderHsn(); }, function (e) { btn.textContent = "Apply Ticked Rates"; toast(explain(e)); return false; });
+    });
+    var md = body.closest(".modal"); if (md) md.style.maxWidth = "min(1100px, 96vw)";
   }
   function renderOthers() {
     var box = $("bnList"), can = chqCan(); $("bnAdd").hidden = !can; box.textContent = "";
@@ -17367,7 +17565,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function modeKey() { return "bv_mode_" + ((S.me && S.me.id) || ""); }
   function modeSaved() { try { return localStorage.getItem(modeKey()) === "demo" ? "demo" : "live"; } catch (e) { return "live"; } }
   function renderModeSw() {
-    if (tly()) { S.mode = "live"; $("modeSw").hidden = true; $("demoBar").hidden = false; document.body.classList.add("tly"); if (!document.getElementById("tlyFonts")) { var lf = document.createElement("link"); lf.id = "tlyFonts"; lf.rel = "stylesheet"; lf.href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:wght@500;600&display=swap"; document.head.appendChild(lf); } $("demoBar").textContent = "Tally (Demo): practice entries for the Tally way of working. Live masters are read here; nothing done here reaches Live."; document.body.classList.add("is-demo"); return; }
+    if (tly()) { S.mode = "live"; $("modeSw").hidden = true; $("demoBar").hidden = false; document.body.classList.add("tly"); $("demoBar").textContent = "Tally (Demo): practice entries for the Tally way of working. Live masters are read here; nothing done here reaches Live."; document.body.classList.add("is-demo"); return; }
     var can = S.isAdmin || demoAllowed();
     var w = $("modeSw"); w.textContent = ""; w.hidden = !can; document.body.classList.toggle("is-demo", S.mode === "demo"); $("demoBar").hidden = S.mode !== "demo";
     if (!can) return;

@@ -4121,6 +4121,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       "- confidence: for each field, how sure you are that what you gave is exactly right, from 0 to 100. Be honest: 90 or more only when it is clearly printed and you read it exactly; 50 to 79 when it is partly unclear or a best reading; under 50 when it is mostly a guess. Use 0 for a field you left null.",
       "- items: every line of the bill's item table, in order, as {\"description\", \"hsn\", \"qty\", \"unit\", \"rate\", \"discount\", \"taxable\", \"gst_pct\", \"amount\"}. Numbers plain; null for anything not printed or unreadable. Copy the description as printed (translate into English in brackets if it is not English). [] if the bill has no item table.",
       "- items_note: one or two sentences on anything you are unsure of in the items (which lines, which figures), or an empty string.",
+      tly() ? "- page_rotations (at the top level of the reply, next to bills): for each page of the file in order, the clockwise turn in degrees, 0, 90, 180 or 270, that would make its printed text read upright. 0 when it is already upright." : "",
       tly() ? "- For this record the items must account for the whole bill: give each item a \"kind\": \"item\" for each goods or service line; \"charge\" for every amount printed outside the item table that adds to the taxable value, such as cartage, freight, transport, packing, forwarding, loading, delivery or insurance (no hsn; its gst_pct as charged on it); and \"round_off\" for the round off (its amount, negative if it reduces the total; no hsn, gst_pct null). The items' taxable values, plus GST on them, plus the round off, must come to total_amount. Give each item its taxable value (before GST, after any discount) in \"taxable\"." : "",
       "",
       "Reply with only this JSON object (bills holds one object per bill):",
@@ -4323,7 +4324,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       "- copy: a duplicate, triplicate or transporter copy of a bill already in the file (same supplier and bill number).",
       "- other: not a bill: e-way bill, delivery challan, receipt, packing list, blank page.",
       "Also give the supplier (the seller who issued it) and the bill number printed on the page, as printed; empty strings if not shown. The buyer is one of: " + JSON.stringify(cos) + "; never give the buyer as the supplier.",
-      "Reply with only this JSON: {\"pages\":[{\"page\":" + from + ",\"kind\":\"bill_start\",\"supplier\":\"\",\"bill_number\":\"\"}]} with one entry per page " + from + " to " + to + ".",
+      tly() && scanned ? "Also give rotation: the clockwise turn in degrees, 0, 90, 180 or 270, that would make the page's text read upright (0 if it already does)." : "",
+      "Reply with only this JSON: {\"pages\":[{\"page\":" + from + ",\"kind\":\"bill_start\",\"supplier\":\"\",\"bill_number\":\"\"" + (tly() && scanned ? ",\"rotation\":0" : "") + "}]} with one entry per page " + from + " to " + to + ".",
       texts ? "\n" + texts : ""
     ].join("\n");
   }
@@ -4381,6 +4383,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       });
       return c2;
     }).then(function () {
+      /* Tally (Demo): pages Claude found turned are set upright in the PDF before it is split and kept */
+      var rots = tly() ? turnsOf(sorted.map(function (x) { return Number(x.rotation) || 0; })) : null;
+      if (rots && it.orig) return turnFile(it.orig, rots).then(function (f) { if (f) { it.orig = f; it.srcPdf = null; } });
+    }).then(function () {
       var groups = groupPages(sorted), done = [], dups = 0, okN = 0;
       it.msg = "Found " + plural(groups.length, "bill") + " in " + n + " pages. Reading each"; renderLog();
       var c3 = Promise.resolve();
@@ -4419,8 +4425,53 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       });
     });
   }
+  /* ---- Tally (Demo): uploads come out flat and upright ----
+     A photo is cropped to the paper and its perspective and tilt are taken out (OpenCV). Claude then says how far each page
+     must turn (0, 90, 180 or 270 degrees); photos are turned, and PDF pages are given that rotation (the PDF stays a PDF). */
+  function turnsOf(a) { if (!Array.isArray(a)) return null; var t = a.map(function (x) { var n = ((Math.round(Number(x) / 90) * 90) % 360 + 360) % 360; return isFinite(n) ? n : 0; }); return t.some(function (x) { return x; }) ? t : null; }
+  function canvasFile(cv, name) { return new Promise(function (res) { cv.toBlob(function (bl) { res(bl ? new File([bl], String(name || "bill").replace(/\.[a-z0-9]+$/i, "") + ".jpg", { type: "image/jpeg" }) : null); }, "image/jpeg", 0.9); }); }
+  function turnCanvas(src, deg) { var o = document.createElement("canvas"), q = deg % 180 !== 0; o.width = q ? src.height : src.width; o.height = q ? src.width : src.height; var g = o.getContext("2d"); g.translate(o.width / 2, o.height / 2); g.rotate(deg * Math.PI / 180); g.drawImage(src, -src.width / 2, -src.height / 2); return o; }
+  function imgCanvas(blobOrUrl) {
+    var p = typeof blobOrUrl === "string" ? fetch(blobOrUrl).then(function (r) { return r.blob(); }) : Promise.resolve(blobOrUrl);
+    return p.then(function (b) { return createImageBitmap(b, { imageOrientation: "from-image" }); }).then(function (bm) { var k = Math.min(1, 3200 / Math.max(bm.width, bm.height)), cv = document.createElement("canvas"); cv.width = Math.max(1, Math.round(bm.width * k)); cv.height = Math.max(1, Math.round(bm.height * k)); var g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(bm, 0, 0, cv.width, cv.height); return cv; });
+  }
+  function flattenPhoto(file) {
+    return imgCanvas(file).then(function (cv) {
+      return cvLib().then(function (lib) {
+        var c = lib.cv, W = cv.width, H = cv.height, m = c.imread(cv), g = new c.Mat(), e = new c.Mat(), cs = new c.MatVector(), hh = new c.Mat(), quad = null;
+        try {
+          c.cvtColor(m, g, c.COLOR_RGBA2GRAY); c.GaussianBlur(g, g, new c.Size(5, 5), 0); c.Canny(g, e, 40, 120); var ker = c.Mat.ones(5, 5, c.CV_8U); c.dilate(e, e, ker); ker.delete();
+          c.findContours(e, cs, hh, c.RETR_EXTERNAL, c.CHAIN_APPROX_SIMPLE);
+          var list = []; for (var i = 0; i < cs.size(); i++) { var cn = cs.get(i); list.push({ cn: cn, a: c.contourArea(cn) }); } list.sort(function (x, y) { return y.a - x.a; });
+          for (var j = 0; j < Math.min(5, list.length) && !quad; j++) { if (list[j].a < W * H * 0.2) break; var ap = new c.Mat(), pe = c.arcLength(list[j].cn, true); c.approxPolyDP(list[j].cn, ap, 0.02 * pe, true); if (ap.rows === 4) { quad = []; for (var k = 0; k < 4; k++) quad.push({ x: ap.data32S[k * 2], y: ap.data32S[k * 2 + 1] }); } ap.delete(); }
+          if (!quad && list.length && list[0].a > W * H * 0.35) quad = c.RotatedRect.points(c.minAreaRect(list[0].cn)).map(function (p0) { return { x: p0.x, y: p0.y }; });
+          if (!quad) return null;
+          var o = chqOrder(quad), d = function (a, b2) { return Math.hypot(a.x - b2.x, a.y - b2.y); }, ow = Math.round(Math.max(d(o[0], o[1]), d(o[3], o[2]))), oh = Math.round(Math.max(d(o[0], o[3]), d(o[1], o[2])));
+          if (ow * oh > W * H * 0.97 && Math.abs(o[0].y - o[1].y) < H * 0.01) return null; /* already the whole, level page */
+          var sT = c.matFromArray(4, 1, c.CV_32FC2, [o[0].x, o[0].y, o[1].x, o[1].y, o[2].x, o[2].y, o[3].x, o[3].y]), dT = c.matFromArray(4, 1, c.CV_32FC2, [0, 0, ow, 0, ow, oh, 0, oh]), M = c.getPerspectiveTransform(sT, dT), out = new c.Mat();
+          c.warpPerspective(m, out, M, new c.Size(ow, oh), c.INTER_CUBIC, c.BORDER_REPLICATE);
+          var oc = document.createElement("canvas"); c.imshow(oc, out); [sT, dT, M, out].forEach(function (x) { x.delete(); }); return oc;
+        } finally { [m, g, e, hh].forEach(function (x) { x.delete(); }); cs.delete(); }
+      }).then(function (oc) { return oc ? canvasFile(oc, file.name) : null; });
+    }).catch(function () { return null; });
+  }
+  /* turns the kept file: a photo by redrawing it, a PDF by setting each page's rotation */
+  function turnFile(f, rots) {
+    if (!f || !rots) return Promise.resolve(null);
+    if (isPdf(f)) return loadScript(PDFLIB).then(function () { return f.arrayBuffer(); }).then(function (buf) { return window.PDFLib.PDFDocument.load(buf, { ignoreEncryption: true }); }).then(function (doc) {
+      doc.getPages().forEach(function (pg, i) { var t = rots[i] || 0; if (t) pg.setRotation(window.PDFLib.degrees(((pg.getRotation().angle || 0) + t) % 360)); });
+      return doc.save();
+    }).then(function (bytes) { return new File([bytes], f.name || "bill.pdf", { type: "application/pdf" }); }).catch(function () { return null; });
+    if (!rots[0]) return Promise.resolve(null);
+    return imgCanvas(f).then(function (cv) { return canvasFile(turnCanvas(cv, rots[0]), f.name); }).catch(function () { return null; });
+  }
+  function turnPreviews(urls, rots) {
+    return Promise.all((urls || []).map(function (u, i) { var t = rots[i] || 0; if (!t || typeof u !== "string") return u; return imgCanvas(u).then(function (cv) { return turnCanvas(cv, t).toDataURL("image/jpeg", 0.85); }, function () { return u; }); }));
+  }
   function readOne(it) {
     it.state = "run"; it.msg = "Reading"; renderLog();
+    /* Tally (Demo): a photo is cropped to the paper and flattened first; that is what is read and kept */
+    if (tly() && it.file && !it.flat && !isPdf(it.file) && /^image\//.test(it.file.type || "")) { it.flat = true; it.msg = "Straightening"; renderLog(); return flattenPhoto(it.file).then(function (f) { if (f) { it.file = f; it.orig = f; } return readOne(it); }); }
     if (!S.sample || B.aiOff) return addFromFile(it);
     if (it.file && isPdf(it.file) && it.file.size <= 25 * 1024 * 1024) {
       return openPdf(it.file).then(function (pdf) {
@@ -4448,6 +4499,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }).then(function (res) {
       if (!res || typeof res !== "object") throw { kind: "failed", manual: true };
       var list = Array.isArray(res.bills) ? res.bills.filter(function (x) { return x && typeof x === "object"; }) : [res];
+      var rots = tly() ? turnsOf(res.page_rotations || (list[0] || {}).page_rotations) : null;
       if (list.length > 1) return saveSplit(it, list);
       res = list[0] || {};
       var d = linkInto(docFromResult(res, it), it.link);
@@ -4456,8 +4508,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var id = newId("b");
       return retry(function () { return S.db.doc("bills/" + id).set(d); }).then(function () {
         S.bills[id] = Object.assign({ id: id }, d); invalidate();
+        if (rots) { var orig0 = it.orig, pv0 = it.prep.previews; it.prep = null; it.orig = null;
+          /* Tally (Demo): pages turned upright before they are kept */
+          turnPreviews(pv0, rots).then(function (pv) { S.previews[id] = pv; storePreviews(id, pv); onData(); });
+          turnFile(orig0, rots).then(function (f) { keepFile(id, f || orig0); });
+        } else {
         S.previews[id] = it.prep.previews; it.prep = null; storePreviews(id, S.previews[id]);
-        keepFile(id, it.orig); it.orig = null;
+        keepFile(id, it.orig); it.orig = null; }
         var dup = findDuplicate(draftFrom(S.bills[id]), S.bills[id]);
         it.state = "ok"; it.dup = !!dup;
         it.msg = dup ? "Added, but bill " + dup.billNo + " from this vendor " + (dup.status === "done" ? "was already submitted on " + fmtDay(dup.submittedAt) : "is already waiting in " + (dup.ownerId === meId() ? "your list" : "someone else's list")) + ". Check before submitting."

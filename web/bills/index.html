@@ -4121,9 +4121,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       "- confidence: for each field, how sure you are that what you gave is exactly right, from 0 to 100. Be honest: 90 or more only when it is clearly printed and you read it exactly; 50 to 79 when it is partly unclear or a best reading; under 50 when it is mostly a guess. Use 0 for a field you left null.",
       "- items: every line of the bill's item table, in order, as {\"description\", \"hsn\", \"qty\", \"unit\", \"rate\", \"discount\", \"taxable\", \"gst_pct\", \"amount\"}. Numbers plain; null for anything not printed or unreadable. Copy the description as printed (translate into English in brackets if it is not English). [] if the bill has no item table.",
       "- items_note: one or two sentences on anything you are unsure of in the items (which lines, which figures), or an empty string.",
+      tly() ? "- For this record the items must account for the whole bill: give each item a \"kind\": \"item\" for each goods or service line; \"charge\" for every amount printed outside the item table that adds to the taxable value, such as cartage, freight, transport, packing, forwarding, loading, delivery or insurance (no hsn; its gst_pct as charged on it); and \"round_off\" for the round off (its amount, negative if it reduces the total; no hsn, gst_pct null). The items' taxable values, plus GST on them, plus the round off, must come to total_amount. Give each item its taxable value (before GST, after any discount) in \"taxable\"." : "",
       "",
       "Reply with only this JSON object (bills holds one object per bill):",
-      '{"bills":[{"pages":[1],"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_bank":null,"vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"round_off":0,"total_amount":0,"payment_term_days":null,"irn":null,"ack_no":null,"ack_date":null,"narration":"","narration_review":[],"supply_of":"goods","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}]}',
+      '{"bills":[{"pages":[1],"readable":true,"company_id":null,"company_name_on_bill":"","vendor_name":"","vendor_gstin":"","vendor_pan":"","vendor_address":"","vendor_bank":null,"vendor_type":null,"bill_number":"","bill_date":"YYYY-MM-DD","currency":"INR","taxable_amount":0,"gst_amount":0,"round_off":0,"total_amount":0,"payment_term_days":null,"irn":null,"ack_no":null,"ack_date":null,"narration":"","narration_review":[],"supply_of":"goods","notes":"","confidence":{"company":0,"vendor":0,"vendor_gstin":0,"bill_number":0,"bill_date":0,"currency":0,"taxable_amount":0,"gst_amount":0,"total_amount":0,"payment_term_days":0,"narration":0},"items":[{"description":"","hsn":"","qty":null,"unit":"","rate":null,"discount":null,"taxable":null,"gst_pct":null,"amount":null}],"items_note":""}]}'.replace('"amount":null}]', tly() ? '"amount":null,"kind":"item"}]' : '"amount":null}]'),
       "",
       NARR_RULES,
       "",
@@ -4156,7 +4157,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function aiItems(list) {
     if (!Array.isArray(list)) return [];
     var n = function (x) { var v = num(x); return v == null ? null : v; };
-    return list.slice(0, 150).map(function (it) { it = it || {}; return { description: str(it.description, 200), hsn: str(it.hsn, 20), qty: n(it.qty), unit: str(it.unit, 20), rate: n(it.rate), discount: n(it.discount), taxable: n(it.taxable), gst_pct: n(it.gst_pct), amount: n(it.amount), lg: str(it.ledger_id, 40) }; })
+    return list.slice(0, 150).map(function (it) { it = it || {}; return { description: str(it.description, 200), hsn: str(it.hsn, 20), qty: n(it.qty), unit: str(it.unit, 20), rate: n(it.rate), discount: n(it.discount), taxable: n(it.taxable), gst_pct: n(it.gst_pct), amount: n(it.amount), lg: str(it.ledger_id, 40), kind: /^(item|charge|round_off)$/.test(it.kind) ? it.kind : "" }; })
       .filter(function (it) { return it.description || it.amount != null || it.qty != null; });
   }
   function str(v, max) { return v == null ? "" : String(v).replace(/\s+/g, " ").trim().slice(0, max || 200); }
@@ -5818,7 +5819,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         { label: "Vendor", cls: "desc", sort: function (b) { return vname(b).toLowerCase(); }, cell: function (b, td) { td.appendChild(el("b", null, vname(b))); sub(td, [b.billNo || "No bill no", fmtDate(b.billDate), coLabel(b.companyId), b.status === "draft" ? "Not submitted" : b.status === "postponed" ? "Postponed" : b.acct === "approved" ? "Accounted" : "Submitted"].join(" · ")); } },
         { label: "Line Items", cls: "r num", sort: function (b) { return nItems(b); }, cell: function (b, td) { txt(td, String(nItems(b))); } },
         { label: "Total", cls: "r num", sort: function (b) { return Number(b.total) || 0; }, cell: function (b, td) { txt(td, curMoney(b.currency || "INR", b.total)); } },
-        { label: "Copy", kind: "act", cls: "r", cell: function (b, td) { var c = el("button", { class: "btn sm primary", type: "button" }, "Copy"); c.addEventListener("click", function () { c.disabled = true; copyLiveBill(b).then(function (id) { if (id) { close(); S.openBill = id; renderBills(); toast("Copied " + (b.billNo || "the bill") + " into Tally (Demo). Check it and submit."); } else c.disabled = false; }); }); td.appendChild(c); } }
+        { label: "Copy", kind: "act", cls: "r", cell: function (b, td) { var c = el("button", { class: "btn sm primary", type: "button" }, "Copy"); c.addEventListener("click", function () { c.disabled = true; copyLiveBill(b).then(function (id) { if (!id) { c.disabled = false; return; } close(); S.openBill = id; renderBills();
+          if (!S.sample || B.aiOff) { toast("Copied " + (b.billNo || "the bill") + " into Tally (Demo). Check it and submit."); return; }
+          toast("Copied " + (b.billNo || "the bill") + ". Claude is reading it again…"); var sv = $("bcSaved"); if (sv) sv.textContent = "Claude is reading the bill again…";
+          tlyReread(id).then(function (ok) { if (!ok) return; if (B.cardId === id) { B.cardId = null; } S.openBill = id; renderBills(); toast((b.billNo || "The bill") + " has been read again: check the line items, ledgers and Data for Tally."); }); }); }); td.appendChild(c); } }
       ], rows, { sortIndex: 1, sortDir: -1 });
     }
     q.addEventListener("input", draw);
@@ -5826,6 +5830,26 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       all = sn.docs.map(function (d) { return Object.assign({ id: d.id }, d.data() || {}); }).filter(function (b) { return b.status !== "deleted" && b.companyId && S.companies[b.companyId]; });
       draw();
     }, function (e) { list.textContent = ""; list.appendChild(el("div", { class: "empty" }, "Live bills couldn't be read (" + ((e && e.code) || "error") + ").")); });
+  }
+  /* Tally (Demo): a copied bill is read again from its file by Claude, the Tally way (every charge and the round off as lines),
+     and its details are redone from that reading; the company and vendor stay as copied when the reading doesn't settle them. */
+  function tlyReread(id) {
+    var b = S.bills[id]; if (!b || !b.file || !b.file.path || !window.bvFiles || !S.sample || B.aiOff) return Promise.resolve(false);
+    return window.bvFiles.get(b.file.path).then(function (blob) {
+      var f = new File([blob], b.file.name || "bill", { type: b.file.type || blob.type || "" });
+      return prepFile(f).then(function (p) {
+        return S.sample.json(buildPrompt(p), { images: p.images.length ? p.images : undefined, modelTier: p.scanned ? "default" : "quick" }).then(function (res) {
+          var list = res && Array.isArray(res.bills) ? res.bills.filter(function (x) { return x && typeof x === "object"; }) : [res || {}], r = list[0] || {};
+          var d = docFromResult(r, { name: b.file.name || "" }), now = Date.now(), cur = S.bills[id] || b;
+          var up = { companyId: d.companyId || cur.companyId || null, vendorId: d.vendorId || cur.vendorId || null, billNo: d.billNo || cur.billNo || "", billDate: d.billDate || cur.billDate || "",
+            currency: d.currency, fxRate: d.fxRate, fcTaxable: d.fcTaxable, fcGst: d.fcGst, fcTotal: d.fcTotal, taxable: d.taxable, gstAmt: d.gstAmt, roundOff: d.roundOff, gstPct: d.gstPct, total: d.total,
+            narration: d.narration || cur.narration || "", supplyOf: d.supplyOf || cur.supplyOf || "", einv: d.einv, ex: d.ex, items: [], ledgers: [], rereadAt: now, updatedAt: now };
+          if (!up.vendorId) up.vendorNew = d.vendorNew; if (d.termDays != null) up.termDays = d.termDays;
+          if (p.previews && p.previews.length) { S.previews[id] = p.previews; storePreviews(id, p.previews); }
+          return retry(function () { return S.db.doc("bills/" + id).update(up); }).then(function () { S.bills[id] = Object.assign({}, S.bills[id] || b, up); return true; });
+        });
+      });
+    }).catch(function (e) { toast("Claude couldn't read the copied bill again (" + ((e && (e.code || e.kind || e.message)) || "error") + "). Its copied details are kept."); return false; });
   }
   function copyLiveBill(b) {
     var id = newId("b"), now = Date.now(), doc = {};

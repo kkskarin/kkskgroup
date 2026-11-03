@@ -13384,8 +13384,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
      until its PDF is uploaded and read; ones that change no rate are shown with Claude's reason. ---- */
   function notifKey(n) { var m = /(\d+)\s*\/\s*(\d{4})/.exec(String(n || "")); if (!m) return ""; var t = /integrated/i.test(n) ? "I" : /union/i.test(n) ? "U" : /state/i.test(n) ? "S" : /central|cgst/i.test(n) ? "C" : "X"; var k = t + "-" + Number(m[1]) + "-" + m[2]; return /corrigend|errat/i.test(n) ? "corr-" + k + "-" + ((/G\.?S\.?R\.?\s*(\d+)/i.exec(n) || [])[1] || "") : k; }
   function rateWatchLoad() { return S.db ? S.db.doc("ratewatch/state").get().then(function (d) { S.rateWatch = d && d.exists ? d.data() || {} : {}; }, function () { S.rateWatch = S.rateWatch || {}; }) : Promise.resolve(); }
-  function rateUploaded() { var u = {}; (S.hsnDocs || []).forEach(function (d) { if (d.kind === "rate") { var k = notifKey(d.notif); if (k) u[k] = d; } }); return u; }
-  function ratePending() { var u = rateUploaded(); return ((S.rateWatch || {}).found || []).filter(function (f) { return f.relevant && !u[f.key]; }); }
+  /* the Central Tax, Integrated Tax and UT Tax versions of a notification carry the same rates: uploading one covers all */
+  function notifGroup(k) { return String(k || "").replace(/(^|corr-)[A-Z]-/, "$1G-"); }
+  function rateUploaded() { var u = {}; (S.hsnDocs || []).forEach(function (d) { if (d.kind === "rate") { var k = notifKey(d.notif); if (k) { u[k] = d; u[notifGroup(k)] = u[notifGroup(k)] || d; } } }); return u; }
+  function rateDone(f, u) { return u[f.key] || u[notifGroup(f.key)] || null; }
+  function ratePending() { var u = rateUploaded(); return ((S.rateWatch || {}).found || []).filter(function (f) { return f.relevant && !rateDone(f, u); }); }
   /* "Nothing New This Month" only when a check in the last day and a half found nothing left to upload */
   function rateQuiet() { var w = S.rateWatch || {}; return !w.running && !w.error && !w.incomplete && w.lastOk && Date.now() - w.lastOk < 36 * 3600e3 && !ratePending().length; }
   var RW_POLL = 0;
@@ -13408,15 +13411,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     else if (w.lastOk && !w.running) sec.appendChild(el("p", { class: "hint", style: "margin:8px 0 0" }, "Nothing left to upload."));
     clearTimeout(RW_POLL); if (w.running) RW_POLL = setTimeout(function () { rateWatchLoad().then(function () { if ($("hsnDocs") && $("hsnDocs").offsetParent) renderHsnDocs(); }); }, 10000);
     if (!found.length) return;
-    found.sort(function (a, b) { var pa = a.relevant && !u[a.key] ? 0 : 1, pb = b.relevant && !u[b.key] ? 0 : 1; return pa - pb || String(b.issued || "").localeCompare(String(a.issued || "")); });
+    found.sort(function (a, b) { var pa = a.relevant && !rateDone(a, u) ? 0 : 1, pb = b.relevant && !rateDone(b, u) ? 0 : 1; return pa - pb || String(b.issued || "").localeCompare(String(a.issued || "")); });
     var tb = el("table", { class: "t", style: "margin-top:8px" }), hr = el("tr"); ["Notification", "Issued", "In Force From", "Official Link", "Status"].forEach(function (h) { hr.appendChild(el("th", null, h)); }); var th = el("thead"); th.appendChild(hr); tb.appendChild(th); var bd = el("tbody"); tb.appendChild(bd);
     found.forEach(function (f) {
-      var up = u[f.key], tr = el("tr");
+      var up = rateDone(f, u), tr = el("tr");
       var c1 = el("td", { class: "desc" }); c1.appendChild(el("b", null, f.number)); if (f.base) c1.appendChild(el("span", { class: "chip", style: "margin-left:6px" }, "In force")); sub(c1, f.subject || ""); tr.appendChild(c1);
       tr.appendChild(el("td", null, f.issued ? fmtDate(f.issued) : "")); tr.appendChild(el("td", null, f.from ? fmtDate(f.from) : ""));
       var c4 = el("td"); if (f.url) { var op = el("a", { href: f.url, target: "_blank", rel: "noopener", class: "link-btn" }, "Open"), cp = el("button", { type: "button", class: "link-btn", style: "margin-left:10px" }, "Copy URL"); cp.addEventListener("click", function () { (navigator.clipboard ? navigator.clipboard.writeText(f.url) : Promise.reject()).then(function () { toast("URL copied."); }, function () { window.prompt("Copy the URL:", f.url); }); }); c4.appendChild(op); c4.appendChild(cp); sub(c4, f.url.replace(/^https?:\/\//, "").slice(0, 60)); } else txt(c4, "Not found on an official site: search CBIC by its number."); tr.appendChild(c4);
       var c5 = el("td", { class: "desc" });
-      if (up) { c5.appendChild(el("span", { class: "chip" }, "Uploaded")); sub(c5, fmtDay(up.at) + (up.applied != null ? " · " + plural(up.applied, "rate") + " applied" : "")); }
+      if (up) { c5.appendChild(el("span", { class: "chip" }, "Uploaded")); if (!u[f.key]) sub(c5, "As " + up.notif); sub(c5, fmtDay(up.at) + (up.applied != null ? " · " + plural(up.applied, "rate") + " applied" : "")); }
       else if (f.relevant) { c5.appendChild(el("b", { style: "color:var(--warn)" }, "To upload")); sub(c5, f.reason || ""); if (can) { var ub = el("button", { type: "button", class: "btn sm primary", style: "margin-top:4px" }, "Upload PDF"); ub.addEventListener("click", function () { pickFile(".pdf,application/pdf", function (fl) { hsnRateDoc(fl, f); }); }); c5.appendChild(ub); } }
       else { txt(c5, "Not needed (Claude)"); sub(c5, f.reason || "Changes no GST rate."); }
       tr.appendChild(c5); bd.appendChild(tr);

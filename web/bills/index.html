@@ -5664,26 +5664,35 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     "termDays", "termChoice", "ledgers", "narration", "supplyOf", "file", "fileName", "ex", "einv", "und", "undertaking", "cc", "ccT", "source"];
   function copyLiveForm() {
     if (!tly() || !S.rawDb || !S.rawDb.live) return;
-    var body = el("div", { class: "mform" }), q = inp("tlyQ", "", { placeholder: "Bill no, vendor or company", autocomplete: "off" }), list = el("div", { class: "card list scroll", style: "max-height:380px;margin-top:10px" });
-    body.appendChild(fld("Find", q)); body.appendChild(list); list.appendChild(el("div", { class: "empty" }, "Loading Live bills…"));
+    /* its own pop-up: a list to sort and scroll, closed with the × at the top right (or Esc) */
+    var bg = el("div", { class: "modal-bg" }), m = el("div", { class: "modal wide", role: "dialog", "aria-modal": "true", "aria-label": "Copy a live bill", style: "max-width:860px;position:relative" });
+    var x = el("button", { type: "button", class: "icon", "aria-label": "Close", title: "Close", style: "position:absolute;top:10px;right:12px;font-size:22px;line-height:1;background:none;border:0;cursor:pointer;color:var(--ink);padding:4px 8px" }, "\u00d7");
+    var close = function () { bg.remove(); document.removeEventListener("keydown", esc); }, esc = function (e) { if (e.key === "Escape") close(); };
+    x.addEventListener("click", close); bg.addEventListener("click", function (e) { if (e.target === bg) close(); }); document.addEventListener("keydown", esc);
+    m.appendChild(x); m.appendChild(el("h3", { style: "padding-right:36px" }, "Copy a live bill"));
+    m.appendChild(el("p", { class: "sub" }, "Every bill in Live, whether submitted, accounted, approved or paid. The copy is a new draft here with the bill's file, line items, amounts, ledgers and narration; nothing in Live changes."));
+    var q = inp("tlyQ", "", { placeholder: "Find: bill no, vendor or company", autocomplete: "off", style: "margin-top:10px" }), list = el("div", { class: "card list scroll", style: "max-height:60vh;margin-top:10px" });
+    m.appendChild(q); m.appendChild(list); list.appendChild(el("div", { class: "empty" }, "Loading Live bills…"));
+    bg.appendChild(m); document.body.appendChild(bg); q.focus();
     var all = [];
+    var vname = function (b) { var v = S.vendors[b.vendorId]; return v ? v.name : (b.vendorNew || {}).name || ""; };
+    var nItems = function (b) { return ((b.ex && b.ex.items) || []).length; };
     function draw() {
       var t = q.value.trim().toLowerCase(); list.textContent = "";
-      var rows = all.filter(function (b) { var v = S.vendors[b.vendorId], hay = [b.billNo, v ? v.name : (b.vendorNew || {}).name, coLabel(b.companyId)].join(" ").toLowerCase(); return !t || hay.indexOf(t) >= 0; }).slice(0, 150);
+      var rows = all.filter(function (b) { return !t || [b.billNo, vname(b), coLabel(b.companyId)].join(" ").toLowerCase().indexOf(t) >= 0; });
       if (!rows.length) { list.appendChild(el("div", { class: "empty" }, all.length ? "No Live bill matches." : "No Live bills.")); return; }
       sortTable(list, "tlyCopy", [
-        { label: "Bill", cell: function (b, td) { td.appendChild(el("b", { class: "mono" }, b.billNo || "")); sub(td, fmtDate(b.billDate) + " · " + coLabel(b.companyId)); } },
-        { label: "Vendor", cls: "desc", cell: function (b, td) { var v = S.vendors[b.vendorId]; txt(td, v ? v.name : (b.vendorNew || {}).name || ""); sub(td, ((b.ex && b.ex.items) || []).length + " line items"); } },
-        { label: "Total", cls: "r num", cell: function (b, td) { txt(td, curMoney(b.currency || "INR", b.total)); } },
-        { label: "", kind: "act", cls: "r", cell: function (b, td) { var c = el("button", { class: "btn sm primary", type: "button" }, "Copy"); c.addEventListener("click", function () { c.disabled = true; copyLiveBill(b).then(function (id) { var m = document.querySelector(".modal-bg"); if (m) m.remove(); if (id) { S.openBill = id; renderBills(); toast("Copied " + (b.billNo || "the bill") + " into Tally (Demo). Check it and submit."); } else c.disabled = false; }); }); td.appendChild(c); } }
-      ], rows, { sortIndex: -1 });
+        { label: "Vendor", cls: "desc", sort: function (b) { return vname(b).toLowerCase(); }, cell: function (b, td) { td.appendChild(el("b", null, vname(b))); sub(td, [b.billNo || "No bill no", fmtDate(b.billDate), coLabel(b.companyId), b.status === "draft" ? "Not submitted" : b.status === "postponed" ? "Postponed" : b.acct === "approved" ? "Accounted" : "Submitted"].join(" · ")); } },
+        { label: "Line Items", cls: "r num", sort: function (b) { return nItems(b); }, cell: function (b, td) { txt(td, String(nItems(b))); } },
+        { label: "Total", cls: "r num", sort: function (b) { return Number(b.total) || 0; }, cell: function (b, td) { txt(td, curMoney(b.currency || "INR", b.total)); } },
+        { label: "Copy", kind: "act", cls: "r", cell: function (b, td) { var c = el("button", { class: "btn sm primary", type: "button" }, "Copy"); c.addEventListener("click", function () { c.disabled = true; copyLiveBill(b).then(function (id) { if (id) { close(); S.openBill = id; renderBills(); toast("Copied " + (b.billNo || "the bill") + " into Tally (Demo). Check it and submit."); } else c.disabled = false; }); }); td.appendChild(c); } }
+      ], rows, { sortIndex: 1, sortDir: -1 });
     }
     q.addEventListener("input", draw);
     S.rawDb.live.collection("bills").get().then(function (sn) {
-      all = sn.docs.map(function (d) { return Object.assign({ id: d.id }, d.data() || {}); }).filter(function (b) { return b.status === "done" && b.companyId && S.companies[b.companyId]; }).sort(function (a, b) { return natCmp(b.billDate || "", a.billDate || "") || natCmp(b.billNo || "", a.billNo || ""); });
+      all = sn.docs.map(function (d) { return Object.assign({ id: d.id }, d.data() || {}); }).filter(function (b) { return b.status !== "deleted" && b.companyId && S.companies[b.companyId]; });
       draw();
     }, function (e) { list.textContent = ""; list.appendChild(el("div", { class: "empty" }, "Live bills couldn't be read (" + ((e && e.code) || "error") + ").")); });
-    popForm("Copy a live bill", "The copy is a new draft in Tally (Demo) with the Live bill's file, line items, amounts, ledgers and narration. Nothing in Live changes.", body, "Close", function () { return true; });
   }
   function copyLiveBill(b) {
     var id = newId("b"), now = Date.now(), doc = {};

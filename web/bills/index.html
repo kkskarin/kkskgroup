@@ -5354,7 +5354,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function itemsIn(b) {
     var keep = b.items && b.items.length ? b.items : null, out = itemsIn0(b);
     /* as read: an HSN / SAC written once covers the lines below it until the next one; one for the whole bill covers every line */
-    if (!keep) { var first = "", last = ""; out.forEach(function (x) { if (!first && x.k !== "ro" && hsnNorm(x.hsn)) first = x.hsn; }); out.forEach(function (x) { if (x.k === "ro") return; if (hsnNorm(x.hsn)) last = x.hsn; else if (last || first) x.hsn = last || first; }); }
+    if (!keep) { var first = "", last = ""; out.forEach(function (x) { if (!first && x.k !== "ro" && hsnNorm(x.hsn)) first = x.hsn; }); out.forEach(function (x) { if (x.k === "ro" || (x.k === "charge" && !num(x.gst))) return; if (hsnNorm(x.hsn)) last = x.hsn; else if (last || first) x.hsn = last || first; }); }
     out.forEach(function (x, i) { var o = keep && keep[i] ? keep[i] : {}; x.id = o.id || newId("i"); x.rr = o.rr != null ? String(o.rr) : ""; x.hsnBill = keep ? hsnNorm(o.hsnBill || "") : x.k !== "ro" ? hsnNorm(x.hsn) : ""; if (x.k === "charge") { x.to = o.to !== undefined ? o.to : x.lg ? "" : "all"; if (x.to && !chargeFits(x, chargeTargets(x, out))) x.to = ""; } else x.to = ""; });
     return out;
   }
@@ -5618,9 +5618,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var dtd = el("td", { class: "itd" }); dtd.appendChild(dta); tr.appendChild(dtd);
       /* HSN / SAC: typed or picked from the master; picking fills an empty GST rate */
       var htd = el("td");
-      if (!ro) { var hc = hsnCombo(it.hsn || "", "HSN / SAC, line " + (i + 1), function (code, rate) { if (code === (it.hsn || "") && rate == null) return; it.hsn = code;
+      if (!ro && !(roLike(it) && !hsnNorm(it.hsn))) { var hc = hsnCombo(it.hsn || "", "HSN / SAC, line " + (i + 1), function (code, rate) { if (code === (it.hsn || "") && rate == null) return; it.hsn = code;
         /* Purchase Entry: a bill often writes an HSN / SAC once for the lines below it; it fills the empty lines down to the next one written */
-        if (!c.acct && hsnNorm(code)) for (var j = i + 1; j < its.length; j++) { var y = its[j]; if (y.k === "ro") continue; if (hsnNorm(y.hsn)) break; y.hsn = code; if (it.hsnBill && hsnNorm(it.hsnBill) === hsnNorm(code)) y.hsnBill = hsnNorm(code); if ((y.gst === "" || y.gst == null) && it.gst !== "" && it.gst != null) y.gst = it.gst; } var rs0 = hsnRates(code, c.day); rate = rs0.length === 1 ? rs0[0] : rs0.length ? null : rate; if (rate != null && (it.gst === "" || it.gst == null)) it.gst = String(rate); if (!it.man && it.k === "item") { it.lg = ""; suggestItems(sd, false); } ch(); }, wide.hsn); if (off) hc.disabled = true; htd.appendChild(hc); var hi0 = hsnInfo(hsnNorm(it.hsn)); if (hi0) { htd.title = hi0[0] + ": " + hi0[1]; } }
+        if (!c.acct && hsnNorm(code)) for (var j = i + 1; j < its.length; j++) { var y = its[j]; if (y.k === "ro" || roLike(y)) continue; if (hsnNorm(y.hsn)) break; y.hsn = code; if (it.hsnBill && hsnNorm(it.hsnBill) === hsnNorm(code)) y.hsnBill = hsnNorm(code); if ((y.gst === "" || y.gst == null) && it.gst !== "" && it.gst != null) y.gst = it.gst; } var rs0 = hsnRates(code, c.day); rate = rs0.length === 1 ? rs0[0] : rs0.length ? null : rate; if (rate != null && (it.gst === "" || it.gst == null)) it.gst = String(rate); if (!it.man && it.k === "item") { it.lg = ""; suggestItems(sd, false); } ch(); }, wide.hsn); if (off) hc.disabled = true; htd.appendChild(hc); var hi0 = hsnInfo(hsnNorm(it.hsn)); if (hi0) { htd.title = hi0[0] + ": " + hi0[1]; } }
       else { var hx = el("div", { class: "field ro itdash" }, "—"); fitWidth(hx, wide.hsn); htd.appendChild(hx); }
       tr.appendChild(htd);
       /* GST %: picked from the rates */
@@ -5740,11 +5740,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!fits && !it.lg) { if (it.multi >= 2) { r.warn.push(it.multi + " ledgers have been used for this HSN / SAC: choose the right one."); r.wcells.led = 1; } else bad("led", "No ledger chosen."); }
     if (it.gst !== "" && it.gst != null && rates.indexOf(num(it.gst)) < 0) bad("gst", it.gst + "% isn't a GST rate on the bill's date" + (c.day && c.day >= GST2_FROM && (num(it.gst) === 12 || num(it.gst) === 28) ? " (12% and 28% ended on 21 Sep 2025)" : "") + ".");
     /* HSN / SAC: on every line but round off, from the bill; checked against the official list and the item's description */
-    var h = hsnNorm(it.hsn), chk = hsnChkOf(it), led = (S.ledgers || {})[it.lg], g0 = it.gst === "" || it.gst == null || num(it.gst) === 0;
+    var h = hsnNorm(it.hsn), chk = hsnChkOf(it), led = (S.ledgers || {})[it.lg], g0 = it.gst === "" || it.gst == null || num(it.gst) === 0, rol = roLike(it);
     /* Purchase Entry: the purchaser enters every line completely (amount, HSN / SAC from the bill, GST rate, ledger); whether
        the HSN / SAC, rate and charges are right is shown and settled only in Accounting */
     if (!c.acct) {
-      if (!h && c.reg !== false) bad("hsn", "No HSN / SAC: enter it from the bill (a line takes the HSN / SAC written above it on the bill).");
+      if (!h && c.reg !== false && !rol) bad("hsn", "No HSN / SAC: enter it from the bill (a line takes the HSN / SAC written above it on the bill).");
       if (h && !it.hsnBill) { r.warn.push("HSN / SAC typed in: not on the bill (see the attestation below the lines)."); r.wcells.hsn = 1; }
       if (it.k === "charge" && it.to && !fits) bad("led", "Its GST rate differs from the lines it goes to.");
       return r;
@@ -5753,10 +5753,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var CHG_RX = /cartage|freight|transport|delivery|packing|forwarding|loading|unloading|handling|courier|carriage|lorry|hamali/i;
     if (led && led.tax) bad("led", "A GST or tax ledger can't be a bill line: the GST is worked out from each line's rate.");
     if (c.reg === false && num(it.gst) > 0) bad("gst", "An unregistered vendor can't charge GST: ask for a corrected bill (if the service is under reverse charge, set RCM instead).");
-    if (c.reg !== false && g0 && !it.rcm && !fits && (it.k === "charge" || CHG_RX.test(it.d || "")) && its.some(function (x) { return x !== it && x.k === "item" && num(x.gst) > 0; }))
+    if (c.reg !== false && g0 && !it.rcm && !fits && !rol && (it.k === "charge" || CHG_RX.test(it.d || "")) && its.some(function (x) { return x !== it && x.k === "item" && num(x.gst) > 0; }))
       bad("gst", "Charged by the supplier on its own goods invoice, this is part of the value of the goods (CGST Act s.15(2)(c)): it takes the goods' GST rate. Ask for a corrected invoice, or verify with the Chief Accountant.");
     if (c.reg === false && CHG_RX.test(it.d || "")) { r.warn.push("If the transporter is a goods transport agency (issues a consignment note), GST at 5% is payable by us under reverse charge (13/2017-CT(R)); a truck owner's own transport is exempt."); }
-    if (!h && c.reg === false) { /* an unregistered vendor's bill need not show an HSN / SAC */ }
+    if (rol) { /* a charge without GST on its own ledger is kept like round off: no HSN / SAC (see the deviations) */ }
+    else if (!h && c.reg === false) { /* an unregistered vendor's bill need not show an HSN / SAC */ }
     else if (!h) bad("hsn", "No HSN / SAC: every line except round off needs the HSN / SAC from the bill." + (chk && chk.code ? " From the item name it looks like " + chk.code + " (" + hsnShort(chk.code) + ")." : ""));
     else if (HSNM) {
       var e = hsnEntry(h), par = e ? null : hsnParent(h);
@@ -5890,6 +5891,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       return retry(function () { return S.db.doc("hsnok/" + h).set({ items: cur }); }).then(function () { S.hsnOk = S.hsnOk || {}; S.hsnOk[h] = cur; });
     }));
   }
+  /* a charge (cartage, freight…) the bill shows without GST, kept on a ledger of its own (General Expenses): like round off,
+     it needs no HSN / SAC and no GST rate; Accounting lists it in the deviations with the rule it departs from */
+  function roLike(it) { return !!it && it.k === "charge" && !it.to && !it.rcm && (it.gst === "" || it.gst == null || num(it.gst) === 0); }
   /* the nearest official code above one the list doesn't have: 85362030 -> 853620 -> 8536 */
   function hsnParent(h) { if (!HSNM || !h) return null; for (var n = h.length - (h.length % 2 ? 1 : 2); n >= 4; n -= 2) { var k = h.slice(0, n), x = HSNM.by[k] || hsnEntry(k); if (x) return [k, x[1]]; } return null; }
   /* HSN / SAC deviations on a bill: each line whose code differs from the official list or from what the item is, with the
@@ -5897,7 +5901,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function hsnDeviations(c) {
     var out = []; if (!c || !HSNM) return out;
     (c.D.items || []).forEach(function (it, i) {
-      if (it.k === "ro") return; var h = hsnNorm(it.hsn); if (!h || hsnOkOf(h, it.d)) return;
+      if (it.k === "ro") return;
+      if (roLike(it)) { var gl = (S.ledgers || {})[it.lg]; out.push("Line " + (i + 1) + " (" + String(it.d || "").slice(0, 50) + "), " + amt2(num(it.tx) || 0) + ": charged without GST and kept like round off" + (gl ? " under " + gl.name : "") + ", with no HSN / SAC. Reference: CGST Act s.15(2)(c) counts such charges by the supplier on its goods invoice as part of the goods' value (their GST rate)."); return; }
+      var h = hsnNorm(it.hsn); if (!h || hsnOkOf(h, it.d)) return;
       var e = hsnEntry(h), par = e ? null : hsnParent(h), chk = hsnChkOf(it), why = [];
       if (par && par[0].length >= 6) par = null;
       if (par) why.push("not in the official HSN / SAC list; nearest official code " + par[0] + " (" + String(par[1]).slice(0, 70) + ")");

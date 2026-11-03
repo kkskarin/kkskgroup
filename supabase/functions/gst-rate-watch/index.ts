@@ -70,7 +70,7 @@ function reply(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 }
 
-type Found = { key: string; cat: string; type?: string; topic?: string; number: string; issued: string; from: string; subject: string; url: string; relevant: boolean; rate: boolean; reason: string; base?: boolean; firstSeen: number; seen: number };
+type Found = { key: string; cat: string; type?: string; topic?: string; inForce?: boolean; replacedBy?: string; number: string; issued: string; from: string; subject: string; url: string; relevant: boolean; rate: boolean; reason: string; base?: boolean; firstSeen: number; seen: number };
 type Job = { topic: string; round: number; carry: string };
 
 const ymd = (s: unknown) => /^\d{4}-\d{2}-\d{2}$/.test(String(s ?? "")) ? String(s) : "";
@@ -164,9 +164,10 @@ async function runJob(db: any, prev: any, job: Job) {
     "For each give: number (as printed, e.g. \"9/2025-Integrated Tax (Rate)\", \"Notification No. 45/2026 (Income-tax)\", or the Act section if it is a provision of an Act), issued (YYYY-MM-DD or empty), from (YYYY-MM-DD in force from, or empty), subject (one line on what it does), type (notification, circular, advisory, decision, order or Act),",
     "url (its own PDF or page on an official site you found, else the official page that lists it, else empty), relevant (true if this company must apply it: rates, exemptions, reverse charge, ITC, e-invoicing, TDS, TCS, cess, customs on its imports; false if it doesn't touch this company or is only procedural),",
     "rate (true only if it sets or changes GST rates of goods or services by HSN or SAC), reason (one short line on why it is or isn't relevant), base (true if it is listed because it is in force, not because it is new).",
+    "Irrelevant also means no longer in force: a notification fully replaced by a later one (superseded or rescinded), or whose every entry was later amended or omitted. List those with relevant false, inForce false and replacedBy naming what replaced them; and in \"superseded\" name any already-known item that is no longer in force, with what replaced it.",
     "Where an official page lists many notifications (such as CBIC's list for a year), open it with web_fetch and take them all from it rather than searching one by one.",
     "Never guess a number, date or URL. Set \"complete\" false if you couldn't cover the topic, and say exactly what is left in \"left\" (short).",
-    "Reply with only JSON: {\"notifications\":[{\"number\":\"\",\"type\":\"notification\",\"issued\":\"\",\"from\":\"\",\"subject\":\"\",\"url\":\"\",\"relevant\":true,\"rate\":false,\"reason\":\"\",\"base\":false}],\"complete\":true,\"left\":\"\"}",
+    "Reply with only JSON: {\"notifications\":[{\"number\":\"\",\"type\":\"notification\",\"issued\":\"\",\"from\":\"\",\"subject\":\"\",\"url\":\"\",\"relevant\":true,\"inForce\":true,\"replacedBy\":\"\",\"rate\":false,\"reason\":\"\",\"base\":false}],\"superseded\":[{\"number\":\"\",\"replacedBy\":\"\"}],\"complete\":true,\"left\":\"\"}",
   ].filter(Boolean).join("\n");
   const j = parseJson(await ask(prompt, t.sites));
   const byKey = new Map(found.map((f) => [f.key, f]));
@@ -175,14 +176,21 @@ async function runJob(db: any, prev: any, job: Job) {
     const number = String(n.number ?? "").trim().slice(0, 140), key = keyOf(t.cat, number);
     if (!key) continue;
     const old = byKey.get(key);
+    const gone = n.inForce === false;
     const f: Found = {
+      inForce: !gone, replacedBy: String(n.replacedBy || "").slice(0, 140),
       key, cat: t.cat, type: String(n.type || old?.type || "").slice(0, 20), topic: t.id, number, issued: ymd(n.issued) || old?.issued || "", from: ymd(n.from) || old?.from || "",
       subject: String(n.subject || old?.subject || "").slice(0, 300), url: official(String(n.url ?? "")) || old?.url || "",
-      relevant: n.relevant === false ? false : true, rate: t.cat === "gst" ? (n.rate === true || (n.rate !== false && t.id.startsWith("gst-rate"))) : false,
-      reason: String(n.reason || old?.reason || "").slice(0, 300), base: !!(n.base || old?.base), firstSeen: old?.firstSeen ?? now, seen: now,
+      relevant: gone ? false : n.relevant === false ? false : true, rate: t.cat === "gst" ? (n.rate === true || (n.rate !== false && t.id.startsWith("gst-rate"))) : false,
+      reason: (gone ? "No longer in force" + (n.replacedBy ? ": replaced by " + String(n.replacedBy).slice(0, 120) : "") + ". " : "") + String(n.reason || old?.reason || "").slice(0, 260), base: !!(n.base || old?.base), firstSeen: old?.firstSeen ?? now, seen: now,
     };
     if (!old) added++;
     byKey.set(key, f);
+  }
+  // known items Claude says are no longer in force
+  for (const sx of Array.isArray(j.superseded) ? j.superseded : []) {
+    const k = keyOf(t.cat, String(sx.number ?? "")), f = k ? byKey.get(k) : undefined;
+    if (f && f.inForce !== false) byKey.set(k, { ...f, inForce: false, relevant: false, replacedBy: String(sx.replacedBy || "").slice(0, 140), reason: "No longer in force" + (sx.replacedBy ? ": replaced by " + String(sx.replacedBy).slice(0, 120) : "") + "." });
   }
   const list = [...byKey.values()].sort((a, b) => (b.issued || "").localeCompare(a.issued || ""));
   const queue: Job[] = (prev.queue || []).slice(1);

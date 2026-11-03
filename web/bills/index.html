@@ -13563,7 +13563,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     hsnKeepFile(id, file, "pdf").then(function (path) { if (!path) throw { code: "unavailable" }; return hsnDocSave({ id: id, kind: "notice", cat: f.cat || "gst", key: f.key, name: file.name, path: path, notif: f.number, issued: f.issued || "", from: f.from || "" }); })
       .then(function () { toast("Kept: " + f.number + "."); renderNotif(); }, function (e) { toast(explain(e)); });
   }
-  function hsnDocLink(d) { if (!d.path || !window.bvFiles) return null; var a = el("button", { type: "button", class: "link-btn" }, d.name || "Open"); a.addEventListener("click", function () { window.bvFiles.link(d.path).then(function (u) { window.open(u, "_blank", "noopener"); }, function (e) { toast(explain(e)); }); }); return a; }
+  function hsnDocLink(d) { if (!d.path && d.url) return el("a", { href: d.url, target: "_blank", rel: "noopener", class: "link-btn" }, d.name || "Open"); if (!d.path || !window.bvFiles) return null; var a = el("button", { type: "button", class: "link-btn" }, d.name || "Open"); a.addEventListener("click", function () { window.bvFiles.link(d.path).then(function (u) { window.open(u, "_blank", "noopener"); }, function (e) { toast(explain(e)); }); }); return a; }
   function renderHsnDocs() {
     var box = $("hsnDocs"); if (!box) return; box.textContent = "";
     var last = hsnLastDoc(), due = hsnDocsDue(), can = hsnCanUpload();

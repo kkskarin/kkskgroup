@@ -479,6 +479,16 @@ h3{font-size:calc(13px*var(--ts,1));font-weight:700;text-transform:none;letter-s
 .navbar .wrap{padding-top:0;padding-bottom:0;gap:0}
 .navbar #nav button{color:#C9D4E5;font-size:calc(13.5px*var(--ts,1));font-weight:600;letter-spacing:0;text-transform:none;padding:13px 16px;border-radius:0;position:relative;background:none}
 .navbar #nav button.grp-on{color:#fff;background:none}
+body.tly #navbar{display:none}
+body.tly .top .wrap{gap:14px}
+body.tly .top .titles{flex:none}
+#nav.hnav{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;align-items:center;align-content:center;gap:0 2px;align-self:stretch;margin:-6px 0}
+#nav.hnav::-webkit-scrollbar{display:none}
+#nav.hnav button{all:unset;box-sizing:border-box;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;padding:7px 9px;font-size:calc(13.5px*var(--ts,1));font-weight:600;color:var(--muted);border-bottom:3px solid transparent;border-top:3px solid transparent}
+#nav.hnav button:hover{color:var(--ink)}
+#nav.hnav button.grp-on,#nav.hnav button[aria-current="page"]{color:var(--brand);border-bottom-color:var(--brand)}
+#nav.hnav button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+@media (max-width:760px){body.tly .top .wrap{flex-wrap:wrap}#nav.hnav{order:9;flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -4px}}
 .navbar #nav button.grp-on::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:3px;background:var(--gold);border-radius:3px 3px 0 0}
 .navbar .subbar{background:#fff;border-top:0;border-bottom:1px solid var(--line)}
 .navbar .subbar .wrap{padding-top:0;padding-bottom:0;gap:4px}
@@ -17952,7 +17962,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function modeKey() { return "bv_mode_" + ((S.me && S.me.id) || ""); }
   function modeSaved() { try { return localStorage.getItem(modeKey()) === "demo" ? "demo" : "live"; } catch (e) { return "live"; } }
   function renderModeSw() {
-    if (tly()) { S.mode = "live"; $("modeSw").hidden = true; $("demoBar").hidden = false; document.body.classList.add("tly"); $("demoBar").textContent = "Tally (Demo): practice entries for the Tally way of working. Live masters are read here; nothing done here reaches Live."; document.body.classList.add("is-demo"); return; }
+    if (tly()) { S.mode = "live"; $("modeSw").hidden = true; $("demoBar").hidden = false; document.body.classList.add("tly");
+      /* Tally (Demo): the tabs sit in the header, on the line with the logo, the app name and the menu */
+      var nv0 = $("nav"); if (nv0 && !nv0.classList.contains("hnav")) { nv0.classList.remove("wrap"); nv0.classList.add("hnav"); $("appsLink").parentNode.insertBefore(nv0, $("appsLink")); } $("demoBar").textContent = "Tally (Demo): practice entries for the Tally way of working. Live masters are read here; nothing done here reaches Live."; document.body.classList.add("is-demo"); return; }
     var can = S.isAdmin || demoAllowed();
     var w = $("modeSw"); w.textContent = ""; w.hidden = !can; document.body.classList.toggle("is-demo", S.mode === "demo"); $("demoBar").hidden = S.mode !== "demo";
     if (!can) return;

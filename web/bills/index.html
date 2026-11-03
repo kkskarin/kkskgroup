@@ -633,13 +633,25 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:cal
 body.tly .bcard{overflow:visible}body.tly .bc-body{align-items:start}
 body.tly .bc-prev{position:sticky;top:12px;align-self:start;height:calc(100vh - 24px);max-height:none;border-radius:12px 0 0 12px}
 body.tly .bc-fv{height:calc(100vh - 24px)}
-.tlysecs{padding:12px 14px 14px;display:grid;gap:14px}.tlysec{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:visible;box-shadow:0 1px 2px rgba(15,23,42,.05)}
-.tlysec>h3{margin:0;padding:10px 16px;font-size:calc(13px*var(--ts,1));letter-spacing:.08em;text-transform:uppercase;color:var(--brand-text,var(--accent));background:var(--soft);border-bottom:1px solid var(--line);border-radius:12px 12px 0 0}
+/* Tally (Demo) takes the TARS Creations look: leather and paper, IBM Plex Sans 15px, Spectral headings, 6px corners */
+body.tly{--font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--serif:"Spectral",Georgia,"Times New Roman",serif;font-family:var(--font);font-size:calc(15px*var(--ts,1));line-height:1.5}
+body.tly h2{font-family:var(--serif);font-weight:600}body.tly .field{border-radius:6px;padding:.55rem .7rem;border-color:#cdbcad}body.tly .card{border-radius:6px}body.tly .btn{border-radius:6px}
+body.tly .t th{background:var(--brand-soft);color:var(--brand-dark);font-size:calc(13px*var(--ts,1));font-weight:600}body.tly .t td{border-bottom:1px solid var(--line)}
+.tlysecs{padding:12px 14px 14px;display:grid;gap:16px}
+.scanwrap{position:relative;overflow:hidden}.scanbar{position:absolute;left:0;right:0;height:90px;top:-90px;background:linear-gradient(180deg,transparent,rgba(201,149,77,.35) 70%,rgba(201,149,77,.9) 96%,transparent);box-shadow:0 2px 14px rgba(201,149,77,.55);animation:scanmove 2.2s cubic-bezier(.45,0,.55,1) infinite;pointer-events:none;z-index:5}
+@keyframes scanmove{0%{top:-90px}100%{top:100%}}.scaninfo{padding:40px 32px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}.scaninfo h3{text-transform:none;letter-spacing:0;font-family:var(--serif);font-size:calc(22px*var(--ts,1));margin:0}
+.scanspin{width:34px;height:34px;border-radius:50%;border:3px solid var(--brand-soft,#f1e6dc);border-top-color:var(--brand,#5b3a26);animation:scanspin 1s linear infinite}@keyframes scanspin{to{transform:rotate(360deg)}}
+.scansteps{list-style:none;padding:0;margin:6px 0 0;display:grid;gap:8px}.scansteps li{opacity:.35;padding-left:22px;position:relative;animation:scanstep 8s ease infinite}.scansteps li::before{content:"";position:absolute;left:0;top:.45em;width:10px;height:10px;border-radius:50%;background:var(--rule,#c9954d)}
+@keyframes scanstep{0%,10%{opacity:.35}20%,100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.scanbar,.scanspin,.scansteps li{animation:none}.scansteps li{opacity:1}}.tlysec{border:1px solid var(--line);border-radius:6px;background:var(--surface);overflow:visible;box-shadow:0 1px 3px rgba(61,38,24,.08);border-left:4px solid var(--rule,var(--brand))}
+.tlysec>h3,.tlysec>summary{text-transform:none;letter-spacing:0;margin:0;padding:11px 18px;font-family:var(--serif);font-size:calc(17px*var(--ts,1));font-weight:600;color:var(--brand-dark,var(--brand));background:var(--brand-soft,var(--soft));border-bottom:1px solid var(--line);border-radius:0 6px 0 0}
+details.tlysec:not([open])>summary{border-bottom:0}details.tlysec>summary{cursor:pointer;list-style-position:inside}details.tlysec>summary .hint{font-family:var(--font);font-weight:400;margin-left:8px}
+.tlysec>.form{padding:18px 20px 20px!important;gap:16px 20px}.tlysec>div:not(.form){padding:16px 20px 20px}.tlysec .lb,.tlysec label{font-weight:600}
 .tlysec>.form{padding:14px 16px 16px}.tlysec>div:not(.form){padding:12px 16px 16px}.ao-tly{padding:0;margin:12px 0}
 .itcard{overflow:visible}table.itbl td.itn,table.itbl th:first-child{padding-left:12px!important}table.itbl td:last-child,table.itbl th:last-child{padding-right:12px!important}
 table.itbl .itl>select,table.itbl .itl>.lcombo{display:flex;flex:none;width:max-content}table.itbl .itl .lcombo .field{padding-right:30px}table.itbl .hcombo .lcpop,table.itbl .itl .lcpop{min-width:360px;z-index:30}table.itbl .hcombo{display:inline-flex}
-table.itbl .itdash{color:var(--muted);text-align:center}table.itbl tr.itchg td{background:color-mix(in srgb,var(--soft) 55%,transparent)}
-.tlysec>.form{padding:0}.itbl{width:100%}.tlysec table.itbl th,.tlysec table.itbl td,.tlysec .list table.itbl td,.tlysec .list table.itbl th,.ao-main table.itbl td,.ao-main table.itbl th{padding:6px 3px;white-space:nowrap;vertical-align:top}table.itbl .itd{white-space:normal;width:100%;min-width:10ch}table.itbl tfoot td{white-space:normal!important}table.itbl .field{min-width:0;min-height:34px;height:34px;padding:5px 5px;font-size:calc(13px*var(--ts,1))}table.itbl select.field{padding:5px 18px 5px 5px;background-position:right 4px center}table.itbl textarea.itdesc{width:100%;min-width:10ch;height:34px;min-height:34px;resize:none;overflow:hidden;line-height:1.35;white-space:pre-wrap}table.itbl .itx{border:0;background:none;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;padding:6px 4px}table.itbl .itx:hover{color:var(--bad)}table.itbl td .tsub{white-space:normal;display:block;max-width:30ch}.itbl tr.itro td{background:var(--soft)}.tallyv td{vertical-align:top}
+table.itbl .itdash{color:var(--muted);text-align:center}table.itbl tr.itbad>td{background:var(--bad-bg,#fbeae6)!important}table.itbl tr.itwarn>td{background:#fff6d6!important}table.itbl tr.itwarn.itmsg>td{color:#7a4f00}table.itbl td.itcbad .field,table.itbl td.itcbad .lcombo,table.itbl tfoot td.itcbad{outline:2px solid var(--bad,#a33a2c);outline-offset:1px;border-radius:6px}table.itbl td.itcwarn .field{outline:2px solid #d9a300;outline-offset:1px}table.itbl tr.itbad:not(.itmsg)>td{border-bottom:0}table.itbl tr.itmsg>td{color:var(--bad,#a33a2c);font-weight:600;font-size:calc(12.5px*var(--ts,1));white-space:normal!important;padding-top:0!important}table.itbl tr.itchg td{background:color-mix(in srgb,var(--soft) 55%,transparent)}
+.itbl{width:100%}.tlysec table.itbl th,.tlysec table.itbl td,.tlysec .list table.itbl td,.tlysec .list table.itbl th,.ao-main table.itbl td,.ao-main table.itbl th{padding:6px 3px;white-space:nowrap;vertical-align:top}table.itbl .itd{white-space:normal;width:100%;min-width:10ch}table.itbl tfoot td{white-space:normal!important}table.itbl .field{min-width:0;min-height:34px;height:34px;padding:5px 5px;font-size:calc(13px*var(--ts,1))}table.itbl select.field{padding:5px 18px 5px 5px;background-position:right 4px center}table.itbl textarea.itdesc{width:100%;min-width:10ch;height:34px;min-height:34px;resize:none;overflow:hidden;line-height:1.35;white-space:pre-wrap}table.itbl .itx{border:0;background:none;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;padding:6px 4px}table.itbl .itx:hover{color:var(--bad)}table.itbl td .tsub{white-space:normal;display:block;max-width:30ch}.itbl tr.itro td{background:var(--soft)}.tallyv td{vertical-align:top}
 @media (max-width:900px){body.tly .bc-prev{position:static;height:62vh}body.tly .bc-fv{height:62vh}}
 .modal-bg.dock .modal{max-width:100%}
 .apfilt{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}.apfilt .field{width:auto;min-width:150px;flex:0 1 200px}
@@ -928,6 +940,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   <section id="secBanks" hidden>
     <div class="head"><div class="grow"><h2>Bank Accounts</h2><p class="sub">Each company's bank accounts, added before any cheque template for that bank. The IFSC fills in the bank's name, branch, city and address. One account is the company's default, and each account has a default cheque book; both fill in when paying and can be changed. The bank's name, city and account number also go on the salary covering letter.</p></div><div class="acts"><button class="btn primary" id="bankAdd" type="button">Add Bank Account</button></div></div>
     <div id="bankList"></div>
+  </section>
+  <section id="secHsn" hidden>
+    <div class="head"><div class="grow"><h2>HSN / SAC</h2><p class="sub" id="hsnSub">The official HSN list (CBIC) and SAC codes, with the GST rate of each. Line items are checked against it: a code not in it, or a rate that differs, turns the line red.</p></div></div>
+    <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><input class="field" id="hsnQ" placeholder="Search by code or words (e.g. 3917, ball valve)" autocomplete="off" style="max-width:420px"><select class="field" id="hsnK" style="max-width:220px"><option value="">HSN and SAC</option><option value="h">HSN (goods)</option><option value="s">SAC (services)</option><option value="e">Rates changed here</option><option value="l">Used on accounted bills</option></select><span class="hint" id="hsnN" style="margin:0"></span></div>
+    <div class="card list" id="hsnList"></div>
   </section>
   <section id="secOthers" hidden>
     <div class="head"><div class="grow"><h2>Others</h2><p class="sub">Lists used across the app. A change here updates every place that uses it.</p></div></div>
@@ -1647,7 +1664,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var S = { staff: {}, salruns: {}, regions: {}, ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
+  var VIEWS = ["secHsn", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1877,7 +1894,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS],
     /* Tally (Demo): purchaser, accountant and financier, nothing else; masters to look up */
-    tly: [{ h: "Purchase", tabs: [["Bills", "Purchase Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Ledger Books", "Ledger Statements"]] }, { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"]] }, { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]] }, { h: "Masters", tabs: MASTERS }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
+    tly: [{ h: "Purchase", tabs: [["Bills", "Purchase Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Ledger Books", "Ledger Statements"]] }, { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"]] }, { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]] }, { h: "Masters", tabs: MASTERS.concat([["HSN", "HSN / SAC", 0, "m"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
   var LAST_M = "";
@@ -1999,6 +2016,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (t === "Cheques") { CQ.id = null; CQ.D = null; renderCheques(); show("secCheques"); return; }
     if (t === "Banks") { renderBanks(); show("secBanks"); return; }
     if (t === "Others") { renderOthers(); show("secOthers"); return; }
+    if (t === "HSN") { renderHsn(); show("secHsn"); return; }
     if (t === "Salary") { renderSalary(); show("secSalary"); return; }
     if (t === "All Entries") { if (dataReady()) { renderAllEnt(); show("secAllEnt"); } else show("vLoading"); return; }
     if (t === "Roles" && S.isAdmin) { S.userEditing = null; renderRoles(); show("secRoles"); return; }
@@ -2979,7 +2997,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (GO.charAt(0) === "b") {
       var bl = S.bills[id]; if (!bl) { goDone("That bill isn't in this app."); return true; }
       goDone(); setTab("Bills");
-      if ((bl.status === "draft" || bl.status === "postponed") && (bl.ownerId === meId() || S.isAdmin)) { if (bl.status === "postponed") resumeBill(id); else { S.openBill = id; S.pinned = id; B.cardId = null; renderBills(); } }
+      if ((bl.status === "draft" || bl.status === "postponed") && (bl.ownerId === meId() || S.isAdmin)) { if (bl.status === "postponed") resumeBill(id); else { S.skipOpen = ""; S.openBill = id; S.pinned = id; B.cardId = null; renderBills(); } }
       else toast("Bill " + (bl.billNo || "") + " is submitted" + (checkOf(bl) ? " and in " + checkOf(bl).r.no : "") + ". It is listed under Enter Bills.");
       return true;
     }
@@ -3489,6 +3507,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     };
   }
   var GST_RATES = [0, 0.1, 0.25, 1, 1.5, 3, 5, 6, 7.5, 12, 18, 28, 40];
+  /* The GST rates in force on a date: from 22 Sep 2025 (GST 2.0) 0, 5, 18 and 40% with the special 0.25, 1.5 and 3%; before
+     that 12% and 28% too, and no 40% */
+  var GST2_FROM = "2025-09-22";
+  function gstRatesOn(ymd) { return ymdOk(ymd) && ymd < GST2_FROM ? [0, 0.25, 1.5, 3, 5, 12, 18, 28] : [0, 0.25, 1.5, 3, 5, 18, 40]; }
   function daysSince(ms) { return ms ? Math.max(0, Math.floor((Date.now() - ms) / 864e5)) : 0; }
   function natCmp(a, b) { return String(a || "").localeCompare(String(b || ""), undefined, { numeric: true, sensitivity: "base" }); }
   function plural(n, w) { return n + " " + w + (n === 1 ? "" : "s"); }
@@ -4634,7 +4656,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     doSave().then(function () { return retry(function () { return S.db.doc("bills/" + id).set(d); }); }).then(function () {
       S.bills[id] = Object.assign({ id: id }, d); invalidate();
       if (it) { if (it.prep) { S.previews[id] = it.prep.previews; it.prep = null; storePreviews(id, S.previews[id]); } if (it.orig) { keepFile(id, it.orig); it.orig = null; } it.state = "manual"; it.msg = "Opened for typing in"; it.manual = false; }
-      S.openBill = id; S.pinned = id; B.cardId = null; renderBills();
+      S.skipOpen = ""; S.openBill = id; S.pinned = id; B.cardId = null; renderBills();
       var c = $("bOpen"); if (c && c.scrollIntoView) c.scrollIntoView({ block: "start" });
     }, function (e) { toast(explain(e)); }).then(function () { B.busy = false; });
   }
@@ -4667,7 +4689,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   function myPostponed() { return billList().filter(function (b) { return b.status === "postponed" && b.ownerId === meId(); }).sort(billCmp); }
   function pickOpen() {
-    var b = S.openBill && S.bills[S.openBill], q = myQueue();
+    var b = S.openBill && S.bills[S.openBill], q = myQueue().filter(function (x) { return x.id !== S.skipOpen; });
     /* The open card follows the sort order until someone starts working on it, so bills still being read don't jump ahead. */
     if (b && b.status === "draft" && b.ownerId === meId() && (B.touched || S.pinned === b.id || !q.length || q[0].id === b.id)) return;
     S.openBill = q.length ? q[0].id : null;
@@ -4685,7 +4707,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       ledgers: ledLinesIn(b.ledgers).concat(roLineIn(b.companyId, b.roundOff)), prepBy: b.preparedBy || "", forId: b.madeBy ? b.preparedBy || "" : "", forNew: "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), approver1Id: b.approver1Id || "", und: b.und || null, settle: b.settle ? "yes" : "no", X: Object.assign({}, extOf(b, DIV))
     };
   }
-  function draftFromBill(b) { var D = draftFrom(b); D.items = tly() ? itemsIn(b) : []; D.descTidy = b.descTidy === 2 ? 2 : !!b.descTidy; if (!D.ledgers.length && num(D.taxable) != null && num(D.taxable) > 0) D.ledgers.push({ id: "", amt: D.taxable }); return D; }
+  function draftFromBill(b) { var D = draftFrom(b); D.items = tly() ? itemsIn(b) : []; D.descTidy = b.descTidy === 2 ? 2 : !!b.descTidy; D.hsnAtt = b.hsnAttest || null; if (!D.ledgers.length && num(D.taxable) != null && num(D.taxable) > 0) D.ledgers.push({ id: "", amt: D.taxable }); return D; }
   /* A bill read before its vendor was saved (often one upload holding several bills from a new vendor) is linked to that vendor once it exists. */
   function autoLink(D) {
     if (D.vendorChoice !== "new") return false;
@@ -4797,7 +4819,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   function draftToDoc(D) {
     var doc = draftToDoc0(D), cc = doc.settle ? billCash(D, B.cardId) : null; doc.cashCheck = cc ? cashRec(cc) : null;
-    if (tly()) { doc.items = itemsOut(D.items || []); doc.descTidy = D.descTidy === 2 ? 2 : !!D.descTidy; }
+    if (tly()) { doc.hsnAttest = D.hsnAtt && D.hsnAtt.ok ? D.hsnAtt : null; doc.items = itemsOut(D.items || []); doc.descTidy = D.descTidy === 2 ? 2 : !!D.descTidy; }
     if (bnvMaker() && D.forId) { var pr = prepResolve(D); if (pr.id) Object.assign(doc, { preparedBy: pr.id, preparedByName: pr.name, madeBy: meId(), madeByName: preparedByText() }); }
     return doc;
   }
@@ -4940,8 +4962,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     });
     var ro = 0; if (String(D.roundOff || "").trim()) { ro = num(D.roundOff); if (ro == null) { E("bcRound", "Enter the round off as a number, like 0.28 or -0.40."); ro = 0; } else if (Math.abs(ro) > ROUND_MAX) { E("bcRound", "Round off is only for a bill's last paise or rupees: up to \u20B9" + ROUND_MAX + " either way. Anything more is a charge (freight, cartage), entered on a ledger line."); ro = 0; } }
     if (tx != null && ga != null && tx + ga + ro <= 0) E("bcLed", "The total must be more than zero.");
-    if (D.companyId && tx != null && tx > 0) { var le = ledCheck(D.ledgers, tx, D.companyId, MAX_LED.bill); if (le) E("bcLed", le); }
-    if (tly() && (D.items || []).length) { var ie = itemsCheck(D); if (ie) E("bcItems", ie); }
+    if (D.companyId && tx != null && tx > 0 && !(tly() && (D.items || []).length)) { var le = ledCheck(D.ledgers, tx, D.companyId, MAX_LED.bill); if (le) E("bcLed", le); }
+    if (tly() && (D.items || []).length) { var ie = itemsCheck(D); if (ie) E("bcItems", ie);
+      var mlines = (D.items || []).map(function (x, k) { return x.k === "item" && hsnNorm(x.hsn) && !x.hsnBill ? k + 1 : 0; }).filter(Boolean);
+      if (mlines.length && !(D.hsnAtt && D.hsnAtt.ok && String(D.hsnAtt.lines) === String(mlines))) E("bcHsnAtt", "Line" + (mlines.length > 1 ? "s " : " ") + mlines.join(", ") + ": the bill shows no HSN / SAC. Get a correct bill from the vendor, or give the attestation."); }
     if (oneStop(D.companyId) && $("bcTds")) {
       var td0 = num(D.tds), tot0 = (tx || 0) + (num(D.gstAmt) || 0);
       if (!String(D.tds || "").trim()) E("bcTds", "Enter the TDS. Enter 0 if none is deducted."); else if (td0 == null || td0 < 0) E("bcTds", "Enter the TDS as a number, 0 or more."); else if (td0 > tot0) E("bcTds", "TDS can't be more than the total.");
@@ -5102,24 +5126,31 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         return retry(function () { return S.db.doc("vendors/" + v.id).update({ gst: gd }); }).then(function () { invalidate(); toast("Fetched from the GST portal."); });
       }).catch(function (e) { toast("The GST portal couldn't be reached (" + ((e && (e.code || e.message)) || "error") + ")."); }).then(function () { bx._k = ""; updateDynamic(); });
     });
-    var ads = g && (g.addresses || []).length ? g.addresses : g && g.address ? [{ kind: "principal", address: g.address, nature: "" }] : [];
-    if (!ads.length) return;
-    var cur = normName(v.address || ""), lst = el("div", { style: "display:grid;gap:6px;margin-top:8px" });
-    lst.appendChild(el("span", { class: "lb", style: "margin:0" }, "Addresses on the GST portal"));
-    ads.forEach(function (a) {
-      var same = normName(a.address) === cur, r0 = el("div", { class: "vline", style: "display:flex;gap:10px;align-items:flex-start;justify-content:space-between" });
-      var tx = el("div"); tx.appendChild(el("b", null, (a.kind === "principal" ? "Principal place" : "Additional place") + (a.nature ? " · " + a.nature : ""))); tx.appendChild(el("div", null, a.address)); r0.appendChild(tx);
-      if (same) r0.appendChild(el("span", { class: "chip", style: "flex:none" }, "Saved address"));
-      else { var ub = el("button", { type: "button", class: "btn sm", style: "flex:none" }, "Use this address"); ub.addEventListener("click", function () { ub.disabled = true; retry(function () { return S.db.doc("vendors/" + v.id).update({ address: a.address }); }).then(function () { v.address = a.address; invalidate(); toast("The vendor's address is updated."); bx._k = ""; updateDynamic(); }, function (e) { ub.disabled = false; toast(explain(e)); }); }); r0.appendChild(ub); }
-      lst.appendChild(r0);
-    });
-    bx.appendChild(lst);
+    if (!g) return;
+    /* what Masters holds next to what the portal says; anything different can be taken from the portal */
+    var upd = function (patch, what) { return retry(function () { return S.db.doc("vendors/" + v.id).update(patch); }).then(function () { Object.assign(v, patch); invalidate(); toast("The vendor's " + what + " is updated."); bx._k = ""; updateDynamic(); }, function (e) { toast(explain(e)); }); };
+    var biz = gstBizName(g), pan = panFromGstin(normId(v.gstin)), cmp = [
+      ["Name", v.name || "", biz, biz && normName(biz) !== normName(v.name || "") ? function () { return upd({ name: biz }, "name"); } : null],
+      ["PAN", v.pan || "", pan, pan && pan !== (v.pan || "") ? function () { return upd({ pan: pan }, "PAN"); } : null],
+      ["Status", "", g.status || "Not given", null], ["Taxpayer type", vtypeLabel(v.type) || "", [g.type, g.constitution].filter(Boolean).join(", "), null],
+      ["e-Invoice", "", gstEinv(g) ? "Must issue e-invoices" : /^n/i.test(g.einv || "") ? "Need not issue e-invoices" : "Not stated (taken as No)", null]];
+    var tb = el("table", { class: "t", style: "margin-top:10px" }), hr = el("tr"); ["", "In Masters", "On the GST portal", ""].forEach(function (h) { hr.appendChild(el("th", null, h)); }); var th0 = el("thead"); th0.appendChild(hr); tb.appendChild(th0); var bd0 = el("tbody"); tb.appendChild(bd0);
+    cmp.forEach(function (r) { var tr = el("tr"); tr.appendChild(elc("td", null, el("b", null, r[0]))); tr.appendChild(el("td", null, r[1] || "—")); tr.appendChild(el("td", r[3] ? { style: "color:var(--warn);font-weight:600" } : null, r[2] || "—")); var td = el("td"); if (r[3]) { var ub = el("button", { type: "button", class: "btn sm" }, "Update"); ub.addEventListener("click", function () { ub.disabled = true; r[3](); }); td.appendChild(ub); } tr.appendChild(td); bd0.appendChild(tr); });
+    var ads = (g.addresses || []).length ? g.addresses : g.address ? [{ kind: "principal", address: g.address, nature: "" }] : [], cur = normName(v.address || "");
+    var atr = el("tr"); atr.appendChild(elc("td", null, el("b", null, "Address"))); atr.appendChild(el("td", null, v.address || "—")); var atd = el("td"), btd = el("td");
+    ads.forEach(function (a, k) { var same = normName(a.address) === cur, dv = el("div", { style: "margin-bottom:6px" + (same ? "" : ";color:var(--warn)") }); dv.appendChild(el("b", null, (a.kind === "principal" ? "Principal place" : "Additional place") + (a.nature ? " · " + a.nature : ""))); dv.appendChild(el("div", null, a.address)); atd.appendChild(dv);
+      var bb = el("div", { style: "margin-bottom:6px;min-height:" + (k === 0 ? "0" : "0") }); if (same) bb.appendChild(el("span", { class: "chip" }, "Saved")); else { var ub2 = el("button", { type: "button", class: "btn sm" }, "Use this"); ub2.addEventListener("click", function () { ub2.disabled = true; upd({ address: a.address }, "address"); }); bb.appendChild(ub2); } btd.appendChild(bb); });
+    atr.appendChild(atd); atr.appendChild(btd); bd0.appendChild(atr);
+    var tc = el("div", { class: "card list" }); tc.appendChild(tb); bx.appendChild(tc);
   }
   function paintEinvSt() {
     var st = $("bcEinvSt"), D = B.D; if (!st || !D) return; var v = billVendor(), b = S.bills[B.cardId] || {}, g = v ? vGst(v) : cardPortal(b, normId((D.vNew || {}).gstin));
     var req = !!(g && gstEinv(g)), known = !!(g && String(g.einv || "").trim());
     st.textContent = req ? "The GST portal says this vendor must issue e-invoices: the IRN, Ack No and Ack Date are required." : known ? "The GST portal says this vendor need not issue e-invoices: fill these in only if the bill is an e-invoice." : "The GST portal doesn't say whether this vendor must issue e-invoices, so it is taken as No: fill these in only if the bill is an e-invoice." + (v && v.gstin ? " Fetch from GST Portal to check." : "");
     st.style.color = req ? "var(--warn)" : ""; st.style.fontWeight = req ? "600" : "";
+    var ei = D.einv || {}, has = !!(String(ei.irn || "").trim() || String(ei.ackNo || "").trim() || String(ei.ackDate || "").trim()), sec0 = $("bcEinvSec"), sm = $("bcEinvSum");
+    if (sec0 && sec0._auto !== (req || has)) { sec0._auto = req || has; sec0.open = req || has; }
+    if (sm) sm.textContent = req ? "required for this vendor" : has ? "this bill is an e-invoice" : "not needed for this vendor; open it if the bill is an e-invoice";
   }
   function tlyLayout(f) {
     var wrap = el("div", { class: "tlysecs" }), hold = el("div", { hidden: "", "aria-hidden": "true" });
@@ -5131,9 +5162,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     sec("Bills Line Items", ["bcItemsWrap"]);
     /* Tally Line Items (the voucher as Tally gets it) are the accountant's, in Accounting */
     var nb = box("bcNar"); sec("Narration", [], nb ? [nb] : []);
-    var al = sec("Alerts", ["bcFlags", "bcUndBox"], notes); al.appendChild(el("div", { class: "f wide", id: "bcTlyAl" }));
-    /* e-Invoice last: whether the GST portal says this vendor must issue e-invoices, then the IRN and acknowledgement */
-    var es = el("div", { class: "f wide hint", id: "bcEinvSt", style: "margin:0" }); sec("e-Invoice", [], [es]); var eg = wrap.lastChild.querySelector(".form"); ["bcIrn", "bcAck", "bcAckD"].forEach(function (id) { var n = box(id); if (n) eg.appendChild(n); });
+    /* e-Invoice: whether the GST portal says this vendor must issue e-invoices, then the IRN and acknowledgement; closed when
+       it isn't needed and the bill shows none. Alerts come last. */
+    var ed = el("details", { class: "tlysec", id: "bcEinvSec" }), esm = el("summary"); esm.appendChild(document.createTextNode("e-Invoice")); esm.appendChild(el("span", { class: "hint", id: "bcEinvSum" })); ed.appendChild(esm);
+    var eg = el("div", { class: "form" }); eg.appendChild(el("div", { class: "f wide hint", id: "bcEinvSt", style: "margin:0" })); ["bcIrn", "bcAck", "bcAckD"].forEach(function (id) { var n = box(id); if (n) eg.appendChild(n); }); ed.appendChild(eg); wrap.appendChild(ed);
+    var al = sec("Alerts", ["bcFlags", "bcUndBox"], notes); al.appendChild(el("div", { class: "f wide", id: "bcItAl" })); al.appendChild(el("div", { class: "f wide", id: "bcTlyAl" }));
     while (f.firstChild) hold.appendChild(f.firstChild);
     wrap.appendChild(hold); return wrap;
   }
@@ -5201,7 +5234,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     lgf.appendChild(el("span", { class: "hint" }, "Choose the ledger for each part of the bill and enter its amount, before GST: up to 4 ledgers, which together make the taxable amount. Round Off is its own line below them and doesn't count in the 4." + (b.source === "file" ? " The taxable amount read from the bill is filled in on the first line." : "") + " TDS is entered by the accountant."));
     lgf.appendChild(el("span", { class: "err", id: "bcLedE", hidden: "" })); f.appendChild(lgf);
     if (tly()) { var itf = el("div", { class: "f wide" }); itf.appendChild(el("div", { id: "bcItemsWrap" }));
-      itf.appendChild(el("span", { class: "hint" }, "Every line of the bill: items with their HSN / SAC, charges such as cartage or freight (no HSN of their own), and round off. The ledger is suggested from what was accounted before; change it if needed. The taxable amount, GST, total and Data for Tally all follow from these lines.")); itf.appendChild(el("span", { class: "err", id: "bcItemsE", hidden: "" })); f.appendChild(itf); }
+      itf.appendChild(el("span", { class: "hint" }, "Every line of the bill: items with their HSN / SAC, charges such as cartage or freight (no HSN of their own), and round off. The ledger is suggested from what was accounted before; change it if needed. The taxable amount, GST and total follow from these lines, and so do the Tally Line Items the accountant sees in Accounting. A line in red has something to check.")); itf.appendChild(el("span", { class: "err", id: "bcItemsE", hidden: "" })); f.appendChild(itf); }
     if (oneStopAny()) {
       var tf = fld("TDS (₹)", inp("bcTds", D.tds || "", { inputmode: "decimal", class: "field num" }), "You also account bills: enter the TDS (0 if none). The bill is accounted as you submit it.");
       var tsel = el("select", { class: "field", id: "bcTdsSec" }); fillSelect(tsel, [["", "No TDS"]].concat(tdsOptions(D.tdsSec)), D.tdsSec || ""); var sf = fld("TDS section", tsel);
@@ -5221,9 +5254,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     setTimeout(mountBillLed, 0);
     var foot = el("div", { class: "form-foot" });
     var sub = el("button", { class: "btn primary", id: "bcSubmit" }); sub.innerHTML = '<svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><path d="m4 10.5 4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Submit bill';
-    var post = el("button", { class: "btn", id: "bcPost" }); post.innerHTML = '<svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 5.8V10l2.8 1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Postpone';
+    var post = el("button", { class: "btn", id: "bcPost" }); post.innerHTML = '<svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 5.8V10l2.8 1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' + (tly() ? "Draft" : "Postpone");
     var dis = el("button", { class: "btn danger", id: "bcDiscard" }, "Discard");
-    foot.appendChild(sub); foot.appendChild(post); foot.appendChild(el("span", { class: "grow" })); foot.appendChild(dis);
+    foot.appendChild(sub); foot.appendChild(post); foot.appendChild(el("span", { class: "grow" }));
+    /* Tally (Demo): Cancel Entry puts the bill back as it was when it was opened and leaves it */
+    if (tly()) { var cx = el("button", { class: "btn", id: "bcCancel", type: "button", title: "Go back without saving: the bill stays as it was when you opened it" }, "Cancel Entry"); cx.addEventListener("click", cancelBillEntry); foot.appendChild(cx); }
+    foot.appendChild(dis);
     card.appendChild(foot);
     sub.addEventListener("click", submitBill); post.addEventListener("click", postponeBill); dis.addEventListener("click", discardBill);
     var grow = function () { var n = $("bcNar"); if (!n) return; n.style.height = "auto"; n.style.height = Math.max(84, n.scrollHeight + 2) + "px"; };
@@ -5291,7 +5327,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
      (to: "all"), or to one item (its id), or stands on its own ledger (to: "") */
   function itemsIn(b) {
     var keep = b.items && b.items.length ? b.items : null, out = itemsIn0(b);
-    out.forEach(function (x, i) { var o = keep && keep[i] ? keep[i] : {}; x.id = o.id || newId("i"); x.rr = o.rr != null ? String(o.rr) : ""; if (x.k === "charge") { x.to = o.to !== undefined ? o.to : x.lg ? "" : "all"; if (x.to && !chargeFits(x, chargeTargets(x, out))) x.to = ""; } else x.to = ""; });
+    out.forEach(function (x, i) { var o = keep && keep[i] ? keep[i] : {}; x.id = o.id || newId("i"); x.rr = o.rr != null ? String(o.rr) : ""; x.hsnBill = keep ? hsnNorm(o.hsnBill || "") : x.k === "item" ? hsnNorm(x.hsn) : ""; if (x.k === "charge") { x.to = o.to !== undefined ? o.to : x.lg ? "" : "all"; if (x.to && !chargeFits(x, chargeTargets(x, out))) x.to = ""; } else x.to = ""; });
     return out;
   }
   function itemsIn0(b) {
@@ -5311,14 +5347,19 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }
     return out;
   }
-  function itemsOut(items) { return items.map(function (x) { return { id: x.id || newId("i"), to: x.k === "charge" ? x.to || "" : "", rr: x.rcm && num(x.rr) != null ? num(x.rr) : null, k: x.k || "item", d: String(x.d || "").trim(), hsn: x.k === "item" ? hsnNorm(x.hsn) : "", qty: x.qty == null ? null : x.qty, unit: x.unit || "", rate: x.rate == null ? null : x.rate, gst: x.k === "ro" ? null : num(x.gst), rcm: x.k !== "ro" && !!x.rcm, itc: x.k === "ro" ? "" : x.itc || "elig", tx: num(x.tx), lg: x.lg || "", why: x.why || "", man: !!x.man }; }); }
+  function itemsOut(items) { return items.map(function (x) { return { hsnBill: x.hsnBill || "", id: x.id || newId("i"), to: x.k === "charge" ? x.to || "" : "", rr: x.rcm && num(x.rr) != null ? num(x.rr) : null, k: x.k || "item", d: String(x.d || "").trim(), hsn: x.k === "item" ? hsnNorm(x.hsn) : "", qty: x.qty == null ? null : x.qty, unit: x.unit || "", rate: x.rate == null ? null : x.rate, gst: x.k === "ro" ? null : num(x.gst), rcm: x.k !== "ro" && !!x.rcm, itc: x.k === "ro" ? "" : x.itc || "elig", tx: num(x.tx), lg: x.lg || "", why: x.why || "", man: !!x.man }; }); }
   function hsnNorm(h) { return String(h || "").replace(/[^0-9]/g, "").slice(0, 8); }
   function itemsSum(items) { return round2(items.reduce(function (s0, x) { return s0 + (x.k !== "ro" ? num(x.tx) || 0 : 0); }, 0)); }
   /* Amounts that follow from the items: taxable (items and charges), GST (not on RCM lines), round off, total */
   /* GST is worked as Tally shows it: per rate, on the lines at that rate, CGST and SGST each rounded (IGST once when interstate) */
   /* ---- HSN / SAC master (web/hsn.json: the CBIC HSN list and SAC codes, with chapter-level GST rates) ---- */
   var HSNM = null, HSNQ = null;
-  function hsnMaster() { if (HSNM) return Promise.resolve(HSNM); if (!HSNQ) HSNQ = fetch((window.BV_HOME || "../") + "hsn.json").then(function (r) { return r.json(); }).then(function (j) { var m = { list: (j.h || []).concat(j.s || []), by: {} }; m.list.forEach(function (x) { m.by[x[0]] = x; }); HSNM = m; return m; }).catch(function () { HSNQ = null; return null; }); return HSNQ; }
+  function hsnMaster() { if (HSNM) return Promise.resolve(HSNM); if (!HSNQ) HSNQ = fetch((window.BV_HOME || "../") + "hsn.json").then(function (r) { return r.json(); }).then(function (j) {
+      var m = { list: (j.h || []).map(function (x) { return [x[0], x[1], x[2], "h"]; }).concat((j.s || []).map(function (x) { return [x[0], x[1], x[2], "s"]; })), by: {}, src: j.src || "" }; m.list.forEach(function (x) { m.by[x[0]] = x; });
+      /* rates the accountant changed (Masters › HSN / SAC), kept in this app */
+      var lq = S.db ? S.db.collection("hsnlearn").get().then(function (sn) { var L = {}; sn.docs.forEach(function (d) { L[d.id] = d.data() || {}; }); S.hsnLearn = L; S.hsnMem = null; }, function () { S.hsnLearn = S.hsnLearn || {}; }) : Promise.resolve();
+      return lq.then(function () { return S.db ? S.db.collection("hsnrates").get() : null; }).then(function (sn) { if (!sn) return; sn.docs.forEach(function (d) { var o = d.data() || {}, x = m.by[d.id]; if (x && o.rate != null) { x[4] = x[4] == null ? x[2] : x[4]; x[2] = Number(o.rate); x[5] = o; } }); }).catch(function () {}).then(function () { HSNM = m; return m; });
+    }).catch(function () { HSNQ = null; return null; }); return HSNQ; }
   /* the master's entry for a code, or for the code it starts (3917 -> first 3917xxxx) */
   function hsnInfo(code) { if (!HSNM || !code) return null; if (HSNM.by[code]) return HSNM.by[code]; for (var i = 0; i < HSNM.list.length; i++) if (HSNM.list[i][0].indexOf(code) === 0) return HSNM.list[i]; return null; }
   function hsnCombo(cur, label, onPick, wd) {
@@ -5366,7 +5407,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   /* What was accounted before, by ledger name (the same name is one ledger in every company) */
   function hsnMemory() {
-    var key = (S.tlyLive || []).length + "|" + Object.keys(S.bills || {}).length; if (S.hsnMem && S.hsnMem.key === key) return S.hsnMem;
+    var key = (S.tlyLive || []).length + "|" + Object.keys(S.bills || {}).length + "|" + Object.keys(S.hsnLearn || {}).length; if (S.hsnMem && S.hsnMem.key === key) return S.hsnMem;
     var M = { key: key, vh: {}, h: {}, h4: {}, descs: [], vend: {} };
     var add = function (m, k, nm) { var o = m[k] || (m[k] = {}); o[nm] = (o[nm] || 0) + 1; };
     (S.tlyLive || []).concat(billList()).forEach(function (b) {
@@ -5381,10 +5422,17 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         M.descs.push({ t: toks(it.d), nm: nm, vid: b.vendorId || "" });
       });
     });
+    /* what accounting has stored in Masters (hsnlearn): the ledgers each HSN / SAC went to */
+    Object.keys(S.hsnLearn || {}).forEach(function (h) { var lg = (S.hsnLearn[h] || {}).ledgers || {}; Object.keys(lg).forEach(function (nm) { var o = M.h[h] || (M.h[h] = {}); if (!o[nm]) o[nm] = lg[nm]; }); });
     S.hsnMem = M; return M;
   }
   function ledByName(cid, nm) { var n = normName(nm); return ledFor(cid).filter(function (l) { return normName(l.name) === n; })[0] || null; }
+  /* the ledgers an HSN / SAC has been accounted to, that this company has */
+  function hsnLedgers(cid, h, M) { var m = h && M.h[h], out = []; if (!m) return out; Object.keys(m).forEach(function (nm) { var l = ledByName(cid, nm); if (l && out.indexOf(l.id) < 0) out.push(l.id); }); return out; }
   function suggestItem(cid, vid, it, M) {
+    var h0 = hsnNorm(it.hsn), many = hsnLedgers(cid, h0, M);
+    /* an HSN / SAC accounted to two or more ledgers is chosen by hand (the line shows yellow); one ledger is filled in */
+    if (many.length >= 2) return { lg: "", why: many.length + " ledgers have been used for HSN " + h0 + ": choose one", multi: many.length };
     var h = hsnNorm(it.hsn), tries = h ? [[M.vh[vid + "|" + h], "This vendor's HSN " + h + " before"], [M.h[h], "HSN " + h + " before"], [h.length >= 4 ? M.h4[h.slice(0, 4)] : null, "HSN chapter " + h.slice(0, 4) + " before"]] : [];
     for (var i = 0; i < tries.length; i++) {
       var m = tries[i][0]; if (!m) continue;
@@ -5404,6 +5452,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var cid = D.companyId, vid = D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : "", M = hsnMemory(), n = 0;
     if (!cid) return 0;
     (D.items || []).forEach(function (it) {
+      if (it.k === "item" && !it.man && cid) { var mm = hsnLedgers(cid, hsnNorm(it.hsn), M); if (mm.length >= 2) { it.lg = ""; it.why = mm.length + " ledgers have been used for HSN " + hsnNorm(it.hsn) + ": choose one"; it.multi = mm.length; n++; return; } it.multi = 0; }
       if (it.k === "charge" && !(it.to && chargeFits(it, chargeTargets(it, D.items)))) { if (it.to) it.to = ""; if (!it.man && (!it.lg || all)) { var ge = genExpLedger(cid); if (ge) { it.lg = ge.id; it.why = "Its GST differs from the items', so it can't be spread: General Expenses"; n++; } } return; }
       if (it.k === "ro" || (it.k === "charge" && it.to) || it.man || (it.lg && !all && ledOk(it.lg, cid))) return; var sg = suggestItem(cid, vid, it, M); it.lg = sg.lg; it.why = sg.why; n++; });
     return n;
@@ -5417,7 +5466,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (x.k === "charge" && x.to) { if (x.to !== "all" && !its.some(function (t) { return t.id === x.to && t.k === "item"; })) return "Line " + n + " is added to a line that isn't there any more. Choose again."; if (!its.some(function (t) { return t.k === "item"; })) return "Line " + n + " has no items to be spread over: give it a ledger of its own."; if (!chargeFits(x, chargeTargets(x, its))) return "Line " + n + " has a different GST rate from the items it goes to, so the totals wouldn't match the bill: give it a ledger of its own."; continue; }
       if (!x.lg) return "Choose the ledger on line " + n + ".";
       if (x.k === "item" && num(x.gst) > 0 && !hsnNorm(x.hsn)) return "Enter the HSN / SAC on line " + n + ".";
-      if (x.gst !== "" && GST_RATES.indexOf(num(x.gst)) < 0 && num(x.gst) !== 0) return "The GST rate on line " + n + " isn't a GST rate.";
+      if (x.gst !== "" && x.gst != null && gstRatesOn(D.day || parseDate(D.billDate || "") || "").indexOf(num(x.gst)) < 0) return "Line " + n + ": " + x.gst + "% isn't a GST rate on the bill's date.";
       ls[x.lg] = 1;
     }
     if (Object.keys(ls).length > MAX_LED.bill) return "The lines use " + Object.keys(ls).length + " expense ledgers; a bill takes up to " + MAX_LED.bill + ".";
@@ -5440,13 +5489,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
      only the accountant sets RCM, ITC and TDS. */
   function billCtx() {
     var D = B.D; if (!D) return null; var b = S.bills[B.cardId] || {}, vid = D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : "";
-    return { D: D, acct: false, wrap: "bcItemsWrap", tally: "bcTally", cid: D.companyId, vid: vid, billNo: D.billNo, party: (S.vendors[vid] || {}).name || (D.vNew || {}).name, printed: b.ex && b.ex.printedTotal,
+    return { D: D, acct: false, day: parseDate(D.billDate || "") || b.billDate || "", wrap: "bcItemsWrap", tally: "bcTally", cid: D.companyId, vid: vid, billNo: D.billNo, party: (S.vendors[vid] || {}).name || (D.vNew || {}).name, printed: b.ex && b.ex.printedTotal,
       inter: billInter({ vendorId: vid, vendorGstin: vid ? "" : normId((D.vNew || {}).gstin), companyId: D.companyId, currency: D.currency }),
       changed: function () { applyItemLedgers(); B.touched = true; scheduleSave(); }, redraw: function () { drawItems(billCtx()); drawTallyC(billCtx()); } };
   }
   function acctCtx() {
     var x = S.bills[AC.id], T = AC.T; if (!x || !T) return null;
-    return { D: T, acct: true, wrap: "aoItemsWrap", tally: "aoTally", cid: x.companyId, vid: x.vendorId || "", billNo: x.billNo, party: vendorLabelOfBill(x), printed: x.ex && x.ex.printedTotal, inter: billInter(x), locked: AC.locked,
+    return { D: T, acct: true, day: x.billDate || "", wrap: "aoItemsWrap", tally: "aoTally", cid: x.companyId, vid: x.vendorId || "", billNo: x.billNo, party: vendorLabelOfBill(x), printed: x.ex && x.ex.printedTotal, inter: billInter(x), locked: AC.locked,
       changed: function () { AC.dirty = true; }, redraw: function () { drawItems(acctCtx()); drawTallyC(acctCtx()); } };
   }
   function mountBillItems() {
@@ -5492,7 +5541,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     /* each column as wide as its widest value or heading */
     var wide = { hsn: "HSN / SAC".length, gst: 6, tx: "Amount (₹)".length, led: "Ledger".length, rcm: 3, itc: 8 };
     its.forEach(function (x) { wide.hsn = Math.max(wide.hsn, String(x.hsn || "").length); wide.gst = Math.max(wide.gst, String(x.gst || "").length + 1); wide.tx = Math.max(wide.tx, String(x.tx || "").length); wide.led = Math.max(wide.led, x.k === "charge" && x.to ? 22 : x.k === "ro" ? 9 : (lname(x.lg).length || 17)); if (x.rcm) wide.rcm = Math.max(wide.rcm, 7); if (x.itc === "inel") wide.itc = 10; });
-    var ch = function () { c.changed(); c.redraw(); }, idp = c.acct ? "aoIt" : "bcIt";
+    var ch = function () { c.changed(); c.redraw(); }, idp = c.acct ? "aoIt" : "bcIt", allIss = [], manual = [];
     its.forEach(function (it, i) {
       var ro = it.k === "ro", chg = it.k === "charge", fits = chg && it.to && chargeFits(it, chargeTargets(it, its)), tr = el("tr", ro ? { class: "itro" } : chg ? { class: "itchg" } : null); tr.appendChild(el("td", { class: "num itn" }, String(i + 1)));
       /* description: wraps and grows with its text */
@@ -5508,7 +5557,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       /* GST %: picked from the rates */
       var gtd = el("td");
       if (ro || fits) { var gx = el("div", { class: "field ro itdash", title: fits ? "Spread or added to items: it takes their GST rate" : "" }, ro ? "—" : (it.gst || "0") + "%"); fitWidth(gx, wide.gst); gtd.appendChild(gx); }
-      else { var gs = el("select", { class: "field num", "aria-label": "GST %, line " + (i + 1) }); var opts = GST_RATES.map(function (r) { return [String(r), r + "%"]; }); if (it.gst === "" || it.gst == null) opts.unshift(["", "–"]); else if (GST_RATES.indexOf(num(it.gst)) < 0) opts.push([String(it.gst), it.gst + "%"]); fillSelect(gs, opts, it.gst === "" || it.gst == null ? "" : String(num(it.gst))); fitWidth(gs, wide.gst); gs.disabled = off; gs.addEventListener("change", function () { it.gst = gs.value; ch(); }); gtd.appendChild(gs); }
+      else { var gs = el("select", { class: "field num", "aria-label": "GST %, line " + (i + 1) }); var rIn = gstRatesOn(c.day), rH = it.k === "item" ? hsnRates(hsnNorm(it.hsn)).filter(function (r) { return rIn.indexOf(r) >= 0; }) : [], rts = rH.length ? rH : rIn, opts = rts.map(function (r) { return [String(r), r + "%"]; }); if (it.gst === "" || it.gst == null) opts.unshift(["", "–"]); else if (rts.indexOf(num(it.gst)) < 0) opts.push([String(num(it.gst)), it.gst + "% (" + (rIn.indexOf(num(it.gst)) < 0 ? "not in force" : "not for this HSN") + ")"]); fillSelect(gs, opts, it.gst === "" || it.gst == null ? "" : String(num(it.gst))); fitWidth(gs, wide.gst); gs.disabled = off; gs.addEventListener("change", function () { it.gst = gs.value; ch(); }); gtd.appendChild(gs); }
       tr.appendChild(gtd);
       if (c.acct) {
         var sel2 = function (cur, opts, on, lab, wd) { var sl = el("select", { class: "field", "aria-label": lab + ", line " + (i + 1) }); fillSelect(sl, opts, cur); fitWidth(sl, wd); if (ro || off || fits) { sl.disabled = true; if (ro || fits) fillSelect(sl, [["", "—"]], ""); } sl.addEventListener("change", function () { on(sl.value); ch(); }); var td = el("td"); td.appendChild(sl); return td; };
@@ -5538,12 +5587,27 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       tr.appendChild(ltd);
       var rm = el("button", { type: "button", class: "itx", "aria-label": "Remove line " + (i + 1), title: "Remove this line" }, "×"); rm.disabled = off; rm.addEventListener("click", function () { var gone = it.id; D.items.splice(i, 1); D.items.forEach(function (x) { if (x.to === gone) x.to = "all"; }); ch(); });
       var rtd = el("td", { class: "itn" }); rtd.appendChild(rm); tr.appendChild(rtd); bd.appendChild(tr);
+      var iss = lineIssues(it, its, c), cellOf = { hsn: htd, gst: gtd, tx: ttd, led: ltd };
+      Object.keys(iss.cells).forEach(function (k0) { if (cellOf[k0]) cellOf[k0].classList.add("itcbad"); }); Object.keys(iss.wcells).forEach(function (k0) { if (cellOf[k0] && !iss.cells[k0]) cellOf[k0].classList.add("itcwarn"); });
+      if (iss.bad.length || iss.warn.length) { tr.classList.add(iss.bad.length ? "itbad" : "itwarn"); var mr = el("tr", { class: (iss.bad.length ? "itbad" : "itwarn") + " itmsg" }), mt = el("td", { colspan: String(heads.length) }); mt.textContent = "Line " + (i + 1) + ": " + iss.bad.concat(iss.warn).join(" "); mr.appendChild(mt); bd.appendChild(mr); allIss.push("Line " + (i + 1) + ": " + iss.bad.concat(iss.warn).join(" ")); }
+      if (it.k === "item" && hsnNorm(it.hsn) && !it.hsnBill) manual.push(i + 1);
     });
+    /* HSN / SAC typed where the bill shows none: the purchaser's attestation */
+    if (!c.acct) { var abx = el("div", { class: "vbox und", style: "margin-top:10px;display:block" }); abx.hidden = !manual.length; D.hsnAttLines = manual.slice();
+      if (manual.length) { abx.appendChild(el("div", { class: "ttl" }, "HSN / SAC typed in for line" + (manual.length > 1 ? "s " : " ") + manual.join(", ") + ": the bill doesn't show " + (manual.length > 1 ? "them" : "it") + "."));
+        var al0 = el("label", { class: "check" }), acb = el("input", { type: "checkbox", id: "bcHsnAtt" }); acb.checked = !!(D.hsnAtt && D.hsnAtt.ok && String(D.hsnAtt.lines) === String(manual)); al0.appendChild(acb);
+        al0.appendChild(document.createTextNode(" I attest that I entered these HSN / SAC codes myself and take responsibility for them. If the vendor files a different HSN / SAC, or this purchase is entered without getting a correct bill, I will be penalised.")); abx.appendChild(al0); abx.appendChild(el("span", { class: "err", id: "bcHsnAttE", hidden: "" }));
+        acb.addEventListener("change", function () { D.hsnAtt = acb.checked ? { ok: true, lines: manual.slice(), by: meId(), byName: pnm(preparedByText()), at: Date.now() } : null; c.changed(); }); }
+      w.appendChild(abx); }
+    var ia = c.acct ? null : $("bcItAl"); if (ia) { ia.textContent = ""; if (allIss.length) { var fl = el("div", { class: "flag e", style: "display:block" }); fl.appendChild(el("b", null, "Lines to check (in red above):")); var ul0 = el("ul", { style: "margin:6px 0 0;padding-left:20px" }); allIss.forEach(function (x) { ul0.appendChild(el("li", null, x)); }); fl.appendChild(ul0); ia.appendChild(fl); } }
     var t = itemTotals(its, c.inter), tf = el("tfoot"), fr = el("tr"), lead = c.acct ? 6 : 4; fr.appendChild(elc("td", { colspan: String(lead), class: "itn" }, el("b", null, "Taxable " + amt2(t.taxable) + " · GST " + amt2(t.gst) + (t.ro ? " · Round off " + amt2(t.ro) : "") + " · Total")));
-    fr.appendChild(elc("td", { class: "r num" }, el("b", null, amt2(t.total)))); fr.appendChild(el("td", { colspan: "2" })); tf.appendChild(fr); tb.appendChild(tf);
+    fr.appendChild(elc("td", { class: "r num" }, el("b", null, amt2(t.total)))); fr.appendChild(el("td", { colspan: "2" })); tf.appendChild(fr);
+    /* the totals turn red when they don't come to the bill's printed total */
+    if (c.printed && its.length && Math.abs(c.printed - t.total) > 0.5) { fr.classList.add("itbad"); fr.children[1].classList.add("itcbad"); var fm = el("tr", { class: "itbad itmsg" }), fmt = el("td", { colspan: String(heads.length) }); fmt.textContent = "The lines come to " + amt2(t.total) + " but the bill's printed total is " + amt2(c.printed) + ": " + amt2(round2(c.printed - t.total)) + " is missing or extra."; fm.appendChild(fmt); tf.appendChild(fm); allIss.push(fmt.textContent); }
+    tb.appendChild(tf);
     var card = el("div", { class: "card list itcard" }); card.appendChild(tb); w.appendChild(card);
     setTimeout(function () { Array.prototype.forEach.call(w.querySelectorAll("textarea.itdesc"), growTa); }, 0);
-    hsnMaster();
+    if (!HSNM) hsnMaster().then(function (m) { if (m && $(c.wrap)) c.redraw(); });
     if (off) return;
     var foot = el("div", { class: "row", style: "display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:8px" });
     var mk = function (lab, k, d0) { var a = el("button", { type: "button", class: "link-btn" }, lab); a.addEventListener("click", function () { var nw = { id: newId("i"), k: k, to: "", d: d0, hsn: "", qty: null, unit: "", rate: null, gst: "", rcm: false, rr: "", itc: k === "ro" ? "" : "elig", tx: "", lg: "", why: "", man: false }; if (k === "charge" && items.length && chargeFits(nw, items)) nw.to = "all"; D.items.push(nw); if (k !== "ro") suggestItems(sd, false); ch(); var n = $(idp + (k === "ro" ? "tx" : "d") + (D.items.length - 1)); if (n) n.focus(); }); foot.appendChild(a); };
@@ -5553,6 +5617,30 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (pt && its.length) foot.appendChild(el("span", { class: "hint", style: "margin:0;" + (Math.abs(pt - t.total) > 0.5 ? "color:var(--bad);font-weight:600" : "") }, Math.abs(pt - t.total) > 0.5 ? "The bill's printed total is " + amt2(pt) + ": " + amt2(round2(pt - t.total)) + " is not in any line." : "Matches the bill's printed total."));
     w.appendChild(foot);
   }
+  /* What is doubtful on a line: the whole row turns red with the reasons under it */
+  /* What is doubtful on a line: red for problems (the row, and the cell at fault outlined), yellow where a choice is needed */
+  function lineIssues(it, its, c) {
+    var r = { bad: [], cells: {}, warn: [], wcells: {} }, a = num(it.tx), rates = gstRatesOn(c.day), bad = function (cell, m) { r.bad.push(m); r.cells[cell] = 1; };
+    if (a == null) bad("tx", "No amount.");
+    if (it.k === "ro") { if (a != null && Math.abs(a) > ROUND_MAX) bad("tx", "Round off over ₹" + ROUND_MAX + "."); return r; }
+    var fits = it.k === "charge" && it.to && chargeFits(it, chargeTargets(it, its));
+    if (!fits && !it.lg) { if (it.multi >= 2) { r.warn.push(it.multi + " ledgers have been used for this HSN / SAC: choose the right one."); r.wcells.led = 1; } else bad("led", "No ledger chosen."); }
+    if (it.gst !== "" && it.gst != null && rates.indexOf(num(it.gst)) < 0) bad("gst", it.gst + "% isn't a GST rate on the bill's date" + (c.day && c.day >= GST2_FROM && (num(it.gst) === 12 || num(it.gst) === 28) ? " (12% and 28% ended on 21 Sep 2025)" : "") + ".");
+    if (it.k === "item") {
+      var h = hsnNorm(it.hsn);
+      if (!h && num(it.gst) > 0) bad("hsn", "No HSN / SAC.");
+      else if (h && HSNM) { var e = hsnEntry(h); if (!e) bad("hsn", "HSN / SAC " + h + " isn't in the official list: check it against the bill."); else { var ok = hsnRates(h); if (it.gst !== "" && it.gst != null && ok.length && ok.indexOf(num(it.gst)) < 0) bad("gst", "The HSN master gives " + ok.join(" or ") + "% for " + h + "; this line has " + it.gst + "%."); } }
+      if (h && !it.hsnBill) { r.warn.push("HSN / SAC typed in: not on the bill (see the attestation below the lines)."); r.wcells.hsn = 1; }
+      else if (h && it.hsnBill && h !== it.hsnBill) { r.warn.push("HSN / SAC corrected from " + it.hsnBill + " as read."); r.wcells.hsn = 1; }
+    }
+    if (it.k === "charge" && it.to && !fits) bad("led", "Its GST rate differs from the lines it goes to.");
+    return r;
+  }
+  /* the GST rates the master has under a code (3917 -> every 3917xxxx), as rates in force */
+  function hsnRates(h) { if (!HSNM || !h) return []; var m = {}; (HSNM.by[h] ? [HSNM.by[h]] : HSNM.list.filter(function (x) { return x[0].indexOf(h) === 0; })).forEach(function (x) { if (x[2] != null) m[x[2]] = 1; }); return Object.keys(m).map(Number).sort(function (a, b) { return a - b; }); }
+  function hsnEntry(h) { if (!HSNM || !h) return null; if (HSNM.by[h]) return HSNM.by[h]; if (h.length < 4) return null; for (var i = 0; i < HSNM.list.length; i++) if (HSNM.list[i][0].indexOf(h) === 0) return HSNM.list[i]; return null; }
+  /* a short code (3917) is checked against the master's rate only when every code under it has the same rate */
+  function hsnSameRate(h) { if (!HSNM) return false; if (HSNM.by[h]) return true; var r = null, ok = true; HSNM.list.forEach(function (x) { if (ok && x[0].indexOf(h) === 0) { if (r === null) r = x[2]; else if (x[2] !== r) ok = false; } }); return ok && r !== null; }
   function growTa(ta) { if (!ta) return; ta.style.height = "auto"; ta.style.height = (ta.scrollHeight + 2) + "px"; }
   window.addEventListener("resize", function () { Array.prototype.forEach.call(document.querySelectorAll("textarea.itdesc"), growTa); });
   /* ---- Data for Tally: the purchase voucher exactly as Tally will get it, from the line items ----
@@ -5861,7 +5949,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     readCard(); B.busy = true; setCardBusy(true); clearTimeout(B.saveTimer); B.dirty = false;
     var data = Object.assign(draftToDoc(B.D), { status: "postponed", postponedAt: Date.now() });
     (B.savePromise || Promise.resolve()).then(function () { return retry(function () { return S.db.doc("bills/" + b.id).update(data); }); })
-      .then(function () { toast("Postponed. It waits under Postponed until you resume it."); closeCard(b.id, true); }, function (e) { toast(explain(e)); setCardBusy(false); })
+      .then(function () { toast(tly() ? "Saved as a draft. It waits under Drafts until you open it again." : "Postponed. It waits under Postponed until you resume it."); closeCard(b.id, true); }, function (e) { toast(explain(e)); setCardBusy(false); })
+      .then(function () { B.busy = false; });
+  }
+  function cancelBillEntry() {
+    if (B.busy) return; var b = S.bills[B.cardId]; if (!b) return;
+    B.busy = true; setCardBusy(true); clearTimeout(B.saveTimer); B.dirty = false;
+    var snap = B.snap && B.snap.id === b.id ? B.snap.doc : null;
+    (B.savePromise || Promise.resolve()).then(function () { return snap ? retry(function () { return S.db.doc("bills/" + b.id).set(snap); }) : null; })
+      .then(function () { if (snap) S.bills[b.id] = Object.assign({ id: b.id }, snap); invalidate(); S.skipOpen = b.id; B.cardId = null; B.D = null; S.openBill = null; toast("Entry cancelled: the bill is as it was."); renderBills(); }, function (e) { toast(explain(e)); setCardBusy(false); })
       .then(function () { B.busy = false; });
   }
   function discardBill() {
@@ -5877,7 +5973,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     readCard(); B.busy = true;
     doSave().then(function () { return retry(function () { return S.db.doc("bills/" + id).update({ status: "draft", ownerId: meId(), resumedAt: Date.now() }); }); })
       .then(function () {
-        S.bills[id].status = "draft"; S.bills[id].ownerId = meId(); S.openBill = id; S.pinned = id; B.cardId = null; renderBills();
+        S.bills[id].status = "draft"; S.bills[id].ownerId = meId(); S.skipOpen = ""; S.openBill = id; S.pinned = id; B.cardId = null; renderBills();
         var c = $("bOpen"); if (c && c.scrollIntoView) c.scrollIntoView({ block: "start" });
       }, function (e) { toast(explain(e)); }).then(function () { B.busy = false; });
   }
@@ -5900,7 +5996,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     B.busy = true; readCard();
     doSave().then(function () { return retry(function () { return S.db.doc("bills/" + id).update({ status: "draft", ownerId: meId(), reopenedAt: Date.now(), reopenedBy: meId() }); }); })
       .then(function () {
-        S.bills[id].status = "draft"; S.bills[id].ownerId = meId(); invalidate(); S.openBill = id; S.pinned = id; B.cardId = null; renderBills();
+        S.bills[id].status = "draft"; S.bills[id].ownerId = meId(); invalidate(); S.skipOpen = ""; S.openBill = id; S.pinned = id; B.cardId = null; renderBills();
         toast("Bill " + (b.billNo || "") + " is back in your list for changes. Submit it again when done.");
         var c = $("bOpen"); if (c && c.scrollIntoView) c.scrollIntoView({ block: "start" });
       }, function (e) { toast(explain(e)); }).then(function () { B.busy = false; });
@@ -6048,10 +6144,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         { label: "Vendor", cls: "desc", sort: function (b) { return vname(b).toLowerCase(); }, cell: function (b, td) { td.appendChild(el("b", null, vname(b))); sub(td, [b.billNo || "No bill no", fmtDate(b.billDate), coLabel(b.companyId), b.status === "draft" ? "Not submitted" : b.status === "postponed" ? "Postponed" : b.acct === "approved" ? "Accounted" : "Submitted"].join(" · ")); } },
         { label: "Line Items", cls: "r num", sort: function (b) { return nItems(b); }, cell: function (b, td) { txt(td, String(nItems(b))); } },
         { label: "Total", cls: "r num", sort: function (b) { return Number(b.total) || 0; }, cell: function (b, td) { txt(td, curMoney(b.currency || "INR", b.total)); } },
-        { label: "Copy", kind: "act", cls: "r", cell: function (b, td) { var c = el("button", { class: "btn sm primary", type: "button" }, "Copy"); c.addEventListener("click", function () { c.disabled = true; copyLiveBill(b).then(function (id) { if (!id) { c.disabled = false; return; } close(); S.openBill = id; renderBills();
+        { label: "Copy", kind: "act", cls: "r", cell: function (b, td) { var c = el("button", { class: "btn sm primary", type: "button" }, "Copy"); c.addEventListener("click", function () { c.disabled = true; copyLiveBill(b).then(function (id) { if (!id) { c.disabled = false; return; } close(); S.openBill = id; if (!S.sample || B.aiOff) renderBills();
           if (!S.sample || B.aiOff) { toast("Copied " + (b.billNo || "the bill") + " into Tally (Demo). Check it and submit."); return; }
-          toast("Copied " + (b.billNo || "the bill") + ". Claude is reading it again…"); var sv = $("bcSaved"); if (sv) sv.textContent = "Claude is reading the bill again…";
-          tlyReread(id).then(function (ok) { if (!ok) return; if (B.cardId === id) { B.cardId = null; } S.openBill = id; renderBills(); toast((b.billNo || "The bill") + " has been read again: check the line items, ledgers and Data for Tally."); }); }); }); td.appendChild(c); } }
+          S.tlyScan = id; S.openBill = id; renderBills();
+          tlyReread(id).then(function (ok) { S.tlyScan = ""; B.cardId = null; S.openBill = id; renderBills(); if (ok) toast((b.billNo || "The bill") + " has been read: check the line items and ledgers."); }); }); }); td.appendChild(c); } }
       ], rows, { sortIndex: 1, sortDir: -1 });
     }
     q.addEventListener("input", draw);
@@ -6080,6 +6176,14 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       });
     }).catch(function (e) { toast("Claude couldn't read the copied bill again (" + ((e && (e.code || e.kind || e.message)) || "error") + "). Its copied details are kept."); return false; });
   }
+  function scanCard(b) {
+    var card = el("article", { class: "card bcard tlyscan", "aria-busy": "true", "aria-label": "Claude is reading the bill" }), body = el("div", { class: "bc-body" });
+    var pv = el("div", { class: "bc-prev bc-fv scanwrap" }); if (b.file && b.file.path && window.bvFiles) pv.appendChild(fileViewer(b.file)); pv.appendChild(el("div", { class: "scanbar", "aria-hidden": "true" })); body.appendChild(pv);
+    var info = el("div", { class: "scaninfo" }); info.appendChild(el("div", { class: "scanspin", "aria-hidden": "true" })); info.appendChild(el("h3", null, "Scanning " + (b.billNo || "the bill") + "…"));
+    info.appendChild(el("p", { class: "sub" }, "Claude is reading the bill again: company and vendor, every line with its HSN / SAC and GST rate, charges and round off, the e-invoice and the narration. The form opens when it is done."));
+    var steps = el("ul", { class: "scansteps" }); ["Reading the pages", "Finding the line items", "Checking HSN / SAC and GST rates", "Matching ledgers", "Writing the narration"].forEach(function (t, i) { steps.appendChild(el("li", { style: "animation-delay:" + (i * 1.6) + "s" }, t)); }); info.appendChild(steps);
+    body.appendChild(info); card.appendChild(body); return card;
+  }
   function copyLiveBill(b) {
     var id = newId("b"), now = Date.now(), doc = {};
     TLY_COPY.forEach(function (k) { if (b[k] !== undefined) doc[k] = JSON.parse(JSON.stringify(b[k])); });
@@ -6095,7 +6199,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("bQCount").textContent = q.length ? "(" + q.length + ")" : "";
     var ob = $("bOpen");
     if (!open) { B.cardId = null; B.D = null; ob.textContent = ""; ob.appendChild(el("div", { class: "card empty" }, "Nothing to check. Upload bills to start.")); }
+    else if (tly() && S.tlyScan === open.id) {
+      /* Tally (Demo): a copied bill is being read again by Claude: the file under a scanning bar, the form once it is done */
+      if (!ob.querySelector(".tlyscan")) { B.cardId = null; B.D = null; ob.textContent = ""; ob.appendChild(scanCard(open)); }
+    }
     else if (B.cardId !== open.id || !$("bcCo")) {
+      B.snap = { id: open.id, doc: (function () { var c0 = JSON.parse(JSON.stringify(open)); delete c0.id; return c0; })() };
       B.cardId = open.id; B.D = draftFromBill(open); B.tried = false; B.armDiscard = false; B.touched = false; micStop(); B.vSig = sigOf(); B.cSig = myCompanyIds().join(); B.ledTouched = !!(open.ledgers || []).length; B.ledKey = ""; B.ledO = null;
       var linked = autoLink(B.D);
       ob.textContent = ""; ob.appendChild(buildCard(open)); renderTermBox(); updateDynamic();
@@ -6116,7 +6225,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       nx.appendChild(el("p", { class: "sub qnote" }, "Next in line. Each one opens when the bill above is submitted or postponed."));
       var c = el("div", { class: "card" }); rest.forEach(function (b) { c.appendChild(billRow(b, "queue")); }); nx.appendChild(c);
     }
-    var pp = myPostponed(), pw = $("bPostWrap"), pb = $("bPost"); pw.hidden = !pp.length; pb.textContent = "";
+    var pp = myPostponed(), pw = $("bPostWrap"), pb = $("bPost"); pw.hidden = !pp.length; pb.textContent = ""; pw.querySelector("h3").textContent = tly() ? "Drafts" : "Postponed";
     pp.forEach(function (b) { pb.appendChild(billRow(b, "post")); });
     renderDone();
   }
@@ -13188,6 +13297,26 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       }, function (e) { toast(explain(e)); return false; });
     });
   }
+  /* Masters › HSN / SAC (Tally (Demo)): search the master; the accountant can set a code's GST rate (kept in hsnrates) */
+  function renderHsn() {
+    var box = $("hsnList"); if (!box) return;
+    if (!HSNM) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Loading the HSN / SAC list…")); hsnMaster().then(function (m) { if (m) renderHsn(); else { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "The HSN / SAC list couldn't be loaded. Reload the page.")); } }); return; }
+    if (!$("hsnQ")._on) { $("hsnQ")._on = 1; var tm = 0; $("hsnQ").addEventListener("input", function () { clearTimeout(tm); tm = setTimeout(renderHsn, 200); }); $("hsnK").addEventListener("change", renderHsn); }
+    var q = $("hsnQ").value.trim().toLowerCase(), k = $("hsnK").value, dg = q.replace(/[^0-9]/g, ""), words = q.split(/\s+/).filter(Boolean), can = S.isAdmin || canDo("acct");
+    var rows = HSNM.list.filter(function (x) { if (k === "h" || k === "s") { if (x[3] !== k) return false; } else if (k === "e" && !x[5]) return false; else if (k === "l" && !(S.hsnLearn || {})[x[0]]) return false; if (!q) return true; if (dg && dg === q.replace(/\s+/g, "")) return x[0].indexOf(dg) === 0; var h = (x[0] + " " + x[1]).toLowerCase(); return words.every(function (w0) { return h.indexOf(w0) >= 0; }); });
+    $("hsnN").textContent = rows.length + " of " + HSNM.list.length + (rows.length > 300 ? ", the first 300 shown: search to narrow" : "");
+    $("hsnSub").title = HSNM.src;
+    sortTable(box, "hsnT", [
+      { label: "Code", sort: function (x) { return x[0]; }, cell: function (x, td) { td.appendChild(el("b", { class: "mono" }, x[0])); sub(td, x[3] === "s" ? "SAC" : "HSN"); } },
+      { label: "Description", cls: "desc", cell: function (x, td) { txt(td, x[1]); } },
+      { label: "From accounted bills", cls: "desc", cell: function (x, td) { var L = (S.hsnLearn || {})[x[0]]; if (!L) { txt(td, ""); return; } var ln = Object.keys(L.ledgers || {}); txt(td, ln.map(function (k) { return k + " (" + L.ledgers[k] + ")"; }).join(", ")); if (ln.length >= 2) sub(td, ln.length + " ledgers: chosen by hand on a bill", "color:#7a4f00;font-weight:600"); if ((L.descs || []).length) sub(td, L.descs.slice(0, 4).join(" · ")); } },
+      { label: "GST %", cls: "r", sort: function (x) { return x[2] == null ? -1 : x[2]; }, cell: function (x, td) {
+        if (!can) { txt(td, x[2] == null ? "Not given" : x[2] + "%"); if (x[5]) sub(td, "Changed here (was " + (x[4] == null ? "not given" : x[4] + "%") + ")"); return; }
+        var sl = el("select", { class: "field num", "aria-label": "GST rate of " + x[0], style: "width:auto" }), rts = gstRatesOn(todayYmd()), op = [["", "Not given"]].concat(rts.map(function (r) { return [String(r), r + "%"]; })); if (x[2] != null && rts.indexOf(x[2]) < 0) op.push([String(x[2]), x[2] + "% (not in force)"]); fillSelect(sl, op, x[2] == null ? "" : String(x[2]));
+        sl.addEventListener("change", function () { var v = sl.value === "" ? null : Number(sl.value); sl.disabled = true; retry(function () { return S.db.doc("hsnrates/" + x[0]).set({ rate: v, was: x[4] == null ? x[2] : x[4], by: meId(), byName: pnm(preparedByText()), at: Date.now() }); }).then(function () { if (x[4] == null) x[4] = x[2]; x[2] = v; x[5] = { rate: v }; toast(x[0] + ": GST " + (v == null ? "not given" : v + "%") + "."); renderHsn(); }, function (e) { sl.disabled = false; toast(explain(e)); }); });
+        td.appendChild(sl); if (x[5]) sub(td, "Changed here (was " + (x[4] == null ? "not given" : x[4] + "%") + ")"); } }
+    ], rows.slice(0, 300), { sortIndex: -1 });
+  }
   function renderOthers() {
     var box = $("bnList"), can = chqCan(); $("bnAdd").hidden = !can; box.textContent = "";
     var rows = bnList(); if (!rows.length) { box.appendChild(el("div", { class: "card empty" }, "No bank names yet. They are added as bank accounts are entered, or with Add Bank Name.")); return; }
@@ -14341,7 +14470,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (kind === "voucher") { if ((x.gstLedgers || []).length) x.gstLedgers.forEach(function (g) { var l = (S.ledgers || {})[g.id]; if (l) AC.D.rcmA[gstHead(l)] = fmtInput(g.amt); }); else rcmFill(AC.D); }
     if (kind === "bill") { AC.D.gstInter = billInter(x); gstFromSaved(x, AC.D); }
     /* Tally (Demo): the accountant works on the bill's line items (RCM, ITC, ledgers), TDS and narration */
-    AC.T = tly() && kind === "bill" ? { items: itemsIn(JSON.parse(JSON.stringify(x))), tds: x.tds != null ? fmtInput(x.tds) : x.entryTds || "", tdsSec: x.tdsSection || x.entryTdsSection || "", narration: x.narration || "", companyId: x.companyId, vendorChoice: x.vendorId || "" } : null;
+    AC.T = tly() && kind === "bill" ? { day: x.billDate || "", items: itemsIn(JSON.parse(JSON.stringify(x))), tds: x.tds != null ? fmtInput(x.tds) : x.entryTds || "", tdsSec: x.tdsSection || x.entryTdsSection || "", narration: x.narration || "", companyId: x.companyId, vendorChoice: x.vendorId || "" } : null;
     renderAcctOne(); show("secAcctOne");
   }
   function renderAcctOne() {
@@ -14517,6 +14646,18 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return n.length ? n : null;
   }
   /* Tally (Demo): accounting saves the line items as the accountant left them, and everything that follows from them */
+  /* Accounting teaches the HSN / SAC master: each code keeps the item descriptions it came with and the ledgers it went to */
+  function hsnLearnFrom(items) {
+    var by = {}; (items || []).forEach(function (x) { var h = hsnNorm(x.hsn), l = (S.ledgers || {})[x.lg]; if (x.k !== "item" || !h || !l) return; var o = by[h] || (by[h] = { ledgers: {}, descs: [] }); o.ledgers[l.name] = (o.ledgers[l.name] || 0) + 1; if (x.d) o.descs.push(String(x.d).slice(0, 120)); });
+    S.hsnLearn = S.hsnLearn || {};
+    Object.keys(by).forEach(function (h) {
+      var cur = S.hsnLearn[h] || { ledgers: {}, descs: [] }, n = { ledgers: Object.assign({}, cur.ledgers || {}), descs: (cur.descs || []).slice(), at: Date.now() };
+      Object.keys(by[h].ledgers).forEach(function (nm) { n.ledgers[nm] = (n.ledgers[nm] || 0) + by[h].ledgers[nm]; });
+      by[h].descs.forEach(function (d) { if (n.descs.map(normName).indexOf(normName(d)) < 0) n.descs.unshift(d); }); n.descs = n.descs.slice(0, 15);
+      S.hsnLearn[h] = n; retry(function () { return S.db.doc("hsnlearn/" + h).set(n); }).catch(function () {});
+    });
+    S.hsnMem = null;
+  }
   function tlyAcctApprove(btn) {
     var x = S.bills[AC.id], T = AC.T; if (!x || !T || AC.busy) return;
     if (acctVendorNeeds(x)) { toast("Fill in the vendor's details first."); return; }
@@ -14535,7 +14676,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var up = Object.assign({ acct: "approved", acctNote: "", items: itemsOut(T.items), ledgers: order.map(function (k) { return { id: k, amt: per[k] }; }), taxable: t.taxable, gstAmt: t.gst, roundOff: t.ro || null, total: t.total,
       gstLedgers: gl, gstSupply: gl.length ? (inter ? "inter" : "intra") : null, gstTypes: gl.length ? Object.keys(gt) : null, tds: td, tdsSection: td > 0 ? T.tdsSec : "", narration: nar }, inr ? { fcTaxable: t.taxable, fcGst: t.gst, fcTotal: t.total } : {}, tdsBaseRate(td, base), acctWho());
     var was = x.acct === "approved"; AC.busy = true; btn.disabled = true;
-    retry(function () { return S.db.doc("bills/" + x.id).update(up); }).then(function () { Object.assign(x, up); invalidate(); toast("Bill " + x.billNo + (was ? " updated." : " accounted. It can be paid in Payment Entry.")); backToAcct(); renderNav(); }, function (e) { toast(explain(e)); }).then(function () { AC.busy = false; btn.disabled = false; });
+    retry(function () { return S.db.doc("bills/" + x.id).update(up); }).then(function () { Object.assign(x, up); invalidate(); hsnLearnFrom(T.items); toast("Bill " + x.billNo + (was ? " updated." : " accounted. It can be paid in Payment Entry.")); backToAcct(); renderNav(); }, function (e) { toast(explain(e)); }).then(function () { AC.busy = false; btn.disabled = false; });
   }
   function acctApprove(btn) {
     if (AC.busy) return;
@@ -17226,7 +17367,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function modeKey() { return "bv_mode_" + ((S.me && S.me.id) || ""); }
   function modeSaved() { try { return localStorage.getItem(modeKey()) === "demo" ? "demo" : "live"; } catch (e) { return "live"; } }
   function renderModeSw() {
-    if (tly()) { S.mode = "live"; $("modeSw").hidden = true; $("demoBar").hidden = false; document.body.classList.add("tly"); $("demoBar").textContent = "Tally (Demo): practice entries for the Tally way of working. Live masters are read here; nothing done here reaches Live."; document.body.classList.add("is-demo"); return; }
+    if (tly()) { S.mode = "live"; $("modeSw").hidden = true; $("demoBar").hidden = false; document.body.classList.add("tly"); if (!document.getElementById("tlyFonts")) { var lf = document.createElement("link"); lf.id = "tlyFonts"; lf.rel = "stylesheet"; lf.href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:wght@500;600&display=swap"; document.head.appendChild(lf); } $("demoBar").textContent = "Tally (Demo): practice entries for the Tally way of working. Live masters are read here; nothing done here reaches Live."; document.body.classList.add("is-demo"); return; }
     var can = S.isAdmin || demoAllowed();
     var w = $("modeSw"); w.textContent = ""; w.hidden = !can; document.body.classList.toggle("is-demo", S.mode === "demo"); $("demoBar").hidden = S.mode !== "demo";
     if (!can) return;

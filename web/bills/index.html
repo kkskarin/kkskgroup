@@ -3869,7 +3869,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var meta = { path: path, name: str(f.name || "Bill", 160), type: t, size: f.size || 0, at: Date.now(), by: meId() };
     return window.bvFiles.put(path, f, t).then(function () {
       return retry(function () { return S.db.doc("bills/" + billId).update({ file: meta }); });
-    }).then(function () { if (S.bills[billId]) S.bills[billId].file = meta; if (B.cardId === billId) { var x = $("bcFileLn"); if (x) x.textContent = "File kept: " + meta.name; } return meta; },
+    }).then(function () { if (S.bills[billId]) S.bills[billId].file = meta; if (B.cardId === billId) { var x = $("bcFileLn"); if (x) x.textContent = "File kept: " + meta.name; if (tly() && !document.querySelector(".bcard .fv")) { B.cardId = null; renderBills(); } } return meta; },
       function (e) { toast("The bill file couldn't be kept (" + ((e && (e.code || e.message)) || "error") + "). The bill itself is saved."); return null; });
   }
   function dropFile(b) { if (b && b.file && b.file.path && window.bvFiles) window.bvFiles.remove(b.file.path).catch(function () {}); }
@@ -3895,7 +3895,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var nextB = b("›", "Next page", function () { go(V.page + 1); });
     bar.appendChild(el("span", { class: "fv-sep" }));
     b("−", "Zoom out", function () { zoomBy(1 / 1.25); }); var zl = el("span", { class: "fv-zm num" }, "100%"); bar.appendChild(zl); b("+", "Zoom in", function () { zoomBy(1.25); });
-    var fw = b("Fit width", "Fit to width", function () { V.fit = "width"; draw(); }), fp = b("Fit page", "Fit the whole page", function () { V.fit = "page"; draw(); });
+    var fw = b("Fit width", "Fit to width", function () { V.fit = "width"; draw(); }), fp = b("Fit height", "Fit the page's height", function () { V.fit = "page"; draw(); });
     b("↻", "Rotate", function () { V.rot = (V.rot + 90) % 360; draw(); });
     bar.appendChild(el("span", { class: "grow" }));
     /* Some scanners' PDFs (layered "compact" scans) come out doubled or blurred in the app's own drawing; the browser's PDF viewer
@@ -3907,13 +3907,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var nt = b("Open in new tab", "Open the file in a new tab", function () { window.bvFiles.link(meta.path).then(function (u) { window.open(u, "_blank", "noopener"); }, function () { if (V.url) window.open(V.url, "_blank", "noopener"); }); });
     var note = el("div", { class: "fv-note" }, "Loading the bill file…"); sheet.appendChild(note);
     function baseSize() { if (V.img) return { w: V.img.naturalWidth || 800, h: V.img.naturalHeight || 1100 }; return V.vp ? { w: V.vp.width, h: V.vp.height } : { w: 800, h: 1100 }; }
-    function fitScale() { var s = baseSize(), r = V.rot % 180 ? { w: s.h, h: s.w } : s, aw = Math.max(200, stage.clientWidth - 24), ah = Math.max(200, stage.clientHeight - 24); return V.fit === "page" ? Math.min(aw / r.w, ah / r.h) : aw / r.w; }
+    function fitScale() { var s = baseSize(), r = V.rot % 180 ? { w: s.h, h: s.w } : s, aw = Math.max(200, stage.clientWidth - 24), ah = Math.max(200, stage.clientHeight - 24); return V.fit === "page" ? ah / r.h : aw / r.w; }
     function scale() { return V.fit ? fitScale() : V.zoom; }
     function zoomBy(f) { var s0 = scale(), cx = stage.scrollLeft + stage.clientWidth / 2, cy = stage.scrollTop + stage.clientHeight / 2; V.zoom = Math.max(0.2, Math.min(6, s0 * f)); V.fit = ""; draw().then(function () { var k = V.zoom / s0; stage.scrollLeft = cx * k - stage.clientWidth / 2; stage.scrollTop = cy * k - stage.clientHeight / 2; }); }
     function go(n) { if (n < 1 || n > V.pages || n === V.page) return; V.page = n; V.vp = null; draw().then(function () { stage.scrollTop = 0; }); }
     function paint() {
       pageL.textContent = "Page " + V.page + " of " + V.pages; prevB.disabled = V.page <= 1; nextB.disabled = V.page >= V.pages;
-      zl.textContent = Math.round(scale() * 100) + "%"; fw.setAttribute("aria-pressed", V.fit === "width" ? "true" : "false"); fp.setAttribute("aria-pressed", V.fit === "page" ? "true" : "false");
+      zl.textContent = Math.round(scale() * 100) + "%" + (V.fit ? "" : " · Custom"); zl.title = V.fit === "width" ? "Fitted to width" : V.fit === "page" ? "Fitted to height" : "Custom zoom"; fw.setAttribute("aria-pressed", V.fit === "width" ? "true" : "false"); fp.setAttribute("aria-pressed", V.fit === "page" ? "true" : "false");
     }
     function draw() {
       if (V.busy) { V.again = true; return V.busy; }
@@ -5096,8 +5096,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     ht.appendChild(fileLine(b));
     head.appendChild(ht); head.appendChild(el("span", { class: "saved", id: "bcSaved", "aria-live": "polite" }, ""));
     card.appendChild(head);
-    var prev = S.previews[b.id], body = el("div", { class: "bc-body" + (prev && prev.length ? "" : " noprev") });
-    if (prev && prev.length) body.appendChild(previewEl(prev));
+    var prev = S.previews[b.id], useFile = tly() && b.file && b.file.path && window.bvFiles, body = el("div", { class: "bc-body" + ((prev && prev.length) || useFile ? "" : " noprev") });
+    /* Tally (Demo): the bill's own file with the viewer's tools (pages, zoom, fit, rotate, browser view, new tab), not page pictures */
+    if (useFile) { var fwT = el("div", { class: "bc-prev bc-fv" }); fwT.appendChild(fileViewer(b.file)); body.appendChild(fwT); }
+    else if (prev && prev.length) body.appendChild(previewEl(prev));
     else if (b.previewPages) setTimeout(function () { loadPreviews(b.id); }, 0);
     /* a bill back for editing has no page pictures any more: its kept file opens in their place */
     else if (b.file && b.file.path && window.bvFiles) { body.classList.remove("noprev"); var fw0 = el("div", { class: "bc-prev bc-fv" }); fw0.appendChild(fileViewer(b.file)); body.appendChild(fw0); }

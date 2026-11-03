@@ -633,8 +633,13 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:cal
 body.tly .bcard{overflow:visible}body.tly .bc-body{align-items:start}
 body.tly .bc-prev{position:sticky;top:12px;align-self:start;height:calc(100vh - 24px);max-height:none;border-radius:12px 0 0 12px}
 body.tly .bc-fv{height:calc(100vh - 24px)}
-.tlysecs{padding:6px 18px 10px}.tlysec{border-top:1px solid var(--line);padding:14px 0 6px}.tlysec:first-child{border-top:0}.tlysec>h3{margin:0 0 4px;font-size:calc(15px*var(--ts,1))}
-.tlysec>.form{padding:0}.itbl{width:100%}.tlysec table.itbl th,.tlysec table.itbl td,.tlysec .list table.itbl td,.tlysec .list table.itbl th,.ao-main table.itbl td,.ao-main table.itbl th{padding:6px 3px;white-space:nowrap;vertical-align:top}table.itbl .itd{white-space:normal;width:100%;min-width:14ch}table.itbl .field{min-width:0;min-height:34px;height:34px;padding:5px 5px;font-size:calc(13px*var(--ts,1))}table.itbl select.field{padding:5px 18px 5px 5px;background-position:right 4px center}table.itbl textarea.itdesc{width:100%;height:34px;min-height:34px;resize:none;overflow:hidden;line-height:1.35;white-space:pre-wrap}table.itbl .itx{border:0;background:none;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;padding:6px 4px}table.itbl .itx:hover{color:var(--bad)}table.itbl td .tsub{white-space:normal;display:block;max-width:30ch}.itbl tr.itro td{background:var(--soft)}.tallyv td{vertical-align:top}
+.tlysecs{padding:12px 14px 14px;display:grid;gap:14px}.tlysec{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:visible;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.tlysec>h3{margin:0;padding:10px 16px;font-size:calc(13px*var(--ts,1));letter-spacing:.08em;text-transform:uppercase;color:var(--brand-text,var(--accent));background:var(--soft);border-bottom:1px solid var(--line);border-radius:12px 12px 0 0}
+.tlysec>.form{padding:14px 16px 16px}.tlysec>div:not(.form){padding:12px 16px 16px}.ao-tly{padding:0;margin:12px 0}
+.itcard{overflow:visible}table.itbl td.itn,table.itbl th:first-child{padding-left:12px!important}table.itbl td:last-child,table.itbl th:last-child{padding-right:12px!important}
+table.itbl .itl>select,table.itbl .itl>.lcombo{display:flex;flex:none;width:max-content}table.itbl .itl .lcombo .field{padding-right:30px}table.itbl .hcombo .lcpop,table.itbl .itl .lcpop{min-width:360px;z-index:30}table.itbl .hcombo{display:inline-flex}
+table.itbl .itdash{color:var(--muted);text-align:center}table.itbl tr.itchg td{background:color-mix(in srgb,var(--soft) 55%,transparent)}
+.tlysec>.form{padding:0}.itbl{width:100%}.tlysec table.itbl th,.tlysec table.itbl td,.tlysec .list table.itbl td,.tlysec .list table.itbl th,.ao-main table.itbl td,.ao-main table.itbl th{padding:6px 3px;white-space:nowrap;vertical-align:top}table.itbl .itd{white-space:normal;width:100%;min-width:10ch}table.itbl tfoot td{white-space:normal!important}table.itbl .field{min-width:0;min-height:34px;height:34px;padding:5px 5px;font-size:calc(13px*var(--ts,1))}table.itbl select.field{padding:5px 18px 5px 5px;background-position:right 4px center}table.itbl textarea.itdesc{width:100%;min-width:10ch;height:34px;min-height:34px;resize:none;overflow:hidden;line-height:1.35;white-space:pre-wrap}table.itbl .itx{border:0;background:none;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;padding:6px 4px}table.itbl .itx:hover{color:var(--bad)}table.itbl td .tsub{white-space:normal;display:block;max-width:30ch}.itbl tr.itro td{background:var(--soft)}.tallyv td{vertical-align:top}
 @media (max-width:900px){body.tly .bc-prev{position:static;height:62vh}body.tly .bc-fv{height:62vh}}
 .modal-bg.dock .modal{max-width:100%}
 .apfilt{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}.apfilt .field{width:auto;min-width:150px;flex:0 1 200px}
@@ -4227,7 +4232,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function supplyOk(v) { v = String(v || "").toLowerCase(); return v === "mixed" ? "composite" : SUPPLY.some(function (x) { return x[0] === v; }) ? v : ""; }
   var NARR_MAX = 255;
   /* Tally (Demo): how Claude writes each line item's description */
-  var DESC_RULE = "Description rules: proper case; fix spelling; expand an abbreviation only when its meaning is certain (\"m/c\" machine, \"brg\" bearing); keep sizes, grades, model, part and serial numbers; drop prices, quantities, HSN codes, item codes and serial-number prefixes that mean nothing to a reader; at most 60 characters; translate into English (keep the original in brackets only if it is a brand or name).";
+  var DESC_RULE = "Description rules: what the item is, in proper case, then its size, grade, make or brand, model or part number, then the quantity with its unit after a dash (\"PPR Pipe H 63 mm PN16, Greenfit, Prince - 12 Mtrs\", \"Ball Valve 25 mm, Piero - 4 Nos\"), then any remark printed for the line (colour, batch, for what) in brackets at the end. Fix spelling and obvious slips (\"MRTS\" is Mtrs, \"NOS\" Nos, \"KGS\" Kg); expand an abbreviation only when its meaning is certain (\"m/c\" machine, \"brg\" bearing); write units the usual way (Nos, Mtrs, Kg, Ltrs, Sets, Pairs, Rolls, Bags). No prices, HSN codes, internal item codes or serial-number prefixes that mean nothing to a reader. At most 100 characters. Translate into English (keep the original in brackets only for a brand or name).";
   function narrFix(t) { return sentenceFix(String(t == null ? "" : t).replace(/\s+/g, " ").trim()); }
   function narrReview(res) { var r = (res && (res.narration_review || res.review_reasons)) || []; r = Array.isArray(r) ? r.map(function (x) { return str(x, 160); }).filter(Boolean) : []; if (narrFix(res && res.narration).length > NARR_MAX) r.push("The narration is longer than 255 characters."); return r; }
   /* A bill's e-invoice details: IRN (64 hex characters), acknowledgement number and date. Read from the bill or typed. */
@@ -4505,7 +4510,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var rots = tly() ? turnsOf(res.page_rotations || (list[0] || {}).page_rotations) : null;
       if (list.length > 1) return saveSplit(it, list);
       res = list[0] || {};
-      var d = linkInto(docFromResult(res, it), it.link); if (tly()) d.descTidy = true;
+      var d = linkInto(docFromResult(res, it), it.link); if (tly()) d.descTidy = 2;
       var empty = nothingRead(d); d.ex.aiMarks = billAiMarks(d);
       if (empty && res.readable === false && !(it.prep.previews || []).length) throw { kind: "blank", manual: true };
       var id = newId("b");
@@ -4680,7 +4685,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       ledgers: ledLinesIn(b.ledgers).concat(roLineIn(b.companyId, b.roundOff)), prepBy: b.preparedBy || "", forId: b.madeBy ? b.preparedBy || "" : "", forNew: "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), approver1Id: b.approver1Id || "", und: b.und || null, settle: b.settle ? "yes" : "no", X: Object.assign({}, extOf(b, DIV))
     };
   }
-  function draftFromBill(b) { var D = draftFrom(b); D.items = tly() ? itemsIn(b) : []; D.descTidy = !!b.descTidy; if (!D.ledgers.length && num(D.taxable) != null && num(D.taxable) > 0) D.ledgers.push({ id: "", amt: D.taxable }); return D; }
+  function draftFromBill(b) { var D = draftFrom(b); D.items = tly() ? itemsIn(b) : []; D.descTidy = b.descTidy === 2 ? 2 : !!b.descTidy; if (!D.ledgers.length && num(D.taxable) != null && num(D.taxable) > 0) D.ledgers.push({ id: "", amt: D.taxable }); return D; }
   /* A bill read before its vendor was saved (often one upload holding several bills from a new vendor) is linked to that vendor once it exists. */
   function autoLink(D) {
     if (D.vendorChoice !== "new") return false;
@@ -4792,7 +4797,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   function draftToDoc(D) {
     var doc = draftToDoc0(D), cc = doc.settle ? billCash(D, B.cardId) : null; doc.cashCheck = cc ? cashRec(cc) : null;
-    if (tly()) { doc.items = itemsOut(D.items || []); doc.descTidy = !!D.descTidy; }
+    if (tly()) { doc.items = itemsOut(D.items || []); doc.descTidy = D.descTidy === 2 ? 2 : !!D.descTidy; }
     if (bnvMaker() && D.forId) { var pr = prepResolve(D); if (pr.id) Object.assign(doc, { preparedBy: pr.id, preparedByName: pr.name, madeBy: meId(), madeByName: preparedByText() }); }
     return doc;
   }
@@ -5080,9 +5085,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var notes = Array.prototype.filter.call(f.children, function (n) { return n.classList && n.classList.contains("flag"); });
     sec("Base Details", ["bcCo", "bcVen", "bcVBox", "bcVInfo", "bcAdvBox", "bcSetF", "bcNo", "bcDate", "bcTermBox", "bcDue", "bcSupply"]);
     sec("e-Invoice", ["bcIrn", "bcAck", "bcAckD"]);
-    sec("Line Items", ["bcItemsWrap"]);
-    var tw = el("div", { class: "f wide" }); tw.appendChild(el("div", { id: "bcTally" }));
-    var nb = box("bcNar"); sec("Data for Tally", [], [tw].concat(nb ? [nb] : []));
+    sec("Bills Line Items", ["bcItemsWrap"]);
+    /* Tally Line Items (the voucher as Tally gets it) are the accountant's, in Accounting */
+    var nb = box("bcNar"); sec("Narration", [], nb ? [nb] : []);
     var al = sec("Alerts", ["bcFlags", "bcUndBox"], notes); al.appendChild(el("div", { class: "f wide", id: "bcTlyAl" }));
     while (f.firstChild) hold.appendChild(f.firstChild);
     wrap.appendChild(hold); return wrap;
@@ -5241,7 +5246,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
      (to: "all"), or to one item (its id), or stands on its own ledger (to: "") */
   function itemsIn(b) {
     var keep = b.items && b.items.length ? b.items : null, out = itemsIn0(b);
-    out.forEach(function (x, i) { var o = keep && keep[i] ? keep[i] : {}; x.id = o.id || newId("i"); x.rr = o.rr != null ? String(o.rr) : ""; if (x.k === "charge") x.to = o.to !== undefined ? o.to : x.lg ? "" : "all"; else x.to = ""; });
+    out.forEach(function (x, i) { var o = keep && keep[i] ? keep[i] : {}; x.id = o.id || newId("i"); x.rr = o.rr != null ? String(o.rr) : ""; if (x.k === "charge") { x.to = o.to !== undefined ? o.to : x.lg ? "" : "all"; if (x.to && !chargeFits(x, chargeTargets(x, out))) x.to = ""; } else x.to = ""; });
     return out;
   }
   function itemsIn0(b) {
@@ -5266,6 +5271,37 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function itemsSum(items) { return round2(items.reduce(function (s0, x) { return s0 + (x.k !== "ro" ? num(x.tx) || 0 : 0); }, 0)); }
   /* Amounts that follow from the items: taxable (items and charges), GST (not on RCM lines), round off, total */
   /* GST is worked as Tally shows it: per rate, on the lines at that rate, CGST and SGST each rounded (IGST once when interstate) */
+  /* ---- HSN / SAC master (web/hsn.json: the CBIC HSN list and SAC codes, with chapter-level GST rates) ---- */
+  var HSNM = null, HSNQ = null;
+  function hsnMaster() { if (HSNM) return Promise.resolve(HSNM); if (!HSNQ) HSNQ = fetch((window.BV_HOME || "../") + "hsn.json").then(function (r) { return r.json(); }).then(function (j) { var m = { list: (j.h || []).concat(j.s || []), by: {} }; m.list.forEach(function (x) { m.by[x[0]] = x; }); HSNM = m; return m; }).catch(function () { HSNQ = null; return null; }); return HSNQ; }
+  /* the master's entry for a code, or for the code it starts (3917 -> first 3917xxxx) */
+  function hsnInfo(code) { if (!HSNM || !code) return null; if (HSNM.by[code]) return HSNM.by[code]; for (var i = 0; i < HSNM.list.length; i++) if (HSNM.list[i][0].indexOf(code) === 0) return HSNM.list[i]; return null; }
+  function hsnCombo(cur, label, onPick, wd) {
+    var w = el("div", { class: "lcombo hcombo" }), t = el("input", { class: "field mono", type: "text", autocomplete: "off", spellcheck: "false", inputmode: "numeric", role: "combobox", "aria-label": label, value: cur || "", maxlength: "8" }), pop = el("div", { class: "lcpop", role: "listbox", hidden: "" });
+    w.appendChild(t); w.appendChild(pop); fitWidth(t, wd); var hi = 0, shown = [];
+    function close() { pop.hidden = true; }
+    function show() {
+      hsnMaster().then(function (m) {
+        if (!m || document.activeElement !== t) return; var q = t.value.trim().toLowerCase(), dg = q.replace(/[^0-9]/g, ""), words = q.split(/\s+/).filter(Boolean);
+        shown = (dg && dg === q.replace(/\s+/g, "") ? m.list.filter(function (x) { return x[0].indexOf(dg) === 0; }) : words.length ? m.list.filter(function (x) { var h = x[1].toLowerCase(); return words.every(function (k) { return h.indexOf(k) >= 0; }); }) : []).slice(0, 40);
+        pop.textContent = ""; hi = 0; if (!shown.length) { pop.hidden = true; return; }
+        shown.forEach(function (x, k) { var op = el("div", { class: "lcopt" + (k === hi ? " on" : ""), role: "option" }); op.appendChild(el("b", null, x[0] + (x[2] != null ? "  ·  " + x[2] + "%" : ""))); op.appendChild(el("span", null, x[1])); op.addEventListener("mousedown", function (e) { e.preventDefault(); pick(x); }); pop.appendChild(op); });
+        pop.hidden = false;
+      });
+    }
+    function pick(x) { t.value = x[0]; close(); onPick(x[0], x[2]); }
+    t.addEventListener("input", function (e) { e.stopPropagation(); show(); });
+    t.addEventListener("keydown", function (e) { var ops = pop.querySelectorAll(".lcopt"); if (e.key === "ArrowDown" && !pop.hidden) { e.preventDefault(); hi = Math.min(ops.length - 1, hi + 1); } else if (e.key === "ArrowUp" && !pop.hidden) { e.preventDefault(); hi = Math.max(0, hi - 1); } else if (e.key === "Enter") { e.preventDefault(); if (!pop.hidden && shown[hi]) pick(shown[hi]); else { close(); onPick(hsnNorm(t.value), null); } return; } else if (e.key === "Escape") { close(); return; } else return; Array.prototype.forEach.call(ops, function (o0, k) { o0.classList.toggle("on", k === hi); }); });
+    t.addEventListener("change", function (e) { e.stopPropagation(); });
+    t.addEventListener("blur", function () { setTimeout(function () { if (!pop.hidden) close(); if (hsnNorm(t.value) !== (cur || "")) onPick(hsnNorm(t.value), null); }, 150); });
+    Object.defineProperty(w, "disabled", { set: function (d) { t.disabled = !!d; } });
+    return w;
+  }
+  /* A charge can be spread over the items, or added to one, only where its GST rate is theirs; otherwise the totals would no
+     longer match the bill, and it stays on its own (General Expenses by default). */
+  function chargeFits(ch, targets) { var r = num(ch.gst) || 0; return targets.length > 0 && targets.every(function (t) { return (num(t.gst) || 0) === r; }); }
+  function chargeTargets(ch, its) { var tg = its.filter(function (x) { return x.k === "item"; }); return !ch.to ? [] : ch.to === "all" ? tg : tg.filter(function (t) { return t.id === ch.to; }); }
+  function genExpLedger(cid) { var ls = cid ? ledFor(cid) : []; return ls.filter(function (l) { return /^general expenses$/i.test(l.name); })[0] || ls.filter(function (l) { return /general expenses/i.test(l.name); })[0] || ls.filter(function (l) { return /general expenses/i.test(l.sub || ""); })[0] || null; }
   function itemTotals(items, inter) {
     var tx = 0, ro = 0, by = {}; effItems(items).forEach(function (x) { var a = num(x.tx) || 0; if (x.k === "ro") ro += a; else { tx += a; var r = num(x.gst) || 0, k0 = r + "|" + (x.itc || "elig"); if (!x.rcm && r > 0) by[k0] = (by[k0] || 0) + a; } });
     var gst = 0; Object.keys(by).forEach(function (r) { var b0 = round2(by[r]), rr = Number(r.split("|")[0]); gst += inter ? round2(b0 * rr / 100) : 2 * round2(b0 * rr / 200); });
@@ -5275,9 +5311,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
      becomes part of those items (their ledger, HSN and GST rate); a charge on its own ledger stays a line of its own. */
   function effItems(items) {
     var its = items || [], tg = its.filter(function (x) { return x.k === "item"; }), out = [], byId = {};
-    its.forEach(function (x) { if (x.k === "charge" && x.to && (x.to === "all" ? tg.length : tg.some(function (t) { return t.id === x.to; }))) return; var c = Object.assign({}, x, { chg: [] }); out.push(c); if (x.id) byId[x.id] = c; });
+    its.forEach(function (x) { if (x.k === "charge" && x.to && chargeFits(x, chargeTargets(x, its))) return; var c = Object.assign({}, x, { chg: [] }); out.push(c); if (x.id) byId[x.id] = c; });
     its.forEach(function (ch) {
-      if (ch.k !== "charge" || !ch.to) return; var to = ch.to === "all" ? tg : tg.filter(function (t) { return t.id === ch.to; }); if (!to.length) return;
+      if (ch.k !== "charge" || !ch.to) return; var to = chargeTargets(ch, its); if (!to.length || !chargeFits(ch, to)) return;
       var amt = num(ch.tx) || 0, base = to.reduce(function (s0, t) { return s0 + Math.abs(num(t.tx) || 0); }, 0), left = round2(amt);
       to.forEach(function (t, i) { var sh = i === to.length - 1 ? left : round2(base ? amt * Math.abs(num(t.tx) || 0) / base : amt / to.length); left = round2(left - sh); var c = byId[t.id]; if (!c) return; c.tx = fmtInput(round2((num(c.tx) || 0) + sh)); c.chg.push([ch.d || "Charge", sh]); });
     });
@@ -5322,7 +5358,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function suggestItems(D, all) {
     var cid = D.companyId, vid = D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : "", M = hsnMemory(), n = 0;
     if (!cid) return 0;
-    (D.items || []).forEach(function (it) { if (it.k === "ro" || (it.k === "charge" && it.to) || it.man || (it.lg && !all && ledOk(it.lg, cid))) return; var sg = suggestItem(cid, vid, it, M); it.lg = sg.lg; it.why = sg.why; n++; });
+    (D.items || []).forEach(function (it) {
+      if (it.k === "charge" && !(it.to && chargeFits(it, chargeTargets(it, D.items)))) { if (it.to) it.to = ""; if (!it.man && (!it.lg || all)) { var ge = genExpLedger(cid); if (ge) { it.lg = ge.id; it.why = "Its GST differs from the items', so it can't be spread: General Expenses"; n++; } } return; }
+      if (it.k === "ro" || (it.k === "charge" && it.to) || it.man || (it.lg && !all && ledOk(it.lg, cid))) return; var sg = suggestItem(cid, vid, it, M); it.lg = sg.lg; it.why = sg.why; n++; });
     return n;
   }
   function itemsCheck(D) {
@@ -5331,7 +5369,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var x = its[i], n = i + 1;
       if (num(x.tx) == null) return "Enter the amount on line " + n + ".";
       if (x.k === "ro") { if (Math.abs(num(x.tx)) > ROUND_MAX) return "Round off (line " + n + ") can be up to ₹" + ROUND_MAX + " either way."; continue; }
-      if (x.k === "charge" && x.to) { if (x.to !== "all" && !its.some(function (t) { return t.id === x.to && t.k === "item"; })) return "Line " + n + " is added to a line that isn't there any more. Choose again."; if (!its.some(function (t) { return t.k === "item"; })) return "Line " + n + " has no items to be spread over: give it a ledger of its own."; continue; }
+      if (x.k === "charge" && x.to) { if (x.to !== "all" && !its.some(function (t) { return t.id === x.to && t.k === "item"; })) return "Line " + n + " is added to a line that isn't there any more. Choose again."; if (!its.some(function (t) { return t.k === "item"; })) return "Line " + n + " has no items to be spread over: give it a ledger of its own."; if (!chargeFits(x, chargeTargets(x, its))) return "Line " + n + " has a different GST rate from the items it goes to, so the totals wouldn't match the bill: give it a ledger of its own."; continue; }
       if (!x.lg) return "Choose the ledger on line " + n + ".";
       if (x.k === "item" && num(x.gst) > 0 && !hsnNorm(x.hsn)) return "Enter the HSN / SAC on line " + n + ".";
       if (x.gst !== "" && GST_RATES.indexOf(num(x.gst)) < 0 && num(x.gst) !== 0) return "The GST rate on line " + n + " isn't a GST rate.";
@@ -5377,15 +5415,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   /* Claude tidies the items' descriptions once, when a bill is opened (new readings already come tidy) */
   function tidyDescs(id) {
-    var b = S.bills[id], D = B.D; if (!b || !D || b.descTidy || D.descTidy || !S.sample || B.aiOff || B.tidying === id) return;
-    var its = (D.items || []).filter(function (x) { return x.k !== "ro" && String(x.d || "").trim(); }); if (!its.length) { D.descTidy = true; return; }
+    var b = S.bills[id], D = B.D; if (!b || !D || b.descTidy === 2 || D.descTidy === 2 || !S.sample || B.aiOff || B.tidying === id) return;
+    var its = (D.items || []).filter(function (x) { return x.k !== "ro" && String(x.d || "").trim(); }); if (!its.length) { D.descTidy = 2; return; }
     B.tidying = id;
     var prompt = ["Rewrite each item description from an Indian purchase bill so it reads neatly in accounting records.", DESC_RULE,
-      "Reply with only this JSON: {\"items\":[\"...\"]}, one entry per description below, in the same order.", "", JSON.stringify(its.map(function (x) { return x.d; }))].join("\n");
+      "Reply with only this JSON: {\"items\":[\"...\"]}, one rewritten description per line below, in the same order. Each line gives the description as read and its quantity and unit if known.", "", JSON.stringify(its.map(function (x) { return { description: x.d, qty: x.qty, unit: x.unit }; }))].join("\n");
     S.sample.json(prompt, { modelTier: "quick" }).then(function (r) {
       var out = r && Array.isArray(r.items) ? r.items : null; if (!out || out.length !== its.length || B.cardId !== id || !B.D) return;
-      its.forEach(function (x, i) { var t = String(out[i] || "").replace(/\s+/g, " ").trim().slice(0, 160); if (t) x.d = t; });
-      B.D.descTidy = true; B.touched = true; scheduleSave(); var c = billCtx(); if (c) c.redraw();
+      its.forEach(function (x, i) { var t = String(out[i] || "").replace(/\s+/g, " ").trim().slice(0, 200); if (t) x.d = t; });
+      B.D.descTidy = 2; B.touched = true; scheduleSave(); var c = billCtx(); if (c) c.redraw();
     }, function () {}).then(function () { if (B.tidying === id) B.tidying = ""; });
   }
   /* A plain narration from the items when there is none yet (Claude writes a better one when it reads the bill): what was
@@ -5401,62 +5439,77 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function fitWidth(e, len) { e.style.width = "calc(" + Math.max(3, len) + "ch + " + (e.tagName === "SELECT" ? 26 : 14) + "px)"; }
   function drawItems(c) {
     var w = c && $(c.wrap); if (!w) return; var D = c.D; w.textContent = "";
-    var cid = c.cid, leds = cid ? ledFor(cid) : [], rl = cid ? roundLedger(cid) : null, tb = el("table", { class: "t itbl" }), hr = el("tr"), its = D.items || [], off = !!c.locked;
-    var items = its.filter(function (x) { return x.k === "item"; }), lname = function (id) { return ((S.ledgers || {})[id] || {}).name || ""; };
+    var cid = c.cid, rl = cid ? roundLedger(cid) : null, tb = el("table", { class: "t itbl" }), hr = el("tr"), its = D.items || [], off = !!c.locked;
+    var items = its.filter(function (x) { return x.k === "item"; }), lname = function (id) { return ((S.ledgers || {})[id] || {}).name || ""; }, sd = Object.assign({ companyId: cid, vendorChoice: c.vid }, D);
     var heads = ["#", "Description", "HSN / SAC", "GST %"].concat(c.acct ? ["RCM", "ITC"] : []).concat(["Amount (₹)", "Ledger", ""]);
-    heads.forEach(function (h, i) { hr.appendChild(el("th", h === "Description" ? { class: "itd" } : h === "Amount (₹)" ? { class: "r" } : null, h)); });
+    heads.forEach(function (h) { hr.appendChild(el("th", h === "Description" ? { class: "itd" } : h === "Amount (₹)" ? { class: "r" } : null, h)); });
     var th = el("thead"); th.appendChild(hr); tb.appendChild(th); var bd = el("tbody"); tb.appendChild(bd);
-    /* the widest value in each column */
-    var wide = { hsn: "HSN / SAC".length, gst: "GST %".length, tx: "Amount (₹)".length, led: "Ledger".length, rcm: 3, itc: 10 };
-    its.forEach(function (x) { wide.hsn = Math.max(wide.hsn, String(x.hsn || "").length); wide.gst = Math.max(wide.gst, String(x.gst || "").length); wide.tx = Math.max(wide.tx, String(x.tx || "").length); wide.led = Math.max(wide.led, x.k === "charge" && x.to ? (x.to === "all" ? 23 : 28) : lname(x.lg).length || 17); if (x.rcm) wide.rcm = Math.max(wide.rcm, 9); if (x.itc === "inel") wide.itc = Math.max(wide.itc, 10); });
-    var ch = function () { c.changed(); c.redraw(); };
+    /* each column as wide as its widest value or heading */
+    var wide = { hsn: "HSN / SAC".length, gst: 6, tx: "Amount (₹)".length, led: "Ledger".length, rcm: 3, itc: 8 };
+    its.forEach(function (x) { wide.hsn = Math.max(wide.hsn, String(x.hsn || "").length); wide.gst = Math.max(wide.gst, String(x.gst || "").length + 1); wide.tx = Math.max(wide.tx, String(x.tx || "").length); wide.led = Math.max(wide.led, x.k === "charge" && x.to ? 22 : x.k === "ro" ? 9 : (lname(x.lg).length || 17)); if (x.rcm) wide.rcm = Math.max(wide.rcm, 7); if (x.itc === "inel") wide.itc = 10; });
+    var ch = function () { c.changed(); c.redraw(); }, idp = c.acct ? "aoIt" : "bcIt";
     its.forEach(function (it, i) {
-      var ro = it.k === "ro", chg = it.k === "charge", tr = el("tr", ro ? { class: "itro" } : null); tr.appendChild(el("td", { class: "num" }, String(i + 1)));
-      var f = function (k, attrs, cls, dis, wd) { var x = inp((c.acct ? "aoIt" : "bcIt") + k + i, it[k] == null ? "" : String(it[k]), Object.assign({ class: "field " + (cls || ""), autocomplete: "off" }, attrs || {})); if (wd) fitWidth(x, wd); if (dis) { x.disabled = true; x.value = ""; x.placeholder = "—"; } if (off) x.disabled = true;
-        x.addEventListener("change", function () { it[k] = k === "hsn" ? hsnNorm(x.value) : k === "tx" ? (num(x.value) == null ? x.value : fmtInput(x.value)) : k === "gst" ? String(x.value).replace(/[^0-9.]/g, "") : x.value;
-          if ((k === "hsn") && !it.man && it.k === "item") { it.lg = ""; suggestItems(D.companyId ? D : Object.assign({ companyId: cid, vendorChoice: c.vid }, D), false); } ch(); }); var td = el("td"); td.appendChild(x); return td; };
-      /* description: wraps, and grows with its text */
-      var dta = el("textarea", { class: "field itdesc", rows: "1", id: (c.acct ? "aoItd" : "bcItd") + i, maxlength: "160", "aria-label": "Description, line " + (i + 1) }); dta.value = it.d || ""; if (off) dta.disabled = true;
-      var grow = function () { dta.style.height = "auto"; dta.style.height = dta.scrollHeight + 2 + "px"; }; dta.addEventListener("input", grow); setTimeout(grow, 0);
-      dta.addEventListener("change", function () { it.d = dta.value.replace(/\s+/g, " ").trim(); var nk = itemKind({ d: it.d, hsn: it.hsn, k: it.k === "ro" || RO_RX.test(it.d) ? "" : it.k }); if (nk !== it.k) { it.k = nk; if (nk === "ro") { it.hsn = ""; it.gst = ""; it.rcm = false; it.itc = ""; it.lg = ""; } if (nk === "charge" && !it.lg) it.to = "all"; } if (!it.man && it.k === "item") { it.lg = ""; suggestItems(Object.assign({ companyId: cid, vendorChoice: c.vid }, D), false); } ch(); });
+      var ro = it.k === "ro", chg = it.k === "charge", fits = chg && it.to && chargeFits(it, chargeTargets(it, its)), tr = el("tr", ro ? { class: "itro" } : chg ? { class: "itchg" } : null); tr.appendChild(el("td", { class: "num itn" }, String(i + 1)));
+      /* description: wraps and grows with its text */
+      var dta = el("textarea", { class: "field itdesc", rows: "1", cols: "1", id: idp + "d" + i, maxlength: "200", "aria-label": "Description, line " + (i + 1) }); dta.value = it.d || ""; if (off) dta.disabled = true;
+      dta.addEventListener("input", function () { growTa(dta); });
+      dta.addEventListener("change", function () { it.d = dta.value.replace(/\s+/g, " ").trim(); var nk = itemKind({ d: it.d, hsn: it.hsn, k: it.k === "ro" || RO_RX.test(it.d) ? "" : it.k }); if (nk !== it.k) { it.k = nk; if (nk === "ro") { it.hsn = ""; it.gst = ""; it.rcm = false; it.itc = ""; it.lg = ""; } if (nk === "charge") it.to = ""; } if (!it.man && it.k === "item") { it.lg = ""; suggestItems(sd, false); } ch(); });
       var dtd = el("td", { class: "itd" }); dtd.appendChild(dta); tr.appendChild(dtd);
-      tr.appendChild(f("hsn", { maxlength: "8", inputmode: "numeric", "aria-label": "HSN / SAC, line " + (i + 1), title: chg ? "A charge on the bill has no HSN of its own" : "" }, "mono", it.k !== "item", wide.hsn));
-      tr.appendChild(f("gst", { maxlength: "5", inputmode: "decimal", "aria-label": "GST %, line " + (i + 1), title: chg && it.to ? "Spread or added to items: it takes their GST rate" : "" }, "num", ro || (chg && !!it.to), wide.gst));
+      /* HSN / SAC: typed or picked from the master; picking fills an empty GST rate */
+      var htd = el("td");
+      if (it.k === "item") { var hc = hsnCombo(it.hsn || "", "HSN / SAC, line " + (i + 1), function (code, rate) { if (code === (it.hsn || "") && rate == null) return; it.hsn = code; if (rate != null && (it.gst === "" || it.gst == null)) it.gst = String(rate); if (!it.man) { it.lg = ""; suggestItems(sd, false); } ch(); }, wide.hsn); if (off) hc.disabled = true; htd.appendChild(hc); var hi0 = hsnInfo(hsnNorm(it.hsn)); if (hi0) { htd.title = hi0[0] + ": " + hi0[1]; } }
+      else { var hx = el("div", { class: "field ro itdash" }, "—"); fitWidth(hx, wide.hsn); htd.appendChild(hx); }
+      tr.appendChild(htd);
+      /* GST %: picked from the rates */
+      var gtd = el("td");
+      if (ro || fits) { var gx = el("div", { class: "field ro itdash", title: fits ? "Spread or added to items: it takes their GST rate" : "" }, ro ? "—" : (it.gst || "0") + "%"); fitWidth(gx, wide.gst); gtd.appendChild(gx); }
+      else { var gs = el("select", { class: "field num", "aria-label": "GST %, line " + (i + 1) }); var opts = GST_RATES.map(function (r) { return [String(r), r + "%"]; }); if (it.gst === "" || it.gst == null) opts.unshift(["", "–"]); else if (GST_RATES.indexOf(num(it.gst)) < 0) opts.push([String(it.gst), it.gst + "%"]); fillSelect(gs, opts, it.gst === "" || it.gst == null ? "" : String(num(it.gst))); fitWidth(gs, wide.gst); gs.disabled = off; gs.addEventListener("change", function () { it.gst = gs.value; ch(); }); gtd.appendChild(gs); }
+      tr.appendChild(gtd);
       if (c.acct) {
-        var sel2 = function (cur, opts, on, lab, wd) { var sl = el("select", { class: "field", "aria-label": lab + ", line " + (i + 1) }); fillSelect(sl, opts, cur); fitWidth(sl, wd); if (ro || off || (chg && it.to)) { sl.disabled = true; if (ro || (chg && it.to)) { fillSelect(sl, [["", "—"]], ""); } } sl.addEventListener("change", function () { on(sl.value); ch(); }); var td = el("td"); td.appendChild(sl); return td; };
+        var sel2 = function (cur, opts, on, lab, wd) { var sl = el("select", { class: "field", "aria-label": lab + ", line " + (i + 1) }); fillSelect(sl, opts, cur); fitWidth(sl, wd); if (ro || off || fits) { sl.disabled = true; if (ro || fits) fillSelect(sl, [["", "—"]], ""); } sl.addEventListener("change", function () { on(sl.value); ch(); }); var td = el("td"); td.appendChild(sl); return td; };
         tr.appendChild(sel2(it.rcm ? "y" + (it.rr || it.gst || "18") : "no", [["no", "No"]].concat(RCM_RATES.map(function (r) { return ["y" + r[0], "Yes " + r[0] + "%"]; })), function (v) { it.rcm = v !== "no"; it.rr = it.rcm ? v.slice(1) : ""; if (it.rcm) it.itc = "elig"; }, "RCM", wide.rcm));
         tr.appendChild(sel2(it.itc === "inel" ? "inel" : "elig", it.rcm ? [["elig", "Eligible"]] : [["elig", "Eligible"], ["inel", "Ineligible"]], function (v) { it.itc = v; }, "ITC", wide.itc));
       }
-      var txTd = f("tx", { inputmode: "decimal", "aria-label": "Amount, line " + (i + 1) }, "num", false, wide.tx); txTd.className = "r"; tr.appendChild(txTd);
-      var ltd = el("td");
+      var tx = inp(idp + "tx" + i, it.tx == null ? "" : String(it.tx), { class: "field num", inputmode: "decimal", autocomplete: "off", "aria-label": "Amount, line " + (i + 1) }); fitWidth(tx, wide.tx); tx.disabled = off;
+      tx.addEventListener("change", function () { it.tx = num(tx.value) == null ? tx.value : fmtInput(tx.value); ch(); }); var ttd = el("td", { class: "r" }); ttd.appendChild(tx); tr.appendChild(ttd);
+      var ltd = el("td", { class: "itl" });
       if (ro) { var rb = el("div", { class: "field ro" }, rl ? rl.name : "Round Off"); fitWidth(rb, wide.led); ltd.appendChild(rb); }
       else {
         if (chg) {
-          var al = el("select", { class: "field", "aria-label": "Where line " + (i + 1) + " goes" }); fillSelect(al, (items.length ? [["all", "Spread over all items"]] : []).concat(items.map(function (t) { return [t.id, "Add to line " + (its.indexOf(t) + 1) + ": " + String(t.d || "").slice(0, 18)]; })).concat([["", "Own line, own ledger"]]), it.to || ""); fitWidth(al, wide.led); if (off) al.disabled = true;
-          al.addEventListener("change", function () { it.to = al.value; if (!it.to && !it.lg) suggestItems(Object.assign({ companyId: cid, vendorChoice: c.vid }, D), false); ch(); }); ltd.appendChild(al);
+          /* where a charge goes: spread over the items, added to one, or on its own ledger; only onto lines at its own GST rate */
+          var al = el("select", { class: "field", "aria-label": "Where line " + (i + 1) + " goes" }), aopts = [];
+          if (items.length) aopts.push(["all", "Spread over all items" + (chargeFits(it, items) ? "" : " (GST differs)")]);
+          items.forEach(function (t) { aopts.push([t.id, "Add to line " + (its.indexOf(t) + 1) + ": " + String(t.d || "").slice(0, 16) + (chargeFits(it, [t]) ? "" : " (GST differs)")]); });
+          aopts.push(["", "Own line, own ledger"]); fillSelect(al, aopts, fits ? it.to : ""); Array.prototype.forEach.call(al.options, function (o0) { if (/GST differs/.test(o0.textContent)) o0.disabled = true; }); fitWidth(al, wide.led); al.disabled = off;
+          al.addEventListener("change", function () { it.to = al.value; if (!it.to) { it.man = false; suggestItems(sd, false); } ch(); }); ltd.appendChild(al);
         }
-        if (!chg || !it.to) {
-          var sel = el("select", { class: "field", id: (c.acct ? "aoItLg" : "bcItLg") + i, "aria-label": "Ledger, line " + (i + 1) }); fillSelect(sel, [["", cid ? "Choose the ledger" : "Choose the company first"]].concat(leds.map(function (l) { return [l.id, l.name]; })), it.lg || ""); fitWidth(sel, wide.led); if (off) sel.disabled = true;
-          sel.addEventListener("change", function () { it.lg = sel.value; it.man = !!sel.value; it.why = sel.value ? "Chosen" : ""; ch(); });
-          if (chg) sel.style.marginTop = "4px"; ltd.appendChild(sel); if (it.why) sub(ltd, (it.man ? "" : "Suggested: ") + it.why, it.man ? "" : "color:var(--accent-ink,var(--accent))");
+        if (!chg || !fits) {
+          var lc = ledCombo({ attrs: { "aria-label": "Ledger, line " + (i + 1), id: idp + "Lg" + i }, cur: it.lg || "", list: function () { return cid ? ledFor(cid) : []; }, placeholder: cid ? "Type to search ledgers" : "Choose the company first", full: true });
+          var lin = lc.querySelector("input"); if (lin) fitWidth(lin, wide.led); lc.disabled = off;
+          lc.addEventListener("change", function () { it.lg = lc.value; it.man = !!lc.value; it.why = lc.value ? "Chosen" : ""; ch(); });
+          if (chg) lc.style.marginTop = "4px"; ltd.appendChild(lc); if (it.why) sub(ltd, (it.man ? "" : "Suggested: ") + it.why, it.man ? "" : "color:var(--accent-ink,var(--accent))");
         } else sub(ltd, it.to === "all" ? "Shared by every item's ledger" : "Goes with line " + (its.findIndex(function (t) { return t.id === it.to; }) + 1));
       }
       tr.appendChild(ltd);
       var rm = el("button", { type: "button", class: "itx", "aria-label": "Remove line " + (i + 1), title: "Remove this line" }, "×"); rm.disabled = off; rm.addEventListener("click", function () { var gone = it.id; D.items.splice(i, 1); D.items.forEach(function (x) { if (x.to === gone) x.to = "all"; }); ch(); });
-      var rtd = el("td"); rtd.appendChild(rm); tr.appendChild(rtd); bd.appendChild(tr);
+      var rtd = el("td", { class: "itn" }); rtd.appendChild(rm); tr.appendChild(rtd); bd.appendChild(tr);
     });
-    var t = itemTotals(its, c.inter), tf = el("tfoot"), fr = el("tr"), lead = c.acct ? 6 : 4; fr.appendChild(elc("td", { colspan: String(lead) }, el("b", null, "Taxable " + amt2(t.taxable) + " · GST " + amt2(t.gst) + (t.ro ? " · Round off " + amt2(t.ro) : "") + " · Total")));
+    var t = itemTotals(its, c.inter), tf = el("tfoot"), fr = el("tr"), lead = c.acct ? 6 : 4; fr.appendChild(elc("td", { colspan: String(lead), class: "itn" }, el("b", null, "Taxable " + amt2(t.taxable) + " · GST " + amt2(t.gst) + (t.ro ? " · Round off " + amt2(t.ro) : "") + " · Total")));
     fr.appendChild(elc("td", { class: "r num" }, el("b", null, amt2(t.total)))); fr.appendChild(el("td", { colspan: "2" })); tf.appendChild(fr); tb.appendChild(tf);
-    var card = el("div", { class: "card list scroll" }); card.appendChild(tb); w.appendChild(card);
+    var card = el("div", { class: "card list itcard" }); card.appendChild(tb); w.appendChild(card);
+    setTimeout(function () { Array.prototype.forEach.call(w.querySelectorAll("textarea.itdesc"), growTa); }, 0);
+    hsnMaster();
     if (off) return;
-    var foot = el("div", { class: "row", style: "display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:6px" });
-    var mk = function (lab, k, d0) { var a = el("button", { type: "button", class: "link-btn" }, lab); a.addEventListener("click", function () { D.items.push({ id: newId("i"), k: k, to: k === "charge" ? (items.length ? "all" : "") : "", d: d0, hsn: "", qty: null, unit: "", rate: null, gst: "", rcm: false, rr: "", itc: k === "ro" ? "" : "elig", tx: "", lg: "", why: "", man: false }); ch(); var n = $((c.acct ? "aoIt" : "bcIt") + (k === "ro" ? "tx" : "") + (k === "ro" ? "" : "d") + (D.items.length - 1)) || $((c.acct ? "aoItd" : "bcItd") + (D.items.length - 1)); if (n) n.focus(); }); foot.appendChild(a); };
+    var foot = el("div", { class: "row", style: "display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:8px" });
+    var mk = function (lab, k, d0) { var a = el("button", { type: "button", class: "link-btn" }, lab); a.addEventListener("click", function () { var nw = { id: newId("i"), k: k, to: "", d: d0, hsn: "", qty: null, unit: "", rate: null, gst: "", rcm: false, rr: "", itc: k === "ro" ? "" : "elig", tx: "", lg: "", why: "", man: false }; if (k === "charge" && items.length && chargeFits(nw, items)) nw.to = "all"; D.items.push(nw); if (k !== "ro") suggestItems(sd, false); ch(); var n = $(idp + (k === "ro" ? "tx" : "d") + (D.items.length - 1)); if (n) n.focus(); }); foot.appendChild(a); };
     mk("+ Add an item", "item", ""); mk("+ Add a charge (cartage, freight…)", "charge", ""); if (!its.some(function (x) { return x.k === "ro"; })) mk("+ Add round off", "ro", "Round Off");
-    var re = el("button", { type: "button", class: "link-btn" }, "Suggest ledgers again"); re.addEventListener("click", function () { its.forEach(function (it) { it.man = false; }); suggestItems(Object.assign({ companyId: cid, vendorChoice: c.vid }, D), true); ch(); }); foot.appendChild(re);
+    var re = el("button", { type: "button", class: "link-btn" }, "Suggest ledgers again"); re.addEventListener("click", function () { its.forEach(function (it) { it.man = false; }); suggestItems(sd, true); ch(); }); foot.appendChild(re);
     var pt = c.printed;
     if (pt && its.length) foot.appendChild(el("span", { class: "hint", style: "margin:0;" + (Math.abs(pt - t.total) > 0.5 ? "color:var(--bad);font-weight:600" : "") }, Math.abs(pt - t.total) > 0.5 ? "The bill's printed total is " + amt2(pt) + ": " + amt2(round2(pt - t.total)) + " is not in any line." : "Matches the bill's printed total."));
     w.appendChild(foot);
   }
+  function growTa(ta) { if (!ta) return; ta.style.height = "auto"; ta.style.height = (ta.scrollHeight + 2) + "px"; }
+  window.addEventListener("resize", function () { Array.prototype.forEach.call(document.querySelectorAll("textarea.itdesc"), growTa); });
   /* ---- Data for Tally: the purchase voucher exactly as Tally will get it, from the line items ----
      Dr each expense ledger (one line per ledger, HSN, GST rate, RCM and ITC); Dr CGST + SGST Input (or IGST Input) on the
      eligible lines; Dr Input - Ineligible on blocked ones; nothing for RCM lines (their tax goes by a Journal-GST); Round Off;
@@ -5973,7 +6026,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           var d = docFromResult(r, { name: b.file.name || "" }), now = Date.now(), cur = S.bills[id] || b;
           var up = { companyId: d.companyId || cur.companyId || null, vendorId: d.vendorId || cur.vendorId || null, billNo: d.billNo || cur.billNo || "", billDate: d.billDate || cur.billDate || "",
             currency: d.currency, fxRate: d.fxRate, fcTaxable: d.fcTaxable, fcGst: d.fcGst, fcTotal: d.fcTotal, taxable: d.taxable, gstAmt: d.gstAmt, roundOff: d.roundOff, gstPct: d.gstPct, total: d.total,
-            narration: d.narration || cur.narration || "", supplyOf: d.supplyOf || cur.supplyOf || "", einv: d.einv, ex: d.ex, items: [], ledgers: [], descTidy: true, rereadAt: now, updatedAt: now };
+            narration: d.narration || cur.narration || "", supplyOf: d.supplyOf || cur.supplyOf || "", einv: d.einv, ex: d.ex, items: [], ledgers: [], descTidy: 2, rereadAt: now, updatedAt: now };
           if (!up.vendorId) up.vendorNew = d.vendorNew; if (d.termDays != null) up.termDays = d.termDays;
           if (p.previews && p.previews.length) { S.previews[id] = p.previews; storePreviews(id, p.previews); }
           return retry(function () { return S.db.doc("bills/" + id).update(up); }).then(function () { S.bills[id] = Object.assign({}, S.bills[id] || b, up); return true; });
@@ -12816,7 +12869,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       shown.forEach(function (l, k) {
         var g = l.main + " \u203A " + l.sub; if (!q && g !== lastG) { pop.appendChild(el("div", { class: "lcgrp" }, g)); lastG = g; }
         var op = el("div", { class: "lcopt" + (k === hi ? " on" : "") + (l.id === val ? " sel" : ""), role: "option", id: lid + "_" + k, "aria-selected": l.id === val ? "true" : "false" });
-        op.appendChild(el("b", null, l.name)); if (q) op.appendChild(el("span", null, l.sub));
+        op.appendChild(el("b", null, l.name)); if (o.full) op.appendChild(el("span", null, l.main + " \u203A " + l.sub)); else if (q) op.appendChild(el("span", null, l.sub));
         op.addEventListener("mousedown", function (e) { e.preventDefault(); pick(l.id); });
         pop.appendChild(op);
       });
@@ -14276,13 +14329,14 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (tly() && isB && AC.T) {
       AC.locked = locked;
       itCard = el("div", { class: "card", style: "padding:14px 18px;margin:12px 0" });
-      itCard.appendChild(el("h3", { style: "margin:0 0 8px" }, "Line Items")); itCard.appendChild(el("div", { id: "aoItemsWrap" }));
-      itCard.appendChild(el("h3", { style: "margin:16px 0 8px" }, "Data for Tally")); itCard.appendChild(el("div", { id: "aoTally" }));
+      itCard.className = "tlysecs ao-tly"; itCard.removeAttribute("style");
+      var s1 = el("section", { class: "tlysec" }); s1.appendChild(el("h3", null, "Bills Line Items")); s1.appendChild(el("div", { id: "aoItemsWrap" })); itCard.appendChild(s1);
+      var s2 = el("section", { class: "tlysec" }); s2.appendChild(el("h3", null, "Tally Line Items")); s2.appendChild(el("div", { id: "aoTally" })); itCard.appendChild(s2);
       var nta = el("textarea", { class: "field", id: "aoTlyNar", rows: "3", maxlength: String(NARR_MAX) }); nta.value = AC.T.narration; nta.disabled = locked;
       var ncount = el("span", { class: "hint" }); var nc = function () { ncount.textContent = nta.value.length + " of " + NARR_MAX + " characters"; }; nc();
       nta.addEventListener("input", function () { AC.T.narration = nta.value; nc(); });
-      var nf = el("div", { class: "f", style: "margin-top:12px" }); nf.appendChild(el("label", { for: "aoTlyNar" }, "Narration")); nf.appendChild(nta); nf.appendChild(ncount); itCard.appendChild(nf);
-      itCard.appendChild(el("div", { id: "aoTlyErr" }));
+      var nf = el("div", { class: "f", style: "margin-top:12px" }); nf.appendChild(el("label", { for: "aoTlyNar" }, "Narration")); nf.appendChild(nta); nf.appendChild(ncount); s2.appendChild(nf);
+      s2.appendChild(el("div", { id: "aoTlyErr" }));
       setTimeout(function () { var c = acctCtx(); if (c) c.redraw(); }, 0);
     } else if (isB && x.ex && (x.ex.items || []).length) {
       var its = x.ex.items, hasH = its.some(function (r) { return r.hsn; }), hasR = its.some(function (r) { return r.rate != null; });

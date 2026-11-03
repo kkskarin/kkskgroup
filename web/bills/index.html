@@ -1174,7 +1174,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       <span class="grow"></span>
       <div class="acts2">
         <button class="btn" id="bCopyLive" type="button" hidden title="Bring a bill from Live into Tally (Demo) as a new entry; the Live bill is not touched">Copy a live bill</button>
-        <button class="btn primary" id="bUpload">Upload bills (up to 15)</button>
+        <button class="btn primary" id="bUpload">Upload bills</button>
       </div>
       <input type="file" id="bFiles" multiple accept="application/pdf,.pdf,image/jpeg,image/png,image/webp" hidden>
     </div>
@@ -1955,7 +1955,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS],
     /* Tally (Demo): purchaser, accountant and financier, nothing else; masters to look up */
-    tly: [{ h: "Purchase", tabs: [["Bills", "Bill Entry", 0, "Bills"], ["Bill All", "All Entries", 0, "Bills"], ["Vch T", "Vouchers"], ["Pro T", "Proformas"], ["Imp T", "Imports"]] }, { h: "Accounts", tabs: [["Accounts", "Purchase"], ["Sales Acct", "Sales"], ["Verify", "Verification"]] }, { h: "Finance", tabs: [["Mark Transaction", "Plan"], ["Pay Record", "Record"]] },
+    tly: [{ h: "Purchase", tabs: [["Bills", "Bill Entry", 0, "Bills"], ["Bill All", "All Entries", 0, "Bills"], ["Vch T", "Vouchers"], ["Pro T", "Proformas"], ["Imp T", "Imports"]] }, { h: "Sales", tabs: [["Sales T", "Sales Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Purchase"], ["Sales Acct", "Sales"], ["Verify", "Verification"]] }, { h: "Finance", tabs: [["Mark Transaction", "Plan"], ["Pay Record", "Record"]] },
       { h: "Reports", tabs: [["Transactions", "Transactions", 0, "Purchase"], ["Ledger Books", "Ledger Statements", 0, "Accounts"], ["Vendor Stmt", "Vendor Statement", 0, "Accounts"], ["Payables", "Payables", 0, "Finance"]].concat(MASTERS, [["HSN", "HSN / SAC", 0, "m"], ["Tally DL", "Tally Downloads"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
@@ -2103,6 +2103,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (t === "Others") { renderOthers(); show("secOthers"); return; }
     if (t === "HSN") { renderHsn(); show("secHsn"); return; }
     if (t === "Vch T" || t === "Pro T" || t === "Imp T") { $("soonTitle").textContent = { "Vch T": "Vouchers", "Pro T": "Proformas", "Imp T": "Imports" }[t]; $("soonText").textContent = "Coming next: brought over from the KKSK Group app the Tally way, with the same statuses and Send for Approval as bills."; show("secSoon"); return; }
+    if (t === "Sales T") { $("soonTitle").textContent = "Sales Entry"; $("soonText").textContent = "Sales invoices are entered here. Waiting for the details of how sales should work in Tally (Demo)."; show("secSoon"); return; }
     if (t === "Sales Acct" || t === "Tally DL") { $("soonTitle").textContent = t === "Sales Acct" ? "Sales" : "Tally Downloads"; $("soonText").textContent = t === "Sales Acct" ? "Accounting for sales comes here. Nothing is set up for sales in Tally (Demo) yet." : "Files to import into Tally come here. Nothing is set up for downloads yet."; show("secSoon"); return; }
     if (t === "Verify") { if (dataReady()) { renderVerify(); show("secVerify"); } else show("vLoading"); return; }
     if (t === "Salary") { renderSalary(); show("secSalary"); return; }
@@ -4397,11 +4398,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     busy: "Claude didn't answer. Upload this file again."
   };
   var B = { log: [], pending: [], running: 0, aiOff: "", D: null, cardId: null, saveTimer: null, dirty: false, savePromise: null, busy: false, tried: false, armDiscard: false, vSig: "", cSig: "", doneLimit: 100 };
-  var MAX_SCAN = 15;
+  /* any number of bills in one go: they are read two at a time, the rest wait their turn */
   function startUpload(files) {
     files = Array.prototype.slice.call(files || []); if (!files.length) return;
-    var busy = B.pending.length + B.running, room = MAX_SCAN - busy;
-    if (files.length > room) { var m = "Up to " + MAX_SCAN + " bills can be read at a time." + (busy ? " " + busy + " are still being read, so choose up to " + Math.max(room, 0) + " now." : " Choose up to " + MAX_SCAN + " files."); toast(m); window.alert(m); return; }
     if (B.log.length && !B.pending.length && !B.running) B.log = [];
     var link = takeLink();
     files.forEach(function (f) { var it = { name: f.name || "File", file: f, orig: f, state: "wait", msg: "Waiting", link: link }; B.log.push(it); B.pending.push(it); });
@@ -4638,7 +4637,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (empty && res.readable === false && !(it.prep.previews || []).length) throw { kind: "blank", manual: true };
       var id = newId("b");
       return retry(function () { return S.db.doc("bills/" + id).set(d); }).then(function () {
-        S.bills[id] = Object.assign({ id: id }, d); invalidate();
+        S.bills[id] = Object.assign({ id: id }, d); invalidate(); if (d.vendorId && S.vendors[d.vendorId]) gstRefresh(S.vendors[d.vendorId], null, true);
         if (rots) { var orig0 = it.orig, pv0 = it.prep.previews; it.prep = null; it.orig = null;
           /* Tally (Demo): pages turned upright before they are kept */
           turnPreviews(pv0, rots).then(function (pv) { S.previews[id] = pv; storePreviews(id, pv); onData(); });
@@ -4692,7 +4691,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         if (pages.length) d.ex.notes = ((d.ex.notes ? d.ex.notes + " " : "") + "Page" + (pages.length > 1 ? "s " : " ") + pages.join(", ") + " of " + (it.name || "the file") + ".").trim();
         var id = newId("b");
         return retry(function () { return S.db.doc("bills/" + id).set(d); }).then(function () {
-          S.bills[id] = Object.assign({ id: id }, d); invalidate();
+          S.bills[id] = Object.assign({ id: id }, d); invalidate(); if (d.vendorId && S.vendors[d.vendorId]) gstRefresh(S.vendors[d.vendorId], null, true);
           var pv = pages.length ? pages.map(function (pg) { return prev[pg - 1]; }).filter(Boolean) : [];
           S.previews[id] = pv.length ? pv : prev.slice(); storePreviews(id, S.previews[id]);
           var orig = it.orig;
@@ -5091,7 +5090,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (String(ei.ackNo || "").trim() && !/^\d{6,20}$/.test(String(ei.ackNo).replace(/\s+/g, ""))) E("bcAck", "The Ack No is digits only.");
     if (String(ei.ackDate || "").trim() && !parseDate(ei.ackDate)) E("bcAckD", "Enter the date like 12-Sep-26.");
     if ((String(ei.ackNo || "").trim() || String(ei.ackDate || "").trim()) && !irn) E("bcIrn", "Enter the IRN too, from the same e-invoice block.");
-    if (v) { gstAlerts(v, bd, ga || 0, { irn: irn }).forEach(function (w) { warns.push(w); }); gstRefresh(v, function () { if (B.D && $("bcFlags")) updateDynamic(); }); }
+    if (v) { gstAlerts(v, bd, ga || 0, { irn: irn }).forEach(function (w) { warns.push(w); }); gstRefresh(v, function () { if (B.D && $("bcFlags")) updateDynamic(); }, true); }
     var oa = openAdvsFor(D, b);
     if (oa.length && !D.advPick) E("bcAdvPick", "Say whether this is the final bill of the open " + (oa[0].kind === "import" ? "import " : "proforma ") + oa[0].piNo + (oa.length > 1 ? " or another open one" : "") + ".");
     else if (oa.length && D.advPick === "no" && String(D.advWhy || "").trim().length < 4) E("bcAdvWhy", "Write why this bill is separate.");
@@ -5746,7 +5745,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         /* the Chief Accountant (or the Super Admin), accounting it: answer on the line itself */
         if (c.acct && tly() && canVerify() && c.billId && !off && (iss.bad.length || iss.warn.length) && hsnNorm(it.hsn)) {
           var cc = el("button", { type: "button", class: "btn sm", style: "margin-left:8px", title: "Not a deviation: kept as correct for this HSN / SAC and item on every bill" }, "Confirm Correct (Always)");
-          cc.addEventListener("click", function () { cc.disabled = true; hsnOkAdd([{ hsn: it.hsn, d: it.d }], c.billNo).then(function () { toast("Confirmed correct: kept in Masters › HSN / SAC."); c.redraw(); }, function (e) { cc.disabled = false; toast(explain(e)); }); });
+          cc.addEventListener("click", function () { cc.disabled = true; hsnOkAdd([{ hsn: it.hsn, d: it.d, gst: it.gst }], c.billNo, c.vid).then(function () { toast("Confirmed correct: kept in Masters › HSN / SAC."); c.redraw(); verifySweep(c.billNo); }, function (e) { cc.disabled = false; toast(explain(e)); }); });
           mt.appendChild(cc);
           if (iss.bad.length) { var ao = el("button", { type: "button", class: "btn sm", style: "margin-left:8px", title: "Only this bill, while the line stays unchanged" }, "Allow This Once");
             ao.addEventListener("click", function () { var bl = S.bills[c.billId]; if (!bl) return; ao.disabled = true; var v = JSON.parse(JSON.stringify(bl.verify || {})); v.ok = Object.assign({}, v.ok || {}); v.ok[it.id] = { sig: lineSig(it), by: meId(), byName: pnm(preparedByText()), at: Date.now(), reply: "Allowed this once" }; verifySave(c.billId, v).then(function () { c.ver = v.ok; toast("Allowed for this bill."); c.redraw(); }, function (e) { ao.disabled = false; toast(explain(e)); }); });
@@ -5798,17 +5797,20 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return sc.slice(0, 20).map(function (p) { return p[1]; });
   }
   function hsnCheckLines(its, redraw) {
-    if (!tly() || !S.sample || !HSNM || B.aiOff) return;
+    if (!tly() || !S.sample || !HSNM || B.aiOff) return Promise.resolve();
+    var busy = its.map(function (x) { return HSN_CHKQ[hsnChkKey(x)]; }).filter(function (q) { return q && q.then; });
     var need = its.filter(function (x) { var k = hsnChkKey(x); return x.k !== "ro" && String(x.d || "").trim().length > 2 && !(k in HSN_CHK) && !HSN_CHKQ[k]; }).slice(0, 20);
-    if (!need.length) return; need.forEach(function (x) { HSN_CHKQ[hsnChkKey(x)] = 1; });
+    if (!need.length) return Promise.all(busy).then(function () {});
     var lines = need.map(function (x, n) { var h = hsnNorm(x.hsn), e = h ? hsnEntry(h) : null; return (n + 1) + ". \"" + String(x.d).slice(0, 160) + "\" | HSN / SAC read from the bill: " + (h || "none") + (h ? " (" + (e ? "official description: " + String(e[1]).slice(0, 140) : "not in the official list") + ")" : "") + "\n   Candidates: " + hsnCands(x.d, h).map(function (c0) { return c0[0] + " = " + String(c0[1]).slice(0, 90); }).join("; "); });
     var prompt = ["Check the HSN / SAC of each line of a purchase bill against what the item is. The code was read from the bill and may be smudged, misread or missing.",
       "For each line reply {\"line\": n, \"verdict\": \"ok\" if the code read fits the item, \"mismatch\" if it clearly doesn't, \"missing\" if none was read or it isn't in the official list, \"code\": the best-fitting code from that line's candidates or the code read (empty if nothing fits), \"why\": a short reason}.",
       "Pick codes only from the line's candidates or the code read. Reply with only JSON: {\"lines\":[...]}.", "", lines.join("\n")].join("\n");
-    S.sample.json(prompt, { modelTier: "quick" }).then(function (j) {
+    var pr = S.sample.json(prompt, { modelTier: "quick" }).then(function (j) {
       need.forEach(function (x) { HSN_CHK[hsnChkKey(x)] = { verdict: "", code: "", why: "" }; });
       (j && j.lines || []).forEach(function (l) { var x = need[Number(l.line) - 1]; if (!x) return; var code = hsnNorm(l.code || ""); if (code && !hsnEntry(code)) code = ""; HSN_CHK[hsnChkKey(x)] = { verdict: /^(ok|mismatch|missing)$/.test(l.verdict) ? l.verdict : "", code: code, why: str(l.why, 160) }; });
     }, function () { need.forEach(function (x) { HSN_CHK[hsnChkKey(x)] = { verdict: "", code: "", why: "" }; }); }).then(function () { need.forEach(function (x) { delete HSN_CHKQ[hsnChkKey(x)]; }); if (redraw) redraw(); });
+    need.forEach(function (x) { HSN_CHKQ[hsnChkKey(x)] = pr; });
+    return Promise.all(busy.concat([pr])).then(function () {});
   }
   /* What is doubtful on a line: the whole row turns red with the reasons under it */
   /* What is doubtful on a line: red for problems (the row, and the cell at fault outlined), yellow where a choice is needed */
@@ -5861,7 +5863,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     else if (h && it.hsnBill && h !== it.hsnBill) { r.warn.push("HSN / SAC corrected from " + it.hsnBill + " as read."); r.wcells.hsn = 1; }
     if (chk && chk.code && chk.code !== h && chk.verdict !== "ok" && chk.code.slice(0, 6) !== h.slice(0, 6)) r.sug = chk.code;
     /* confirmed correct by the Chief Accountant (Masters › HSN / SAC): the HSN / SAC and rate questions on it are not errors */
-    var okE = c.acct && hsnOkOf(h, it.d);
+    var okE = c.acct && hsnOkOf(h, it.d, c.vid);
     if (okE) { var basic = /^No amount|^No ledger chosen|tax ledger can't be a bill line/; r.bad = r.bad.filter(function (m) { return basic.test(m); }); r.cells = {}; if (r.bad.length) { if (!it.lg) r.cells.led = 1; if (a == null) r.cells.tx = 1; } r.warn = r.warn.filter(function (m) { return /ledgers have been used/.test(m); }); r.wcells = r.warn.length ? { led: 1 } : {}; r.sug = ""; r.confirmed = okE; }
     var vk = (c.ver || {})[it.id];
     if (vk && r.bad.length && vk.sig === lineSig(it)) { r.warn = ["Verified by " + (vk.byName || "the Chief Accountant") + (vk.reply ? ": " + vk.reply : "") + " (" + r.bad.join(" ") + ")"].concat(r.warn); Object.keys(r.cells).forEach(function (k0) { r.wcells[k0] = 1; }); r.bad = []; r.cells = {}; r.verified = true; }
@@ -5894,8 +5896,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var v = JSON.parse(JSON.stringify(b.verify || {})), who = { by: meId(), byName: pnm(preparedByText()), at: Date.now(), reply: ta.value.trim().slice(0, 500) };
       v.reqs = (v.reqs || []).map(function (x) { return x.id === q.id ? Object.assign({}, x, { status: ok ? "approved" : "rejected", always: always, done: who }) : x; });
       if (ok) { var ls0 = (q.lines || []).concat(q.lineId ? [{ id: q.lineId, sig: q.sig }] : []); if (ls0.length) v.ok = Object.assign({}, v.ok || {}); ls0.forEach(function (l) { v.ok[l.id] = Object.assign({ sig: l.sig }, who); }); }
-      var keep = always ? hsnOkAdd((q.lines || []).map(function (l) { var it1 = (b.items || []).filter(function (x) { return x.id === l.id; })[0] || {}; return { hsn: l.hsn || it1.hsn, d: l.d || it1.d }; }), b.billNo) : Promise.resolve();
-      return keep.then(function () { return verifySave(id, v); }).then(function () { toast(always ? "Confirmed correct: kept in Masters › HSN / SAC." : ok ? "Allowed for this bill." : "Rejected."); renderVerify(); }, function (e) { toast(explain(e)); return false; });
+      var keep = always ? hsnOkAdd((q.lines || []).map(function (l) { var it1 = (b.items || []).filter(function (x) { return x.id === l.id; })[0] || {}; return { hsn: l.hsn || it1.hsn, d: l.d || it1.d, gst: it1.gst }; }), b.billNo, b.vendorId) : Promise.resolve();
+      return keep.then(function () { return verifySave(id, v); }).then(function () { toast(always ? "Confirmed correct: kept in Masters › HSN / SAC." : ok ? "Allowed for this bill." : "Rejected."); if (always) verifySweep(b.billNo); renderVerify(); }, function (e) { toast(explain(e)); return false; });
     });
   }
   /* Verify with Chief Accountant (Accounting, next to Postpone): the bill and every red line on it, as they are now */
@@ -5912,8 +5914,28 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     rq.slice().reverse().forEach(function (q) { var d = el("div", { class: "flag " + (q.status === "rejected" ? "e" : q.status === "approved" ? "" : "warn"), style: "display:block;margin-top:8px" }); d.appendChild(el("b", null, q.status === "pending" ? "Waiting for the Chief Accountant" : q.status === "approved" ? "Approved by " + ((q.done || {}).byName || "the Chief Accountant") : "Rejected by " + ((q.done || {}).byName || "the Chief Accountant"))); d.appendChild(el("div", null, q.what)); if (q.note) d.appendChild(el("div", { class: "hint" }, "Note: " + q.note)); if (q.done && q.done.reply) d.appendChild(el("div", null, "Reply: " + q.done.reply)); box.appendChild(d); });
   }
   /* Accounts › Verification: every request, waiting ones first */
+  /* After a Confirm Correct (Always): any other bill still waiting on the Chief Accountant for lines that are now covered
+     (same HSN / SAC and the same or a similar item, or the same vendor) is cleared too, so nothing is asked twice */
+  function verifySweep(fromBill) {
+    if (!tly() || !canVerify() || !S.hsnOk) return Promise.resolve(0); var n = 0, jobs = [];
+    Object.keys(S.bills || {}).forEach(function (id) {
+      var b = S.bills[id], reqs = verifyReqs(id); if (!reqs.some(function (q) { return q.status === "pending"; })) return;
+      var v = JSON.parse(JSON.stringify(b.verify || {})), hit = false;
+      v.reqs = (v.reqs || []).map(function (q) {
+        if (q.status !== "pending") return q; var ls = (q.lines || []).concat(q.lineId && !(q.lines || []).some(function (l) { return l.id === q.lineId; }) ? [{ id: q.lineId, sig: q.sig }] : []); if (!ls.length) return q;
+        var all = ls.every(function (l) { var it = (b.items || []).filter(function (x) { return x.id === l.id; })[0] || {}, h = hsnNorm(l.hsn || it.hsn); return h && hsnOkOf(h, l.d || it.d, b.vendorId); });
+        if (!all) return q; hit = true; n++;
+        var who = { by: meId(), byName: pnm(preparedByText()), at: Date.now(), reply: "Covered by an earlier Confirm Correct (Always)" + (fromBill ? " on bill " + fromBill : "") + ".", auto: true };
+        v.ok = Object.assign({}, v.ok || {}); ls.forEach(function (l) { var it = (b.items || []).filter(function (x) { return x.id === l.id; })[0]; v.ok[l.id] = Object.assign({ sig: l.sig || (it ? lineSig(it) : "") }, who); });
+        return Object.assign({}, q, { status: "approved", always: true, done: who });
+      });
+      if (hit) jobs.push(verifySave(id, v));
+    });
+    return Promise.all(jobs).then(function () { if (n) { toast(plural(n, "other waiting request") + " cleared: the same items were confirmed correct."); renderVerify(); } return n; }, function () { return n; });
+  }
   function renderVerify() {
     var box = $("verifyList"); if (!box) return; box.textContent = "";
+    if (!S.vSwept && S.hsnOk && canVerify()) { S.vSwept = 1; verifySweep(); }
     var all = []; Object.keys(S.bills || {}).forEach(function (id) { verifyReqs(id).forEach(function (q) { all.push({ id: id, q: q }); }); });
     if (!all.length) { box.appendChild(el("div", { class: "card empty" }, "Nothing has been sent for verification.")); return; }
     all.sort(function (a, b) { var pa = a.q.status === "pending" ? 0 : 1, pb = b.q.status === "pending" ? 0 : 1; return pa - pb || (b.q.at || 0) - (a.q.at || 0); });
@@ -5943,7 +5965,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return { rates: Object.keys(set).map(Number).sort(function (a, b) { return a - b; }), src: src, at: at };
   }
   /* each official rate for a code on a date, with what it is for and where it comes from */
-  function hsnRateOpts(h, ymd) {
+  /* GST rates the Chief Accountant confirmed for a code (Confirm Correct (Always)): used when no official rate is loaded */
+  function hsnOkRates(h) { var m = {}; ((S.hsnOk || {})[hsnNorm(h)] || []).forEach(function (x) { if (x.r != null && !isNaN(x.r)) (m[x.r] = m[x.r] || []).push(x.billNo || ""); }); return Object.keys(m).map(function (r) { var bs = m[r].filter(Boolean).filter(function (b, i, a) { return a.indexOf(b) === i; }); return { rate: Number(r), label: "confirmed by the Chief Accountant" + (bs.length ? " (bill " + bs.slice(0, 2).join(", ") + ")" : ""), notif: "", ca: true }; }).sort(function (a, b) { return a.rate - b.rate; }); }
+  function hsnRateOpts(h, ymd) { var o = hsnRateOpts0(h, ymd); return o.length ? o : hsnOkRates(h); }
+  function hsnRateOpts0(h, ymd) {
     if (!HSNM || !h) return []; var off = hsnOffRates(h, ymd), by = {};
     if (!HSNM.official && !off.rates.length) return hsnRates(h, ymd).map(function (r) { return { rate: r, label: "the master", notif: "" }; });
     off.src.forEach(function (e) { var o = by[e.rate] || (by[e.rate] = { rate: e.rate, descs: [], notif: e.notif || "", from: e.from, sno: e.sno || "" }); var d = String(e.desc || "").trim(); if (d && o.descs.indexOf(d) < 0) o.descs.push(d); });
@@ -5962,12 +5987,23 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* Items the Chief Accountant confirmed correct under an HSN / SAC (hsnok/<code>: items [{d, k, by, byName, at, billNo}]):
      the same item under the same code is never flagged again. Matched on the description without its quantity. */
   function hsnOkKey(d) { return String(d || "").toLowerCase().replace(/\s+-\s+[\d.,]+\s*[a-z.]*\s*$/i, "").replace(/[^a-z0-9]+/g, " ").trim(); }
-  function hsnOkOf(h, d) { var k = hsnOkKey(d); if (!h || !k) return null; return ((S.hsnOk || {})[hsnNorm(h)] || []).filter(function (x) { return x.k === k; })[0] || null; }
-  function hsnOkAdd(lines, billNo) {
-    var by = {}; lines.forEach(function (l) { var h = hsnNorm(l.hsn), k = hsnOkKey(l.d); if (!h || !k) return; (by[h] = by[h] || []).push({ d: String(l.d || "").slice(0, 160), k: k }); });
+  /* "Similar" items: confirmed once, the same kind of line passes on every later bill without asking again. Under the same
+     HSN / SAC, a line matches a confirmed item when it is
+       - the same description (quantity left out), or
+       - from the same vendor (that vendor's goods under that code were confirmed), or
+       - a similar description: the item words (sizes, numbers and units left out) of the shorter one are mostly in the other,
+         e.g. "PVC Pipe 1 inch" and "PVC Pipe 2 inch Heavy". */
+  function hsnOkWords(d) { var m = {}; String(d || "").toLowerCase().split(/[^a-z]+/).forEach(function (w) { if (w.length >= 3 && !HSN_STOP[w]) m[w.length > 4 ? w.replace(/(ies)$/, "y").replace(/(sses|shes|ches|xes)$/, function (e) { return e.slice(0, -2); }).replace(/([^s])s$/, "$1") : w.replace(/([^s])s$/, "$1")] = 1; }); return Object.keys(m); }
+  function hsnOkSimilar(a, b) { var wa = hsnOkWords(a), wb = hsnOkWords(b); if (!wa.length || !wb.length) return false; var s = wa.length <= wb.length ? wa : wb, o = s === wa ? wb : wa, n = s.filter(function (w) { return o.indexOf(w) >= 0; }).length; return n >= Math.max(1, Math.ceil(s.length * 0.6)); }
+  function hsnOkOf(h, d, vid) {
+    var k = hsnOkKey(d); if (!h || !k) return null; var l = (S.hsnOk || {})[hsnNorm(h)] || [];
+    return l.filter(function (x) { return x.k === k; })[0] || (vid ? l.filter(function (x) { return x.v === vid; })[0] : null) || l.filter(function (x) { return hsnOkSimilar(x.d || x.k, d); })[0] || null;
+  }
+  function hsnOkAdd(lines, billNo, vid) {
+    var by = {}; lines.forEach(function (l) { var h = hsnNorm(l.hsn), k = hsnOkKey(l.d); if (!h || !k) return; var g = l.gst === "" || l.gst == null ? null : num(l.gst); (by[h] = by[h] || []).push({ d: String(l.d || "").slice(0, 160), k: k, v: vid || "", r: g }); });
     var who = { by: meId(), byName: pnm(preparedByText()), at: Date.now(), billNo: billNo || "" };
     return Promise.all(Object.keys(by).map(function (h) {
-      var cur = ((S.hsnOk || {})[h] || []).slice(); by[h].forEach(function (x) { if (!cur.some(function (y) { return y.k === x.k; })) cur.push(Object.assign(x, who)); });
+      var cur = ((S.hsnOk || {})[h] || []).slice(); by[h].forEach(function (x) { var o = cur.filter(function (y) { return y.k === x.k; })[0]; if (!o) cur.push(Object.assign(x, who)); else if (o.r == null && x.r != null) o.r = x.r; });
       return retry(function () { return S.db.doc("hsnok/" + h).set({ items: cur }); }).then(function () { S.hsnOk = S.hsnOk || {}; S.hsnOk[h] = cur; });
     }));
   }
@@ -5983,7 +6019,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     (c.D.items || []).forEach(function (it, i) {
       if (it.k === "ro") return;
       if (roLike(it)) { var gl = (S.ledgers || {})[it.lg]; out.push("Line " + (i + 1) + " (" + String(it.d || "").slice(0, 50) + "), " + amt2(num(it.tx) || 0) + ": charged without GST and kept like round off" + (gl ? " under " + gl.name : "") + ", with no HSN / SAC. Reference: CGST Act s.15(2)(c) counts such charges by the supplier on its goods invoice as part of the goods' value (their GST rate)."); return; }
-      var h = hsnNorm(it.hsn); if (!h || hsnOkOf(h, it.d)) return;
+      var h = hsnNorm(it.hsn); if (!h || hsnOkOf(h, it.d, c.vid)) return;
       var e = hsnEntry(h), par = e ? null : hsnParent(h), chk = hsnChkOf(it), why = [];
       if (par && par[0].length >= 6) par = null;
       if (par) why.push("not in the official HSN / SAC list; nearest official code " + par[0] + " (" + String(par[1]).slice(0, 70) + ")");
@@ -6576,12 +6612,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       });
     }).catch(function (e) { toast("Claude couldn't read the copied bill again: " + ((e && e.code === "sampling_disabled" && e.message) || (e && (e.code || e.kind || e.message)) || "error") + ". Its copied details are kept."); return false; });
   }
-  function scanCard(b) {
-    var card = el("article", { class: "card bcard tlyscan", "aria-busy": "true", "aria-label": "Claude is reading the bill" }), body = el("div", { class: "bc-body" });
+  function scanCard(b, o) {
+    o = o || {};
+    var card = el("article", { class: "card bcard tlyscan", "aria-busy": "true", "aria-label": o.label || "Claude is reading the bill" }), body = el("div", { class: "bc-body" });
     var pv = el("div", { class: "bc-prev bc-fv scanwrap" }); if (b.file && b.file.path && window.bvFiles) pv.appendChild(fileViewer(b.file)); pv.appendChild(el("div", { class: "scanbar", "aria-hidden": "true" })); body.appendChild(pv);
-    var info = el("div", { class: "scaninfo" }); info.appendChild(el("div", { class: "scanspin", "aria-hidden": "true" })); info.appendChild(el("h3", null, "Scanning " + (b.billNo || "the bill") + "…"));
-    info.appendChild(el("p", { class: "sub" }, "Claude is reading the bill again: company and vendor, every line with its HSN / SAC and GST rate, charges and round off, the e-invoice and the narration. The form opens when it is done."));
-    var steps = el("ul", { class: "scansteps" }); ["Reading the pages", "Finding the line items", "Checking HSN / SAC and GST rates", "Matching ledgers", "Writing the narration"].forEach(function (t, i) { steps.appendChild(el("li", { style: "animation-delay:" + (i * 1.6) + "s" }, t)); }); info.appendChild(steps);
+    var info = el("div", { class: "scaninfo" }); info.appendChild(el("div", { class: "scanspin", "aria-hidden": "true" })); info.appendChild(el("h3", null, o.title || "Scanning " + (b.billNo || "the bill") + "…"));
+    info.appendChild(el("p", { class: "sub" }, o.text || "Claude is reading the bill again: company and vendor, every line with its HSN / SAC and GST rate, charges and round off, the e-invoice and the narration. The form opens when it is done."));
+    var steps = el("ul", { class: "scansteps" }); (o.steps || ["Reading the pages", "Finding the line items", "Checking HSN / SAC and GST rates", "Matching ledgers", "Writing the narration"]).forEach(function (t, i) { steps.appendChild(el("li", { style: "animation-delay:" + (i * 1.6) + "s" }, t)); }); info.appendChild(steps);
     body.appendChild(info); card.appendChild(body); return card;
   }
   function copyLiveBill(b) {
@@ -6905,7 +6942,6 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("veSave").hidden = !ed && !eb; $("veCancel").textContent = ed || eb ? "Cancel" : "Back";
     if (!ed || !eb) { var nt = el("div", { class: "flag", style: "margin-top:8px" }, ed ? "The bank details for cheques and NEFT / RTGS are filled in by the financier." : eb ? "The vendor's accounting details and opening balances are kept by the accountant. You fill in the bank details for cheques and NEFT / RTGS." : "Vendor details and opening balances are filled in by the accountant; bank details by the financier."); $("vFlags").appendChild(nt); }
     $("veBenIfscH").textContent = bk0.src && bk0.acct ? "Read from " + bk0.src + ". Check them against the vendor's cancelled cheque or letter." : eb ? "Bank, branch and address fill in from the IFSC." : "";
-    if (!v.isNew) gstRefresh(v, function () { if (VE.id === v.id) paintVendorGst(S.vendors[v.id]); });
     var tg = $("veToggle"); tg.hidden = !S.isAdmin || !ed || !!v.isNew;
     $("veStH").hidden = $("veStSub").hidden = $("veSt").hidden = !!v.isNew; $("veSave").textContent = v.isNew ? "Add vendor" : "Save vendor";
     if (S.isAdmin) { var off = v.active === false; tg.textContent = off ? "Reactivate vendor" : "Deactivate vendor"; tg.className = "btn" + (off ? "" : " danger"); }
@@ -7098,8 +7134,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function gstSmallTds(g) { return !!g && /proprietor|individual|huf|hindu undivided/i.test(g.constitution || ""); }
   function gstYmd(s) { var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(s || "")); return m ? m[3] + "-" + m[2] + "-" + m[1] : ""; }
   function gstDue(v) { if (!v || !v.id || !v.gstin || gstinCheck(v.gstin)) return false; var g = vGst(v); return !g || Date.now() - (g.checkedAt || 0) >= GST_STALE; }
-  function gstRefresh(v, then) {
-    if (!window.bvGst || !gstDue(v) || GSTQ[v.id]) return Promise.resolve(false);
+  /* The GST portal is asked only when someone presses a button (Fetch from GST Portal, Vendors › Check on the GST portal),
+     or, while a bill is being read, for a vendor never checked before ("never": true) */
+  function gstRefresh(v, then, never) {
+    if (!window.bvGst || !gstDue(v) || GSTQ[v.id] || (never && vGst(v))) return Promise.resolve(false);
     GSTQ[v.id] = 1;
     return window.bvGst.search(normId(v.gstin)).then(function (r) {
       if (!r || !r.found) return false;
@@ -13960,8 +13998,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       { label: "Code", sort: function (x) { return x[0]; }, cell: function (x, td) { td.appendChild(el("b", { class: "mono" }, x[0])); sub(td, x[3] === "s" ? "SAC" : "HSN"); } },
       { label: "Description", cls: "desc", cell: function (x, td) { txt(td, x[1]); } },
       { label: "From accounted bills", cls: "desc", cell: function (x, td) { var L = (S.hsnLearn || {})[x[0]]; if (!L) { txt(td, ""); return; } var ln = Object.keys(L.ledgers || {}); txt(td, ln.map(function (k) { return k + " (" + L.ledgers[k] + ")"; }).join(", ")); if (ln.length >= 2) sub(td, ln.length + " ledgers: chosen by hand on a bill", "color:#7a4f00;font-weight:600"); if ((L.descs || []).length) sub(td, L.descs.slice(0, 4).join(" · ")); } },
-      { label: "Approved by Chief Accountant", cls: "desc", cell: function (x, td) { var A = (S.hsnOk || {})[x[0]] || []; if (!A.length) { txt(td, ""); return; } A.slice(0, 6).forEach(function (q, k) { var dv = el("div", { style: k ? "margin-top:4px" : "" }, q.d); td.appendChild(dv); }); sub(td, A.length + " item" + (A.length > 1 ? "s" : "") + ", last by " + (A[A.length - 1].byName || "the Chief Accountant") + " on " + fmtDay(A[A.length - 1].at)); } },
-      { label: "GST % (Official)", cls: "desc", cell: function (x, td) { var o = hsnRateOpts(x[0]); if (!o.length) { txt(td, HSNM.official ? "No rate loaded yet" : ""); return; } o.forEach(function (q, k) { var dv = el("div", { style: k ? "margin-top:6px" : "" }); dv.appendChild(el("b", null, q.rate + "%")); dv.appendChild(document.createTextNode(" " + (q.descs && q.descs.length ? "for " + q.descs.join("; ").slice(0, 160) : ""))); td.appendChild(dv); if (q.notif || q.from) sub(td, [q.notif, q.from ? "from " + fmtDate(q.from) : ""].filter(Boolean).join(", ")); }); if (o.length > 1) sub(td, o.length + " rates: the one that fits the item is chosen on the bill", "color:#7a4f00;font-weight:600"); } },
+      { label: "Approved by Chief Accountant", cls: "desc", cell: function (x, td) { var A = (S.hsnOk || {})[x[0]] || []; if (!A.length) { txt(td, ""); return; } A.slice(0, 6).forEach(function (q, k) { var dv = el("div", { style: k ? "margin-top:4px" : "" }, q.d + (q.r != null ? " (" + q.r + "%)" : "")); td.appendChild(dv); }); sub(td, A.length + " item" + (A.length > 1 ? "s" : "") + ", last by " + (A[A.length - 1].byName || "the Chief Accountant") + " on " + fmtDay(A[A.length - 1].at)); } },
+      { label: "GST % (Official)", cls: "desc", cell: function (x, td) { var o = hsnRateOpts(x[0]); if (!o.length) { txt(td, HSNM.official ? "No rate loaded yet" : ""); return; } o.forEach(function (q, k) { var dv = el("div", { style: k ? "margin-top:6px" : "" }); dv.appendChild(el("b", null, q.rate + "%")); dv.appendChild(document.createTextNode(" " + (q.descs && q.descs.length ? "for " + q.descs.join("; ").slice(0, 160) : q.ca ? q.label : ""))); td.appendChild(dv); if (q.notif || q.from) sub(td, [q.notif, q.from ? "from " + fmtDate(q.from) : ""].filter(Boolean).join(", ")); }); if (o.length > 1) sub(td, o.length + " rates: the one that fits the item is chosen on the bill", "color:#7a4f00;font-weight:600"); } },
     ].concat(HSNM.official ? [] : [
       { label: "GST %", cls: "r", sort: function (x) { return x[2] == null ? -1 : x[2]; }, cell: function (x, td) {
         if (!can) { var use0 = hsnRates(x[0]); txt(td, use0.length ? use0.join(" or ") + "%" : "Not given"); if (x[5]) sub(td, "Changed here (was " + (x[4] == null ? "not given" : x[4] + "%") + ")"); return; }
@@ -15277,9 +15315,26 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (kind === "bill") { AC.D.gstInter = billInter(x); gstFromSaved(x, AC.D); }
     /* Tally (Demo): the accountant works on the bill's line items (RCM, ITC, ledgers), TDS and narration */
     AC.T = tly() && kind === "bill" ? { day: x.billDate || "", items: itemsIn(JSON.parse(JSON.stringify(x))), tds: x.tds != null ? fmtInput(x.tds) : x.entryTds || "", tdsSec: x.tdsSection || x.entryTdsSection || "", narration: x.narration || "", companyId: x.companyId, vendorChoice: x.vendorId || "" } : null;
+    if (AC.T && !(AC.ready || {})[id]) { acctAnalyse(x); show("secAcctOne"); return; }
     renderAcctOne(); show("secAcctOne");
   }
+  /* Tally (Demo): a bill opens for accounting only once its analysis is done (the official HSN / SAC list and rates, each
+     line's HSN / SAC against the item), with the bill under a scanning bar meanwhile, as in Purchase Entry. A bill already
+     analysed in this session opens straight away; only if the analysis hangs for 2 minutes does the bill open without it. */
+  function acctAnalyse(x) {
+    var id = x.id; AC.loading = id; AC.ready = AC.ready || {};
+    $("aoTitle").textContent = "Bill " + (x.billNo || "") + ", " + vendorLabelOfBill(x); $("aoSub").textContent = "Analysing the bill…"; $("aoActs").textContent = "";
+    var f = $("aoBody"); f.textContent = "";
+    f.appendChild(scanCard(x, { label: "Analysing the bill", title: "Analysing " + (x.billNo || "the bill") + "…", text: "Every line is being checked before the bill opens for accounting: its HSN / SAC against the official list and against what the item is, the official GST rates on the bill's date, and items already confirmed correct by the Chief Accountant.", steps: ["Loading the official HSN / SAC list", "Checking each line's HSN / SAC against the item", "Matching the official GST rates", "Applying the Chief Accountant's confirmations", "Finding the deviations"] }));
+    var done = false, finish = function () { if (done) return; done = true; AC.ready[id] = 1; if (AC.loading === id) AC.loading = null; if (AC.id === id && !$("secAcctOne").hidden) renderAcctOne(); };
+    setTimeout(finish, 120000);
+    /* 20 lines go to Claude at a time: a longer bill takes a few rounds */
+    var its = (AC.T && AC.T.items) || [], left = function () { return its.some(function (it) { var k = hsnChkKey(it); return it.k !== "ro" && String(it.d || "").trim().length > 2 && !(k in HSN_CHK); }); };
+    var round = function (n) { return hsnCheckLines(its).then(function () { if (n < 5 && left() && S.sample && !B.aiOff) return round(n + 1); }); };
+    hsnMaster().then(function () { return round(1); }).then(finish, finish);
+  }
   function renderAcctOne() {
+    if (AC.loading && AC.loading === AC.id) return;
     var kind = AC.kind, x = kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D; if (!x) { backToAcct(); return; }
     var tlyPaid = tly() && kind === "bill" && tlyPaidAmt(x) > 0.5;
     var withPrep = acctWithPrep(kind, x), locked = withPrep || acctLocked(kind, x) || tlyPaid, isB = kind === "bill", vNeed = isB && !withPrep ? acctVendorNeeds(x) : null;
@@ -15425,7 +15480,6 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var cn = el("button", { class: "btn", type: "button" }, "Cancel"); cn.title = "Back to Accounting, without saving"; cn.addEventListener("click", backToAcct);
     if (isB) {
       var alb = el("div", { id: "aoAlerts" }); $("aoBody").insertBefore(alb, $("aoBody").firstChild); paintAoAlerts(x);
-      gstRefresh(S.vendors[x.vendorId], function () { if (AC.id === x.id && $("aoAlerts")) { paintAoAlerts(x); aoTdsHint(); } });
     }
     if (vNeed && !locked) {
       var vf = el("div", { class: "flag e", style: "margin:0 0 12px" }); vf.innerHTML = WARN_SVG; vf.appendChild(el("span", null, "This bill can't be accounted yet: its vendor still needs " + vNeed.join("; ") + ". "));

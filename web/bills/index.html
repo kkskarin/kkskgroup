@@ -479,7 +479,7 @@ h3{font-size:calc(13px*var(--ts,1));font-weight:700;text-transform:none;letter-s
 .navbar .wrap{padding-top:0;padding-bottom:0;gap:0}
 .navbar #nav button{color:#C9D4E5;font-size:calc(13.5px*var(--ts,1));font-weight:600;letter-spacing:0;text-transform:none;padding:13px 16px;border-radius:0;position:relative;background:none}
 .navbar #nav button.grp-on{color:#fff;background:none}
-body.tly #navbar{display:none}
+body.tly #navbar{background:#fff;border-bottom:1px solid var(--line)}
 body.tly .top .wrap{gap:14px}
 body.tly .top .titles{flex:none}
 #nav.hnav{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;align-items:center;align-content:center;gap:0 2px;align-self:stretch;margin:-6px 0}
@@ -1026,7 +1026,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     <div class="stats" id="ntStats"></div>
     <div class="card list scroll" id="ntList"></div>
   </section>
-  <section id="secSoon" class="panel" hidden><h2 id="soonTitle"></h2><p>App being built</p></section>
+  <section id="secSoon" class="panel" hidden><h2 id="soonTitle"></h2><p id="soonText">App being built</p></section>
 
   <section id="secList" hidden>
     <div class="head">
@@ -1927,10 +1927,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS],
     /* Tally (Demo): purchaser, accountant and financier, nothing else; masters to look up */
-    tly: [{ h: "Purchase", tabs: [["Bills", "Purchase Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Verify", "Verification"]] }, { h: "Payments", tabs: [["Mark Transaction", "Plan Payments"], ["Pay Record", "Record Payments"], ["Payables", "Payables"]] }, { h: "Reports", tabs: [["Transactions", "Transactions"], ["Ledger Books", "Ledger Statements"], ["Vendor Stmt", "Vendor Statement"]] }, { h: "Masters", tabs: MASTERS.concat([["HSN", "HSN / SAC", 0, "m"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
+    tly: [{ h: "Purchase", tabs: [["Bills", "Purchase Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Purchase"], ["Sales Acct", "Sales"], ["Verify", "Verification"]] }, { h: "Finance", tabs: [["Mark Transaction", "Plan"], ["Pay Record", "Record"]] },
+      { h: "Reports", tabs: [["Transactions", "Transactions", 0, "Purchase"], ["Ledger Books", "Ledger Statements", 0, "Accounts"], ["Vendor Stmt", "Vendor Statement", 0, "Accounts"], ["Payables", "Payables", 0, "Finance"]].concat(MASTERS, [["HSN", "HSN / SAC", 0, "m"], ["Tally DL", "Tally Downloads"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
-  var LAST_M = "";
+  var LAST_M = "", LAST_SET = {};
   var HOME_TAB = { acc: "Accounts", fin: "Payables", apr: "Approvals", tly: "Bills" }[APP] || "Transactions", LAST_IN = {};
   var DATA_TABS = ["Pay Record", "Vendor Stmt", "Advance Requests", "Cash Approvals", "Approvals", "Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
   /* Admins oversee rather than enter: the entry screens (and the accountant's queue) are left out for them.
@@ -1948,7 +1949,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         .map(function (t) { return fo && t[0] === "Transactions" ? [t[0], "Payments"] : t; }).sort(function (x, y) { return fo ? (x[0] === "Payables" ? -1 : y[0] === "Payables" ? 1 : 0) : 0; }) };
     }).filter(function (g) { return g.tabs.length; }).reduce(function (all, g) {
       /* Tally (Demo): every tab sits in the top bar; no second row of sub-tabs */
-      if (tly() && !g.tabs.some(function (t) { return t[0] === "Personalise"; })) g.tabs.forEach(function (t) { all.push({ h: t[1], tabs: [t] }); }); else all.push(g); return all;
+      all.push(g); return all;
     }, []);
   }
   /* Reports other than Ledgers are for people who do more than accounts. */
@@ -1996,21 +1997,28 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       b.addEventListener("click", function () { if (on) return; var last = LAST_IN[g.h]; setTab(last && groupOf(last) === g ? last : g.tabs[0][0]); });
       nav.appendChild(b);
     });
-    var ms = cg && cg.h !== "Masters" ? cg.tabs.filter(function (t) { return t[3] === "m"; }) : [], onM = ms.some(function (t) { return t[0] === S.tab; }), mDone = false;
+    /* A tab's 4th field puts it in a set ("m" = Masters, or a name such as "Accounts"): the set is one tab here, and its pages
+       are a third row (the bar under the tabs). */
+    var setOf = function (t) { return t[3] ? (t[3] === "m" ? "Masters" : t[3]) : ""; }, curSet = "", members = function (nm) { return cg.tabs.filter(function (x) { return setOf(x) === nm; }); }, shown = {}, nSub = 0;
+    if (cg) cg.tabs.forEach(function (t) { if (t[0] === S.tab && cg.h !== "Masters") curSet = setOf(t); });
     if (cg) cg.tabs.forEach(function (t) {
-      if (t[3] === "m" && cg.h !== "Masters") {
-        if (mDone) return; mDone = true;
-        var mb = el("button", onM ? { type: "button", "aria-current": "page" } : { type: "button" }, "Masters"), mbd = tabBadge("Vendors"); if (mbd && ms.some(function (x) { return x[0] === "Vendors"; })) mb.appendChild(badgeEl(mbd));
-        mb.addEventListener("click", function () { setTab(ms.some(function (x) { return x[0] === LAST_M; }) ? LAST_M : ms[0][0]); }); subn.appendChild(mb); return;
+      var sn = cg.h !== "Masters" ? setOf(t) : "";
+      if (sn) {
+        if (shown[sn]) return; shown[sn] = 1; nSub++;
+        var mem = members(sn), mb = el("button", sn === curSet ? { type: "button", "aria-current": "page" } : { type: "button" }, sn), mbd = null;
+        mem.forEach(function (x) { var d0 = tabBadge(x[0]); if (d0 && !mbd) mbd = d0; }); if (mbd) mb.appendChild(badgeEl(mbd));
+        mb.addEventListener("click", function () { var last = LAST_SET[sn]; setTab(mem.some(function (x) { return x[0] === last; }) ? last : mem[0][0]); }); subn.appendChild(mb); return;
       }
+      nSub++;
       var b = el("button", S.tab === t[0] ? { type: "button", "aria-current": "page" } : { type: "button" }, t[1]), bd = tabBadge(t[0]);
       if (bd) { if (bd.warn) { var wi = warnIcon(bd.label); wi.style.marginRight = "6px"; b.insertBefore(wi, b.firstChild); } b.appendChild(badgeEl(bd)); }
       b.addEventListener("click", function () { setTab(t[0]); });
       subn.appendChild(b);
     });
-    subn.parentNode.style.display = cg && cg.tabs.length > 1 ? "" : "none";
-    var bar = $("mastersBar"); bar.textContent = ""; bar.hidden = !onM;
-    if (onM) { LAST_M = S.tab; var sg = el("div", { class: "seg", role: "tablist", "aria-label": "Masters" }); ms.forEach(function (t) { var b = el("button", { type: "button", role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false" }, t[1]), bd = tabBadge(t[0]); if (bd) b.appendChild(badgeEl(bd)); b.addEventListener("click", function () { if (S.tab !== t[0]) setTab(t[0]); }); sg.appendChild(b); }); bar.appendChild(sg); }
+    subn.parentNode.style.display = cg && nSub > 1 ? "" : "none";
+    var bar = $("mastersBar"), ms = curSet ? members(curSet) : []; bar.textContent = ""; bar.hidden = ms.length < 2;
+    if (curSet) { LAST_SET[curSet] = S.tab; if (curSet === "Masters") LAST_M = S.tab; }
+    if (ms.length > 1) { var sg = el("div", { class: "seg", role: "tablist", "aria-label": curSet }); ms.forEach(function (t) { var b = el("button", { type: "button", role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false" }, t[1]), bd = tabBadge(t[0]); if (bd) b.appendChild(badgeEl(bd)); b.addEventListener("click", function () { if (S.tab !== t[0]) setTab(t[0]); }); sg.appendChild(b); }); bar.appendChild(sg); }
     slideTo(nav, nav.querySelector(".grp-on"), "G"); slideTo(subn, subn.querySelector('[aria-current="page"]'), "T");
     /* on a phone the open heading and tab are scrolled into sight */
     [[nav, nav.querySelector(".grp-on")], [subn, subn.querySelector('[aria-current="page"]')], [bar, bar.querySelector('[aria-selected="true"]')]].forEach(function (x) { var c = x[1] && x[1].parentNode; if (x[1] && c && c.scrollWidth > c.clientWidth + 2) c.scrollLeft = Math.max(0, x[1].offsetLeft - c.offsetLeft - 24); });
@@ -2065,6 +2073,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (t === "Banks") { renderBanks(); show("secBanks"); return; }
     if (t === "Others") { renderOthers(); show("secOthers"); return; }
     if (t === "HSN") { renderHsn(); show("secHsn"); return; }
+    if (t === "Sales Acct" || t === "Tally DL") { $("soonTitle").textContent = t === "Sales Acct" ? "Sales" : "Tally Downloads"; $("soonText").textContent = t === "Sales Acct" ? "Accounting for sales comes here. Nothing is set up for sales in Tally (Demo) yet." : "Files to import into Tally come here. Nothing is set up for downloads yet."; show("secSoon"); return; }
     if (t === "Verify") { if (dataReady()) { renderVerify(); show("secVerify"); } else show("vLoading"); return; }
     if (t === "Salary") { renderSalary(); show("secSalary"); return; }
     if (t === "All Entries") { if (dataReady()) { renderAllEnt(); show("secAllEnt"); } else show("vLoading"); return; }
@@ -2075,7 +2084,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     else if (t === "Activity" && (S.isAdmin || meChief())) { if (dataReady()) { acLoad(); renderActivity(); show("secActivity"); } else show("vLoading"); }
     else if (t === "Archive" && S.isAdmin) { if (dataReady()) { renderArchive(); show("secArch"); } else show("vLoading"); }
     else if (t === "Companies") { if (S.loaded || Object.keys(S.companies || {}).length) { renderList(); show("secList"); } else show("vLoading"); }
-    else { $("soonTitle").textContent = tabLabel(t); show("secSoon"); }
+    else { $("soonTitle").textContent = tabLabel(t); $("soonText").textContent = "App being built"; show("secSoon"); }
   }
   function show(id) {
     VIEWS.forEach(function (v) { $(v).hidden = v !== id; }); window.scrollTo(0, 0);
@@ -17984,7 +17993,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function renderModeSw() {
     if (tly()) { S.mode = "live"; $("modeSw").hidden = true; $("demoBar").hidden = false; document.body.classList.add("tly");
       /* Tally (Demo): the tabs sit in the header, on the line with the logo, the app name and the menu */
-      var nv0 = $("nav"); if (nv0 && !nv0.classList.contains("hnav")) { nv0.classList.remove("wrap"); nv0.classList.add("hnav"); $("appsLink").parentNode.insertBefore(nv0, $("appsLink")); } $("demoBar").textContent = "Tally (Demo): practice entries for the Tally way of working. Live masters are read here; nothing done here reaches Live."; document.body.classList.add("is-demo"); return; }
+      var nv0 = $("nav"); if (nv0 && !nv0.classList.contains("hnav")) { nv0.classList.remove("wrap"); nv0.classList.add("hnav"); $("appsLink").parentNode.insertBefore(nv0, $("appsLink")); $("demoBar").parentNode.insertBefore($("navbar"), $("demoBar")); } $("demoBar").textContent = "Tally (Demo): practice entries for the Tally way of working. Live masters are read here; nothing done here reaches Live."; document.body.classList.add("is-demo"); return; }
     var can = S.isAdmin || demoAllowed();
     var w = $("modeSw"); w.textContent = ""; w.hidden = !can; document.body.classList.toggle("is-demo", S.mode === "demo"); $("demoBar").hidden = S.mode !== "demo";
     if (!can) return;

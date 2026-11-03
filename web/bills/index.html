@@ -46,7 +46,7 @@ button{cursor:pointer} button:disabled{cursor:default}
 .lcpop{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:45;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 34px rgba(15,23,42,.18);max-height:300px;overflow-y:auto;padding:4px;min-width:260px}
 .lcgrp{position:sticky;top:-4px;background:var(--soft,#f1f5f9);font-size:calc(11px*var(--ts,1));font-weight:700;letter-spacing:.3px;color:var(--muted);padding:6px 10px;text-transform:uppercase}
 .lcopt{padding:8px 10px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;gap:10px;font-size:calc(13.5px*var(--ts,1))}.lcopt b{font-weight:600}.lcopt span{color:var(--muted);font-size:calc(12px*var(--ts,1));text-align:right}
-.lcopt.on{background:var(--fill,rgba(15,23,42,.07))}.lcopt.sel b{color:var(--brand-text,#0E7A3E)}.lcnone{padding:10px;color:var(--muted);font-size:calc(13px*var(--ts,1))}
+.lcopt.on,.lcopt:hover{background:var(--fill,rgba(15,23,42,.07))}.lcopt.sel b{color:var(--brand-text,#0E7A3E)}.lcnone{padding:10px;color:var(--muted);font-size:calc(13px*var(--ts,1))}
 .ledbox{display:flex;flex-direction:column;gap:8px}.ledrow{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap}.ledrow select{flex:2 1 220px}.ledrow textarea{flex:3 1 240px;min-height:40px}.ledrow input.num{flex:1 1 120px;max-width:170px}.ledfoot{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.ledsum{font-size:calc(12.5px*var(--ts,1));color:var(--muted)}.ledsum.bad{color:var(--bad);font-weight:600}
 .me .sw{font-size:calc(12px*var(--ts,1));margin-top:2px}
 .me{position:relative}.me .mebtn{all:unset;cursor:pointer;display:block;text-align:right;border-radius:8px;padding:2px 4px}.me .mebtn:focus-visible{outline:2px solid var(--brand)}
@@ -636,7 +636,7 @@ body.tly .bc-fv{height:calc(100vh - 24px)}
 /* Tally (Demo) takes the TARS Creations layout (cards, 6px corners) in the app's own fonts and colours */
 body.tly{line-height:1.5}body.tly .field{border-radius:6px;padding:.55rem .7rem;border-color:#cdbcad}body.tly .card{border-radius:6px}body.tly .btn{border-radius:6px}
 body.tly .t th{background:var(--brand-soft);color:var(--brand-dark);font-size:calc(13px*var(--ts,1));font-weight:600}body.tly .t td{border-bottom:1px solid var(--line)}
-.tlysecs{padding:12px 14px 14px;display:grid;gap:16px}
+.tlysecs{padding:12px 14px 14px;display:grid;gap:16px;background:var(--bg)}
 .scanwrap{position:relative;overflow:hidden}.scanbar{position:absolute;left:0;right:0;height:90px;top:-90px;background:linear-gradient(180deg,transparent,rgba(201,149,77,.35) 70%,rgba(201,149,77,.9) 96%,transparent);box-shadow:0 2px 14px rgba(201,149,77,.55);animation:scanmove 2.2s cubic-bezier(.45,0,.55,1) infinite;pointer-events:none;z-index:5}
 @keyframes scanmove{0%{top:-90px}100%{top:100%}}.scaninfo{padding:40px 32px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}.scaninfo h3{text-transform:none;letter-spacing:0;font-family:var(--serif);font-size:calc(22px*var(--ts,1));margin:0}
 .scanspin{width:34px;height:34px;border-radius:50%;border:3px solid var(--brand-soft,#f1e6dc);border-top-color:var(--brand,#5b3a26);animation:scanspin 1s linear infinite}@keyframes scanspin{to{transform:rotate(360deg)}}
@@ -945,6 +945,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     <div class="card" id="hsnDocs" style="padding:14px 16px;margin-bottom:12px"></div>
     <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><input class="field" id="hsnQ" placeholder="Search by code or words (e.g. 3917, ball valve)" autocomplete="off" style="max-width:420px"><select class="field" id="hsnK" style="max-width:220px"><option value="">HSN and SAC</option><option value="h">HSN (goods)</option><option value="s">SAC (services)</option><option value="o">Rates from official documents</option><option value="e">Rates set by hand (starting list only)</option><option value="l">Used on accounted bills</option></select><span class="hint" id="hsnN" style="margin:0"></span></div>
     <div class="card list" id="hsnList"></div>
+  </section>
+  <section id="secVerify" hidden>
+    <div class="head"><div class="grow"><h2>Verification</h2><p class="sub">Questions sent with Verify with Chief Accountant, from bill lines the app marks red or from a whole bill. The Chief Accountant approves (the line can then go through as it is, while it stays unchanged) or rejects, with a reply the sender sees on the bill.</p></div></div>
+    <div id="verifyList"></div>
   </section>
   <section id="secNotif" hidden>
     <div class="head"><div class="grow"><h2>Official Notifications</h2><p class="sub">Everything in force, and anything new, from official sites only: GST (rates, exemptions, reverse charge, ITC, e-invoicing, circulars, advisories, GST Council, Tamil Nadu GST), income-tax TDS and TCS, cess and customs. Claude searches one topic at a time until all are covered, once a day and on Check Now, and says which apply to the company; anyone here can move one to or from Irrelevant. Tick notifications to download their PDFs (a download that fails isn't tried again: upload that PDF yourself). Files are named by source and number, e.g. CBIC - 9-2025 Integrated Tax (Rate). GST rate notifications are then read into the HSN / SAC rates.</p></div></div>
@@ -1668,7 +1672,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var S = { staff: {}, salruns: {}, regions: {}, ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secNotif", "secHsn", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
+  var VIEWS = ["secVerify", "secNotif", "secHsn", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1898,7 +1902,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS],
     /* Tally (Demo): purchaser, accountant and financier, nothing else; masters to look up */
-    tly: [{ h: "Purchase", tabs: [["Bills", "Purchase Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Ledger Books", "Ledger Statements"]] }, { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"]] }, { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]] }, { h: "Masters", tabs: MASTERS.concat([["HSN", "HSN / SAC", 0, "m"], ["Notifications", "Official Notifications", 0, "m"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
+    tly: [{ h: "Purchase", tabs: [["Bills", "Purchase Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Verify", "Verification"], ["Ledger Books", "Ledger Statements"]] }, { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"]] }, { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]] }, { h: "Masters", tabs: MASTERS.concat([["HSN", "HSN / SAC", 0, "m"], ["Notifications", "Official Notifications", 0, "m"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
   var LAST_M = "";
@@ -2022,6 +2026,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (t === "Others") { renderOthers(); show("secOthers"); return; }
     if (t === "HSN") { renderHsn(); show("secHsn"); return; }
     if (t === "Notifications") { renderNotif(); show("secNotif"); return; }
+    if (t === "Verify") { if (dataReady()) { renderVerify(); show("secVerify"); } else show("vLoading"); return; }
     if (t === "Salary") { renderSalary(); show("secSalary"); return; }
     if (t === "All Entries") { if (dataReady()) { renderAllEnt(); show("secAllEnt"); } else show("vLoading"); return; }
     if (t === "Roles" && S.isAdmin) { S.userEditing = null; renderRoles(); show("secRoles"); return; }
@@ -4979,7 +4984,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var ro = 0; if (String(D.roundOff || "").trim()) { ro = num(D.roundOff); if (ro == null) { E("bcRound", "Enter the round off as a number, like 0.28 or -0.40."); ro = 0; } else if (Math.abs(ro) > ROUND_MAX) { E("bcRound", "Round off is only for a bill's last paise or rupees: up to \u20B9" + ROUND_MAX + " either way. Anything more is a charge (freight, cartage), entered on a ledger line."); ro = 0; } }
     if (tx != null && ga != null && tx + ga + ro <= 0) E("bcLed", "The total must be more than zero.");
     if (D.companyId && tx != null && tx > 0 && !(tly() && (D.items || []).length)) { var le = ledCheck(D.ledgers, tx, D.companyId, MAX_LED.bill); if (le) E("bcLed", le); }
-    if (tly() && (D.items || []).length) { var ie = itemsCheck(D); if (ie) E("bcItems", ie);
+    if (tly() && (D.items || []).length) { var ie = itemsCheck(D, b); if (ie) E("bcItems", ie);
       var mlines = (D.items || []).map(function (x, k) { return x.k !== "ro" && hsnNorm(x.hsn) && !x.hsnBill ? k + 1 : 0; }).filter(Boolean);
       if (mlines.length && !(D.hsnAtt && D.hsnAtt.ok && String(D.hsnAtt.lines) === String(mlines))) E("bcHsnAtt", "Line" + (mlines.length > 1 ? "s " : " ") + mlines.join(", ") + ": the bill shows no HSN / SAC. Get a correct bill from the vendor, or give the attestation."); }
     if (oneStop(D.companyId) && $("bcTds")) {
@@ -5183,7 +5188,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
        it isn't needed and the bill shows none. Alerts come last. */
     var ed = el("details", { class: "tlysec", id: "bcEinvSec" }), esm = el("summary"); esm.appendChild(document.createTextNode("e-Invoice")); esm.appendChild(el("span", { class: "hint", id: "bcEinvSum" })); ed.appendChild(esm);
     var eg = el("div", { class: "form" }); eg.appendChild(el("div", { class: "f wide hint", id: "bcEinvSt", style: "margin:0" })); ["bcIrn", "bcAck", "bcAckD"].forEach(function (id) { var n = box(id); if (n) eg.appendChild(n); }); ed.appendChild(eg); wrap.appendChild(ed);
-    var al = sec("Alerts", ["bcFlags", "bcUndBox"], notes); al.appendChild(el("div", { class: "f wide", id: "bcItAl" })); al.appendChild(el("div", { class: "f wide", id: "bcTlyAl" }));
+    var al = sec("Alerts", ["bcFlags", "bcUndBox"], notes); al.appendChild(el("div", { class: "f wide", id: "bcItAl" })); al.appendChild(el("div", { class: "f wide", id: "bcVerify" })); al.appendChild(el("div", { class: "f wide", id: "bcTlyAl" }));
     while (f.firstChild) hold.appendChild(f.firstChild);
     wrap.appendChild(hold); return wrap;
   }
@@ -5486,18 +5491,18 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (it.k === "ro" || (it.k === "charge" && it.to) || it.man || (it.lg && !all && ledOk(it.lg, cid))) return; var sg = suggestItem(cid, vid, it, M); it.lg = sg.lg; it.why = sg.why; n++; });
     return n;
   }
-  function itemsCheck(D) {
-    var its = D.items || [], ls = {};
+  function itemsCheck(D, b) {
+    var its = D.items || [], ls = {}, vid0 = D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : "";
+    var lc = { D: D, day: D.day || parseDate(D.billDate || "") || "", reg: vendorReg(vid0, D.vNew), ver: ((b || {}).verify || {}).ok || {} };
     for (var i = 0; i < its.length; i++) {
       var x = its[i], n = i + 1;
       if (num(x.tx) == null) return "Enter the amount on line " + n + ".";
       if (x.k === "ro") { if (Math.abs(num(x.tx)) > ROUND_MAX) return "Round off (line " + n + ") can be up to ₹" + ROUND_MAX + " either way."; continue; }
       if (x.k === "charge" && x.to) { if (x.to !== "all" && !its.some(function (t) { return t.id === x.to && t.k === "item"; })) return "Line " + n + " is added to a line that isn't there any more. Choose again."; if (!its.some(function (t) { return t.k === "item"; })) return "Line " + n + " has no items to be spread over: give it a ledger of its own."; if (!chargeFits(x, chargeTargets(x, its))) return "Line " + n + " has a different GST rate from the items it goes to, so the totals wouldn't match the bill: give it a ledger of its own."; continue; }
       if (!x.lg) return "Choose the ledger on line " + n + ".";
-      if (!hsnNorm(x.hsn)) return "Enter the HSN / SAC on line " + n + ": every line except round off needs it, from the bill.";
-      if (HSNM && !hsnEntry(hsnNorm(x.hsn))) return "Line " + n + ": HSN / SAC " + hsnNorm(x.hsn) + " isn't in the official list.";
-      var okR = hsnRates(hsnNorm(x.hsn), D.day || parseDate(D.billDate || "") || ""); if (x.gst !== "" && x.gst != null && okR.length && okR.indexOf(num(x.gst)) < 0 && !(x.k === "charge" && x.to)) return "Line " + n + ": " + x.gst + "% isn't an official GST rate for HSN / SAC " + hsnNorm(x.hsn) + " (" + okR.join("% or ") + "%).";
-      if (x.gst !== "" && x.gst != null && gstRatesOn(D.day || parseDate(D.billDate || "") || "").indexOf(num(x.gst)) < 0) return "Line " + n + ": " + x.gst + "% isn't a GST rate on the bill's date.";
+      /* every red check on the line (HSN, official rates, legal checks), unless the Chief Accountant verified it */
+      var li = lineIssues(x, its, lc);
+      if (li.bad.length) return "Line " + n + ": " + li.bad[0] + (li.bad.length > 1 ? " (and " + (li.bad.length - 1) + " more)" : "");
       ls[x.lg] = 1;
     }
     if (Object.keys(ls).length > MAX_LED.bill) return "The lines use " + Object.keys(ls).length + " expense ledgers; a bill takes up to " + MAX_LED.bill + ".";
@@ -5518,15 +5523,17 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   /* The purchaser's view (Purchase Entry) and the accountant's (Accounting) share the line items and Data for Tally;
      only the accountant sets RCM, ITC and TDS. */
+  /* is the bill's vendor GST-registered? (null when not known yet) */
+  function vendorReg(vid, vNew) { var v = vid && S.vendors[vid]; if (v) return v.type === "unregistered" ? false : v.type === "registered" || !!v.gstin ? true : v.type === "overseas" ? false : null; var g = normId((vNew || {}).gstin); return g ? true : (vNew || {}).type === "unregistered" ? false : null; }
   function billCtx() {
     var D = B.D; if (!D) return null; var b = S.bills[B.cardId] || {}, vid = D.vendorChoice && D.vendorChoice !== "new" ? D.vendorChoice : "";
-    return { D: D, acct: false, day: parseDate(D.billDate || "") || b.billDate || "", wrap: "bcItemsWrap", tally: "bcTally", cid: D.companyId, vid: vid, billNo: D.billNo, party: (S.vendors[vid] || {}).name || (D.vNew || {}).name, printed: b.ex && b.ex.printedTotal,
+    return { D: D, acct: false, billId: B.cardId, ver: (b.verify || {}).ok || {}, reg: vendorReg(vid, D.vNew), day: parseDate(D.billDate || "") || b.billDate || "", wrap: "bcItemsWrap", tally: "bcTally", cid: D.companyId, vid: vid, billNo: D.billNo, party: (S.vendors[vid] || {}).name || (D.vNew || {}).name, printed: b.ex && b.ex.printedTotal,
       inter: billInter({ vendorId: vid, vendorGstin: vid ? "" : normId((D.vNew || {}).gstin), companyId: D.companyId, currency: D.currency }),
       changed: function () { applyItemLedgers(); B.touched = true; scheduleSave(); }, redraw: function () { drawItems(billCtx()); drawTallyC(billCtx()); } };
   }
   function acctCtx() {
     var x = S.bills[AC.id], T = AC.T; if (!x || !T) return null;
-    return { D: T, acct: true, day: x.billDate || "", wrap: "aoItemsWrap", tally: "aoTally", cid: x.companyId, vid: x.vendorId || "", billNo: x.billNo, party: vendorLabelOfBill(x), printed: x.ex && x.ex.printedTotal, inter: billInter(x), locked: AC.locked,
+    return { D: T, acct: true, billId: AC.id, ver: (x.verify || {}).ok || {}, reg: vendorReg(x.vendorId || "", null), day: x.billDate || "", wrap: "aoItemsWrap", tally: "aoTally", cid: x.companyId, vid: x.vendorId || "", billNo: x.billNo, party: vendorLabelOfBill(x), printed: x.ex && x.ex.printedTotal, inter: billInter(x), locked: AC.locked,
       changed: function () { AC.dirty = true; }, redraw: function () { drawItems(acctCtx()); drawTallyC(acctCtx()); } };
   }
   function mountBillItems() {
@@ -5609,7 +5616,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           al.addEventListener("change", function () { it.to = al.value; if (!it.to) { it.man = false; suggestItems(sd, false); } ch(); }); ltd.appendChild(al);
         }
         if (!chg || !fits) {
-          var lc = ledCombo({ attrs: { "aria-label": "Ledger, line " + (i + 1), id: idp + "Lg" + i }, cur: it.lg || "", list: function () { return cid ? ledFor(cid) : []; }, placeholder: cid ? "Type to search ledgers" : "Choose the company first", full: true });
+          var lc = ledCombo({ attrs: { "aria-label": "Ledger, line " + (i + 1), id: idp + "Lg" + i }, cur: it.lg || "", list: function () { return cid ? lineLedgers(cid) : []; }, placeholder: cid ? "Type to search ledgers" : "Choose the company first", full: true });
           var lin = lc.querySelector("input"); if (lin) fitWidth(lin, wide.led); lc.disabled = off;
           lc.addEventListener("change", function () { it.lg = lc.value; it.man = !!lc.value; it.why = lc.value ? "Chosen" : ""; ch(); });
           if (chg) lc.style.marginTop = "4px"; ltd.appendChild(lc); if (it.why) sub(ltd, (it.man ? "" : "Suggested: ") + it.why, it.man ? "" : "color:var(--accent-ink,var(--accent))");
@@ -5622,6 +5629,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       Object.keys(iss.cells).forEach(function (k0) { if (cellOf[k0]) cellOf[k0].classList.add("itcbad"); }); Object.keys(iss.wcells).forEach(function (k0) { if (cellOf[k0] && !iss.cells[k0]) cellOf[k0].classList.add("itcwarn"); });
       if (iss.bad.length || iss.warn.length) { tr.classList.add(iss.bad.length ? "itbad" : "itwarn"); var mr = el("tr", { class: (iss.bad.length ? "itbad" : "itwarn") + " itmsg" }), mt = el("td", { colspan: String(heads.length) }); mt.textContent = "Line " + (i + 1) + ": " + iss.bad.concat(iss.warn).join(" ");
         /* the HSN / SAC that fits the item name, one click away (it still counts as typed in: the attestation applies) */
+        /* a red line can be sent to the Chief Accountant; a request waiting shows here */
+        var vq = c.billId && verifyReqs(c.billId).filter(function (q) { return q.lineId === it.id && q.status === "pending"; })[0];
+        if (vq) mt.appendChild(el("span", { class: "hint", style: "display:block;margin:4px 0 0" }, "Sent to the Chief Accountant on " + fmtDay(vq.at) + (vq.byName ? " by " + vq.byName : "") + ": waiting for a reply."));
+        else if (iss.bad.length && c.billId && tly()) { var vb = el("button", { type: "button", class: "btn sm", style: "margin-left:8px" }, "Verify with Chief Accountant"); vb.addEventListener("click", function () { verifyAsk(c.billId, it.id, "Line " + (i + 1) + " (" + String(it.d || "").slice(0, 60) + "): " + iss.bad.join(" "), lineSig(it)); }); mt.appendChild(vb); }
         if (iss.sug && !off) { var ub0 = el("button", { type: "button", class: "btn sm", style: "margin-left:8px" }, "Use " + iss.sug); ub0.addEventListener("click", function () { it.hsn = iss.sug; var rs1 = hsnRates(iss.sug, c.day); if (rs1.length === 1 && (it.gst === "" || it.gst == null)) it.gst = String(rs1[0]); if (!it.man && it.k === "item") { it.lg = ""; suggestItems(sd, false); } ch(); }); mt.appendChild(ub0); }
         mr.appendChild(mt); bd.appendChild(mr); allIss.push("Line " + (i + 1) + ": " + iss.bad.concat(iss.warn).join(" ")); }
       if (!ro && hsnNorm(it.hsn) && !it.hsnBill) manual.push(i + 1);
@@ -5688,8 +5699,16 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!fits && !it.lg) { if (it.multi >= 2) { r.warn.push(it.multi + " ledgers have been used for this HSN / SAC: choose the right one."); r.wcells.led = 1; } else bad("led", "No ledger chosen."); }
     if (it.gst !== "" && it.gst != null && rates.indexOf(num(it.gst)) < 0) bad("gst", it.gst + "% isn't a GST rate on the bill's date" + (c.day && c.day >= GST2_FROM && (num(it.gst) === 12 || num(it.gst) === 28) ? " (12% and 28% ended on 21 Sep 2025)" : "") + ".");
     /* HSN / SAC: on every line but round off, from the bill; checked against the official list and the item's description */
-    var h = hsnNorm(it.hsn), chk = hsnChkOf(it);
-    if (!h) bad("hsn", "No HSN / SAC: every line except round off needs the HSN / SAC from the bill." + (chk && chk.code ? " From the item name it looks like " + chk.code + " (" + hsnShort(chk.code) + ")." : ""));
+    var h = hsnNorm(it.hsn), chk = hsnChkOf(it), led = (S.ledgers || {})[it.lg], g0 = it.gst === "" || it.gst == null || num(it.gst) === 0;
+    /* is it legally right? (checked in Tally (Demo)) */
+    var CHG_RX = /cartage|freight|transport|delivery|packing|forwarding|loading|unloading|handling|courier|carriage|lorry|hamali/i;
+    if (led && led.tax) bad("led", "A GST or tax ledger can't be a bill line: the GST is worked out from each line's rate.");
+    if (c.reg === false && num(it.gst) > 0) bad("gst", "An unregistered vendor can't charge GST: ask for a corrected bill (if the service is under reverse charge, set RCM instead).");
+    if (c.reg !== false && g0 && !it.rcm && !fits && (it.k === "charge" || CHG_RX.test(it.d || "")) && its.some(function (x) { return x !== it && x.k === "item" && num(x.gst) > 0; }))
+      bad("gst", "Charged by the supplier on its own goods invoice, this is part of the value of the goods (CGST Act s.15(2)(c)): it takes the goods' GST rate. Ask for a corrected invoice, or verify with the Chief Accountant.");
+    if (c.reg === false && CHG_RX.test(it.d || "")) { r.warn.push("If the transporter is a goods transport agency (issues a consignment note), GST at 5% is payable by us under reverse charge (13/2017-CT(R)); a truck owner's own transport is exempt."); }
+    if (!h && c.reg === false) { /* an unregistered vendor's bill need not show an HSN / SAC */ }
+    else if (!h) bad("hsn", "No HSN / SAC: every line except round off needs the HSN / SAC from the bill." + (chk && chk.code ? " From the item name it looks like " + chk.code + " (" + hsnShort(chk.code) + ")." : ""));
     else if (HSNM) {
       var e = hsnEntry(h);
       if (!e) bad("hsn", "HSN / SAC " + h + " isn't in the official list: check it against the bill." + (chk && chk.code ? " From the item name it looks like " + chk.code + " (" + hsnShort(chk.code) + ")." : ""));
@@ -5707,9 +5726,62 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (h && !it.hsnBill) { r.warn.push("HSN / SAC typed in: not on the bill (see the attestation below the lines)."); r.wcells.hsn = 1; }
     else if (h && it.hsnBill && h !== it.hsnBill) { r.warn.push("HSN / SAC corrected from " + it.hsnBill + " as read."); r.wcells.hsn = 1; }
     if (chk && chk.code && chk.code !== h && chk.verdict !== "ok") r.sug = chk.code;
+    var vk = (c.ver || {})[it.id];
+    if (vk && r.bad.length && vk.sig === lineSig(it)) { r.warn = ["Verified by " + (vk.byName || "the Chief Accountant") + (vk.reply ? ": " + vk.reply : "") + " (" + r.bad.join(" ") + ")"].concat(r.warn); Object.keys(r.cells).forEach(function (k0) { r.wcells[k0] = 1; }); r.bad = []; r.cells = {}; r.verified = true; }
     if (it.k === "charge" && it.to && !fits) bad("led", "Its GST rate differs from the lines it goes to.");
     return r;
   }
+  /* what a verification approved: the line as it was then */
+  /* ---- Verify with Chief Accountant: requests kept on the bill (verify.reqs), approvals per line (verify.ok) ---- */
+  function verifyReqs(id) { return (((S.bills || {})[id] || {}).verify || {}).reqs || []; }
+  /* open a bill from a list: its draft in Purchase Entry, or the accounting screen once submitted */
+  function openBillAny(id) { var bl = S.bills[id]; if (!bl) return; if (bl.status === "draft" || bl.status === "postponed") { setTab("Bills"); if (bl.status === "postponed") resumeBill(id); else { S.skipOpen = ""; S.openBill = id; S.pinned = id; B.cardId = null; renderBills(); } } else { setTab("Accounts"); if (typeof openAcct === "function") openAcct("bill", id); } }
+  function canVerify() { return S.isAdmin || meChief(); }
+  function verifySave(id, v) { return retry(function () { return S.db.doc("bills/" + id).update({ verify: v }); }).then(function () { if (S.bills[id]) S.bills[id].verify = v; }); }
+  function verifyAsk(id, lineId, what, sig) {
+    var body = el("div", { class: "mform" }), ta = el("textarea", { class: "field", rows: "3", maxlength: "500", placeholder: "Say why it is right, or what you want checked" });
+    body.appendChild(el("p", null, what)); body.appendChild(fld("Your note", ta));
+    popForm("Verify with Chief Accountant", "The Chief Accountant sees this in Accounts › Verification and replies here.", body, "Send", function () {
+      var b = S.bills[id]; if (!b) return false; var v = JSON.parse(JSON.stringify(b.verify || {})); v.reqs = (v.reqs || []).concat([{ id: newId("vq"), lineId: lineId || "", what: String(what).slice(0, 600), note: ta.value.trim().slice(0, 500), sig: sig || "", status: "pending", by: meId(), byName: pnm(preparedByText()), at: Date.now() }]);
+      return verifySave(id, v).then(function () { toast("Sent to the Chief Accountant."); var c0 = B.cardId === id ? billCtx() : AC.id === id ? acctCtx() : null; if (c0) c0.redraw(); paintVerify(); }, function (e) { toast(explain(e)); return false; });
+    });
+  }
+  function verifyAnswer(id, q, ok, btn) {
+    var body = el("div", { class: "mform" }), ta = el("textarea", { class: "field", rows: "3", maxlength: "500", placeholder: ok ? "Optional: why it is right" : "What needs to change" });
+    body.appendChild(el("p", null, q.what)); if (q.note) body.appendChild(el("p", { class: "hint" }, "Note from " + (q.byName || "the sender") + ": " + q.note)); body.appendChild(fld("Your reply", ta));
+    popForm(ok ? "Approve" : "Reject", ok && q.lineId ? "The line can then go through as it is, while it stays unchanged." : "", body, ok ? "Approve" : "Reject", function () {
+      var b = S.bills[id]; if (!b) return false; if (!ok && !ta.value.trim()) { toast("Say what needs to change."); return false; }
+      var v = JSON.parse(JSON.stringify(b.verify || {})), who = { by: meId(), byName: pnm(preparedByText()), at: Date.now(), reply: ta.value.trim().slice(0, 500) };
+      v.reqs = (v.reqs || []).map(function (x) { return x.id === q.id ? Object.assign({}, x, { status: ok ? "approved" : "rejected", done: who }) : x; });
+      if (ok && q.lineId) { var it0 = (b.items || []).filter(function (x) { return x.id === q.lineId; })[0]; v.ok = Object.assign({}, v.ok || {}); v.ok[q.lineId] = Object.assign({ sig: it0 ? lineSig(it0) : q.sig }, who); }
+      return verifySave(id, v).then(function () { toast(ok ? "Approved." : "Rejected."); renderVerify(); }, function (e) { toast(explain(e)); return false; });
+    });
+  }
+  /* on the bill: a question about the whole bill, and the replies */
+  function paintVerify() {
+    var box = $("bcVerify"), id = B.cardId; if (!box || !id) return; box.textContent = "";
+    var rq = verifyReqs(id);
+    var row = el("div", { style: "display:flex;gap:10px;align-items:center;flex-wrap:wrap" }), bb = el("button", { type: "button", class: "btn sm" }, "Verify with Chief Accountant");
+    bb.addEventListener("click", function () { verifyAsk(id, "", "The whole bill " + (B.D.billNo || "") + (B.D.billDate ? " dated " + B.D.billDate : "") + ".", ""); });
+    row.appendChild(bb); row.appendChild(el("span", { class: "hint", style: "margin:0" }, "Anything on this bill can be sent to the Chief Accountant to check.")); box.appendChild(row);
+    rq.slice().reverse().forEach(function (q) { var d = el("div", { class: "flag " + (q.status === "rejected" ? "e" : q.status === "approved" ? "" : "warn"), style: "display:block;margin-top:8px" }); d.appendChild(el("b", null, q.status === "pending" ? "Waiting for the Chief Accountant" : q.status === "approved" ? "Approved by " + ((q.done || {}).byName || "the Chief Accountant") : "Rejected by " + ((q.done || {}).byName || "the Chief Accountant"))); d.appendChild(el("div", null, q.what)); if (q.note) d.appendChild(el("div", { class: "hint" }, "Note: " + q.note)); if (q.done && q.done.reply) d.appendChild(el("div", null, "Reply: " + q.done.reply)); box.appendChild(d); });
+  }
+  /* Accounts › Verification: every request, waiting ones first */
+  function renderVerify() {
+    var box = $("verifyList"); if (!box) return; box.textContent = "";
+    var all = []; Object.keys(S.bills || {}).forEach(function (id) { verifyReqs(id).forEach(function (q) { all.push({ id: id, q: q }); }); });
+    if (!all.length) { box.appendChild(el("div", { class: "card empty" }, "Nothing has been sent for verification.")); return; }
+    all.sort(function (a, b) { var pa = a.q.status === "pending" ? 0 : 1, pb = b.q.status === "pending" ? 0 : 1; return pa - pb || (b.q.at || 0) - (a.q.at || 0); });
+    var w = el("div", { class: "card list" }); box.appendChild(w);
+    sortTable(w, "verT", [
+      { label: "Bill", cell: function (r, td) { var b = S.bills[r.id] || {}; td.appendChild(el("b", null, (b.billNo || "No number") + " · " + vendorLabelOfBill(b))); sub(td, [fmtDate(b.billDate || ""), coLabel(b.companyId)].filter(Boolean).join(" · ")); } },
+      { label: "Asked", cls: "desc", cell: function (r, td) { txt(td, r.q.what); if (r.q.note) sub(td, "Note: " + r.q.note); sub(td, (r.q.byName || "") + ", " + fmtDay(r.q.at)); } },
+      { label: "Status", cls: "desc", cell: function (r, td) { txt(td, r.q.status === "pending" ? "Waiting" : r.q.status === "approved" ? "Approved" : "Rejected"); if (r.q.done) sub(td, (r.q.done.byName || "") + ", " + fmtDay(r.q.done.at) + (r.q.done.reply ? ": " + r.q.done.reply : "")); } },
+      { label: "", kind: "act", cls: "r", cell: function (r, td) { var op = el("button", { type: "button", class: "btn sm" }, "Open Bill"); op.addEventListener("click", function () { openBillAny(r.id); }); td.appendChild(op);
+        if (r.q.status === "pending" && canVerify()) { var a = el("button", { type: "button", class: "btn sm primary", style: "margin-left:6px" }, "Approve"), j = el("button", { type: "button", class: "btn sm", style: "margin-left:6px" }, "Reject"); a.addEventListener("click", function () { verifyAnswer(r.id, r.q, true, a); }); j.addEventListener("click", function () { verifyAnswer(r.id, r.q, false, j); }); td.appendChild(a); td.appendChild(j); } } }
+    ], all, { sortIndex: -1 });
+  }
+  function lineSig(it) { return [it.k, String(it.d || "").trim(), hsnNorm(it.hsn), String(it.gst == null ? "" : it.gst), String(it.tx == null ? "" : it.tx), it.lg || "", it.rcm ? 1 : 0].join("|"); }
   /* the GST rates the master has under a code (3917 -> every 3917xxxx), as rates in force */
   /* rates from the official documents for a code on a date: the most specific code with an entry in force wins
      (tariff item over sub-heading over heading); for a short code, every code under it counts. Per code and
@@ -5928,7 +6000,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function gstSplitText(k, g, cur) { if (g == null || !k) return ""; var f = function (n) { return cur && cur !== "INR" ? fcAmt(cur, n) : money(n); }; return k === "cgst" ? "CGST " + f(round2(g / 2)) + " + SGST " + f(round2(g - round2(g / 2))) : "IGST " + f(g); }
   function updateDynamic() {
     var D = B.D, b = S.bills[B.cardId]; if (!D || !b || !$("bcDue")) return;
-    if (tly()) { paintVPortal(); paintEinvSt(); }
+    if (tly()) { paintVPortal(); paintEinvSt(); paintVerify(); }
     if ($("bcSetF")) { var rel = billAdvOk(D); $("bcSetF").hidden = !rel; if (!rel && D.settle === "yes") { D.settle = "no"; $("bcSettle").value = "no"; }
       if (rel) { var cbx = cashBalance(billWho(D), D.companyId, b.id); $("bcSettleH").textContent = (APP === "bnv" ? "" : "Cash on hand for " + coLabel(D.companyId) + ": " + money(cbx.free) + ". ") + "Yes: once approved it is settled from this cash, and the financier doesn't pay the vendor."; } }
     setTimeout(function () { paintAiFlags(billAiSpecs()); cardGst(); paintCardGst(); }, 0);
@@ -13082,6 +13154,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function canLedgers() { return S.isAdmin || canDo("acct"); }
   function ledAll() { return Object.keys(S.ledgers || {}).map(function (k) { return S.ledgers[k]; }); }
   function ledCmp(a, b) { return LED_MAINS.indexOf(a.main) - LED_MAINS.indexOf(b.main) || natCmp(a.sub, b.sub) || natCmp(a.name, b.name); }
+  /* the ledgers a bill line can take in Tally (Demo): any active ledger of the company except Round Off (whether it
+     is legally right is checked on the line) */
+  function lineLedgers(cid) { if (!tly()) return ledFor(cid); return ledAll().filter(function (l) { return l.active !== false && !l.roundOff && !/^round(ed|ing)?[\s-]*off$/i.test(String(l.name || "").trim()) && (l.allCos || !cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
   function ledFor(cid) { if (APP === "bnv") return ledAll().filter(function (l) { return !l.tax && !l.roundOff && l.active !== false; }).sort(ledCmp); return ledAll().filter(function (l) { return !l.tax && !l.roundOff && l.active !== false && ledInApp(l) && (!cid || (l.companyIds || []).indexOf(cid) >= 0); }).sort(ledCmp); }
   /* Accounts decides which divisions may use a ledger; a ledger with none ticked is open to every division. */
   function ledInApp(l) { if (PV_ALL) return true; return !DIV || ((l.apps && l.apps.length) ? l.apps : ["mnt"]).indexOf(DIV) >= 0; }
@@ -15054,7 +15129,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function tlyAcctApprove(btn) {
     var x = S.bills[AC.id], T = AC.T; if (!x || !T || AC.busy) return;
     if (acctVendorNeeds(x)) { toast("Fill in the vendor's details first."); return; }
-    var errs = [], inter = billInter(x), t = itemTotals(T.items, inter), ie = itemsCheck(T); if (ie) errs.push(ie);
+    var errs = [], inter = billInter(x), t = itemTotals(T.items, inter), ie = itemsCheck(Object.assign({ vendorChoice: x.vendorId || "", billDate: x.billDate }, T), x); if (ie) errs.push(ie);
     var tds = num(T.tds); if (T.tdsSec && (tds == null || tds < 0)) errs.push("Enter the TDS amount for " + T.tdsSec + ".");
     if (inter == null && t.gst > 0) errs.push("CGST + SGST or IGST can't be told: the company's or the vendor's GSTIN is missing.");
     if (t.gst > 0 && gstIsComp(vGst(S.vendors[x.vendorId]))) errs.push("The vendor is a composition dealer (GST portal), so it can't charge GST. Send the bill back for a bill of supply without GST.");

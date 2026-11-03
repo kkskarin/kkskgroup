@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
     if (r.status === 429) return fail(429, "rate_limited", "Too many requests to Claude. Wait a minute.");
     if (r.status === 401 || r.status === 403) return fail(503, "sampling_disabled", "The Anthropic API key was refused.");
     if (/credit balance/i.test(why)) return fail(503, "sampling_disabled", "The Anthropic account is out of credit.");
+    if (/usage limit/i.test(why)) return fail(503, "sampling_disabled", "The Anthropic account has reached its usage limit" + ((/regain access on ([0-9-]+)/i.exec(why) || [])[1] ? " until " + (/regain access on ([0-9-]+)/i.exec(why) || [])[1] : "") + ": raise it in the Anthropic Console (Limits).");
     return fail(502, "upstream_error", "Claude did not answer (" + r.status + "): " + why.slice(0, 200));
   }
   const out = await r.json();

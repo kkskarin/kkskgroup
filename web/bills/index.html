@@ -4356,6 +4356,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var MULTI_MAX_PAGES = 30;
   function aiKind(e) {
     var c = e && e.code;
+        if (e && e.code === "sampling_disabled" && e.message) REJECT.off = String(e.message).replace(/\.?$/, "") + ", so this file wasn't read.";
     if (c === "not_granted" || c === "sampling_disabled" || c === "not_declared" || c === "capability_disabled" || c === "capability_removed") { B.aiOff = "off"; return { kind: "off" }; }
     if (c === "rate_limited") { B.aiOff = "limit"; return { kind: "limit" }; }
     if (c === "images_unavailable") return { kind: "noimg" };
@@ -4541,6 +4542,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       it.prep = p; it.file = null;
       return S.sample.json(buildPrompt(p), { images: p.images.length ? p.images : undefined, modelTier: p.scanned ? "default" : "quick" }).catch(function (e) {
         var c = e && e.code;
+        if (e && e.code === "sampling_disabled" && e.message) REJECT.off = String(e.message).replace(/\.?$/, "") + ", so this file wasn't read.";
         if (c === "not_granted" || c === "sampling_disabled" || c === "not_declared" || c === "capability_disabled" || c === "capability_removed") { B.aiOff = "off"; throw { kind: "off" }; }
         if (c === "rate_limited") { B.aiOff = "limit"; throw { kind: "limit" }; }
         if (c === "images_unavailable") throw { kind: "noimg" };
@@ -6417,13 +6419,16 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var close = function () { bg.remove(); document.removeEventListener("keydown", esc); }, esc = function (e) { if (e.key === "Escape") close(); };
     x.addEventListener("click", close); bg.addEventListener("click", function (e) { if (e.target === bg) close(); }); document.addEventListener("keydown", esc);
     m.appendChild(x); m.appendChild(el("h3", { style: "padding-right:36px" }, "Copy a live bill"));
-    m.appendChild(el("p", { class: "sub" }, "Every bill in Live, whether submitted, accounted, approved or paid. The copy is a new draft here with the bill's file, line items, amounts, ledgers and narration; nothing in Live changes."));
+    m.appendChild(el("p", { class: "sub" }, "Every bill in Live, whether submitted, accounted, approved or paid. The copy is a new draft here with the bill's file, line items, amounts, ledgers and narration; nothing in Live changes. A bill already copied (or the same vendor's same bill number already here) shows where it is, with Open; it can be copied again only once that copy is discarded."));
     var q = inp("tlyQ", "", { placeholder: "Find: bill no, vendor or company", autocomplete: "off", style: "margin-top:10px" }), list = el("div", { class: "card list", style: "max-height:60vh;overflow:auto;margin-top:10px;overscroll-behavior:contain" });
     m.appendChild(q); m.appendChild(list); list.appendChild(el("div", { class: "empty" }, "Loading Live bills…"));
     bg.appendChild(m); document.body.appendChild(bg); q.focus();
     var all = [];
     var vname = function (b) { var v = S.vendors[b.vendorId]; return v ? v.name : (b.vendorNew || {}).name || ""; };
     var nItems = function (b) { return ((b.ex && b.ex.items) || []).length; };
+    /* already here: copied from it (until that copy is discarded), or the same vendor's same bill number entered here */
+    var copyOf = function (b) { var bn = normId(b.billNo || ""), mine = billList(); return mine.filter(function (x) { return x.copiedFrom && x.copiedFrom.id === b.id; })[0] || (bn && b.vendorId ? mine.filter(function (x) { return x.vendorId === b.vendorId && normId(x.billNo || "") === bn; })[0] : null) || null; };
+    var stageHere = function (x) { return x.status === "draft" || x.status === "postponed" ? "In Purchase Entry (draft)" : x.acct === "approved" ? "Accounted" : x.acct === "back" ? "Sent back to the purchaser" : "In Accounting"; };
     function draw() {
       var t = q.value.trim().toLowerCase(); list.textContent = "";
       var rows = all.filter(function (b) { return !t || [b.billNo, vname(b), coLabel(b.companyId)].join(" ").toLowerCase().indexOf(t) >= 0; });
@@ -6432,7 +6437,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         { label: "Vendor", cls: "desc", sort: function (b) { return vname(b).toLowerCase(); }, cell: function (b, td) { td.appendChild(el("b", null, vname(b))); sub(td, [b.billNo || "No bill no", fmtDate(b.billDate), coLabel(b.companyId), b.status === "draft" ? "Not submitted" : b.status === "postponed" ? "Postponed" : b.acct === "approved" ? "Accounted" : "Submitted"].join(" · ")); } },
         { label: "Line Items", cls: "r num", sort: function (b) { return nItems(b); }, cell: function (b, td) { txt(td, String(nItems(b))); } },
         { label: "Total", cls: "r num", sort: function (b) { return Number(b.total) || 0; }, cell: function (b, td) { txt(td, curMoney(b.currency || "INR", b.total)); } },
-        { label: "Copy", kind: "act", cls: "r", cell: function (b, td) { var c = el("button", { class: "btn sm primary", type: "button" }, "Copy"); c.addEventListener("click", function () { c.disabled = true; copyLiveBill(b).then(function (id) { if (!id) { c.disabled = false; return; } close(); S.openBill = id; if (!S.sample || B.aiOff) renderBills();
+        { label: "Copy", kind: "act", cls: "r", cell: function (b, td) {
+          var had = copyOf(b);
+          if (had) { var ob0 = el("button", { class: "btn sm", type: "button", title: "Already here: discard it first to copy it again" }, "Open"); ob0.addEventListener("click", function () { close(); openBillAny(had.id); }); td.appendChild(ob0); sub(td, "Copied · " + stageHere(had)); return; }
+          var c = el("button", { class: "btn sm primary", type: "button" }, "Copy"); c.addEventListener("click", function () { c.disabled = true; copyLiveBill(b).then(function (id) { if (!id) { c.disabled = false; return; } close(); S.openBill = id; if (!S.sample || B.aiOff) renderBills();
           if (!S.sample || B.aiOff) { toast("Copied " + (b.billNo || "the bill") + " into Tally (Demo). Check it and submit."); return; }
           S.tlyScan = id; S.openBill = id; renderBills();
           tlyReread(id).then(function (ok) { S.tlyScan = ""; B.cardId = null; S.openBill = id; renderBills(); if (ok) toast((b.billNo || "The bill") + " has been read: check the line items and ledgers."); }); }); }); td.appendChild(c); } }
@@ -6462,7 +6470,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           return retry(function () { return S.db.doc("bills/" + id).update(up); }).then(function () { S.bills[id] = Object.assign({}, S.bills[id] || b, up); return true; });
         });
       });
-    }).catch(function (e) { toast("Claude couldn't read the copied bill again (" + ((e && (e.code || e.kind || e.message)) || "error") + "). Its copied details are kept."); return false; });
+    }).catch(function (e) { toast("Claude couldn't read the copied bill again: " + ((e && e.code === "sampling_disabled" && e.message) || (e && (e.code || e.kind || e.message)) || "error") + ". Its copied details are kept."); return false; });
   }
   function scanCard(b) {
     var card = el("article", { class: "card bcard tlyscan", "aria-busy": "true", "aria-label": "Claude is reading the bill" }), body = el("div", { class: "bc-body" });
@@ -6473,6 +6481,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     body.appendChild(info); card.appendChild(body); return card;
   }
   function copyLiveBill(b) {
+    var bn = normId(b.billNo || ""), had = billList().filter(function (x) { return (x.copiedFrom && x.copiedFrom.id === b.id) || (bn && b.vendorId && x.vendorId === b.vendorId && normId(x.billNo || "") === bn); })[0];
+    if (had) { toast("Bill " + (b.billNo || "") + " from this vendor is already here (" + (had.status === "draft" ? "a draft" : "submitted") + "). Discard it first to copy it again."); return Promise.resolve(null); }
     var id = newId("b"), now = Date.now(), doc = {};
     TLY_COPY.forEach(function (k) { if (b[k] !== undefined) doc[k] = JSON.parse(JSON.stringify(b[k])); });
     Object.assign(doc, { status: "draft", ownerId: meId(), uploadedBy: meId(), uploadedAt: now, updatedAt: now, copiedFrom: { id: b.id, billNo: b.billNo || "", at: now, by: meId() } });
@@ -8792,6 +8802,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     prepFile(file).then(function (p) {
       return S.sample.json(advPrompt(p, kind), { images: p.images.length ? p.images : undefined, modelTier: p.scanned ? "default" : "quick" }).then(function (res) { return { p: p, res: res }; }, function (e) {
         var c = e && e.code;
+        if (e && e.code === "sampling_disabled" && e.message) REJECT.off = String(e.message).replace(/\.?$/, "") + ", so this file wasn't read.";
         if (c === "not_granted" || c === "sampling_disabled" || c === "not_declared" || c === "capability_disabled" || c === "capability_removed") { B.aiOff = "off"; throw { kind: "off" }; }
         if (c === "rate_limited") { B.aiOff = "limit"; throw { kind: "limit" }; }
         if (c === "images_unavailable") throw { kind: "noimg" };

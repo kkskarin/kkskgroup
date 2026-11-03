@@ -130,6 +130,8 @@ async function ask(prompt: string, sites: string[]) {
       if (r.status === 400 && fallback && /fallback/i.test(detail)) { fallback = false; turn--; continue; }
       console.error("anthropic", r.status, detail.slice(0, 600));
       let why = ""; try { why = JSON.parse(detail)?.error?.message ?? ""; } catch { /* not JSON */ }
+      // the account can't be used (usage limit, no credit, key refused): stop, don't retry
+      if (r.status === 401 || r.status === 403 || /usage limit|credit balance/i.test(why)) { const e = new Error(/usage limit/i.test(why) ? "The Anthropic account has reached its usage limit" + ((/regain access on ([0-9-]+)/i.exec(why) || [])[1] ? " until " + (/regain access on ([0-9-]+)/i.exec(why) || [])[1] : "") + ": raise it in the Anthropic Console." : /credit/i.test(why) ? "The Anthropic account is out of credit." : "The Anthropic API key was refused."); (e as Error & { hard?: boolean }).hard = true; throw e; }
       throw new Error("Claude did not answer (" + r.status + ")" + (why ? ": " + why.slice(0, 200) : ""));
     }
     const out = await r.json();
@@ -208,7 +210,7 @@ async function runJob(db: any, prev: any, job: Job) {
   const doneTopics = TOPICS.filter((x) => !queue.some((q) => q.topic === x.id)).length;
   const cycleDone = !queue.length;
   return {
-    ...prev, running: false, lastRun: Date.now(), error: "", queue, notes, topicDone, found: list, added: (prev.added || 0) + added,
+    ...prev, running: false, lastRun: Date.now(), error: "", holdUntil: 0, queue, notes, topicDone, found: list, added: (prev.added || 0) + added,
     progress: { done: doneTopics, total: TOPICS.length, runs: (prev.progress?.runs || 0) + 1 },
     ...(cycleDone ? { lastOk: Date.now(), lastBy: prev.cycleBy || prev.lastBy || "Daily check", incomplete: TOPICS.some((x) => notes[x.id]) } : {}),
   };
@@ -392,6 +394,9 @@ Deno.serve(async (req) => {
     prev = newCycle(String(p.data.name || "Someone"));
   } else if (busy) {
     return reply(200, { skipped: "running" });
+  } else if ((prev.holdUntil || 0) > now) {
+    // the Anthropic account refused the last run: wait (Check Now still tries)
+    return reply(200, { skipped: "on hold" });
   } else if (!(prev.queue || []).length) {
     // the daily check (a chain call with nothing queued has nothing to do)
     if (body.chain || now - (prev.lastOk || 0) < 20 * 3600e3) return reply(200, { skipped: "not due" });
@@ -416,6 +421,11 @@ Deno.serve(async (req) => {
   const work = runJob(db, prev, job).then(async (s) => { done = true; await save(s); await chainNext(s); }, async (e) => {
     done = true;
     console.error("rate-watch", job.topic, String(e?.message ?? e));
+    if (e?.hard) {
+      // the queue stays as it was; nothing more runs for 6 hours
+      const s = { ...prev, running: false, lastRun: Date.now(), error: String(e.message).slice(0, 300), holdUntil: Date.now() + 6 * 3600e3 };
+      await save(s); return;
+    }
     // the topic is put back once; the error shows until a run succeeds
     const q = (prev.queue || []).slice(1);
     if (job.round < MAX_ROUNDS) q.push({ ...job, round: job.round + 1 });

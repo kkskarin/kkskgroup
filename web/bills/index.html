@@ -255,9 +255,13 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 .arsteps{margin:4px 0 0;padding-left:20px;font-size:calc(13.5px*var(--ts,1));line-height:1.55;color:var(--muted)}.arsteps b{color:var(--ink)}
 .seg{display:inline-flex;gap:4px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:3px;margin:0 0 14px}
 .seg{max-width:100%;flex-wrap:wrap;box-sizing:border-box}
-.tlybt td.arcol,.tlybt th.arcol{width:28px;padding-right:0}
+.tlybt{table-layout:fixed;width:100%;min-width:980px}
+.tlybt td,.tlybt th{vertical-align:middle;overflow-wrap:anywhere}
+.tlybt td.arcol,.tlybt th.arcol{padding-left:12px;padding-right:0;text-align:center}
+.tlybt td:last-child .acts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}.tlybt td:last-child .acts .btn{white-space:nowrap}.tlybt td:nth-child(5),.tlybt td:nth-child(6){white-space:nowrap}
+.tlybt .tag.stg{white-space:normal;display:inline-block;line-height:1.3}
 .arbtn{all:unset;cursor:pointer;display:inline-grid;place-items:center;width:22px;height:22px;border-radius:5px;color:var(--brand);font-size:14px}.arbtn:hover{background:var(--soft)}.arbtn:focus-visible{outline:2px solid var(--focus)}
-.tlybt tr.vrow td{background:var(--soft)}.tlybt tr.bcrrow td{background:#fff}.tlybt tr.bcrrow td:nth-child(2),.tlybt tr.inbcr td:nth-child(2),.tlybt tr.loose td:nth-child(2){padding-left:18px}.tlybt tr.inbcr td:nth-child(3){padding-left:22px}
+.tlybt tr.vrow td{background:var(--soft)}.tlybt tr.bcrrow td{background:#fff}.tlybt tr.bcrrow td:nth-child(2),.tlybt tr.inbcr td:nth-child(2),.tlybt tr.loose td:nth-child(2){padding-left:18px}
 .tag.stg.tst-open{background:#FFF4D6;color:#7A5300}.tag.stg.tst-acct{background:#E3EEFF;color:#1F4A8F}.tag.stg.tst-appr{background:#FDE7DA;color:#8A3B0E}.tag.stg.tst-pay{background:#E6F4EC;color:#0D6B3A}.tag.stg.tst-part{background:#EDE7FA;color:#4B2E8F}.tag.stg.tst-closed{background:#EEF0EF;color:#55605A}
 .tlydone .card{margin-bottom:14px}
 .seg button{all:unset;cursor:pointer;padding:7px 14px;border-radius:7px;font-weight:600;font-size:calc(13px*var(--ts,1));color:var(--muted)}
@@ -6723,7 +6727,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     sorted().forEach(function (c) {
       var cb = all.filter(function (b) { return b.companyId === c.id; }); if (!cb.length) return;
       var card = el("div", { class: "card mkco" }), hd = el("div", { class: "cohead" }); hd.appendChild(el("b", null, c.internalName || c.name)); hd.appendChild(el("span", null, plural(cb.length, "bill") + " · " + money(round2(cb.reduce(function (s0, b) { return s0 + (Number(b.total) || 0); }, 0))))); card.appendChild(hd);
-      var tw = el("div", { class: "list scroll" }), tb = el("table", { class: "t tlybt" }), th = el("thead"), hr = el("tr");
+      var tw = el("div", { class: "list scroll" }), tb = el("table", { class: "t tlybt" }), th = el("thead"), hr = el("tr"), cg = el("colgroup");
+      ["34px", "20%", "14%", "11%", "9%", "9%", "13%", "auto"].forEach(function (w) { cg.appendChild(el("col", { style: "width:" + w })); }); tb.appendChild(cg);
       [["", "arcol"], ["Vendor", ""], ["Bill Details", ""], ["Total Payable", "r"], ["Due Date", ""], ["Submitted", ""], ["Status", ""], ["", "r"]].forEach(function (h) { hr.appendChild(el("th", h[1] ? { class: h[1] } : null, h[0])); }); th.appendChild(hr); tb.appendChild(th);
       var bd = el("tbody"); tb.appendChild(bd); tw.appendChild(tb); card.appendChild(tw); box.appendChild(card);
       var byV = {}; cb.forEach(function (b) { (byV[b.vendorId] = byV[b.vendorId] || []).push(b); });
@@ -6746,9 +6751,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           return w;
         }
         function makeBtn() {
-          var ok = loose.filter(bcrOk), use = pick.length ? pick : ok; if (use.length < 2) return null;
+          var ok = loose.filter(bcrOk), use = pick.length ? pick : ok; if (ok.length < 2) return null;
           var mb = el("button", { class: "btn sm" }, pick.length ? "Make BCR (" + pick.length + ")" : "Make BCR (all " + ok.length + ")");
-          mb.title = pick.length ? "A Bill Checking Report of the ticked bills" : "A Bill Checking Report of every accounted bill of this vendor not yet in one";
+          mb.disabled = use.length < 2;
+          mb.title = use.length < 2 ? "Tick two or more accounted bills (or none, for all of them)" : pick.length ? "A Bill Checking Report of the ticked bills" : "A Bill Checking Report of every accounted bill of this vendor not yet in one";
           mb.addEventListener("click", function () { bcrMake(c.id, vid, use); use.forEach(function (b) { delete B.pick[b.id]; }); }); return mb;
         }
         var tot = round2(bs.reduce(function (s0, b) { return s0 + (Number(b.total) || 0); }, 0));
@@ -6770,7 +6776,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           if (!r.apprReq && rst === "acct") { var sa = el("button", { class: "btn sm primary" }, "Send for Approval"); sa.addEventListener("click", function () { sendForApproval("bcr", r); }); ra.appendChild(sa); }
           if (!r.apprReq && pick.length) { var ad = el("button", { class: "btn sm" }, "Add " + plural(pick.length, "ticked bill")); ad.addEventListener("click", function () { bcrSetBills(r, (r.billIds || []).concat(pick.map(function (b) { return b.id; }))); pick.forEach(function (b) { delete B.pick[b.id]; }); }); ra.appendChild(ad); }
           var bdue = rb.map(function (b) { return b.dueDate || ""; }).filter(ymdOk).sort()[0] || "";
-          cells(trr, [null, el("span", { class: "tsub" }, "Bill Checking Report"), det, money(round2(rb.reduce(function (s0, b) { return s0 + (Number(b.total) || 0); }, 0))), bdue ? fmtDate(bdue) : "", "Made " + fmtDay(r.createdAt), tlyStTag(rst), ra]);
+          cells(trr, [null, el("span", { class: "tsub" }, "Bill Checking Report"), det, money(round2(rb.reduce(function (s0, b) { return s0 + (Number(b.total) || 0); }, 0))), bdue ? fmtDate(bdue) : "", fmtDay(r.createdAt), tlyStTag(rst), ra]);
           if (B.open[rk]) rb.forEach(function (b) { cells(el("tr", { class: "inbcr" }), [null, el("span", { class: "tsub" }, "in " + r.no), billDet(b), money(Number(b.total) || 0), due(b), tlySubmitted(b), tlyStTag(tlyStatus(b)), billActs(b, r)]); });
         });
         loose.forEach(function (b) {

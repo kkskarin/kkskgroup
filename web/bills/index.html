@@ -146,6 +146,7 @@ table.t{border-collapse:collapse;width:100%}
 .logo-box{width:120px;height:72px;border-radius:8px;border:1px dashed var(--line);background:#fff;display:grid;place-items:center;overflow:hidden;color:#6E645C;font-size:calc(12.5px*var(--ts,1));padding:6px}
 .logo-box img{max-width:100%;max-height:100%;display:block}
 .form-foot{display:flex;gap:10px;flex-wrap:wrap;padding:16px 22px;border-top:1px solid var(--line);background:var(--soft)}
+#aoActs.tlyfoot{border:1px solid var(--line);border-radius:6px;margin-top:14px;align-items:center}
 .t th.ordcol,.t td.ordcol{width:1%;white-space:nowrap}
 .ord{display:flex;align-items:center;gap:6px}
 .ord .grip{display:grid;place-items:center;width:22px;height:34px;color:var(--muted);cursor:grab;touch-action:none}
@@ -5974,7 +5975,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var w = c && $(c.tally); if (!w) return; var D = c.D; w.textContent = "";
     var base = tdsBaseOf(D.items);
     if (c.acct) {
-      var row = el("div", { style: "display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px" });
+      var row = el("div", { style: "display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:10px" });
       var sec = el("select", { class: "field", id: "aoTlySec" }); fillSelect(sec, [["", "No TDS"]].concat(tdsOptions(D.tdsSec)), D.tdsSec || ""); sec.disabled = !!c.locked;
       var amt = inp("aoTlyTds", D.tdsSec ? D.tds || "" : "", { inputmode: "decimal", class: "field num", style: "max-width:140px" }); amt.disabled = !D.tdsSec || !!c.locked;
       var sf = fld("TDS section", sec), af = fld("TDS (₹)", amt, D.tdsSec ? "On " + amt2(base) + ", " + (effItems(D.items).some(function (x) { return /^99/.test(hsnNorm(x.hsn)); }) ? "the services" : "the taxable amount") + ", without GST." : ""); sf.style.minWidth = "260px"; row.appendChild(sf); row.appendChild(af); w.appendChild(row);
@@ -14992,7 +14993,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var nta = el("textarea", { class: "field", id: "aoTlyNar", rows: "3", maxlength: String(NARR_MAX) }); nta.value = AC.T.narration; nta.disabled = locked;
       var ncount = el("span", { class: "hint" }); var nc = function () { ncount.textContent = nta.value.length + " of " + NARR_MAX + " characters"; }; nc();
       nta.addEventListener("input", function () { AC.T.narration = nta.value; nc(); });
-      var nf = el("div", { class: "f", style: "margin-top:12px" }); nf.appendChild(el("label", { for: "aoTlyNar" }, "Narration")); nf.appendChild(nta); nf.appendChild(ncount); s2.appendChild(nf);
+      var nf = el("div", { class: "f", style: "margin-top:12px" }); nf.appendChild(el("label", { for: "aoTlyNar" }, "Narration")); nf.appendChild(nta); nf.appendChild(ncount); if (x.ex && (x.ex.narrReview || []).length) nf.appendChild(el("span", { class: "hint" }, "Narration to check: " + x.ex.narrReview.join("; "))); s2.appendChild(nf);
       s2.appendChild(el("div", { id: "aoTlyErr" }));
       setTimeout(function () { var c = acctCtx(); if (c) c.redraw(); }, 0);
     } else if (isB && x.ex && (x.ex.items || []).length) {
@@ -15100,13 +15101,19 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }
     if (!locked) {
       var ap = el("button", { class: "btn primary" }, x.acct === "approved" ? "Save changes" : "Account"); ap.addEventListener("click", function () { if (tlyB) tlyAcctApprove(ap); else acctApprove(ap); }); if (!vNeed) acts.appendChild(ap);
-      if (x.acct !== "approved") { var ho = el("button", { class: "btn" }, "Postpone"); ho.addEventListener("click", function () { acctHold(ho); }); acts.appendChild(ho); }
+      var ho = null; if (x.acct !== "approved") { ho = el("button", { class: "btn" }, "Postpone"); ho.addEventListener("click", function () { acctHold(ho); }); acts.appendChild(ho); }
       /* Tally (Demo): HSN / SAC and GST questions are settled here; the one place to ask the Chief Accountant */
       if (tlyB) { var vfy = el("button", { class: "btn", id: "aoVerifyBtn", type: "button" }, "Verify with Chief Accountant"); vfy.addEventListener("click", verifyBill); acts.appendChild(vfy); }
-      var sb = el("button", { class: "btn danger" }, "Send back"); sb.addEventListener("click", acctSendBack); acts.appendChild(sb);
+      var sb = el("button", { class: "btn danger" }, "Send back"); sb.addEventListener("click", acctSendBack);
+      /* Tally (Demo): laid out like Purchase Entry's foot: the main action with its icon first, Cancel and Send Back on the right */
+      if (tlyB) { ap.innerHTML = '<svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><path d="m4 10.5 4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' + (x.acct === "approved" ? "Save Changes" : "Account Bill");
+        if (ho) ho.innerHTML = '<svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 5.8V10l2.8 1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Postpone';
+        acts.appendChild(el("span", { class: "grow" })); cn.textContent = "Cancel Entry"; acts.appendChild(cn); acts.appendChild(sb); }
+      else acts.appendChild(sb);
     }
     if (!isB && S.downloads && acctOk(x)) { var pv = el("button", { class: "btn" }, "Print voucher"); pv.addEventListener("click", function () { printVoucher(x.id, pv); }); acts.appendChild(pv); }
-    acts.appendChild(cn);
+    if (!cn.parentNode) acts.appendChild(cn);
+    acts.classList.toggle("tlyfoot", !!tlyB);
   }
   function acctCheck() {
     var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, errs = [];

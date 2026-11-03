@@ -951,10 +951,6 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     <div class="head"><div class="grow"><h2>Verification</h2><p class="sub">Bills sent with Verify with Chief Accountant from Accounting, with the lines the app marks red. The Chief Accountant approves (the line can then go through as it is, while it stays unchanged) or rejects, with a reply the sender sees on the bill.</p></div></div>
     <div id="verifyList"></div>
   </section>
-  <section id="secNotif" hidden>
-    <div class="head"><div class="grow"><h2>Official Notifications</h2><p class="sub">Everything in force, and anything new, from official sites only: GST (rates, exemptions, reverse charge, ITC, e-invoicing, circulars, advisories, GST Council, Tamil Nadu GST), income-tax TDS and TCS, cess and customs. Claude searches one topic at a time until all are covered, once a day and on Check Now, and says which apply to the company; anyone here can move one to or from Irrelevant. Tick notifications to download their PDFs (a download that fails isn't tried again: upload that PDF yourself). Files are named by source and number, e.g. CBIC - 9-2025 Integrated Tax (Rate). GST rate notifications are then read into the HSN / SAC rates.</p></div></div>
-    <div class="card" id="notifBox" style="padding:14px 16px"></div>
-  </section>
   <section id="secOthers" hidden>
     <div class="head"><div class="grow"><h2>Others</h2><p class="sub">Lists used across the app. A change here updates every place that uses it.</p></div></div>
     <h3>Bank Names</h3>
@@ -1673,7 +1669,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var S = { staff: {}, salruns: {}, regions: {}, ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secVerify", "secNotif", "secHsn", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
+  var VIEWS = ["secVerify", "secHsn", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1903,7 +1899,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS],
     /* Tally (Demo): purchaser, accountant and financier, nothing else; masters to look up */
-    tly: [{ h: "Purchase", tabs: [["Bills", "Purchase Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Verify", "Verification"], ["Ledger Books", "Ledger Statements"]] }, { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"]] }, { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]] }, { h: "Masters", tabs: MASTERS.concat([["HSN", "HSN / SAC", 0, "m"], ["Notifications", "Official Notifications", 0, "m"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
+    tly: [{ h: "Purchase", tabs: [["Bills", "Purchase Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Verify", "Verification"], ["Ledger Books", "Ledger Statements"]] }, { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"]] }, { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]] }, { h: "Masters", tabs: MASTERS.concat([["HSN", "HSN / SAC", 0, "m"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
   var LAST_M = "";
@@ -2026,7 +2022,6 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (t === "Banks") { renderBanks(); show("secBanks"); return; }
     if (t === "Others") { renderOthers(); show("secOthers"); return; }
     if (t === "HSN") { renderHsn(); show("secHsn"); return; }
-    if (t === "Notifications") { renderNotif(); show("secNotif"); return; }
     if (t === "Verify") { if (dataReady()) { renderVerify(); show("secVerify"); } else show("vLoading"); return; }
     if (t === "Salary") { renderSalary(); show("secSalary"); return; }
     if (t === "All Entries") { if (dataReady()) { renderAllEnt(); show("secAllEnt"); } else show("vLoading"); return; }
@@ -5400,7 +5395,6 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var lq = S.db ? S.db.collection("hsnlearn").get().then(function (sn) { var L = {}; sn.docs.forEach(function (d) { L[d.id] = d.data() || {}; }); S.hsnLearn = L; S.hsnMem = null; }, function () { S.hsnLearn = S.hsnLearn || {}; }) : Promise.resolve();
       /* rates read from official rate documents, each with the date it is in force from; and the documents register */
       var oq = lq.then(function () { return S.db ? S.db.collection("hsnoff").get() : null; }).then(function (sn) { var O = {}; if (sn) sn.docs.forEach(function (d) { O[d.id] = (d.data() || {}).e || []; }); S.hsnOff = O; }).catch(function () { S.hsnOff = S.hsnOff || {}; })
-        .then(function () { return rateWatchLoad(); })
         .then(function () { return S.db ? S.db.collection("hsnok").get() : null; }).then(function (sn) { var K = {}; if (sn) sn.docs.forEach(function (d) { K[d.id] = (d.data() || {}).items || []; }); S.hsnOk = K; }).catch(function () { S.hsnOk = S.hsnOk || {}; })
         .then(function () { return S.db ? S.db.collection("hsndocs").get() : null; }).then(function (sn) { var R = []; if (sn) sn.docs.forEach(function (d) { R.push(Object.assign({ id: d.id }, d.data() || {})); }); S.hsnDocs = R; }).catch(function () { S.hsnDocs = S.hsnDocs || []; });
       /* rates the accountant set by hand (Masters › HSN / SAC) */
@@ -13635,156 +13629,22 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var HSN_DUE_DAYS = 31;
   function hsnCanUpload() { return S.isAdmin || canDo("acct"); }
   function hsnLastDoc() { return (S.hsnDocs || []).filter(function (d) { return d.kind !== "notice"; }).sort(function (a, b) { return (b.at || 0) - (a.at || 0); })[0] || null; }
-  function hsnDocsDue() { var l = hsnLastDoc(); return !l || Date.now() - (l.at || 0) > HSN_DUE_DAYS * 864e5 || ratePending().length > 0; }
-  /* ---- The daily check for new GST rate notifications (gst-rate-watch, official sites only, kept in ratewatch/state).
-     A notification Claude finds that changes any GST rate (whether or not that HSN / SAC is used here) stays "to upload"
-     until its PDF is uploaded and read; ones that change no rate are shown with Claude's reason. ---- */
-  function notifKey(n) { var m = /(\d+)\s*\/\s*(\d{4})/.exec(String(n || "")); if (!m) return ""; var t = /compensation\s*cess/i.test(n) ? "CC" : /integrated/i.test(n) ? "I" : /union/i.test(n) ? "U" : /state tax/i.test(n) ? "S" : /central|cgst/i.test(n) ? "C" : /income|cbdt|s\.\s*o\./i.test(n) ? "IT" : /circular/i.test(n) ? "CIR" : "X"; var k = t + "-" + Number(m[1]) + "-" + m[2]; return /corrigend|errat/i.test(n) ? "corr-" + k + "-" + ((/G\.?S\.?R\.?\s*(\d+)/i.exec(n) || [])[1] || "") : k; }
-  function rateWatchLoad() { if (!S.db) return Promise.resolve(); var coll = function (n, k) { return S.db.collection(n).get().then(function (sn) { var o = {}; sn.docs.forEach(function (d) { o[d.id] = d.data() || {}; }); S[k] = o; }, function () { S[k] = S[k] || {}; }); };
-    return Promise.all([S.db.doc("ratewatch/state").get().then(function (d) { S.rateWatch = d && d.exists ? d.data() || {} : {}; }, function () { S.rateWatch = S.rateWatch || {}; }), coll("notifdl", "notifDl"), coll("notifrel", "notifRel")]); }
-  /* a notification's own document ids (as the server keeps them) */
-  function notifSafe(k) { return String(k || "").replace(/[^A-Za-z0-9_.~:@+-]+/g, "_").slice(0, 120); }
-  function notifDl(f) { return (S.notifDl || {})[notifSafe(f.key)] || null; }
-  /* relevant or not: a person's choice wins over Claude's */
-  function notifRelOf(f) { var r = (S.notifRel || {})[notifSafe(f.key)]; return r && typeof r.rel === "boolean" ? r : null; }
-  function notifRelevant(f) { var r = notifRelOf(f); return r ? r.rel : !!f.relevant; }
-  function notifIsRate(f) { return (f.cat || "gst") === "gst" && f.rate !== false; }
-  /* the file's name: its source and number, e.g. "CBIC - 9-2025 Integrated Tax (Rate).pdf" */
-  function notifSource(u) { var h = ""; try { h = new URL(u).hostname.toLowerCase(); } catch (e) { return "Official"; } var m = [[/egazette/, "eGazette"], [/cbic/, "CBIC"], [/gstcouncil/, "GST Council"], [/einvoice/, "e-Invoice Portal"], [/ewaybill/, "e-Way Bill Portal"], [/gst\.gov\.in/, "GSTN"], [/incometax/, "Income Tax"], [/indiabudget/, "Union Budget"], [/pib\.gov/, "PIB"], [/icegate/, "ICEGATE"], [/tn\.gov\.in|tnsgst/, "Tamil Nadu CTD"]]; for (var i = 0; i < m.length; i++) if (m[i][0].test(h)) return m[i][1]; return "Official"; }
-  function notifFileName(f) { var n = String(f.number || "").replace(/\//g, "-").replace(/[^A-Za-z0-9 ().,&-]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 90); return notifSource(f.url) + " - " + (n || "Notification") + ".pdf"; }
-  function renamed(file, name) { try { return new File([file], name, { type: file.type || "application/pdf" }); } catch (e) { return file; } }
-  /* the Central Tax, Integrated Tax and UT Tax versions of a notification carry the same rates: uploading one covers all */
-  function notifGroup(k) { return String(k || "").replace(/(^|corr-)[A-Z]-/, "$1G-"); }
-  function rateUploaded() { var u = {}; (S.hsnDocs || []).forEach(function (d) { if (d.kind === "rate" || d.kind === "notice") { var k = d.key || notifKey(d.notif); if (k) { u[k] = d; u[notifGroup(k)] = u[notifGroup(k)] || d; } } }); return u; }
-  function rateDone(f, u) { var d = u[f.key] || u[notifGroup(f.key)] || null; if (d) return d; var dl = notifDl(f); return dl && dl.status === "ok" && !notifIsRate(f) ? { at: dl.at, notif: f.number, kind: "notice", auto: true } : null; }
-  /* GST rate notifications waiting (they hold up the monthly HSN check); and everything waiting, of every kind */
-  function ratePending() { var u = rateUploaded(); return ((S.rateWatch || {}).found || []).filter(function (f) { return notifRelevant(f) && notifIsRate(f) && !rateDone(f, u); }); }
-  function notifPending() { var u = rateUploaded(); return ((S.rateWatch || {}).found || []).filter(function (f) { return notifRelevant(f) && !rateDone(f, u); }); }
-  /* "Nothing New This Month" only when a check in the last day and a half found nothing left to upload */
-  function rateQuiet() { var w = S.rateWatch || {}; return !w.running && !(w.queue || []).length && !w.incomplete && w.lastOk && Date.now() - w.lastOk < 36 * 3600e3 && !ratePending().length; }
-  var RW_POLL = 0;
-  function rateWatchNow(btn) {
-    if (!window.bvRateWatch) { toast("The check isn't available here."); return; }
-    btn.disabled = true; btn.textContent = "Checking…";
-    window.bvRateWatch().then(function () { S.rateWatch = Object.assign({}, S.rateWatch, { running: true, startedAt: Date.now() }); toast("Checking official sites for notifications. This takes a few minutes."); if ($("notifBox") && $("notifBox").offsetParent) renderNotif(); else renderHsnDocs(); }, function (e) { toast((e && e.message) || explain(e)); btn.disabled = false; btn.textContent = "Check Now"; });
-  }
-  /* Masters › Official Notifications: the check's progress, and every notification found, by kind */
-  var NOTIF_CATS = [["", "All"], ["gst", "GST"], ["tds", "TDS & TCS"], ["cess", "Cess"], ["customs", "Customs"], ["irr", "Irrelevant"]], NOTIF_CATL = { gst: "GST", tds: "TDS & TCS", cess: "Cess", customs: "Customs" };
-  var NOTIF_TOPICS = { "gst-rate": "GST rates on goods", "gst-rate-svc": "GST rates on services", "gst-other": "GST: ITC, e-invoicing, GST TDS / TCS", "gst-circ": "CBIC GST circulars", gstn: "GSTN and e-invoice advisories", council: "GST Council decisions", "tn-sgst": "Tamil Nadu GST", tds: "Income-tax TDS and TCS", cess: "Cess", customs: "Customs on imports" };
-  /* Masters › Official Notifications: select, download, mark irrelevant; irrelevant ones are kept in their own group */
-  function renderNotif() {
-    var box = $("notifBox"); if (!box) return;
-    if (!S.hsnDocs || !S.rateWatch || !S.notifDl) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Loading…")); Promise.all([hsnMaster(), rateWatchLoad()]).then(function () { renderNotif(); }); return; }
-    box.textContent = ""; var w = S.rateWatch || {}, can = hsnCanUpload(), u = rateUploaded(), q = w.queue || [], busy = !!(w.running || q.length), sel = S.notifSel || (S.notifSel = {});
-    var hd = el("div", { style: "display:flex;gap:10px;flex-wrap:wrap;align-items:center" }); box.appendChild(hd);
-    var tx = el("div", { class: "grow", style: "min-width:240px" }); hd.appendChild(tx);
-    var pr = w.progress || {};
-    tx.appendChild(el("b", null, busy ? "Checking now: " + (pr.done || 0) + " of " + (pr.total || 10) + " topics done" + (w.current && NOTIF_TOPICS[w.current.topic] ? ", searching " + NOTIF_TOPICS[w.current.topic] : "") + "…" : w.lastOk ? "Last checked " + fmtDay(w.lastOk) + " " + new Date(w.lastOk).toTimeString().slice(0, 5) + " (" + (w.lastBy || "Daily check") + ")" : "Not checked yet"));
-    tx.appendChild(el("div", { class: "hint", style: "margin:2px 0 0" }, "Official sites only: CBIC, the GST portal and e-invoice portal, the GST Council and PIB, Tamil Nadu Commercial Taxes, the Income Tax Department, the Union Budget, ICEGATE and the e-Gazette. A full check takes a while; it carries on by itself."));
-    if (can) { var cb = el("button", { type: "button", class: "btn sm primary" }, busy ? "Checking…" : "Check Now"); cb.disabled = busy; cb.addEventListener("click", function () { rateWatchNow(cb); }); hd.appendChild(cb); }
-    if (w.error) box.appendChild(el("p", { class: "flag warn", style: "margin:8px 0 0" }, "A search failed" + (w.lastRun ? " on " + fmtDay(w.lastRun) : "") + " and is being tried again: " + w.error));
-    var notes = w.notes || {}, nk = Object.keys(notes).filter(function (k) { return notes[k]; });
-    if (nk.length) { var dt = el("details", { style: "margin:8px 0 0" }), sm = el("summary", { class: "hint", style: "cursor:pointer" }, (busy ? "Still to cover (being searched): " : "Not fully covered (searched again in the next check): ") + nk.map(function (k) { return NOTIF_TOPICS[k] || k; }).join(", ") + ". Details"); dt.appendChild(sm); nk.forEach(function (k) { var pp = el("p", { style: "margin:6px 0 0;white-space:pre-wrap" }); pp.appendChild(el("b", null, (NOTIF_TOPICS[k] || k) + ": ")); pp.appendChild(document.createTextNode(notes[k])); dt.appendChild(pp); }); box.appendChild(dt); }
-    var dlBusy = Object.keys(S.notifDl || {}).some(function (k) { return S.notifDl[k].status === "downloading"; });
-    clearTimeout(RW_POLL); if (busy || dlBusy) RW_POLL = setTimeout(function () { rateWatchLoad().then(function () { if ($("notifBox") && $("notifBox").offsetParent) renderNotif(); }); }, 8000);
-    var all = (w.found || []).slice(), pend = notifPending();
-    if (pend.length) box.appendChild(el("p", { style: "margin:10px 0 0;color:var(--warn);font-weight:600" }, plural(pend.length, "notification") + " to get: tick them and Download Selected, or upload the PDF yourself where a download doesn't work."));
-    else if (w.lastOk && !busy) box.appendChild(el("p", { class: "hint", style: "margin:10px 0 0" }, "Nothing left to get."));
-    if (!all.length) return;
-    /* the groups: each kind holds the relevant ones; Irrelevant holds the rest, kept */
-    var cat = S.notifCat || "", inCat = function (f, c0) { var rel = notifRelevant(f); if (c0 === "irr") return !rel; if (!rel) return false; return !c0 || (f.cat || "gst") === c0; };
-    var bar = el("div", { class: "checks", style: "margin:12px 0 4px;gap:8px;flex-wrap:wrap" });
-    NOTIF_CATS.forEach(function (c0) { var n0 = all.filter(function (f) { return inCat(f, c0[0]); }).length, b = el("button", { type: "button", class: "btn sm" + (cat === c0[0] ? " primary" : "") }, c0[1] + " (" + n0 + ")"); b.addEventListener("click", function () { S.notifCat = c0[0]; renderNotif(); }); bar.appendChild(b); });
-    box.appendChild(bar);
-    var rows = all.filter(function (f) { return inCat(f, cat); }), CATORD = { gst: 0, tds: 1, cess: 2, customs: 3 };
-    rows.sort(function (a, b) { var ca = CATORD[a.cat || "gst"] || 0, cb0 = CATORD[b.cat || "gst"] || 0; if (cat === "irr" && ca !== cb0) return ca - cb0; var pa = !rateDone(a, u) ? 0 : 1, pb = !rateDone(b, u) ? 0 : 1; return pa - pb || String(b.issued || "").localeCompare(String(a.issued || "")); });
-    /* selection and actions */
-    Object.keys(sel).forEach(function (k) { if (!rows.some(function (f) { return f.key === k; })) delete sel[k]; });
-    var picked = function () { return rows.filter(function (f) { return sel[f.key]; }); };
-    if (can) {
-      var act = el("div", { style: "display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0" });
-      var sa = el("button", { type: "button", class: "btn sm" }, rows.length && rows.every(function (f) { return sel[f.key]; }) ? "Clear Selection" : "Select All");
-      sa.addEventListener("click", function () { var on = !rows.every(function (f) { return sel[f.key]; }); rows.forEach(function (f) { if (on) sel[f.key] = 1; else delete sel[f.key]; }); renderNotif(); });
-      var np = picked(), canDl = np.filter(function (f) { var d = notifDl(f); return f.url && !d && !rateDone(f, u); });
-      var db0 = el("button", { type: "button", class: "btn sm primary" }, "Download Selected" + (np.length ? " (" + canDl.length + ")" : "")); db0.disabled = !canDl.length;
-      db0.title = np.length && !canDl.length ? "None of these can be downloaded: no official link, already downloaded or uploaded, or a download already failed." : "";
-      db0.addEventListener("click", function () { notifDownload(canDl, db0); });
-      var mi = el("button", { type: "button", class: "btn sm" }, cat === "irr" ? "Mark Relevant" + (np.length ? " (" + np.length + ")" : "") : "Mark Irrelevant" + (np.length ? " (" + np.length + ")" : "")); mi.disabled = !np.length;
-      mi.addEventListener("click", function () { notifMark(np, cat === "irr", mi); });
-      act.appendChild(sa); if (cat !== "irr") act.appendChild(db0); act.appendChild(mi);
-      act.appendChild(el("span", { class: "hint", style: "margin:0" }, np.length ? np.length + " selected" : "Tick notifications to download them or move them."));
-      box.appendChild(act);
-    }
-    var tb = el("table", { class: "t", style: "margin-top:4px" }), hr = el("tr"); (can ? [""] : []).concat(["Notification", "Kind", "Issued", "In Force From", "Official Link", "Relevance", "Status"]).forEach(function (h) { hr.appendChild(el("th", null, h)); }); var th = el("thead"); th.appendChild(hr); tb.appendChild(th); var bd = el("tbody"); tb.appendChild(bd);
-    var lastCat = null;
-    rows.forEach(function (f) {
-      var fc = f.cat || "gst", up = rateDone(f, u), dl = notifDl(f), isRate = notifIsRate(f), relBy = notifRelOf(f), tr = el("tr");
-      if (cat === "irr" && fc !== lastCat) { lastCat = fc; var gr = el("tr"), gtd = el("td", { colspan: String(can ? 8 : 7), style: "background:var(--soft);font-weight:600" }, NOTIF_CATL[fc] || fc); gr.appendChild(gtd); bd.appendChild(gr); }
-      if (can) { var ck0 = el("input", { type: "checkbox", "aria-label": "Select " + f.number }); ck0.checked = !!sel[f.key]; ck0.addEventListener("change", function () { if (ck0.checked) sel[f.key] = 1; else delete sel[f.key]; renderNotif(); }); tr.appendChild(elc("td", null, ck0)); }
-      var c1 = el("td", { class: "desc" }); c1.appendChild(el("b", null, f.number)); if (f.base) c1.appendChild(el("span", { class: "chip", style: "margin-left:6px" }, "In force")); sub(c1, f.subject || ""); tr.appendChild(c1);
-      var ck = el("td"); txt(ck, NOTIF_CATL[fc] || fc); sub(ck, [f.type ? f.type.replace(/^./, function (c) { return c.toUpperCase(); }) : "", isRate ? "rates" : ""].filter(Boolean).join(", ")); tr.appendChild(ck);
-      tr.appendChild(el("td", null, f.issued ? fmtDate(f.issued) : "")); tr.appendChild(el("td", null, f.from ? fmtDate(f.from) : ""));
-      var c4 = el("td"); if (f.url) { var op = el("a", { href: f.url, target: "_blank", rel: "noopener", class: "link-btn", title: f.urlChk === "list" ? "An official page that lists it: find it there" : "" }, f.urlChk === "list" ? "Open List" : "Open"), cp = el("button", { type: "button", class: "link-btn", style: "margin-left:10px" }, "Copy URL"); cp.addEventListener("click", function () { (navigator.clipboard ? navigator.clipboard.writeText(f.url) : Promise.reject()).then(function () { toast("URL copied."); }, function () { window.prompt("Copy the URL:", f.url); }); }); c4.appendChild(op); c4.appendChild(cp);
-        /* download this one: not again once an attempt failed, nor while one is running, nor once it's in */
-        if (can && !(dl && dl.status === "ok") && !(up && !up.auto)) { var failed = dl && dl.status === "failed", going = dl && dl.status === "downloading", d1 = el("button", { type: "button", class: "link-btn", style: "margin-left:10px" }, going ? "Downloading…" : "Download"); d1.disabled = !!(failed || going); if (failed) { d1.title = "The download failed: " + (dl.reason || "") + ". Upload the PDF yourself."; d1.style.opacity = ".45"; d1.style.cursor = "not-allowed"; } d1.addEventListener("click", function () { notifDownload([f], d1); }); c4.appendChild(d1); }
-        sub(c4, notifSource(f.url)); } else { txt(c4, "No official link found yet."); if (f.badUrl) sub(c4, "The link given didn't show it, so it was dropped. The next check looks again."); } tr.appendChild(c4);
-      /* relevance: Claude's call to start with; anyone can change it here, one row at a time */
-      var rel = notifRelevant(f), crl = el("td");
-      if (can) { var rs = el("select", { class: "field", "aria-label": "Relevance of " + f.number, style: "width:auto" }); fillSelect(rs, [["y", "Relevant"], ["n", "Irrelevant"]], rel ? "y" : "n"); rs.addEventListener("change", function () { rs.disabled = true; notifMark([f], rs.value === "y", rs); }); crl.appendChild(rs); } else txt(crl, rel ? "Relevant" : "Irrelevant");
-      sub(crl, relBy ? "Set by " + (relBy.byName || "someone") + ", " + fmtDay(relBy.at) + (relBy.rel !== !!f.relevant ? " (Claude: " + (f.relevant ? "relevant" : "irrelevant") + ")" : "") : "Claude's call");
-      tr.appendChild(crl);
-      var c5 = el("td", { class: "desc" });
-      if (up && !up.auto) { c5.appendChild(el("span", { class: "chip" }, "Uploaded")); sub(c5, (up.name ? up.name + " · " : "") + fmtDay(up.at) + (up.kind === "rate" && up.applied != null ? " · " + plural(up.applied, "rate") + " applied" : "")); }
-      else if (dl && dl.status === "ok" && dl.kind === "page") { c5.appendChild(el("span", { class: "chip" }, "Saved as Word")); var wo = el("button", { type: "button", class: "link-btn", style: "margin-left:8px" }, dl.name || "Open file"); wo.addEventListener("click", function () { window.bvFiles.link(dl.path).then(function (l) { window.open(l, "_blank", "noopener"); }, function (e) { toast(explain(e)); }); }); c5.appendChild(wo);
-        var nb = el("button", { type: "button", class: "link-btn", style: "margin-left:10px" }, "View Note"); nb.addEventListener("click", function () { var bd0 = el("div", { class: "mform" }); bd0.appendChild(el("p", { class: "hint" }, "Published online only, so its page was kept as text. Source: " + (dl.url || f.url))); bd0.appendChild(el("div", { style: "white-space:pre-wrap;max-height:60vh;overflow:auto;border:1px solid var(--line);border-radius:6px;padding:10px 12px" }, dl.note || "")); popForm(f.number, "", bd0, "Close", function () { return true; }); }); c5.appendChild(nb);
-        sub(c5, "Online only, kept as a Word document \u00b7 " + fmtDay(dl.at) + (dl.by ? " \u00b7 " + dl.by : ""));
-        if (isRate && rel && can) { sub(c5, "Its rates aren't read in yet.", "color:var(--warn);font-weight:600"); var rr2 = el("button", { type: "button", class: "btn sm primary", style: "margin-top:4px" }, "Read Rates"); rr2.addEventListener("click", function () { var parts = [], t1 = String(dl.note || ""); for (var q0 = 0; q0 < t1.length; q0 += 8000) parts.push(t1.slice(q0, q0 + 8000)); hsnRateDoc({ name: dl.name || notifFileName(f), type: "text/plain" }, f, parts); }); c5.appendChild(rr2); } }
-      else if (dl && dl.status === "ok") { c5.appendChild(el("span", { class: "chip" }, "Downloaded")); var fo = el("button", { type: "button", class: "link-btn", style: "margin-left:8px" }, dl.name || "Open file"); fo.addEventListener("click", function () { window.bvFiles.link(dl.path).then(function (l) { window.open(l, "_blank", "noopener"); }, function (e) { toast(explain(e)); }); }); c5.appendChild(fo); sub(c5, fmtDay(dl.at) + (dl.by ? " · " + dl.by : ""));
-        if (isRate && rel && can) { sub(c5, "Its rates aren't read in yet.", "color:var(--warn);font-weight:600"); var rr = el("button", { type: "button", class: "btn sm primary", style: "margin-top:4px" }, "Read Rates"); rr.addEventListener("click", function () { rr.disabled = true; window.bvFiles.get(dl.path).then(function (bl) { hsnRateDoc(renamed(bl, dl.name || notifFileName(f)), f); }, function (e) { toast(explain(e)); }).then(function () { rr.disabled = false; }); }); c5.appendChild(rr); } }
-      else if (dl && dl.status === "downloading") { c5.appendChild(el("b", null, "Downloading…")); }
-      else if (rel) {
-        c5.appendChild(el("b", { style: "color:var(--warn)" }, "To get"));
-        if (dl && dl.status === "failed") sub(c5, "Download failed: " + (dl.reason || "no reason given") + ". It won't be tried again: upload the PDF yourself.", "color:var(--bad);font-weight:600"); else sub(c5, f.reason || "");
-        if (can) { var ub = el("button", { type: "button", class: "btn sm", style: "margin-top:4px" }, "Upload PDF"); ub.addEventListener("click", function () { pickFile(".pdf,application/pdf", function (fl) { var nf = renamed(fl, notifFileName(f)); if (isRate) hsnRateDoc(nf, f); else noticeUpload(nf, f); }); }); c5.appendChild(ub); }
-      } else { txt(c5, "Not needed"); sub(c5, f.reason || ""); }
-      tr.appendChild(c5); bd.appendChild(tr);
-    });
-    var lw = el("div", { class: "list" }); lw.appendChild(tb); box.appendChild(lw);
-  }
-  function notifDownload(list, btn) {
-    if (!list.length || !window.bvRateWatch) return; btn.disabled = true; btn.textContent = "Starting…";
-    window.bvRateWatch({ action: "download", keys: list.map(function (f) { return f.key; }) }).then(function (r) { toast((r && r.started ? "Downloading " + plural(r.started, "file") : "Nothing to download") + ". The list updates as they finish."); list.forEach(function (f) { delete S.notifSel[f.key]; (S.notifDl = S.notifDl || {})[notifSafe(f.key)] = { status: "downloading", at: Date.now() }; }); renderNotif(); }, function (e) { btn.disabled = false; toast((e && e.message) || explain(e)); });
-  }
-  function notifMark(list, rel, btn) {
-    if (!list.length) return; btn.disabled = true;
-    var by = { by: meId(), byName: pnm(preparedByText()), at: Date.now() };
-    Promise.all(list.map(function (f) { var d = Object.assign({ rel: rel, key: f.key }, by); return retry(function () { return S.db.doc("notifrel/" + notifSafe(f.key)).set(d); }).then(function () { (S.notifRel = S.notifRel || {})[notifSafe(f.key)] = d; delete S.notifSel[f.key]; }); }))
-      .then(function () { toast(plural(list.length, "notification") + " moved to " + (rel ? "their groups" : "Irrelevant") + "."); renderNotif(); }, function (e) { btn.disabled = false; toast(explain(e)); });
-  }
-  function hsnViewsRefresh() { renderHsn(); if ($("notifBox") && $("notifBox").offsetParent) renderNotif(); }
-  function noticeUpload(file, f) {
-    var id = newId("hd"); toast("Uploading " + file.name + "…");
-    hsnKeepFile(id, file, "pdf").then(function (path) { if (!path) throw { code: "unavailable" }; return hsnDocSave({ id: id, kind: "notice", cat: f.cat || "gst", key: f.key, name: file.name, path: path, notif: f.number, issued: f.issued || "", from: f.from || "" }); })
-      .then(function () { toast("Kept: " + f.number + "."); renderNotif(); }, function (e) { toast(explain(e)); });
-  }
+  function hsnDocsDue() { var l = hsnLastDoc(); return !l || Date.now() - (l.at || 0) > HSN_DUE_DAYS * 864e5  }
+  function hsnViewsRefresh() { renderHsn(); }
   function hsnDocLink(d) { if (!d.path && d.url) return el("a", { href: d.url, target: "_blank", rel: "noopener", class: "link-btn" }, d.name || "Open"); if (!d.path || !window.bvFiles) return null; var a = el("button", { type: "button", class: "link-btn" }, d.name || "Open"); a.addEventListener("click", function () { window.bvFiles.link(d.path).then(function (u) { window.open(u, "_blank", "noopener"); }, function (e) { toast(explain(e)); }); }); return a; }
   function renderHsnDocs() {
     var box = $("hsnDocs"); if (!box) return; box.textContent = "";
     var last = hsnLastDoc(), due = hsnDocsDue(), can = hsnCanUpload();
     var top = el("div", { style: "display:flex;gap:10px;flex-wrap:wrap;align-items:center" });
-    top.appendChild(el("div", { class: "grow", style: "min-width:240px" + (due ? ";color:var(--warn);font-weight:600" : "") }, last ? "Last checked " + fmtDay(last.at) + " by " + (last.byName || "someone") + (due ? (ratePending().length ? ". New notifications are waiting to be uploaded." : ". This month's check is due: upload the latest documents, or mark that nothing changed.") : ". Next due by " + fmtDay(last.at + HSN_DUE_DAYS * 864e5) + ".") : "No official documents yet. Upload the HSN list and the rate notifications in force, then once a month."));
+    top.appendChild(el("div", { class: "grow", style: "min-width:240px" + (due ? ";color:var(--warn);font-weight:600" : "") }, last ? "Last checked " + fmtDay(last.at) + " by " + (last.byName || "someone") + (due ? ". This month's check is due: upload the latest documents, or mark that nothing changed." : ". Next due by " + fmtDay(last.at + HSN_DUE_DAYS * 864e5) + ".") : "No official documents yet. Upload the HSN list and the rate notifications in force, then once a month."));
     if (can) {
       var b1 = el("button", { type: "button", class: "btn sm" }, "Upload HSN List (Excel)"), b2 = el("button", { type: "button", class: "btn sm primary" }, "Upload Rate Document (PDF)"), b3 = el("button", { type: "button", class: "btn sm" }, "Nothing New This Month");
       b1.addEventListener("click", function () { pickFile(".xlsx,.xls", function (f) { hsnListUpload(f); }); });
       b2.addEventListener("click", function () { pickFile(".pdf,application/pdf", function (f) { hsnRateDoc(f); }); });
-      if (!rateQuiet()) { b3.disabled = true; b3.title = ratePending().length ? "Upload the new notifications first." : "Needs a check in the last day that found nothing new: use Check Now."; }
-      b3.addEventListener("click", function () { if (!rateQuiet()) return; if (!armed(b3)) return; b3.disabled = true; hsnDocSave({ kind: "none", name: "No new documents", note: "Checked the GST portal and CBIC: nothing new" }).then(function () { toast("Marked as checked for this month."); renderHsnDocs(); }, function (e) { b3.disabled = false; toast(explain(e)); }); });
+      b3.addEventListener("click", function () { if (!armed(b3)) return; b3.disabled = true; hsnDocSave({ kind: "none", name: "No new documents", note: "Checked the GST portal and CBIC: nothing new" }).then(function () { toast("Marked as checked for this month."); renderHsnDocs(); }, function (e) { b3.disabled = false; toast(explain(e)); }); });
       [b1, b2, b3].forEach(function (b) { top.appendChild(b); });
     }
     box.appendChild(top);
-    var pw = ratePending(), wst = S.rateWatch || {}, ln = el("p", { style: "margin:10px 0 0" + (pw.length ? ";color:var(--warn);font-weight:600" : "") });
-    ln.appendChild(document.createTextNode(pw.length ? plural(pw.length, "GST rate notification") + " to upload. " : (wst.lastOk ? "GST rate notifications: nothing to upload (checked " + fmtDay(wst.lastOk) + "). " : "GST rate notifications haven't been checked yet. ")));
-    var gl = el("button", { type: "button", class: "link-btn" }, "Open Official Notifications"); gl.addEventListener("click", function () { setTab("Notifications"); }); ln.appendChild(gl); box.appendChild(ln);
     box.appendChild(el("p", { class: "hint", style: "margin:8px 0 0" }, "Where to get them: the HSN list from gst.gov.in › Services › User Services › Search HSN Code › Download HSN Directory in Excel Format (codes and descriptions, no rates). The rates from cbic-gst.gov.in › GST › Notifications › Central Tax (Rate) and Integrated Tax (Rate): the rate notifications and their amendments, as PDF."));
     var rows = (S.hsnDocs || []).filter(function (d) { return d.kind !== "notice"; }).sort(function (a, b) { return (b.at || 0) - (a.at || 0); }); if (!rows.length) return;
     var w = el("div", { class: "list", style: "margin-top:10px" }); box.appendChild(w);

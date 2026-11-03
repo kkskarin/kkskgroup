@@ -51,7 +51,7 @@ async function ask(prompt: string) {
   const key = Deno.env.get("ANTHROPIC_API_KEY");
   if (!key) throw new Error("The Anthropic API key isn't set up.");
   const ws = Deno.env.get("ANTHROPIC_WORKSPACE_ID")?.trim();
-  const tools = [{ type: "web_search_20260209", name: "web_search", max_uses: 15, allowed_domains: DOMAINS }];
+  const tools = [{ type: "web_search_20260209", name: "web_search", max_uses: 10, allowed_domains: DOMAINS }];
   // deno-lint-ignore no-explicit-any
   const messages: any[] = [{ role: "user", content: prompt }];
   let fallback = true;
@@ -143,14 +143,20 @@ Deno.serve(async (req) => {
     if (prev.running && now - (prev.startedAt || 0) < 10 * 60e3) return reply(409, { code: "busy", message: "A check is already running." });
     if (now - (prev.lastRun || 0) < 3 * 60e3) return reply(429, { code: "rate_limited", message: "Checked a moment ago. Try again in a few minutes." });
   } else if ((prev.running && now - (prev.startedAt || 0) < 10 * 60e3) ||
-    // daily; while a search is unfinished, again each hour for up to 8 rounds
-    (now - (prev.lastOk || 0) < 20 * 3600e3 && !(prev.incomplete && (prev.rounds || 0) < 8 && now - (prev.lastRun || 0) >= 50 * 60e3))) {
+    // daily; while a search is unfinished, again each hour for up to 12 rounds
+    (now - (prev.lastOk || 0) < 20 * 3600e3 && !(prev.incomplete && (prev.rounds || 0) < 12 && now - (prev.lastRun || 0) >= 50 * 60e3))) {
     return reply(200, { skipped: true });
   }
   const save = (data: unknown) => db.from("app_docs").upsert({ path: STATE, data, updated_at: new Date().toISOString() }, { onConflict: "path" });
   const cur = { ...prev, running: true, startedAt: now, startedBy: by };
   await save(cur);
-  const job = run(db, by, cur).then((s) => save(s), (e) => {
+  let done = false;
+  // a round cut off by the time limit is marked unfinished, so the next hourly call carries on
+  addEventListener("beforeunload", () => {
+    if (!done) save({ ...prev, running: false, lastRun: Date.now(), lastBy: by, error: "", incomplete: true, rounds: (prev.rounds || 0) + 1, note: prev.note || "The last round ran out of time." }).then(() => {}, () => {});
+  });
+  const job = run(db, by, cur).then((s) => { done = true; return save(s); }, (e) => {
+    done = true;
     console.error("rate-watch", String(e?.message ?? e));
     return save({ ...prev, running: false, lastRun: Date.now(), lastBy: by, error: String(e?.message ?? e).slice(0, 300) });
   });

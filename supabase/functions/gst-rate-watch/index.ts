@@ -12,7 +12,9 @@
 // Downloads (action "download"): the PDFs of the notifications chosen in the app are fetched from their official links
 // and kept in the bill-files bucket (hsn-docs/auto/); each result, done or failed, is kept in tly__notifdl/<key>. A
 // download that failed is never tried again: that PDF is uploaded by hand.
+// A notification published only as a web page (no PDF) is saved as a note (its text) and as a Word document.
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { strToU8, zipSync } from "npm:fflate@0.8.2";
 
 const MODEL = "claude-opus-5-5";
 const STATE = "tly__ratewatch/state";
@@ -70,7 +72,7 @@ function reply(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 }
 
-type Found = { key: string; cat: string; type?: string; topic?: string; inForce?: boolean; replacedBy?: string; number: string; issued: string; from: string; subject: string; url: string; relevant: boolean; rate: boolean; reason: string; base?: boolean; firstSeen: number; seen: number };
+type Found = { urlChk?: string; badUrl?: string; key: string; cat: string; type?: string; topic?: string; inForce?: boolean; replacedBy?: string; number: string; issued: string; from: string; subject: string; url: string; relevant: boolean; rate: boolean; reason: string; base?: boolean; firstSeen: number; seen: number };
 type Job = { topic: string; round: number; carry: string };
 
 const ymd = (s: unknown) => /^\d{4}-\d{2}-\d{2}$/.test(String(s ?? "")) ? String(s) : "";
@@ -154,7 +156,7 @@ async function runJob(db: any, prev: any, job: Job) {
   if (lastIssued && t.cat === "gst") { const d = new Date(lastIssued + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - 30); const s = d.toISOString().slice(0, 10); if (s > since && done0) since = s; }
   const first = !done0;
   const today = new Date(now + 5.5 * 3600e3).toISOString().slice(0, 10);
-  const known = mine.map((f) => f.number + (f.url ? "" : " (no official URL yet)") + (f.issued ? "" : " (no issue date yet)")).slice(-60);
+  const known = mine.map((f) => f.number + (f.url ? "" : f.badUrl ? " (no official URL yet: " + f.badUrl + " doesn't show it)" : " (no official URL yet)") + (f.issued ? "" : " (no issue date yet)")).slice(-60);
   const prompt = [
     "Today is " + today + " (India). Search official Government of India and Tamil Nadu sites only. " + COMPANY,
     "Topic: " + t.ask + ".",
@@ -162,7 +164,7 @@ async function runJob(db: any, prev: any, job: Job) {
     job.carry ? "An earlier search on this topic couldn't finish. What was left: " + job.carry + " Do that first." : "",
     known.length ? "Already known (list one again only to add something missing, such as its URL or dates): " + known.join("; ") + "." : "",
     "For each give: number (as printed, e.g. \"9/2025-Integrated Tax (Rate)\", \"Notification No. 45/2026 (Income-tax)\", or the Act section if it is a provision of an Act), issued (YYYY-MM-DD or empty), from (YYYY-MM-DD in force from, or empty), subject (one line on what it does), type (notification, circular, advisory, decision, order or Act),",
-    "url (its own PDF or page on an official site you found, else the official page that lists it, else empty), relevant (true if this company must apply it: rates, exemptions, reverse charge, ITC, e-invoicing, TDS, TCS, cess, customs on its imports; false if it doesn't touch this company or is only procedural),",
+    "url (its own PDF or page on an official site that you opened, else an official page you opened that lists it by name; never a general news, home or search page where it isn't shown; else empty), relevant (true if this company must apply it: rates, exemptions, reverse charge, ITC, e-invoicing, TDS, TCS, cess, customs on its imports; false if it doesn't touch this company or is only procedural),",
     "rate (true only if it sets or changes GST rates of goods or services by HSN or SAC), reason (one short line on why it is or isn't relevant), base (true if it is listed because it is in force, not because it is new).",
     "Irrelevant also means no longer in force: a notification fully replaced by a later one (superseded or rescinded), or whose every entry was later amended or omitted. List those with relevant false, inForce false and replacedBy naming what replaced them; and in \"superseded\" name any already-known item that is no longer in force, with what replaced it.",
     "Where an official page lists many notifications (such as CBIC's list for a year), open it with web_fetch and take them all from it rather than searching one by one.",
@@ -177,10 +179,12 @@ async function runJob(db: any, prev: any, job: Job) {
     if (!key) continue;
     const old = byKey.get(key);
     const gone = n.inForce === false;
+    const nu = official(String(n.url ?? "")), url = (nu && nu !== old?.badUrl ? nu : "") || old?.url || "";
     const f: Found = {
       inForce: !gone, replacedBy: String(n.replacedBy || "").slice(0, 140),
       key, cat: t.cat, type: String(n.type || old?.type || "").slice(0, 20), topic: t.id, number, issued: ymd(n.issued) || old?.issued || "", from: ymd(n.from) || old?.from || "",
-      subject: String(n.subject || old?.subject || "").slice(0, 300), url: official(String(n.url ?? "")) || old?.url || "",
+      subject: String(n.subject || old?.subject || "").slice(0, 300), url,
+      badUrl: old?.badUrl, urlChk: url === old?.url ? old?.urlChk : undefined,
       relevant: gone ? false : n.relevant === false ? false : true, rate: t.cat === "gst" ? (n.rate === true || (n.rate !== false && t.id.startsWith("gst-rate"))) : false,
       reason: (gone ? "No longer in force" + (n.replacedBy ? ": replaced by " + String(n.replacedBy).slice(0, 120) : "") + ". " : "") + String(n.reason || old?.reason || "").slice(0, 260), base: !!(n.base || old?.base), firstSeen: old?.firstSeen ?? now, seen: now,
     };
@@ -192,6 +196,8 @@ async function runJob(db: any, prev: any, job: Job) {
     const k = keyOf(t.cat, String(sx.number ?? "")), f = k ? byKey.get(k) : undefined;
     if (f && f.inForce !== false) byKey.set(k, { ...f, inForce: false, relevant: false, replacedBy: String(sx.replacedBy || "").slice(0, 140), reason: "No longer in force" + (sx.replacedBy ? ": replaced by " + String(sx.replacedBy).slice(0, 120) : "") + "." });
   }
+  // open each new link: one that doesn't show the item (such as a news page where it isn't listed) is dropped
+  await checkUrls([...byKey.values()].filter((f) => f.topic === t.id && f.url && (!f.urlChk || f.urlChk === "new")), byKey);
   const list = [...byKey.values()].sort((a, b) => (b.issued || "").localeCompare(a.issued || ""));
   const queue: Job[] = (prev.queue || []).slice(1);
   const left = String(j.left ?? "").slice(0, 1500);
@@ -217,25 +223,90 @@ function sourceOf(u: string) {
   for (const [r, n] of m) if (r.test(h)) return n;
   return "Official";
 }
-export function fileName(u: string, number: string) {
+export function fileName(u: string, number: string, ext = "pdf") {
   const n = number.replace(/\//g, "-").replace(/[^A-Za-z0-9 ().,&-]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 90);
-  return sourceOf(u) + " - " + (n || "Notification") + ".pdf";
+  return sourceOf(u) + " - " + (n || "Notification") + "." + ext;
+}
+// ---- a web page kept as a note and a Word document ----
+function pageText(html: string) {
+  let h = html.replace(/<(script|style|noscript|svg|nav|header|footer|form|iframe)[\s\S]*?<\/\1>/gi, " ");
+  const main = /<(main|article)[\s\S]*?<\/\1>/i.exec(h); if (main && main[0].length > 800) h = main[0];
+  h = h.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|h[1-6]|li|tr|table|section)>/gi, "\n").replace(/<(td|th)[^>]*>/gi, " | ").replace(/<li[^>]*>/gi, "\u2022 ").replace(/<[^>]+>/g, " ");
+  const ent: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'", nbsp: " ", rsquo: "\u2019", lsquo: "\u2018", rdquo: "\u201d", ldquo: "\u201c", ndash: "\u2013", mdash: "\u2014", rupee: "\u20b9", ge: "\u2265", le: "\u2264", times: "\u00d7", deg: "\u00b0", hellip: "\u2026", bull: "\u2022", middot: "\u00b7", copy: "\u00a9", reg: "\u00ae", trade: "\u2122" };
+  h = h.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (m, e) => e[0] === "#" ? String.fromCodePoint(parseInt(e[1] === "x" || e[1] === "X" ? e.slice(2) : e.slice(1), e[1] === "x" || e[1] === "X" ? 16 : 10)) : (ent[e.toLowerCase()] ?? m));
+  return h.split("\n").map((l) => l.replace(/\s+/g, " ").trim()).filter((l, i, a) => l && !(l === a[i - 1])).join("\n").slice(0, 60000);
+}
+// is this page the notification itself (not a list of many)?
+function pageIsIt(text: string, f: Found) {
+  const t = text.toLowerCase(), m = /(\d+)\s*\/\s*(\d{4})/.exec(f.number);
+  if (m && new RegExp("(^|[^0-9])0*" + Number(m[1]) + "\\s*/\\s*" + m[2]).test(t)) {
+    // a list page names many notifications of the year; the notification's own page names few
+    const all = t.match(new RegExp("(^|[^0-9])\\d{1,3}\\s*/\\s*" + m[2], "g")) || [];
+    return all.length <= 6;
+  }
+  // no number: the page must open with the notification's own title (a list page opens with its own heading)
+  const words = f.number.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 3), head = t.slice(0, 400);
+  const hit = words.filter((w) => head.includes(w)).length;
+  return words.length > 0 && hit / words.length >= 0.5;
+}
+const xmlEsc = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "");
+function docx(title: string, meta: string[], text: string) {
+  const para = (x: string, style = "") => "<w:p>" + (style ? '<w:pPr><w:pStyle w:val="' + style + '"/></w:pPr>' : "") + '<w:r><w:t xml:space="preserve">' + xmlEsc(x) + "</w:t></w:r></w:p>";
+  const body = para(title, "Title") + meta.map((m) => para(m, "Meta")).join("") + text.split("\n").map((l) => para(l)).join("");
+  const doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>';
+  const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="22"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Meta"><w:name w:val="Meta"/><w:rPr><w:color w:val="5C6860"/><w:sz w:val="18"/></w:rPr></w:style></w:styles>';
+  return zipSync({
+    "[Content_Types].xml": strToU8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>'),
+    "_rels/.rels": strToU8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'),
+    "word/_rels/document.xml.rels": strToU8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'),
+    "word/document.xml": strToU8(doc), "word/styles.xml": strToU8(styles),
+  });
 }
 const safeKey = (k: string) => k.replace(/[^A-Za-z0-9_.~:@+-]+/g, "_").slice(0, 120);
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36";
-async function getPdf(url: string, number: string): Promise<Uint8Array> {
+type Got = { pdf?: Uint8Array; page?: string };
+async function getDoc(url: string, f: Found, depth = 0): Promise<Got> {
   const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/pdf,text/html;q=0.9,*/*;q=0.8" }, signal: AbortSignal.timeout(30000), redirect: "follow" });
   if (!r.ok) throw new Error("the site answered " + r.status + (r.status === 403 ? " (it refuses automatic downloads)" : ""));
   const b = new Uint8Array(await r.arrayBuffer());
   if (b.length > 25 * 1024 * 1024) throw new Error("the file is over 25 MB");
-  if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return b;
+  if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return { pdf: b };
   // a page, not the PDF: take the one PDF link on it that names this notification's number
-  const html = new TextDecoder().decode(b), m = /(\d+)\s*\/\s*(\d{4})/.exec(number);
+  const html = new TextDecoder().decode(b), m = /(\d+)\s*\/\s*(\d{4})/.exec(f.number);
   const links = [...html.matchAll(/href\s*=\s*["']([^"']+\.pdf[^"']*)["']/gi)].map((x) => { try { return new URL(x[1], r.url || url).href; } catch { return ""; } }).filter((x) => x && official(x));
   const want = m ? links.filter((x) => { const d = decodeURIComponent(x); return new RegExp("(^|[^0-9])0*" + Number(m[1]) + "[ _/-]+" + m[2]).test(d); }) : [];
   const pick = [...new Set(want)];
-  if (pick.length !== 1) throw new Error(pick.length ? "the page links several PDFs that could be this one" : "the link is a web page, and no PDF on it names this notification");
-  return getPdf(pick[0], "");
+  if (pick.length === 1 && depth === 0) { try { const g = await getDoc(pick[0], f, 1); if (g.pdf) return g; } catch { /* keep the page */ } }
+  // no PDF of it: the page itself is the notification (published online only) -> keep its text
+  const text = pageText(html);
+  if (text.length < 200) throw new Error("the page has no text to keep");
+  if (!pageIsIt(text, f)) throw new Error(pick.length > 1 ? "the page links several PDFs that could be this one" : "the link is a list page, not the notification itself");
+  return { page: text };
+}
+// does the link show this item? ok: the item itself (its PDF or own page); list: a page that names it; gone: it isn't there
+async function urlCheck(f: Found): Promise<string> {
+  try {
+    const r = await fetch(f.url, { headers: { "User-Agent": UA, Accept: "application/pdf,text/html;q=0.9,*/*;q=0.8" }, signal: AbortSignal.timeout(15000), redirect: "follow" });
+    if (r.status === 404 || r.status === 410) return "gone";
+    if (!r.ok) return "unchecked";
+    const b = new Uint8Array(await r.arrayBuffer());
+    if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return "ok";
+    const text = pageText(new TextDecoder().decode(b)), t = text.toLowerCase();
+    if (pageIsIt(text, f)) return "ok";
+    const m = /(\d+)\s*\/\s*(\d{4})/.exec(f.number);
+    if (m && new RegExp("(^|[^0-9])0*" + Number(m[1]) + "\\s*/\\s*" + m[2]).test(t)) return "list";
+    const words = f.number.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 3 && !/^(notification|circular|advisory|order|dated)$/.test(w));
+    if (!m && words.length && words.filter((w) => t.includes(w)).length / words.length >= 0.7) return "list";
+    return "gone";
+  } catch { return "unchecked"; }
+}
+async function checkUrls(items: Found[], byKey: Map<string, Found>) {
+  const some = items.slice(0, 10);
+  const res = await Promise.all(some.map((f) => urlCheck(f)));
+  some.forEach((f, i) => {
+    const r = res[i];
+    byKey.set(f.key, r === "gone" ? { ...f, badUrl: f.url, url: "", urlChk: "gone" } : { ...f, urlChk: r });
+  });
 }
 // deno-lint-ignore no-explicit-any
 async function download(db: any, items: Found[], by: string) {
@@ -243,10 +314,20 @@ async function download(db: any, items: Found[], by: string) {
     const path = "tly__notifdl/" + safeKey(f.key);
     let out: Record<string, unknown>;
     try {
-      const b = await getPdf(f.url, f.number), name = fileName(f.url, f.number), file = "hsn-docs/auto/" + safeKey(f.key) + ".pdf";
-      const up = await db.storage.from("bill-files").upload(file, b, { contentType: "application/pdf", upsert: true });
-      if (up.error) throw new Error("it couldn't be stored: " + up.error.message);
-      out = { status: "ok", path: file, name, size: b.length, url: f.url, at: Date.now(), by };
+      const g = await getDoc(f.url, f);
+      if (g.pdf) {
+        const name = fileName(f.url, f.number), file = "hsn-docs/auto/" + safeKey(f.key) + ".pdf";
+        const up = await db.storage.from("bill-files").upload(file, g.pdf, { contentType: "application/pdf", upsert: true });
+        if (up.error) throw new Error("it couldn't be stored: " + up.error.message);
+        out = { status: "ok", kind: "pdf", path: file, name, size: g.pdf.length, url: f.url, at: Date.now(), by };
+      } else {
+        const text = g.page || "", name = fileName(f.url, f.number, "docx"), file = "hsn-docs/auto/" + safeKey(f.key) + ".docx";
+        const when = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 16).replace("T", " ");
+        const w = docx(f.number, ["Source: " + f.url, "Saved from the official web page on " + when + " (India time). It was published online, not as a PDF.", f.subject ? "Subject: " + f.subject : ""].filter(Boolean), text);
+        const up = await db.storage.from("bill-files").upload(file, w, { contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", upsert: true });
+        if (up.error) throw new Error("it couldn't be stored: " + up.error.message);
+        out = { status: "ok", kind: "page", path: file, name, size: w.length, note: text.slice(0, 20000), url: f.url, at: Date.now(), by };
+      }
     } catch (e) {
       const msg = String((e as Error)?.name === "TimeoutError" ? "the site didn't answer in 30 seconds" : (e as Error)?.message ?? e);
       out = { status: "failed", reason: /certificate|ssl|tls/i.test(msg) ? "the site's security certificate wasn't accepted" : msg.slice(0, 200), url: f.url, at: Date.now(), by };

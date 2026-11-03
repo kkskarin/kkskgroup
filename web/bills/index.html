@@ -6730,7 +6730,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         var bs = byV[vid].sort(function (a, b) { return natCmp(a.billDate || "", b.billDate || "") || natCmp(a.billNo, b.billNo); }), v = S.vendors[vid];
         var rs = Object.keys(S.bcrs || {}).map(function (k) { return S.bcrs[k]; }).filter(function (r) { return r.cid === c.id && r.vid === vid && (r.billIds || []).some(function (id) { return bs.some(function (b) { return b.id === id; }); }); }).sort(function (a, b) { return (a.seq || 0) - (b.seq || 0); });
         var loose = bs.filter(function (b) { return !tlyBcrOf(b); }), vk = "v:" + c.id + ":" + vid, multi = bs.length > 1 || rs.length > 0, open = multi && !!B.open[vk];
-        var pick = loose.filter(function (b) { return B.pick[b.id]; });
+        /* a BCR is only of accounted bills not sent for approval on their own, and of two or more */
+        var bcrOk = function (b) { return tlyStatus(b) === "acct" && !b.apprReq; };
+        var pick = loose.filter(function (b) { return B.pick[b.id] && bcrOk(b); });
         function cells(tr, a) { a.forEach(function (x, i) { var td = el("td", i === 3 ? { class: "r num" } : i === 7 ? { class: "r" } : i === 0 ? { class: "arcol" } : null); if (x && x.nodeType) td.appendChild(x); else if (x != null) td.textContent = x; tr.appendChild(td); }); bd.appendChild(tr); return tr; }
         function arrow(key, n) { var ab = el("button", { type: "button", class: "arbtn", "aria-expanded": B.open[key] ? "true" : "false", "aria-label": (B.open[key] ? "Hide " : "Show ") + n }, B.open[key] ? "\u25be" : "\u25b8"); ab.addEventListener("click", function () { B.open[key] = !B.open[key]; renderTlyDone(); }); return ab; }
         function billDet(b) { var d = el("div"); d.appendChild(el("b", { class: "mono" }, b.billNo || "")); d.appendChild(el("div", { class: "tsub" }, fmtDate(b.billDate))); return d; }
@@ -6743,18 +6745,18 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           return w;
         }
         function makeBtn() {
-          var ok = loose.filter(function (b) { return !b.apprReq; }), use = pick.length ? pick : ok;
-          var mb = el("button", { class: "btn sm" }, pick.length ? "Make BCR (" + pick.length + ")" : "Make BCR" + (ok.length > 1 ? " (all " + ok.length + ")" : "")); mb.disabled = !use.length || use.some(function (b) { return b.apprReq; });
-          mb.title = pick.length ? "A Bill Checking Report of the ticked bills" : "A Bill Checking Report of every bill of this vendor not yet in one";
+          var ok = loose.filter(bcrOk), use = pick.length ? pick : ok; if (use.length < 2) return null;
+          var mb = el("button", { class: "btn sm" }, pick.length ? "Make BCR (" + pick.length + ")" : "Make BCR (all " + ok.length + ")");
+          mb.title = pick.length ? "A Bill Checking Report of the ticked bills" : "A Bill Checking Report of every accounted bill of this vendor not yet in one";
           mb.addEventListener("click", function () { bcrMake(c.id, vid, use); use.forEach(function (b) { delete B.pick[b.id]; }); }); return mb;
         }
         var tot = round2(bs.reduce(function (s0, b) { return s0 + (Number(b.total) || 0); }, 0));
         if (!multi) {
-          var b0 = bs[0], tr0 = el("tr"), acts0 = billActs(b0, null); acts0.insertBefore(makeBtn(), acts0.firstChild);
+          var b0 = bs[0], tr0 = el("tr"), acts0 = billActs(b0, null);
           var vn0 = el("div"); vn0.appendChild(el("b", null, v.name));
           cells(tr0, [null, vn0, billDet(b0), money(Number(b0.total) || 0), due(b0), tlySubmitted(b0), tlyStTag(tlyStatus(b0)), acts0]); return;
         }
-        var trv = el("tr", { class: "vrow" }), va = el("div", { class: "acts" }); va.appendChild(makeBtn());
+        var trv = el("tr", { class: "vrow" }), va = el("div", { class: "acts" }), mk0 = makeBtn(); if (mk0) va.appendChild(mk0);
         var vn = el("div"); vn.appendChild(el("b", null, v.name)); var nd = el("div", { class: "tsub" }, plural(bs.length, "bill") + (rs.length ? " · " + plural(rs.length, "BCR") : ""));
         var early = bs.map(function (b) { return b.dueDate || ""; }).filter(ymdOk).sort()[0] || "";
         cells(trv, [arrow(vk, "the bills of " + v.name), vn, nd, money(tot), early ? fmtDate(early) : "", tlySubmitted(bs.slice().sort(function (a, b) { return (b.submittedAt || 0) - (a.submittedAt || 0); })[0]), tlyStTag(tlyGroupSt(bs)), va]);
@@ -6771,7 +6773,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           if (B.open[rk]) rb.forEach(function (b) { cells(el("tr", { class: "inbcr" }), [null, el("span", { class: "tsub" }, "in " + r.no), billDet(b), money(Number(b.total) || 0), due(b), tlySubmitted(b), tlyStTag(tlyStatus(b)), billActs(b, r)]); });
         });
         loose.forEach(function (b) {
-          var ck = el("input", { type: "checkbox", "aria-label": "Tick bill " + (b.billNo || "") }); ck.checked = !!B.pick[b.id]; ck.disabled = !!b.apprReq;
+          var ck = el("input", { type: "checkbox", "aria-label": "Tick bill " + (b.billNo || "") }); ck.checked = !!B.pick[b.id] && bcrOk(b); ck.disabled = !bcrOk(b); if (!bcrOk(b)) ck.title = tlyStatus(b) === "open" ? "Goes into a BCR once accounted" : "Sent for approval on its own";
           ck.addEventListener("change", function () { if (ck.checked) B.pick[b.id] = 1; else delete B.pick[b.id]; renderTlyDone(); });
           cells(el("tr", { class: "loose" }), [ck, el("span", { class: "tsub" }, "Not in a BCR"), billDet(b), money(Number(b.total) || 0), due(b), tlySubmitted(b), tlyStTag(tlyStatus(b)), billActs(b, null)]);
         });

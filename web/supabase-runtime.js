@@ -648,6 +648,13 @@
       return fetch(CFG.supabaseUrl + "/functions/v1/gst-api", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok, apikey: CFG.supabaseKey }, body: JSON.stringify(body) });
     }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw err(j.code || "unavailable", j.message || ("HTTP " + r.status)); return j; }); });
   }
+  /* GST rate notifications watch (gst-rate-watch Edge Function): Check Now from Tally (Demo) › Masters › HSN / SAC */
+  window.bvRateWatch = function () {
+    return ready.then(function () { return sb.auth.getSession(); }).then(function (s) {
+      var tok = s.data.session && s.data.session.access_token;
+      return fetch(CFG.supabaseUrl + "/functions/v1/gst-rate-watch", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok, apikey: CFG.supabaseKey }, body: JSON.stringify({ manual: true }) });
+    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw err(j.code || "unavailable", j.message || ("HTTP " + r.status)); return j; }); });
+  };
   window.bvGst = Object.freeze({
     status: function () { return gstApi({ action: "status" }); },
     search: function (gstin) { return gstApi({ action: "search", gstin: gstin }); }

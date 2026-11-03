@@ -670,6 +670,9 @@ body.tly .bc-fv{height:calc(100vh - 24px)}
 body.tly{line-height:1.5}body.tly .field{border-radius:6px;padding:.55rem .7rem;border-color:#cdbcad}body.tly .card{border-radius:6px}body.tly .btn{border-radius:6px}
 body.tly .t th{background:var(--brand-soft);color:var(--brand-dark);font-size:calc(13px*var(--ts,1));font-weight:600}body.tly .t td{border-bottom:1px solid var(--line)}
 .tlysecs{padding:12px 14px 14px;display:grid;gap:16px;background:var(--bg)}
+.tlysecs,.tlysecs>.tlysec{min-width:0}.ao-tly .form{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}.ao-tly .field.ro{overflow-wrap:anywhere;min-width:0}
+@media (max-width:1500px) and (min-width:981px){body.tly .ao-split{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}}
+.ao-tly .itcard{overflow-x:auto}
 .scanwrap{position:relative;overflow:hidden}.scanbar{position:absolute;left:0;right:0;height:90px;top:-90px;background:linear-gradient(180deg,transparent,rgba(201,149,77,.35) 70%,rgba(201,149,77,.9) 96%,transparent);box-shadow:0 2px 14px rgba(201,149,77,.55);animation:scanmove 2.2s cubic-bezier(.45,0,.55,1) infinite;pointer-events:none;z-index:5}
 @keyframes scanmove{0%{top:-90px}100%{top:100%}}.scaninfo{padding:40px 32px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}.scaninfo h3{text-transform:none;letter-spacing:0;font-family:var(--serif);font-size:calc(22px*var(--ts,1));margin:0}
 .scanspin{width:34px;height:34px;border-radius:50%;border:3px solid var(--brand-soft,#f1e6dc);border-top-color:var(--brand,#5b3a26);animation:scanspin 1s linear infinite}@keyframes scanspin{to{transform:rotate(360deg)}}
@@ -4805,7 +4808,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       ledgers: ledLinesIn(b.ledgers).concat(roLineIn(b.companyId, b.roundOff)), prepBy: b.preparedBy || "", forId: b.madeBy ? b.preparedBy || "" : "", forNew: "", approverId: b.approverId || defaultApprover(b.preparedBy || b.ownerId), approver1Id: b.approver1Id || "", und: b.und || null, settle: b.settle ? "yes" : "no", X: Object.assign({}, extOf(b, DIV))
     };
   }
-  function draftFromBill(b) { var D = draftFrom(b); D.items = tly() ? itemsIn(b) : []; D.descTidy = b.descTidy === 2 ? 2 : !!b.descTidy; D.hsnAtt = b.hsnAttest || null; if (!D.ledgers.length && num(D.taxable) != null && num(D.taxable) > 0) D.ledgers.push({ id: "", amt: D.taxable }); return D; }
+  function draftFromBill(b) { var D = draftFrom(b); D.items = tly() ? itemsIn(b) : []; D.descTidy = b.descTidy === 2 ? 2 : !!b.descTidy; D.hsnAtt = b.hsnAttest || null; D.autoAppr = !!b.autoAppr; if (!D.ledgers.length && num(D.taxable) != null && num(D.taxable) > 0) D.ledgers.push({ id: "", amt: D.taxable }); return D; }
   /* A bill read before its vendor was saved (often one upload holding several bills from a new vendor) is linked to that vendor once it exists. */
   function autoLink(D) {
     if (D.vendorChoice !== "new") return false;
@@ -4917,7 +4920,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   function draftToDoc(D) {
     var doc = draftToDoc0(D), cc = doc.settle ? billCash(D, B.cardId) : null; doc.cashCheck = cc ? cashRec(cc) : null;
-    if (tly()) { doc.hsnAttest = D.hsnAtt && D.hsnAtt.ok ? D.hsnAtt : null; doc.items = itemsOut(D.items || []); doc.descTidy = D.descTidy === 2 ? 2 : !!D.descTidy; }
+    if (tly()) { doc.autoAppr = !!D.autoAppr; doc.hsnAttest = D.hsnAtt && D.hsnAtt.ok ? D.hsnAtt : null; doc.items = itemsOut(D.items || []); doc.descTidy = D.descTidy === 2 ? 2 : !!D.descTidy; }
     if (bnvMaker() && D.forId) { var pr = prepResolve(D); if (pr.id) Object.assign(doc, { preparedBy: pr.id, preparedByName: pr.name, madeBy: meId(), madeByName: preparedByText() }); }
     return doc;
   }
@@ -5268,7 +5271,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
        it isn't needed and the bill shows none. Alerts come last. */
     var ed = el("details", { class: "tlysec", id: "bcEinvSec" }), esm = el("summary"); esm.appendChild(document.createTextNode("e-Invoice")); esm.appendChild(el("span", { class: "hint", id: "bcEinvSum" })); ed.appendChild(esm);
     var eg = el("div", { class: "form" }); eg.appendChild(el("div", { class: "f wide hint", id: "bcEinvSt", style: "margin:0" })); ["bcIrn", "bcAck", "bcAckD"].forEach(function (id) { var n = box(id); if (n) eg.appendChild(n); }); ed.appendChild(eg); wrap.appendChild(ed);
-    var al = sec("Alerts", ["bcFlags", "bcUndBox"], notes); al.appendChild(el("div", { class: "f wide", id: "bcItAl" })); al.appendChild(el("div", { class: "f wide", id: "bcHsnDev" })); al.appendChild(el("div", { class: "f wide", id: "bcVerify" })); al.appendChild(el("div", { class: "f wide", id: "bcTlyAl" }));
+    var al = sec("Alerts", ["bcFlags", "bcUndBox"], notes); al.appendChild(el("div", { class: "f wide", id: "bcItAl" })); al.appendChild(el("div", { class: "f wide", id: "bcHsnDev" })); al.appendChild(el("div", { class: "f wide", id: "bcVerify" })); al.appendChild(el("div", { class: "f wide", id: "bcTlyAl" })); al.appendChild(el("div", { class: "f wide", id: "bcAutoAp" }));
     while (f.firstChild) hold.appendChild(f.firstChild);
     wrap.appendChild(hold); return wrap;
   }
@@ -6237,6 +6240,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (tly()) {
       /* a narration over 255 characters is shortened by Claude straight away */
       if (String(D.narration || "").trim().length > NARR_MAX) narrShorten(B.cardId);
+      /* the purchaser may ask for approval to follow accounting straight away (the bill then can't go into a BCR) */
+      var aa = $("bcAutoAp"); if (aa && !aa.firstChild) { var al0 = el("label", { class: "check" }), ac0 = el("input", { type: "checkbox", id: "bcAutoApC" }); ac0.checked = !!D.autoAppr;
+        ac0.addEventListener("change", function () { D.autoAppr = ac0.checked; B.touched = true; scheduleSave(); });
+        al0.appendChild(ac0); al0.appendChild(document.createTextNode(" Send for Approval as soon as accounting is done? (Note that it won't be possible to create a Bills Checking Report for this bill)")); aa.appendChild(al0); }
       var hd = [], hb = $("bcHsnDev"); if (hb) { hb.textContent = ""; if (hd.length) { var hf = el("div", { class: "flag w", style: "display:block" }); hf.appendChild(el("b", null, "Notes: HSN / SAC deviations (accepted as on the bill; kept with it)")); var hu = el("ul", { style: "margin:6px 0 0;padding-left:20px" }); hd.forEach(function (m) { hu.appendChild(el("li", null, m)); }); hf.appendChild(hu); hb.appendChild(hf); } }
       /* Submit stays blocked (it looks it, and hovering or pressing does nothing) until every query is addressed; the list says what is left */
       var left = r.errs.map(function (e) { return e[1]; }); if (!b.file) left.push("Attach the bill file.");
@@ -6374,6 +6381,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function reopenBill(id) {
     var b = S.bills[id]; if (!b || B.busy) return;
     if (tly() && !tlyCanEdit(b)) { toast("Accounting has started on bill " + (b.billNo || "") + ", so it can't be changed here."); return; }
+    B.preSnap = { id: id, doc: (function () { var c0 = JSON.parse(JSON.stringify(b)); delete c0.id; return c0; })() };
     var ck = checkOf(b); if (ck) { toast("This bill is in " + ck.r.no + ". " + (stageOf(ck.r) === "draft" ? "Untick it in that draft first." : "It can't be changed now.")); return; }
     B.busy = true; readCard();
     doSave().then(function () { return retry(function () { return S.db.doc("bills/" + id).update({ status: "draft", ownerId: meId(), reopenedAt: Date.now(), reopenedBy: meId() }); }); })
@@ -6497,6 +6505,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var a = el("div", { class: "acts" }), rb = el("button", { class: "btn" }, "Resume");
       rb.addEventListener("click", function () { resumeBill(b.id); }); a.appendChild(rb); row.appendChild(a);
     }
+    if (kind === "queue") {
+      var aq = el("div", { class: "acts" }), ob = el("button", { class: "btn" }, "Open");
+      ob.addEventListener("click", function () { if (B.cardId) { readCard(); doSave(); } S.skipOpen = ""; S.openBill = b.id; S.pinned = b.id; B.cardId = null; renderBills(); }); aq.appendChild(ob); row.appendChild(aq);
+    }
     return row;
   }
   /* Tally (Demo) › Purchase Entry › Copy a live bill: a Live bill (its file, line items, amounts, ledgers and narration) comes in
@@ -6594,7 +6606,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (!ob.querySelector(".tlyscan")) { B.cardId = null; B.D = null; ob.textContent = ""; ob.appendChild(scanCard(open)); }
     }
     else if (B.cardId !== open.id || !$("bcCo")) {
-      B.snap = { id: open.id, doc: (function () { var c0 = JSON.parse(JSON.stringify(open)); delete c0.id; return c0; })() };
+      /* "as it was" for Cancel Entry: a bill opened with Edit goes back to submitted, not to the draft Edit made of it */
+      B.snap = B.preSnap && B.preSnap.id === open.id ? B.preSnap : { id: open.id, doc: (function () { var c0 = JSON.parse(JSON.stringify(open)); delete c0.id; return c0; })() }; B.preSnap = null;
       B.cardId = open.id; B.D = draftFromBill(open); B.tried = false; B.armDiscard = false; B.touched = false; micStop(); B.vSig = sigOf(); B.cSig = myCompanyIds().join(); B.ledTouched = !!(open.ledgers || []).length; B.ledKey = ""; B.ledO = null;
       var linked = autoLink(B.D);
       ob.textContent = ""; ob.appendChild(buildCard(open)); renderTermBox(); updateDynamic();
@@ -6678,7 +6691,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var inf = billInfo(b); if ((Number(inf.rem) || 0) <= 0.5) return "closed"; if (tlyPaidAmt(b) > 0.5) return "part";
     var r = tlyBcrOf(b); if ((r && r.apprOk) || b.apprOk) return "pay"; if ((r && r.apprReq) || b.apprReq) return "appr"; return "acct";
   }
-  function tlyStTag(k) { return el("span", { class: "tag stg tst-" + k }, TLY_ST[k]); }
+  function tlyStTag(k, b) { var t = el("span", { class: "tag stg tst-" + k }, TLY_ST[k]); if (!b || k !== "open" || !b.autoAppr) return t; var w = el("div"); w.appendChild(t); w.appendChild(el("div", { class: "tsub" }, "Then straight to approval")); return w; }
   function tlyGroupSt(bs) { var ks = bs.map(tlyStatus); return ks.every(function (k) { return k === ks[0]; }) ? ks[0] : ks.sort(function (a, b) { return TLY_ST_ORDER.indexOf(a) - TLY_ST_ORDER.indexOf(b); })[0]; }
   function tlySubmitted(b) { var d = b.submittedAt ? Math.max(0, daysBetween(ymdOfMs(b.submittedAt), todayYmd())) : 0; return d === 0 ? "Today" : d === 1 ? "Yesterday" : d + " days ago"; }
   function tlyBills(cid) { return billList().filter(function (b) { return b.status === "done" && b.vendorId && S.vendors[b.vendorId] && canStep("bills", b.companyId) && (!cid || b.companyId === cid); }); }
@@ -6737,7 +6750,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         var rs = Object.keys(S.bcrs || {}).map(function (k) { return S.bcrs[k]; }).filter(function (r) { return r.cid === c.id && r.vid === vid && (r.billIds || []).some(function (id) { return bs.some(function (b) { return b.id === id; }); }); }).sort(function (a, b) { return (a.seq || 0) - (b.seq || 0); });
         var loose = bs.filter(function (b) { return !tlyBcrOf(b); }), vk = "v:" + c.id + ":" + vid, multi = bs.length > 1 || rs.length > 0, open = multi && !!B.open[vk];
         /* a BCR is only of accounted bills not sent for approval on their own, and of two or more */
-        var bcrOk = function (b) { return tlyStatus(b) === "acct" && !b.apprReq; };
+        var bcrOk = function (b) { return tlyStatus(b) === "acct" && !b.apprReq && !b.autoAppr; };
         var pick = loose.filter(function (b) { return B.pick[b.id] && bcrOk(b); });
         function cells(tr, a) { a.forEach(function (x, i) { var td = el("td", i === 3 ? { class: "r num" } : i === 7 ? { class: "r" } : i === 0 ? { class: "arcol" } : null); if (x && x.nodeType) td.appendChild(x); else if (x != null) td.textContent = x; tr.appendChild(td); }); bd.appendChild(tr); return tr; }
         function arrow(key, n) { var ab = el("button", { type: "button", class: "arbtn", "aria-expanded": B.open[key] ? "true" : "false", "aria-label": (B.open[key] ? "Hide " : "Show ") + n }, B.open[key] ? "\u25be" : "\u25b8"); ab.addEventListener("click", function () { B.open[key] = !B.open[key]; renderTlyDone(); }); return ab; }
@@ -6761,7 +6774,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         if (!multi) {
           var b0 = bs[0], tr0 = el("tr"), acts0 = billActs(b0, null);
           var vn0 = el("div"); vn0.appendChild(el("b", null, v.name));
-          cells(tr0, [null, vn0, billDet(b0), money(Number(b0.total) || 0), due(b0), tlySubmitted(b0), tlyStTag(tlyStatus(b0)), acts0]); return;
+          cells(tr0, [null, vn0, billDet(b0), money(Number(b0.total) || 0), due(b0), tlySubmitted(b0), tlyStTag(tlyStatus(b0), b0), acts0]); return;
         }
         var trv = el("tr", { class: "vrow" }), va = el("div", { class: "acts" }), mk0 = makeBtn(); if (mk0) va.appendChild(mk0);
         var vn = el("div"); vn.appendChild(el("b", null, v.name)); var nd = el("div", { class: "tsub" }, plural(bs.length, "bill") + (rs.length ? " · " + plural(rs.length, "BCR") : ""));
@@ -6780,9 +6793,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           if (B.open[rk]) rb.forEach(function (b) { cells(el("tr", { class: "inbcr" }), [null, el("span", { class: "tsub" }, "in " + r.no), billDet(b), money(Number(b.total) || 0), due(b), tlySubmitted(b), tlyStTag(tlyStatus(b)), billActs(b, r)]); });
         });
         loose.forEach(function (b) {
-          var ck = el("input", { type: "checkbox", "aria-label": "Tick bill " + (b.billNo || "") }); ck.checked = !!B.pick[b.id] && bcrOk(b); ck.disabled = !bcrOk(b); if (!bcrOk(b)) ck.title = tlyStatus(b) === "open" ? "Goes into a BCR once accounted" : "Sent for approval on its own";
+          var ck = el("input", { type: "checkbox", "aria-label": "Tick bill " + (b.billNo || "") }); ck.checked = !!B.pick[b.id] && bcrOk(b); ck.disabled = !bcrOk(b); if (!bcrOk(b)) ck.title = b.autoAppr ? "Set to go for approval as soon as it is accounted: no BCR" : tlyStatus(b) === "open" ? "Goes into a BCR once accounted" : "Sent for approval on its own";
           ck.addEventListener("change", function () { if (ck.checked) B.pick[b.id] = 1; else delete B.pick[b.id]; renderTlyDone(); });
-          cells(el("tr", { class: "loose" }), [ck, el("span", { class: "tsub" }, "Not in a BCR"), billDet(b), money(Number(b.total) || 0), due(b), tlySubmitted(b), tlyStTag(tlyStatus(b)), billActs(b, null)]);
+          cells(el("tr", { class: "loose" }), [ck, el("span", { class: "tsub" }, "Not in a BCR"), billDet(b), money(Number(b.total) || 0), due(b), tlySubmitted(b), tlyStTag(tlyStatus(b), b), billActs(b, null)]);
         });
       });
     });
@@ -15485,7 +15498,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var gl = tv.rows.filter(function (r) { return r.gst && r.lid; }).map(function (r) { return { id: r.lid, amt: r.amt }; }), gt = {}; gl.forEach(function (g) { gt[gstFlavour((S.ledgers || {})[g.id])] = 1; });
     var td = round2(tds || 0), base = tdsBaseOf(T.items), inr = (x.currency || "INR") === "INR";
     var up = Object.assign({ acct: "approved", acctNote: "", items: itemsOut(T.items), ledgers: order.map(function (k) { return { id: k, amt: per[k] }; }), taxable: t.taxable, gstAmt: t.gst, roundOff: t.ro || null, total: t.total,
-      gstLedgers: gl, gstSupply: gl.length ? (inter ? "inter" : "intra") : null, gstTypes: gl.length ? Object.keys(gt) : null, tds: td, tdsSection: td > 0 ? T.tdsSec : "", narration: nar, hsnDev: hsnDeviations(acctCtx()) }, inr ? { fcTaxable: t.taxable, fcGst: t.gst, fcTotal: t.total } : {}, tdsBaseRate(td, base), acctWho());
+      gstLedgers: gl, gstSupply: gl.length ? (inter ? "inter" : "intra") : null, gstTypes: gl.length ? Object.keys(gt) : null, tds: td, tdsSection: td > 0 ? T.tdsSec : "", narration: nar, hsnDev: hsnDeviations(acctCtx()) }, x.autoAppr && !x.apprReq && !tlyBcrOf(x) ? { apprReq: { at: Date.now(), by: x.submittedBy || x.ownerId || "", byName: pnm(x.preparedByName || ""), auto: true } } : {}, inr ? { fcTaxable: t.taxable, fcGst: t.gst, fcTotal: t.total } : {}, tdsBaseRate(td, base), acctWho());
     var was = x.acct === "approved"; AC.busy = true; btn.disabled = true;
     retry(function () { return S.db.doc("bills/" + x.id).update(up); }).then(function () { Object.assign(x, up); invalidate(); hsnLearnFrom(T.items); toast("Bill " + x.billNo + (was ? " updated." : " accounted. It can be paid in Payment Entry.")); backToAcct(); renderNav(); }, function (e) { toast(explain(e)); }).then(function () { AC.busy = false; btn.disabled = false; });
   }

@@ -1345,7 +1345,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   </section>
 
   <section id="secBillAll" hidden>
-    <div class="head"><div class="grow"><h2>All Bill Entries</h2><p class="sub">Every bill entered, with where it stands: Open – Waiting for Accounting, Accounted, Waiting for Approval, Waiting for Payment, Partially Paid, or Paid &amp; Closed.</p></div></div>
+    <div class="head"><div class="grow"><h2>All Bill Entries</h2><p class="sub">Every bill entered, with where it stands: Waiting to Account, Accounted, Waiting for Approval, Waiting for Payment, Partially Paid, or Paid &amp; Closed.</p></div></div>
     <div class="filters" id="baFilt"></div>
     <div class="card list scroll" id="baBox"></div>
   </section>
@@ -2214,7 +2214,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
      companies began). A division app lists only its companies; Accounts and Finance see them all. Each app keeps its own order. */
   function coApps(c) { return c && c.apps && c.apps.length ? c.apps : ["mnt"]; }
   function coInApp(c) { if (PV_ALL || APP === "bnv") return !!c; return !DIV || coApps(c).indexOf(DIV) >= 0; }
-  function coRank(c) { if (!c) return 1e6; if (c.orders && typeof c.orders[APP] === "number") return c.orders[APP]; return typeof c.order === "number" ? c.order : 1e6; }
+  /* Tally (Demo) keeps the company order of the KKSK Group's Company Masters, not an order of its own */
+  function coRank(c) { if (!c) return 1e6; if (APP !== "tly" && c.orders && typeof c.orders[APP] === "number") return c.orders[APP]; return typeof c.order === "number" ? c.order : 1e6; }
   function coCmp(a, b) { return coRank(a) - coRank(b) || natCmp(a && a.name, b && b.name); }
   function coCmpId(x, y) { if (x === y) return 0; if (!x) return 1; if (!y) return -1; return coCmp(S.companies[x], S.companies[y]); }
   function activeCompanies(all) {
@@ -6657,7 +6658,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
 
   /* ================= Tally (Demo): bills submitted, BCRs, statuses ================= */
-  /* Statuses: Open – Waiting for Accounting, Accounted, Waiting for Approval, Waiting for Payment, Partially Paid, Paid & Closed.
+  /* Statuses: Waiting to Account, Accounted, Waiting for Approval, Waiting for Payment, Partially Paid, Paid & Closed.
      A bill is approved on its own (Send for Approval on the bill) or in a Bill Checking Report (tly__bcrs: one company and one
      vendor, a serial number per company and year, its bills, and its own Send for Approval). */
   var BCRIX = null;
@@ -6666,7 +6667,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function tlyPaidAmt(b) { var inf = billInfo(b); return round2(Math.max(0, (Number(inf.net) || 0) - (Number(inf.adv) || 0) - (Number(inf.rem) || 0))); }
   function tlyAcctStarted(b) { return b.acct === "held" || b.acct === "approved" || verifyReqs(b.id).length > 0; }
   function tlyCanEdit(b) { return !tlyAcctStarted(b); }
-  var TLY_ST = { open: "Open – Waiting for Accounting", acct: "Accounted", appr: "Waiting for Approval", pay: "Waiting for Payment", part: "Partially Paid", closed: "Paid & Closed" };
+  var TLY_ST = { open: "Waiting to Account", acct: "Accounted", appr: "Waiting for Approval", pay: "Waiting for Payment", part: "Partially Paid", closed: "Paid & Closed" };
   var TLY_ST_ORDER = ["open", "acct", "appr", "pay", "part", "closed"];
   function tlyStatus(b) {
     if (b.acct !== "approved") return "open";
@@ -6798,7 +6799,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     box.textContent = "";
     if (!rows.length) { box.appendChild(el("div", { class: "empty" }, "No bills match.")); return; }
     sortTable(box, "baT", [
-      { label: "Company", sort: function (b) { return coLabel(b.companyId); }, cell: function (b, td) { txt(td, (S.companies[b.companyId] || {}).internalName || coLabel(b.companyId)); } },
+      { label: "Company", sort: function (b) { return String(1e6 + coRank(S.companies[b.companyId])); }, cell: function (b, td) { txt(td, (S.companies[b.companyId] || {}).internalName || coLabel(b.companyId)); } },
       { label: "Vendor", kind: "co", sort: function (b) { return vendorLabelOfBill(b); }, cell: function (b, td) { td.appendChild(el("b", null, vendorLabelOfBill(b))); } },
       { label: "Bill Details", sort: function (b) { return b.billDate || ""; }, cell: function (b, td) { td.appendChild(el("b", { class: "mono" }, b.billNo || "")); sub(td, fmtDate(b.billDate)); } },
       { label: "BCR", sort: function (b) { return (tlyBcrOf(b) || {}).no || ""; }, cell: function (b, td) { var r = tlyBcrOf(b); txt(td, r ? r.no : "\u2014"); } },
@@ -6806,7 +6807,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       { label: "Due Date", sort: function (b) { return b.dueDate || ""; }, cell: function (b, td) { txt(td, ymdOk(b.dueDate) ? fmtDate(b.dueDate) : ""); } },
       { label: "Submitted", sort: function (b) { return b.submittedAt || 0; }, desc: true, cell: function (b, td) { txt(td, b.submittedAt ? fmtDay(b.submittedAt) : ""); } },
       { label: "Status", sort: function (b) { return TLY_ST_ORDER.indexOf(tlyStatus(b)); }, cell: function (b, td) { td.appendChild(tlyStTag(tlyStatus(b))); } }
-    ], rows.sort(function (a, b) { return (b.submittedAt || 0) - (a.submittedAt || 0); }), { sortIndex: -1 });
+    ], rows.sort(function (a, b) { return coCmpId(a.companyId, b.companyId) || (b.submittedAt || 0) - (a.submittedAt || 0); }), { sortIndex: -1 });
   }
 
   /* ================= Vendors tab ================= */
@@ -11231,7 +11232,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var GRIP = '<svg width="14" height="18" viewBox="0 0 14 18" aria-hidden="true"><g fill="currentColor"><circle cx="4" cy="4" r="1.6"/><circle cx="10" cy="4" r="1.6"/><circle cx="4" cy="9" r="1.6"/><circle cx="10" cy="9" r="1.6"/><circle cx="4" cy="14" r="1.6"/><circle cx="10" cy="14" r="1.6"/></g></svg>';
     sortTable(box, "coList", [
       /* Only the super admin sets the company order. */
-      !S.isSuper ? null : { label: "Order", cls: "ordcol", dl: "Order", cell: function (c, td, ri) {
+      !S.isSuper || tly() ? null : { label: "Order", cls: "ordcol", dl: "Order", cell: function (c, td, ri) {
           var w = el("div", { class: "ord" }), g = el("span", { class: "grip", title: "Drag to move" }); g.innerHTML = GRIP;
           var up = el("button", { class: "obtn", type: "button", "aria-label": "Move " + c.name + " up", title: "Move up" }, "\u25B2");
           var dn = el("button", { class: "obtn", type: "button", "aria-label": "Move " + c.name + " down", title: "Move down" }, "\u25BC");
@@ -11258,7 +11259,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     ], rows, { sortIndex: -1, rowClass: function (c) { return c.active === false ? "off" : ""; } });
     /* Drag a row by its handle to move it; the new order is saved for everyone. */
     var trs = box.querySelectorAll("tbody tr"), dragId = null;
-    if (S.isSuper) Array.prototype.forEach.call(trs, function (tr, i) {
+    if (S.isSuper && !tly()) Array.prototype.forEach.call(trs, function (tr, i) {
       var c = rows[i]; tr.setAttribute("data-id", c.id);
       var grip = tr.querySelector(".grip");
       grip.addEventListener("pointerdown", function () { tr.draggable = true; });

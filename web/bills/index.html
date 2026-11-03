@@ -5626,7 +5626,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       else { var gs = el("select", { class: "field num", "aria-label": "GST %, line " + (i + 1) }); var rIn = gstRatesOn(c.day), rH = !ro ? hsnRates(hsnNorm(it.hsn), c.day).filter(function (r) { return rIn.indexOf(r) >= 0; }) : [], rts = rH.length ? rH : rIn, ro0 = rH.length ? hsnRateOpts(hsnNorm(it.hsn), c.day) : [], opts = rts.map(function (r) { var o0 = ro0.filter(function (q) { return q.rate === r; })[0]; return [String(r), r + "%" + (o0 && ro0.length > 1 ? " · " + o0.label.slice(0, 28) : "")]; }); if (it.gst === "" || it.gst == null) opts.unshift(["", "–"]); else if (rts.indexOf(num(it.gst)) < 0) opts.push([String(num(it.gst)), it.gst + "% (" + (rIn.indexOf(num(it.gst)) < 0 ? "not in force" : "not for this HSN") + ")"]); fillSelect(gs, opts, it.gst === "" || it.gst == null ? "" : String(num(it.gst))); fitWidth(gs, wide.gst); gs.disabled = off; gs.addEventListener("change", function () { it.gst = gs.value; ch(); }); gtd.appendChild(gs); }
       tr.appendChild(gtd);
       if (c.acct) {
-        var sel2 = function (cur, opts, on, lab, wd) { var sl = el("select", { class: "field", "aria-label": lab + ", line " + (i + 1) }); fillSelect(sl, opts, cur); fitWidth(sl, wd); if (ro || off || fits) { sl.disabled = true; if (ro || fits) fillSelect(sl, [["", "—"]], ""); } sl.addEventListener("change", function () { on(sl.value); ch(); }); var td = el("td"); td.appendChild(sl); return td; };
+        var sel2 = function (cur, opts, on, lab, wd) { var sl = el("select", { class: "field", "aria-label": lab + ", line " + (i + 1) }); fillSelect(sl, opts, cur); fitWidth(sl, wd); if (ro || off || fits || rl0) { sl.disabled = true; if (ro || fits || rl0) fillSelect(sl, [["", "—"]], ""); } sl.addEventListener("change", function () { on(sl.value); ch(); }); var td = el("td"); td.appendChild(sl); return td; };
         tr.appendChild(sel2(it.rcm ? "y" + (it.rr || it.gst || "18") : "no", [["no", "No"]].concat(RCM_RATES.map(function (r) { return ["y" + r[0], "Yes " + r[0] + "%"]; })), function (v) { it.rcm = v !== "no"; it.rr = it.rcm ? v.slice(1) : ""; if (it.rcm) it.itc = "elig"; }, "RCM", wide.rcm));
         tr.appendChild(sel2(it.itc === "inel" ? "inel" : "elig", it.rcm ? [["elig", "Eligible"]] : [["elig", "Eligible"], ["inel", "Ineligible"]], function (v) { it.itc = v; }, "ITC", wide.itc));
       }
@@ -14962,7 +14962,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var facts = isB ? [["Company", coLabel(x.companyId)], ["Bill date", fmtDate(x.billDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Taxable", bm2(x, x.fcTaxable != null ? x.fcTaxable : x.taxable)], ["GST", bm2(x, x.fcGst != null ? x.fcGst : x.gstAmt)]].concat(Number(x.roundOff) ? [["Round off", (Number(x.roundOff) < 0 ? "- " : "+ ") + bm2(x, Math.abs(Number(x.roundOff)))]] : []).concat([["Total", bm2(x, x.fcTotal != null ? x.fcTotal : x.total)]])
       : [["Company", coLabel(x.companyId)], ["Voucher date", fmtDate(x.voucherDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Total", bm2(null, x.total)], ["GST", x.gstApp === "RCM" ? "RCM " + (x.gstRate || 0) + "%" : "Not applicable"], ["Payment", x.settle ? "From cash advance" : "By Financier"]];
     if (!tly()) facts.push(["Approver", approverName(x) || "Not set"]);
-    var fb = el("div", { class: "stats" }); facts.forEach(function (k) { var s = el("div", { class: "stat" }); s.appendChild(el("div", { class: "k" }, k[0])); s.appendChild(el("div", { class: "v" }, k[1] || "")); fb.appendChild(s); }); f.appendChild(fb);
+    var fb = el("div", { class: "stats" }); facts.forEach(function (k) { var s = el("div", { class: "stat" }); s.appendChild(el("div", { class: "k" }, k[0])); s.appendChild(el("div", { class: "v" }, k[1] || "")); fb.appendChild(s); }); if (!(tly() && isB && AC.T)) f.appendChild(fb);
     var det = el("div", { class: "card", style: "padding:14px 18px;margin:12px 0" });
     var vl = !isB && (x.lines || []).length > 1 ? x.lines : null;
     var np = el("p", { style: "margin:0 0 6px" }, (isB ? "Narration: " : "Description: ") + (vl ? "" : x.narration || "None"));
@@ -14978,6 +14978,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       AC.locked = locked;
       itCard = el("div", { class: "card", style: "padding:14px 18px;margin:12px 0" });
       itCard.className = "tlysecs ao-tly"; itCard.removeAttribute("style");
+      /* Base Details, laid out as in Purchase Entry */
+      var s0 = el("section", { class: "tlysec" }), g0 = el("div", { class: "form" }); s0.appendChild(el("h3", null, "Base Details")); s0.appendChild(g0); itCard.appendChild(s0);
+      var vg = x.vendorId ? (S.vendors[x.vendorId] || {}).gstin : "", bdY = x.billDate || "", tdays = x.termDays != null ? x.termDays : null;
+      [["Company", (S.companies[x.companyId] || {}).name || coLabel(x.companyId)], ["Vendor", vendorLabelOfBill(x) + (vg ? " (" + vg + ")" : "")], ["Bill Number", x.billNo || ""], ["Bill Date", fmtDate(bdY)],
+        ["Payment Terms (days)", tdays == null ? "" : String(tdays)], ["Due Date", bdY && tdays != null ? fmtDate(addDays(bdY, tdays)) : ""], ["Supply of", label2(SUPPLY, x.supplyOf) || "Not set"],
+        ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")]].forEach(function (k) {
+        var ff = el("div", { class: "f" }); ff.appendChild(el("span", { class: "lb" }, k[0])); ff.appendChild(el("div", { class: "field ro" }, k[1] || "\u2014")); g0.appendChild(ff); });
+      var ei = el("div", { class: "f wide" }); ei.appendChild(el("span", { class: "lb" }, "e-Invoice")); ei.appendChild(el("div", { class: "field ro mono", style: "word-break:break-all" }, x.einv && x.einv.irn ? einvText(x.einv) : "No IRN recorded")); g0.appendChild(ei);
+      if (x.acctNote) g0.appendChild(el("div", { class: "flag w f wide" }, "Accountant's note: " + x.acctNote));
       var s1 = el("section", { class: "tlysec" }); s1.appendChild(el("h3", null, "Bills Line Items")); s1.appendChild(el("div", { id: "aoItemsWrap" })); itCard.appendChild(s1);
       var s2 = el("section", { class: "tlysec" }); s2.appendChild(el("h3", null, "Tally Line Items")); s2.appendChild(el("div", { id: "aoTally" })); itCard.appendChild(s2);
       var nta = el("textarea", { class: "field", id: "aoTlyNar", rows: "3", maxlength: String(NARR_MAX) }); nta.value = AC.T.narration; nta.disabled = locked;
@@ -14998,7 +15007,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       sortTable(tw, "aoItems", ic, its, { sortIndex: -1 });
     }
     if (x.acctNote) det.appendChild(el("div", { class: "flag w", style: "margin-top:8px" }, "Accountant's note: " + x.acctNote));
-    f.appendChild(det);
+    if (!(tly() && isB && AC.T)) f.appendChild(det);
     var form = el("div", { class: "form" });
     if (!isB) {
       var vt = el("select", { class: "field", id: "aoType" }); fillSelect(vt, [["", "Choose the type"]].concat(VTYPES_V), D.vtype); vt.disabled = locked; form.appendChild(fld("Type of voucher", vt));
@@ -15075,7 +15084,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       gf0.appendChild(el("span", { class: "err", id: "aoGstLedE", hidden: "" })); lw.appendChild(gf0);
     }
     var tlyB = tly() && isB && AC.T;
-    if (itCard) f.insertBefore(itCard, det); if (!tlyB) f.insertBefore(lw, det); if (eo.info && !tlyB) eo.info(); /* the running totals, now that they are on the page */
+    if (itCard) { if (det.parentNode === f) f.insertBefore(itCard, det); else f.appendChild(itCard); } if (!tlyB) f.insertBefore(lw, det); if (eo.info && !tlyB) eo.info(); /* the running totals, now that they are on the page */
     if (!tlyB) f.appendChild(form); aoTdsHint();
     if (locked) Array.prototype.forEach.call($("aoBody").querySelectorAll("#aoLed select, #aoLed input, #aoLed button"), function (b0) { b0.disabled = true; });
     var acts = $("aoActs"); acts.textContent = "";

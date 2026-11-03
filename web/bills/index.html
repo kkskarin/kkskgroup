@@ -1309,6 +1309,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     </div>
   </section>
 
+  <section id="secVStmt" hidden>
+    <div class="head"><div class="grow"><h2>Vendor Statement</h2><p class="sub">A vendor's account with one company, Tally style: opening balance, bills, TDS, payments, discounts and notes, with the running balance. Balance in Cr means the vendor holds that much of ours.</p></div><button class="btn" type="button" id="vsPdf">Download PDF</button></div>
+    <div class="filters" id="vsFilt"></div>
+    <div class="card list scroll" id="vsBox"></div>
+  </section>
   <section id="secMark" hidden>
     <div class="head">
       <div class="grow"><h2>Payment Entry</h2><p class="sub">Everything approved and not yet paid, vendor by vendor (opening balance first, then the earliest due). <b>Pay Now</b>: tick what to pay, set the amount, choose Cheque, NEFT / RTGS or Cash, then print every cheque in one go with running numbers (A/C Payee is chosen there). <b>Record Payment</b>: record a payment already made outside the app (cheque, NEFT / RTGS, net banking, credit card or cash) with its cheque number or transaction ID. Cash stays under ₹10,000 a payee a day (Freight &amp; Transport vouchers: up to ₹35,000); cheques have no limit.</p></div>
@@ -1316,6 +1321,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     <div class="mkrow"><div class="seg" role="tablist" aria-label="Payments for"><button type="button" role="tab" id="mkSideV" aria-selected="true">Bills <span id="mkNV"></span></button><button type="button" role="tab" id="mkSideC" aria-selected="false">Vouchers <span id="mkNC"></span></button><button type="button" role="tab" id="mkSideA" aria-selected="false" hidden>Advances <span id="mkNA"></span></button></div>
       <div class="stats mkstats" id="mkStats"></div>
       <select class="field mkco-sel" id="mkCo" aria-label="Filter by company"></select></div>
+    <div class="filters" id="mkFilt" hidden></div>
     <div class="mkbar">
       <div class="seg" role="tablist" aria-label="Show"><button type="button" role="tab" id="mkTabPay" aria-selected="true">To Pay <span id="mkN"></span></button><button type="button" role="tab" id="mkTabDone" aria-selected="false">Paid, Last 14 Days <span id="mkDN"></span></button></div>
       <div class="seg" role="tablist" aria-label="How" id="mkHow"><button type="button" role="tab" id="mkHowPlan" aria-selected="true">Pay Now</button><button type="button" role="tab" id="mkHowPaid" aria-selected="false">Record Payment</button></div>
@@ -1672,7 +1678,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var S = { staff: {}, salruns: {}, regions: {}, ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secVerify", "secHsn", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
+  var VIEWS = ["secVStmt", "secVerify", "secHsn", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -1902,12 +1908,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS],
     /* Tally (Demo): purchaser, accountant and financier, nothing else; masters to look up */
-    tly: [{ h: "Purchase", tabs: [["Bills", "Purchase Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Verify", "Verification"], ["Ledger Books", "Ledger Statements"]] }, { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"]] }, { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]] }, { h: "Masters", tabs: MASTERS.concat([["HSN", "HSN / SAC", 0, "m"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
+    tly: [{ h: "Purchase", tabs: [["Bills", "Purchase Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Verify", "Verification"]] }, { h: "Payments", tabs: [["Mark Transaction", "Plan Payments"], ["Pay Record", "Record Payments"], ["Payables", "Payables"]] }, { h: "Reports", tabs: [["Transactions", "Transactions"], ["Ledger Books", "Ledger Statements"], ["Vendor Stmt", "Vendor Statement"]] }, { h: "Masters", tabs: MASTERS.concat([["HSN", "HSN / SAC", 0, "m"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
   var LAST_M = "";
   var HOME_TAB = { acc: "Accounts", fin: "Payables", apr: "Approvals", tly: "Bills" }[APP] || "Transactions", LAST_IN = {};
-  var DATA_TABS = ["Advance Requests", "Cash Approvals", "Approvals", "Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
+  var DATA_TABS = ["Pay Record", "Vendor Stmt", "Advance Requests", "Cash Approvals", "Approvals", "Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
   /* Admins oversee rather than enter: the entry screens (and the accountant's queue) are left out for them.
      Reports > Transactions shows every item, where it stands and who is responsible. "View as" still opens a person's screens. */
   var ADMIN_HIDE = { "Bills": 1, "Plan Advance": 1, "Imports": 1, "Cash Voucher": 1, "Accounts": 1, "Mark Transaction": 1 };
@@ -2018,7 +2024,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (t === "Cash Advance") { renderCash(); show("secCash"); return; }
       if (t === "Bills") { renderBills(); show("secBills"); } else if (t === "Vendors") { renderVendors(); show("secVendors"); } else if (t === "Checking Report") { renderChecks(); show("secChecks"); }
       else if (t === "Plan Advance" || t === "Imports") { ADV.kind = t === "Imports" ? "import" : "pi"; ADV.id = null; renderAdvList(); show("secAdvList"); }
-      else if (t === "Mark Transaction") { renderMark(); show("secMark"); }
+      else if (t === "Mark Transaction" || t === "Pay Record") { if (tly()) MK.how = t === "Pay Record" ? "paid" : "plan"; renderMark(); show("secMark"); }
+      else if (t === "Vendor Stmt") { renderVStmt(); show("secVStmt"); }
       else if (t === "Payment Ledger") { renderLedger(); show("secLedger"); }
       else { renderPlanning(); show("secPlanPay"); }
       return;
@@ -7353,6 +7360,36 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     draw();
     popForm("Statement · " + v.name, (c.shortName || c.name) + " · as on " + fmtDate(todayYmd()) + ". Balance in Cr means the vendor holds that much of ours.", body, S.downloads ? "Download PDF" : "Close", function (b) { if (S.downloads) makeStatement(vid, cid, b, parseDate($("svFrom").value) || ""); });
   }
+  /* Reports › Vendor Statement (Tally (Demo)): company, vendor and from date, the statement on the page, and its PDF */
+  var VS = { cid: "", vid: "", from: "" };
+  function renderVStmt() {
+    var f = $("vsFilt"), box = $("vsBox"); if (!f || !box) return;
+    if (!VS.from) VS.from = "20" + fyOf(todayYmd()).slice(0, 2) + "-04-01";
+    var cos = sorted().filter(function (c) { return c.active !== false; }); if (!VS.cid || !S.companies[VS.cid]) VS.cid = cos[0] ? cos[0].id : "";
+    var vs = ledgersFor(function (r) { return r.cid === VS.cid && S.vendors[r.vid]; }).map(function (r) { return S.vendors[r.vid]; }).sort(function (a, b) { return natCmp(a.name, b.name); });
+    if (!vs.some(function (v) { return v.id === VS.vid; })) VS.vid = vs[0] ? vs[0].id : "";
+    if (!f.firstChild) {
+      var cs = el("select", { class: "field", id: "vsCo", "aria-label": "Company" }); cs.addEventListener("change", function () { VS.cid = cs.value; VS.vid = ""; renderVStmt(); });
+      var vv = el("select", { class: "field", id: "vsVen", "aria-label": "Vendor" }); vv.addEventListener("change", function () { VS.vid = vv.value; renderVStmt(); });
+      var fd = dateBox("vsFrom", VS.from, { max: todayYmd(), clearable: true, label: "Statement from" }), on = function () { VS.from = parseDate($("vsFrom").value) || ""; renderVStmt(); };
+      fd.addEventListener("change", on); var fi = fd.querySelector && fd.querySelector("input"); if (fi) fi.addEventListener("change", on);
+      [cs, vv, fd].forEach(function (n) { f.appendChild(n); });
+      $("vsPdf").addEventListener("click", function () { if (VS.vid && VS.cid) makeStatement(VS.vid, VS.cid, $("vsPdf"), VS.from); });
+    }
+    fillSelect($("vsCo"), cos.map(function (c) { return [c.id, c.name]; }), VS.cid);
+    fillSelect($("vsVen"), vs.length ? vs.map(function (v) { return [v.id, v.name]; }) : [["", "No vendors with bills"]], VS.vid);
+    $("vsPdf").hidden = !S.downloads; $("vsPdf").disabled = !VS.vid;
+    box.textContent = "";
+    if (!VS.vid) { box.appendChild(el("div", { class: "empty" }, "No vendor has bills or an opening balance with this company yet.")); return; }
+    var from = VS.from, D = stmtData(VS.vid, VS.cid, from), tb = el("table", { class: "t stmt" }), th = el("thead"), hr = el("tr");
+    [["Date", ""], ["Particulars", ""], ["Reference No.", ""], ["Payable", "r"], ["Paid", "r"], ["Balance", "r"]].forEach(function (h) { hr.appendChild(el("th", h[1] ? { class: h[1] } : null, h[0])); }); th.appendChild(hr); tb.appendChild(th);
+    var bd = el("tbody"); tb.appendChild(bd);
+    function row(cells) { var tr = el("tr"); cells.forEach(function (x, i) { var td = el("td", i >= 3 ? { class: "r num" } : i === 0 ? { class: "num" } : null); if (x && x.b) td.appendChild(el("b", null, x.b)); else td.textContent = x || ""; tr.appendChild(td); }); bd.appendChild(tr); }
+    row([D.openDate ? fmtDate(D.openDate) : "", { b: from ? "Opening balance as on " + fmtDate(from) : "Opening balance" }, "", "", "", { b: stmtBal(D.open) }]);
+    D.rows.forEach(function (e) { row([fmtDate(e.d), e.p, e.ref, e.payable ? amt(e.payable) : "", e.paid ? amt(e.paid) : "", stmtBal(e.bal)]); });
+    var tf = el("tfoot"), ft = el("tr"); [{ b: "Totals (" + D.cur + ")" }, "", "", { b: amt(D.payable) }, { b: amt(D.paid) }, { b: stmtBal(D.close) }].forEach(function (x, i) { var td = el("td", i >= 3 ? { class: "r num" } : null); if (x && x.b) td.appendChild(el("b", null, x.b)); else td.textContent = x || ""; ft.appendChild(td); }); tf.appendChild(ft); tb.appendChild(tf);
+    box.appendChild(tb);
+  }
   function makeStatement(vid, cid, btn, from) {
     var v = S.vendors[vid], c = S.companies[cid]; if (!v || !c || !S.downloads) return;
     var label = btn.textContent; btn.disabled = true; btn.textContent = "Preparing";
@@ -9176,6 +9213,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   function mkPayCell(x, td) {
     var w = el("div", { class: "pay" }), ms = modesFor(x), whole = x.type === "vch" || x.type === "vcr";
+    if (ms.indexOf("cash") >= 0 && !cashAllowed(x, x.pay)) ms = ms.filter(function (m) { return m !== "cash"; });
     var full = el("button", { class: "btn sm full", type: "button", title: "Fill in the full " + curMoney(x.cur, x.pay) }, "Full");
     var amt = el("input", { class: "field num paid", inputmode: "decimal", autocomplete: "off", "data-key": x.key, "aria-label": "Amount paid to " + mkName(x), placeholder: x.cur === "INR" ? "₹" : x.cur });
     amt.value = MK.amts[x.key] || "";
@@ -9200,6 +9238,43 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     else { w.appendChild(full); w.appendChild(amt); w.appendChild(dt); w.appendChild(md); w.appendChild(ref); w.appendChild(ok); w.appendChild(ed); }
     td.appendChild(w);
   }
+  /* Tally (Demo) filters for Payment Entry: company (above), vendor, bill or voucher number, bill date and due by */
+  function mkKeyOf(x) { return x.vid ? "v:" + x.vid : "p:" + normName(x.payee || x.name || ""); }
+  function mkItemFacts(x) {
+    if (x.type === "vch") return [{ no: x.v.voucherNo || "", date: x.v.voucherDate || "", due: x.due }];
+    if (x.type === "inst") return [{ no: x.a.piNo || "", date: x.a.piDate || "", due: x.due }];
+    return (x.items || []).map(function (it) { return it.b ? { no: it.b.billNo || "", date: it.b.billDate || "", due: it.due, it: it } : { no: "", date: "", due: it.due, it: it, open: true }; });
+  }
+  function mkFiltBar(rows) {
+    var f = $("mkFilt"); MK.f = MK.f || { ven: "", no: "", date: "", due: "" };
+    if (!f.firstChild) {
+      var vs = el("select", { class: "field", id: "mkVen", "aria-label": "Vendor or payee" }); vs.addEventListener("change", function () { MK.f.ven = vs.value; renderMark(); });
+      var q = el("input", { class: "field", id: "mkNoQ", type: "search", placeholder: "Bill / voucher number", autocomplete: "off" }); q.addEventListener("input", function () { MK.f.no = q.value.trim(); clearTimeout(MK.fq); MK.fq = setTimeout(renderMark, 250); });
+      var bd = dateBox("mkBillD", "", { clearable: true, label: "Bill date" }), dd = dateBox("mkDueBy", "", { clearable: true, label: "Due by" });
+      [[bd, "mkBillD", "date", "Bill date"], [dd, "mkDueBy", "due", "Due by"]].forEach(function (z) { var ip = z[0].querySelector ? z[0].querySelector("input") || z[0] : z[0]; ip.placeholder = z[3]; var on = function () { MK.f[z[2]] = parseDate($(z[1]).value) || ""; renderMark(); }; z[0].addEventListener("change", on); if (ip !== z[0]) ip.addEventListener("change", on); });
+      [$("mkCo"), vs, q, bd, dd].forEach(function (n) { f.appendChild(n); });
+    }
+    var seen = {}, opts = [["", "All vendors and payees"]];
+    rows.slice().sort(function (a, b) { return natCmp(mkName(a), mkName(b)); }).forEach(function (x) { var k = mkKeyOf(x); if (seen[k]) return; seen[k] = 1; opts.push([k, mkName(x)]); });
+    if (MK.f.ven && !seen[MK.f.ven]) MK.f.ven = ""; fillSelect($("mkVen"), opts, MK.f.ven);
+  }
+  function mkFilter(rows) {
+    var F = MK.f || {}, q = String(F.no || "").toLowerCase();
+    if (!F.ven && !q && !F.date && !F.due) return rows;
+    var ok = function (fa) { return (!q || String(fa.no).toLowerCase().indexOf(q) >= 0) && (!F.date || fa.date === F.date) && (!F.due || !fa.due || fa.due <= F.due); };
+    var out = [];
+    rows.forEach(function (x) {
+      if (F.ven && mkKeyOf(x) !== F.ven) return;
+      if (x.type !== "vendor") { if (ok(mkItemFacts(x)[0])) out.push(x); return; }
+      var its = mkItemFacts(x).filter(function (fa) { return fa.open ? !q && !F.date && (!F.due || !fa.due || fa.due <= F.due) : ok(fa); }).map(function (fa) { return fa.it; });
+      if (!its.length) return;
+      var y = Object.assign({}, x, { items: its, pay: round2(its.reduce(function (s0, it) { return s0 + it.amt; }, 0)), due: its[0].due, sent: its.filter(function (it) { return it.b; }).map(function (it) { return it.b; }) }); y.planned = y.pay; out.push(y);
+    });
+    return out;
+  }
+  /* s.40A(3): cash to one person in a day is limited (₹10,000; ₹35,000 to a transporter), registered or not; cash deposited
+     into their bank account is still cash. Where the amount to pay would cross it, cash is not offered. */
+  function cashAllowed(x, amt) { var c = payCash(x, amt, todayYmd()); return c.total <= c.limit + 0.004; }
   function renderMark() {
     if (MK.busy) return;
     if (MK.side === "advances") MK.side = "vendors"; /* advances are paid from Payments › Advance Requests */
@@ -9207,13 +9282,21 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     fillSelect(sel, [["", "All your companies"]].concat(roleCos("txn").map(function (c) { return [c.id, c.shortName || c.name]; })), cur);
     var na = mkAdvRows(sel.value, false).length; $("mkNA").textContent = na ? "(" + na + ")" : ""; $("mkSideA").setAttribute("aria-selected", side === "advances" ? "true" : "false");
     if (side === "advances") { renderMarkAdv(); return; }
+    var T = tly(); if (T) { side = MK.side = "all"; MK.view = "pay"; MK.bucket = "all"; }
     var allRows = mkRows(sel.value, side), box = $("mkList"); MK.stale = false;
+    if (T) { mkFiltBar(allRows); allRows = mkFilter(allRows); }
     $("mkHowPlan").setAttribute("aria-selected", MK.how !== "paid" ? "true" : "false"); $("mkHowPaid").setAttribute("aria-selected", MK.how === "paid" ? "true" : "false");
-    $("mkHow").hidden = MK.view === "done";
+    $("mkHow").hidden = MK.view === "done" || tly();
     /* When it falls due: All, the next 7 days (with anything overdue), then week by week. Bills only; in Pay Now and Record Payment. */
     var bk = side === "vouchers" ? "all" : MK.bucket || "all", bsum = {}; DUE_BUCKETS.forEach(function (b) { bsum[b[0]] = { n: 0, t: {} }; });
     allRows.forEach(function (x) { [x.bucket, "all"].forEach(function (k) { var q = bsum[k]; if (q) { q.n++; curAdd(q.t, x.cur, x.pay); } }); });
-    var bw = $("mkBuckets"); bw.textContent = ""; bw.hidden = side === "vouchers" || MK.view === "done";
+    var bw = $("mkBuckets"); bw.textContent = ""; bw.hidden = side === "vouchers" || MK.view === "done" || T;
+    /* Tally (Demo): Plan Payments and Record Payments are tabs; bills and vouchers are one list, narrowed by the filters */
+    $("mkSideV").parentNode.hidden = T; $("mkTabPay").parentNode.hidden = T; $("mkFilt").hidden = !T; if (T) $("mkHow").hidden = true;
+    if (T) { var hh = $("secMark").querySelector(".head h2"), hs = $("secMark").querySelector(".head .sub"); if (!MK.sub0) MK.sub0 = hs.innerHTML;
+      hh.textContent = MK.how === "paid" ? "Record Payments" : "Plan Payments";
+      hs.textContent = (MK.how === "paid" ? "Record a payment already made outside the app (cheque, NEFT / RTGS, net banking, card or cash) with its reference, bill by bill or for a vendor." : "Everything accounted and not yet paid, bills and vouchers together: tick what to pay, set the amount and the mode, then print the cheques in one go (A/C Payee) or record the NEFT / RTGS or cash.")
+        + " Cash to one payee in a day stays within ₹10,000 (₹35,000 to a transporter), registered or not (Income-tax s.40A(3)); where a payment would cross it, Cash is not offered. Cash deposited into the vendor's bank account still counts as cash; only an account payee cheque or draft, NEFT / RTGS / IMPS / UPI, net banking, a debit or credit card, or ECS are not cash."; }
     DUE_BUCKETS.forEach(function (b) {
       var q = bsum[b[0]]; if (b[0] !== "all" && b[0] !== "now" && !q.n) return;
       var bt = el("button", { type: "button", role: "tab", "aria-selected": bk === b[0] ? "true" : "false" });
@@ -9251,7 +9334,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var tb = el("div", { class: "list scroll" }); card.appendChild(tb); box.appendChild(card);
       sortTable(tb, "mk_" + c.id, [
         { label: side === "vouchers" ? "Pay to" : "Pay to", kind: "co", cell: function (x, td) { td.appendChild(el("b", null, mkName(x))); sub(td, x.type === "vch" ? (x.v.narration || "Cash voucher") : x.type === "vcr" ? "By financier" : x.type === "inst" ? (x.a.kind === "import" ? "Import instalment" : "Proforma instalment") : (S.vendors[x.vid] || {}).gstin || vtypeLabel((S.vendors[x.vid] || {}).type)); } },
-        { label: "For", cell: function (x, td) { var f = mkFor(x); txt(td, f[0]); if (f[1]) sub(td, f[1]); var o = mkOverdue(x); if (o > 0.5) sub(td, curMoney(x.cur, o) + " overdue", "color:var(--bad);font-weight:600"); } },
+        { label: "Bill No", cell: function (x, td) { mkItemFacts(x).forEach(function (fa, k) { td.appendChild(el("div", k ? { class: "tsub" } : null, fa.no || (fa.open ? "Opening balance" : "\u2014"))); }); } },
+        { label: "Bill Date", cell: function (x, td) { mkItemFacts(x).forEach(function (fa, k) { td.appendChild(el("div", k ? { class: "tsub" } : null, fa.date ? fmtDate(fa.date) : "\u2014")); }); } },
+        { label: "For", cell: function (x, td) { var f = mkFor(x); if (tly()) txt(td, f[1] || f[0]); else { txt(td, f[0]); if (f[1]) sub(td, f[1]); } var o = mkOverdue(x); if (o > 0.5) sub(td, curMoney(x.cur, o) + " overdue", "color:var(--bad);font-weight:600"); } },
         { label: side === "vouchers" ? "Amount" : "Payable", cls: "r num", cell: function (x, td) { td.appendChild(el("b", null, curMoney(x.cur, x.pay))); if (side !== "vouchers" && x.pay < x.planned - 0.5) sub(td, "Planned " + curMoney(x.cur, x.planned) + ", " + curMoney(x.cur, round2(x.planned - x.pay)) + " paid"); } },
         { label: "Payment", kind: "act", cls: "r mkpaycol", cell: function (x, td) { mkPayCell(x, td); if (x.type === "vendor") { var dc = el("button", { class: "link-btn", type: "button" }, "Record a discount"); dc.addEventListener("click", function () { txForm(x, null, "", "discount"); }); td.appendChild(dc); } } }
       ], rs, { sortIndex: -1 });
@@ -9284,7 +9369,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return total > payable + 0.004 ? payable : null;
   }
   function plSelTotal(gr) { return round2(gr.items.reduce(function (s0, it) { return s0 + (MK.pl.sel[it.key] ? plAmt(it) : 0); }, 0)); }
-  function plMode(gr) { return MK.pl.mode[gr.key] || (gr.cur !== "INR" ? "neft" : "cheque"); }
+  function plCashOk(gr) { var it0 = gr.items[0] || {}, amt = plSelTotal(gr) || round2(gr.items.reduce(function (s0, it) { return s0 + it.amt; }, 0)); return cashAllowed({ cid: gr.cid, vid: gr.vid, payee: gr.name, name: gr.name, v: it0.row && it0.row.v || null }, amt); }
+  function plMode(gr) { var m = MK.pl.mode[gr.key] || (gr.cur !== "INR" ? "neft" : "cheque"); return m === "cash" && !plCashOk(gr) ? "cheque" : m; }
   function plBank(cid) { var b = MK.pl.bank[cid] && (S.banks || {})[MK.pl.bank[cid]]; return b || bankDefault(cid); }
   function plBook(cid) { var b = plBank(cid), id = MK.pl.book[cid], t = id && (S.chqtpl || {})[id]; return t && t.active !== false ? t : b ? chqBookDefault(b.id) : null; }
   function renderPlan(allRows, box) {
@@ -9336,6 +9422,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
             g.items.forEach(function (it) { var r = el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap" }), c0 = el("input", { type: "checkbox", "aria-label": "Pay " + it.label }); c0.checked = !!MK.pl.sel[it.key]; c0.addEventListener("change", function () { MK.pl.sel[it.key] = c0.checked; renderMark(); });
               r.appendChild(c0); var t = el("span", { class: "grow" }); t.appendChild(el("span", null, it.label)); if (!(it.it && it.it.kind === "opening")) { t.appendChild(document.createTextNode(" · ")); t.appendChild(dueSpan(it.due)); } t.appendChild(el("span", { class: "tsub" }, " · " + curMoney(g.cur, it.amt))); r.appendChild(t); r.appendChild(amtBox(it, g)); ul.appendChild(r); });
             td.appendChild(ul); } },
+        { label: "Bill No", cell: function (g, td) { g.items.forEach(function (it, k) { var b = it.it && it.it.b, x = it.row; td.appendChild(el("div", k ? { class: "tsub" } : null, b ? b.billNo || "" : x.type === "vch" ? x.v.voucherNo || "" : x.type === "inst" ? x.a.piNo || "" : it.label)); }); } },
+        { label: "Bill Date", cell: function (g, td) { g.items.forEach(function (it, k) { var b = it.it && it.it.b, x = it.row, d = b ? b.billDate : x.type === "vch" ? x.v.voucherDate : x.type === "inst" ? x.a.piDate : ""; td.appendChild(el("div", k ? { class: "tsub" } : null, d ? fmtDate(d) : "\u2014")); }); } },
         { label: "Due", sort: function (g) { return dueKeyG(g); }, cell: function (g, td) { if (g.opening) td.appendChild(el("span", { style: "color:var(--bad);font-weight:600" }, "Opening balance")); else td.appendChild(dueSpan(g.due)); var wa = g.items.map(function (it) { return it.it && it.it.b ? itcAge(it.it.b) : null; }).filter(Boolean).sort(function (a, b) { return b.d - a.d; })[0]; if (wa) sub(td, (g.items.length > 1 ? "A bill here: " : "") + wa.text, "color:var(--" + (wa.bad ? "bad" : "warn") + ");font-weight:600"); } },
         { label: "Payable", cls: "r num", sort: function (g) { return g.items.reduce(function (s0, it) { return s0 + it.amt; }, 0); }, desc: true, cell: function (g, td) { txt(td, curMoney(g.cur, round2(g.items.reduce(function (s0, it) { return s0 + it.amt; }, 0)))); } },
         { label: "Pay Now", cls: "r", cell: function (g, td) {
@@ -9344,7 +9432,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
             function go() { var n0 = num(t.value); if (n0 == null || n0 < 0) { t.value = fmtInput(String(plSelTotal(g))); return; } var cap = plSpread(g, n0); if (cap != null) toast("Up to the payable amount, " + curMoney(g.cur, cap) + "."); renderMark(); }
             t.addEventListener("change", go); t.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); t.blur(); } });
             td.appendChild(t); sub(td, "Opening balance, then earliest due first"); } },
-        { label: "Mode", cell: function (g, td) { var md = el("select", { class: "field", style: "width:auto", "aria-label": "How to pay " + g.name }); fillSelect(md, g.cur !== "INR" ? [["neft", "NEFT / RTGS"]] : [["cheque", "Cheque"], ["neft", "NEFT / RTGS"], ["cash", "Cash"]], plMode(g)); md.addEventListener("change", function () { MK.pl.mode[g.key] = md.value; renderMark(); }); td.appendChild(md); } },
+        { label: "Mode", cell: function (g, td) { var md = el("select", { class: "field", style: "width:auto", "aria-label": "How to pay " + g.name }); fillSelect(md, g.cur !== "INR" ? [["neft", "NEFT / RTGS"]] : [["cheque", "Cheque"], ["neft", "NEFT / RTGS"]].concat(plCashOk(g) ? [["cash", "Cash"]] : []), plMode(g)); if (g.cur === "INR" && !plCashOk(g)) md.title = "No cash: it would cross the day's cash limit to this payee (s.40A(3))"; md.addEventListener("change", function () { MK.pl.mode[g.key] = md.value; renderMark(); }); td.appendChild(md); } },
       ], gs, { sortIndex: 1, sortDir: 1, rowClass: function (g) { return plSelTotal(g) > 0.004 ? "" : "skip"; } });
       box.appendChild(card);
     });
@@ -17547,7 +17635,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (t === "Cash Advance" && !$("secCash").hidden) { var ae1 = document.activeElement; if (!(ae1 && $("secCash").contains(ae1) && /INPUT|TEXTAREA|SELECT/.test(ae1.tagName))) renderCash(); return; }
     if ((t === "Plan Advance" || t === "Imports") && !$("secAdvList").hidden) { renderAdvList(); return; }
     if ((t === "Plan Advance" || t === "Imports") && !$("secAdv").hidden) { if (ADV.id && !S.advances[ADV.id]) backToAdvList(); else if (ADV.id) updAdvForm(); return; }
-    if (t === "Mark Transaction" && !$("secMark").hidden) { var ae = document.activeElement; if (ae && $("secMark").contains(ae) && ae.tagName === "INPUT") MK.stale = true; else renderMark(); return; }
+    if (t === "Vendor Stmt" && !$("secVStmt").hidden) { renderVStmt(); return; }
+    if ((t === "Mark Transaction" || t === "Pay Record") && !$("secMark").hidden) { var ae = document.activeElement; if (ae && $("secMark").contains(ae) && ae.tagName === "INPUT") MK.stale = true; else renderMark(); return; }
     if (t === "Payment Ledger" && !$("secLedger").hidden) { var la = document.activeElement; if (!(la && $("secLedger").contains(la) && la.tagName === "INPUT")) renderLedger(); return; }
     if (t === "Payment Planning" && !$("secPlanPay").hidden) { var pe = document.activeElement; if (pe && $("secPlanPay").contains(pe) && pe.tagName === "INPUT") PP.stale = true; else renderPlanning(); return; }
     if (t === "Checking Report") {

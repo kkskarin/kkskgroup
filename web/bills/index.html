@@ -479,7 +479,12 @@ h3{font-size:calc(13px*var(--ts,1));font-weight:700;text-transform:none;letter-s
 .navbar .wrap{padding-top:0;padding-bottom:0;gap:0}
 .navbar #nav button{color:#C9D4E5;font-size:calc(13.5px*var(--ts,1));font-weight:600;letter-spacing:0;text-transform:none;padding:13px 16px;border-radius:0;position:relative;background:none}
 .navbar #nav button.grp-on{color:#fff;background:none}
-body.tly #navbar{background:#fff;border-bottom:1px solid var(--line)}
+body.tly #navbar{background:var(--forest);border-bottom:0}
+body.tly .navbar .subbar{background:var(--forest);border-bottom:0}
+body.tly .navbar #subnav button{color:#C9D4E5;font-size:calc(13.5px*var(--ts,1));padding:13px 16px;border-bottom:0;position:relative}
+body.tly .navbar #subnav button[aria-current="page"]{color:#fff;background:none}
+body.tly .navbar #subnav button[aria-current="page"]::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:3px;background:var(--gold);border-radius:3px 3px 0 0}
+@media (hover:hover){body.tly .navbar #subnav button:not([aria-current="page"]):hover{background:rgba(255,255,255,.08);color:#fff}}
 body.tly .top .wrap{gap:14px}
 body.tly .top .titles{flex:none}
 .hnavwrap{flex:1 1 auto;min-width:0;display:flex;align-items:stretch;align-self:stretch;margin:-6px 0;position:relative}
@@ -18000,7 +18005,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (tly()) { S.mode = "live"; $("modeSw").hidden = true; $("demoBar").hidden = false; document.body.classList.add("tly");
       /* Tally (Demo): the tabs sit in the header, on the line with the logo, the app name and the menu */
       var nv0 = $("nav"); if (nv0 && !nv0.classList.contains("hnav")) { nv0.classList.remove("wrap"); nv0.classList.add("hnav"); var hw = el("div", { class: "hnavwrap" }), al = el("button", { type: "button", class: "hnavar", "aria-label": "Scroll the headings left", hidden: "" }, "\u2039"), ar = el("button", { type: "button", class: "hnavar", "aria-label": "Scroll the headings right", hidden: "" }, "\u203a");
-        $("appsLink").parentNode.insertBefore(hw, $("appsLink")); hw.appendChild(al); hw.appendChild(nv0); hw.appendChild(ar); $("demoBar").parentNode.insertBefore($("navbar"), $("demoBar"));
+        $("appsLink").parentNode.insertBefore(hw, $("appsLink")); hw.appendChild(al); hw.appendChild(nv0); hw.appendChild(ar);
         /* where the headings don't all fit (smaller screens) they scroll, with ‹ › at whichever end has more */
         var arUpd = function () { var over = nv0.scrollWidth > nv0.clientWidth + 2; al.hidden = !over || nv0.scrollLeft <= 2; ar.hidden = !over || nv0.scrollLeft + nv0.clientWidth >= nv0.scrollWidth - 2; };
         al.addEventListener("click", function () { nv0.scrollLeft -= Math.max(80, nv0.clientWidth * 0.7); }); ar.addEventListener("click", function () { nv0.scrollLeft += Math.max(80, nv0.clientWidth * 0.7); });

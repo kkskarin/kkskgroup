@@ -13515,17 +13515,22 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       act.appendChild(el("span", { class: "hint", style: "margin:0" }, np.length ? np.length + " selected" : "Tick notifications to download them or move them."));
       box.appendChild(act);
     }
-    var tb = el("table", { class: "t", style: "margin-top:4px" }), hr = el("tr"); (can ? [""] : []).concat(["Notification", "Kind", "Issued", "In Force From", "Official Link", "Status"]).forEach(function (h) { hr.appendChild(el("th", null, h)); }); var th = el("thead"); th.appendChild(hr); tb.appendChild(th); var bd = el("tbody"); tb.appendChild(bd);
+    var tb = el("table", { class: "t", style: "margin-top:4px" }), hr = el("tr"); (can ? [""] : []).concat(["Notification", "Kind", "Issued", "In Force From", "Official Link", "Relevance", "Status"]).forEach(function (h) { hr.appendChild(el("th", null, h)); }); var th = el("thead"); th.appendChild(hr); tb.appendChild(th); var bd = el("tbody"); tb.appendChild(bd);
     var lastCat = null;
     rows.forEach(function (f) {
       var fc = f.cat || "gst", up = rateDone(f, u), dl = notifDl(f), isRate = notifIsRate(f), relBy = notifRelOf(f), tr = el("tr");
-      if (cat === "irr" && fc !== lastCat) { lastCat = fc; var gr = el("tr"), gtd = el("td", { colspan: String(can ? 7 : 6), style: "background:var(--soft);font-weight:600" }, NOTIF_CATL[fc] || fc); gr.appendChild(gtd); bd.appendChild(gr); }
+      if (cat === "irr" && fc !== lastCat) { lastCat = fc; var gr = el("tr"), gtd = el("td", { colspan: String(can ? 8 : 7), style: "background:var(--soft);font-weight:600" }, NOTIF_CATL[fc] || fc); gr.appendChild(gtd); bd.appendChild(gr); }
       if (can) { var ck0 = el("input", { type: "checkbox", "aria-label": "Select " + f.number }); ck0.checked = !!sel[f.key]; ck0.addEventListener("change", function () { if (ck0.checked) sel[f.key] = 1; else delete sel[f.key]; renderNotif(); }); tr.appendChild(elc("td", null, ck0)); }
       var c1 = el("td", { class: "desc" }); c1.appendChild(el("b", null, f.number)); if (f.base) c1.appendChild(el("span", { class: "chip", style: "margin-left:6px" }, "In force")); sub(c1, f.subject || ""); tr.appendChild(c1);
       var ck = el("td"); txt(ck, NOTIF_CATL[fc] || fc); sub(ck, [f.type ? f.type.replace(/^./, function (c) { return c.toUpperCase(); }) : "", isRate ? "rates" : ""].filter(Boolean).join(", ")); tr.appendChild(ck);
       tr.appendChild(el("td", null, f.issued ? fmtDate(f.issued) : "")); tr.appendChild(el("td", null, f.from ? fmtDate(f.from) : ""));
       var c4 = el("td"); if (f.url) { var op = el("a", { href: f.url, target: "_blank", rel: "noopener", class: "link-btn" }, "Open"), cp = el("button", { type: "button", class: "link-btn", style: "margin-left:10px" }, "Copy URL"); cp.addEventListener("click", function () { (navigator.clipboard ? navigator.clipboard.writeText(f.url) : Promise.reject()).then(function () { toast("URL copied."); }, function () { window.prompt("Copy the URL:", f.url); }); }); c4.appendChild(op); c4.appendChild(cp); sub(c4, notifSource(f.url)); } else txt(c4, "No official link found yet."); tr.appendChild(c4);
-      var c5 = el("td", { class: "desc" }), rel = notifRelevant(f);
+      /* relevance: Claude's call to start with; anyone can change it here, one row at a time */
+      var rel = notifRelevant(f), crl = el("td");
+      if (can) { var rs = el("select", { class: "field", "aria-label": "Relevance of " + f.number, style: "width:auto" }); fillSelect(rs, [["y", "Relevant"], ["n", "Irrelevant"]], rel ? "y" : "n"); rs.addEventListener("change", function () { rs.disabled = true; notifMark([f], rs.value === "y", rs); }); crl.appendChild(rs); } else txt(crl, rel ? "Relevant" : "Irrelevant");
+      sub(crl, relBy ? "Set by " + (relBy.byName || "someone") + ", " + fmtDay(relBy.at) + (relBy.rel !== !!f.relevant ? " (Claude: " + (f.relevant ? "relevant" : "irrelevant") + ")" : "") : "Claude's call");
+      tr.appendChild(crl);
+      var c5 = el("td", { class: "desc" });
       if (up && !up.auto) { c5.appendChild(el("span", { class: "chip" }, "Uploaded")); sub(c5, (up.name ? up.name + " · " : "") + fmtDay(up.at) + (up.kind === "rate" && up.applied != null ? " · " + plural(up.applied, "rate") + " applied" : "")); }
       else if (dl && dl.status === "ok") { c5.appendChild(el("span", { class: "chip" }, "Downloaded")); var fo = el("button", { type: "button", class: "link-btn", style: "margin-left:8px" }, dl.name || "Open file"); fo.addEventListener("click", function () { window.bvFiles.link(dl.path).then(function (l) { window.open(l, "_blank", "noopener"); }, function (e) { toast(explain(e)); }); }); c5.appendChild(fo); sub(c5, fmtDay(dl.at) + (dl.by ? " · " + dl.by : ""));
         if (isRate && rel && can) { sub(c5, "Its rates aren't read in yet.", "color:var(--warn);font-weight:600"); var rr = el("button", { type: "button", class: "btn sm primary", style: "margin-top:4px" }, "Read Rates"); rr.addEventListener("click", function () { rr.disabled = true; window.bvFiles.get(dl.path).then(function (bl) { hsnRateDoc(renamed(bl, dl.name || notifFileName(f)), f); }, function (e) { toast(explain(e)); }).then(function () { rr.disabled = false; }); }); c5.appendChild(rr); } }
@@ -13534,8 +13539,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         c5.appendChild(el("b", { style: "color:var(--warn)" }, "To get"));
         if (dl && dl.status === "failed") sub(c5, "Download failed: " + (dl.reason || "no reason given") + ". It won't be tried again: upload the PDF yourself.", "color:var(--bad);font-weight:600"); else sub(c5, f.reason || "");
         if (can) { var ub = el("button", { type: "button", class: "btn sm", style: "margin-top:4px" }, "Upload PDF"); ub.addEventListener("click", function () { pickFile(".pdf,application/pdf", function (fl) { var nf = renamed(fl, notifFileName(f)); if (isRate) hsnRateDoc(nf, f); else noticeUpload(nf, f); }); }); c5.appendChild(ub); }
-      } else { txt(c5, relBy ? "Marked irrelevant" : "Irrelevant (Claude)"); sub(c5, relBy ? "by " + (relBy.byName || "someone") + ", " + fmtDay(relBy.at) : f.reason || ""); }
-      if (relBy && rel) sub(c5, "Marked relevant by " + (relBy.byName || "someone") + ", " + fmtDay(relBy.at) + (f.relevant ? "" : " (Claude: irrelevant)"));
+      } else { txt(c5, "Not needed"); sub(c5, f.reason || ""); }
       tr.appendChild(c5); bd.appendChild(tr);
     });
     var lw = el("div", { class: "list" }); lw.appendChild(tb); box.appendChild(lw);

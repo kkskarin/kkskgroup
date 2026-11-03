@@ -4968,7 +4968,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (oa.length && !D.advPick) E("bcAdvPick", "Say whether this is the final bill of the open " + (oa[0].kind === "import" ? "import " : "proforma ") + oa[0].piNo + (oa.length > 1 ? " or another open one" : "") + ".");
     else if (oa.length && D.advPick === "no" && String(D.advWhy || "").trim().length < 4) E("bcAdvWhy", "Write why this bill is separate.");
     var vg = v ? vGst(v) : cardPortal(b, normId((D.vNew || {}).gstin));
-    if (vg && gstEinv(vg) && !irn) { hard.push("The vendor must issue e-invoices (GST portal), but this bill has no IRN. Get the e-invoice with its IRN and QR code."); warns = warns.filter(function (w) { return !/has no IRN/.test(w); }); }
+    if (tly() && vg && gstEinv(vg)) {
+      /* Tally (Demo): the vendor must issue e-invoices (GST portal), so the e-invoice details are required */
+      if (!irn) E("bcIrn", "The vendor must issue e-invoices (GST portal): enter the IRN from the e-invoice, or get the e-invoice from the vendor.");
+      if (!String(ei.ackNo || "").trim()) E("bcAck", "Enter the Ack No from the e-invoice.");
+      if (!String(ei.ackDate || "").trim()) E("bcAckD", "Enter the Ack Date from the e-invoice.");
+      warns = warns.filter(function (w) { return !/has no IRN/.test(w); });
+    } else if (vg && gstEinv(vg) && !irn) { hard.push("The vendor must issue e-invoices (GST portal), but this bill has no IRN. Get the e-invoice with its IRN and QR code."); warns = warns.filter(function (w) { return !/has no IRN/.test(w); }); }
     if (hard.length) {
       var un = D.und || {};
       if (!un.ok) E("bcUnd", "Get a correct bill from the vendor, or give the undertaking below.");
@@ -5078,17 +5084,56 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function sigOf() { return Object.keys(S.vendors).map(function (id) { var v = S.vendors[id]; return id + v.name + v.active + v.termDays + v.type; }).join("|"); }
   /* Tally (Demo): the bill form in five parts: Base Details, e-Invoice, Line Items, Data for Tally, Alerts. Everything else
      (currency, ledger lines, taxable, GST, round off, total) follows from the line items and stays out of sight. */
+  /* Tally (Demo) › Base Details › under the vendor: the GST portal's details, a Fetch from GST Portal button, and the portal's
+     addresses to take in place of the saved one (a change here stays in Tally (Demo)) */
+  function billVendor() { var D = B.D; return D && D.vendorChoice && D.vendorChoice !== "new" ? S.vendors[D.vendorChoice] : null; }
+  function paintVPortal() {
+    var bx = $("bcVPortal"), v = billVendor(); if (!bx) return;
+    var g = v ? vGst(v) : null, key = v ? [v.id, v.gstin, v.address, g && g.checkedAt].join("|") : ""; if (bx._k === key) return; bx._k = key; bx.textContent = "";
+    if (!v || !v.gstin || gstinCheck(v.gstin) || !window.bvGst) { bx.hidden = true; return; } bx.hidden = false;
+    var row = el("div", { style: "display:flex;gap:10px;align-items:center;flex-wrap:wrap" }), fb = el("button", { type: "button", class: "btn sm" }, "Fetch from GST Portal");
+    row.appendChild(fb); row.appendChild(el("span", { class: "hint", style: "margin:0" }, g ? "Checked " + fmtDay(g.checkedAt) + ": " + [g.status || "status not given", g.type, g.constitution, "e-Invoice: " + (gstEinv(g) ? "Yes" : /^n/i.test(g.einv || "") ? "No" : "not stated (taken as No)")].filter(Boolean).join(" · ") : "Not checked on the GST portal yet."));
+    bx.appendChild(row);
+    fb.addEventListener("click", function () {
+      fb.disabled = true; fb.textContent = "Fetching…";
+      window.bvGst.search(normId(v.gstin)).then(function (r) {
+        if (!r || !r.found) { toast((r && r.message) || "The GST portal has nothing for this GSTIN."); return; }
+        var gd = gstFromHit(r); v.gst = gd;
+        return retry(function () { return S.db.doc("vendors/" + v.id).update({ gst: gd }); }).then(function () { invalidate(); toast("Fetched from the GST portal."); });
+      }).catch(function (e) { toast("The GST portal couldn't be reached (" + ((e && (e.code || e.message)) || "error") + ")."); }).then(function () { bx._k = ""; updateDynamic(); });
+    });
+    var ads = g && (g.addresses || []).length ? g.addresses : g && g.address ? [{ kind: "principal", address: g.address, nature: "" }] : [];
+    if (!ads.length) return;
+    var cur = normName(v.address || ""), lst = el("div", { style: "display:grid;gap:6px;margin-top:8px" });
+    lst.appendChild(el("span", { class: "lb", style: "margin:0" }, "Addresses on the GST portal"));
+    ads.forEach(function (a) {
+      var same = normName(a.address) === cur, r0 = el("div", { class: "vline", style: "display:flex;gap:10px;align-items:flex-start;justify-content:space-between" });
+      var tx = el("div"); tx.appendChild(el("b", null, (a.kind === "principal" ? "Principal place" : "Additional place") + (a.nature ? " · " + a.nature : ""))); tx.appendChild(el("div", null, a.address)); r0.appendChild(tx);
+      if (same) r0.appendChild(el("span", { class: "chip", style: "flex:none" }, "Saved address"));
+      else { var ub = el("button", { type: "button", class: "btn sm", style: "flex:none" }, "Use this address"); ub.addEventListener("click", function () { ub.disabled = true; retry(function () { return S.db.doc("vendors/" + v.id).update({ address: a.address }); }).then(function () { v.address = a.address; invalidate(); toast("The vendor's address is updated."); bx._k = ""; updateDynamic(); }, function (e) { ub.disabled = false; toast(explain(e)); }); }); r0.appendChild(ub); }
+      lst.appendChild(r0);
+    });
+    bx.appendChild(lst);
+  }
+  function paintEinvSt() {
+    var st = $("bcEinvSt"), D = B.D; if (!st || !D) return; var v = billVendor(), b = S.bills[B.cardId] || {}, g = v ? vGst(v) : cardPortal(b, normId((D.vNew || {}).gstin));
+    var req = !!(g && gstEinv(g)), known = !!(g && String(g.einv || "").trim());
+    st.textContent = req ? "The GST portal says this vendor must issue e-invoices: the IRN, Ack No and Ack Date are required." : known ? "The GST portal says this vendor need not issue e-invoices: fill these in only if the bill is an e-invoice." : "The GST portal doesn't say whether this vendor must issue e-invoices, so it is taken as No: fill these in only if the bill is an e-invoice." + (v && v.gstin ? " Fetch from GST Portal to check." : "");
+    st.style.color = req ? "var(--warn)" : ""; st.style.fontWeight = req ? "600" : "";
+  }
   function tlyLayout(f) {
     var wrap = el("div", { class: "tlysecs" }), hold = el("div", { hidden: "", "aria-hidden": "true" });
     var box = function (id) { var e = f.querySelector("#" + id); if (!e) return null; return e.classList.contains("f") || e.classList.contains("vbox") || e.classList.contains("vline") ? e : e.closest(".f") || e; };
     var sec = function (title, ids, extra) { var s0 = el("section", { class: "tlysec" }), g = el("div", { class: "form" }); s0.appendChild(el("h3", null, title)); ids.forEach(function (id) { var n = box(id); if (n) g.appendChild(n); }); if (extra) extra.forEach(function (n) { g.appendChild(n); }); s0.appendChild(g); wrap.appendChild(s0); return g; };
     var notes = Array.prototype.filter.call(f.children, function (n) { return n.classList && n.classList.contains("flag"); });
-    sec("Base Details", ["bcCo", "bcVen", "bcVBox", "bcVInfo", "bcAdvBox", "bcSetF", "bcNo", "bcDate", "bcTermBox", "bcDue", "bcSupply"]);
-    sec("e-Invoice", ["bcIrn", "bcAck", "bcAckD"]);
+    var vp = el("div", { class: "f wide", id: "bcVPortal", hidden: "" });
+    sec("Base Details", ["bcCo", "bcVen"], [vp]); var bd0 = wrap.lastChild.querySelector(".form"); ["bcVBox", "bcVInfo", "bcAdvBox", "bcSetF", "bcNo", "bcDate", "bcTermBox", "bcDue", "bcSupply"].forEach(function (id) { var n = box(id); if (n) bd0.appendChild(n); });
     sec("Bills Line Items", ["bcItemsWrap"]);
     /* Tally Line Items (the voucher as Tally gets it) are the accountant's, in Accounting */
     var nb = box("bcNar"); sec("Narration", [], nb ? [nb] : []);
     var al = sec("Alerts", ["bcFlags", "bcUndBox"], notes); al.appendChild(el("div", { class: "f wide", id: "bcTlyAl" }));
+    /* e-Invoice last: whether the GST portal says this vendor must issue e-invoices, then the IRN and acknowledgement */
+    var es = el("div", { class: "f wide hint", id: "bcEinvSt", style: "margin:0" }); sec("e-Invoice", [], [es]); var eg = wrap.lastChild.querySelector(".form"); ["bcIrn", "bcAck", "bcAckD"].forEach(function (id) { var n = box(id); if (n) eg.appendChild(n); });
     while (f.firstChild) hold.appendChild(f.firstChild);
     wrap.appendChild(hold); return wrap;
   }
@@ -5691,6 +5736,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function gstSplitText(k, g, cur) { if (g == null || !k) return ""; var f = function (n) { return cur && cur !== "INR" ? fcAmt(cur, n) : money(n); }; return k === "cgst" ? "CGST " + f(round2(g / 2)) + " + SGST " + f(round2(g - round2(g / 2))) : "IGST " + f(g); }
   function updateDynamic() {
     var D = B.D, b = S.bills[B.cardId]; if (!D || !b || !$("bcDue")) return;
+    if (tly()) { paintVPortal(); paintEinvSt(); }
     if ($("bcSetF")) { var rel = billAdvOk(D); $("bcSetF").hidden = !rel; if (!rel && D.settle === "yes") { D.settle = "no"; $("bcSettle").value = "no"; }
       if (rel) { var cbx = cashBalance(billWho(D), D.companyId, b.id); $("bcSettleH").textContent = (APP === "bnv" ? "" : "Cash on hand for " + coLabel(D.companyId) + ": " + money(cbx.free) + ". ") + "Yes: once approved it is settled from this cash, and the financier doesn't pay the vendor."; } }
     setTimeout(function () { paintAiFlags(billAiSpecs()); cardGst(); paintCardGst(); }, 0);

@@ -821,7 +821,7 @@ h3{font-size:calc(12px*var(--ts,1));font-weight:600;letter-spacing:.16em;text-tr
 .flag.w{border-radius:10px}.flag.e{border-radius:10px}
 .lg{color:var(--kk);border-radius:10px}
 .lcopt.sel b{color:var(--brand-text)}
-.lcgrp{color:var(--brand-text);letter-spacing:.12em}
+.lcgrp{color:var(--brand-text);letter-spacing:.12em}.lcgrp.lctop{background:#E6F4EC;color:#0D6B3A}.lcopt .lcused{flex:none;align-self:center;font-size:calc(11px*var(--ts,1));color:#fff;background:#0D6B3A;font-weight:700;border-radius:9px;padding:0 6px;line-height:16px;margin-right:auto}
 .uplog .lhead{background:var(--soft);color:var(--forest)}
 .docv,.docb,.dv-tot{border-color:var(--forest)}
 .pernav{border-radius:12px}
@@ -5782,7 +5782,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           al.addEventListener("change", function () { it.to = al.value; if (!it.to) { it.man = false; suggestItems(sd, false); } ch(); }); ltd.appendChild(al);
         }
         if (!chg || !fits) {
-          var lc = ledCombo({ attrs: { "aria-label": "Ledger, line " + (i + 1), id: idp + "Lg" + i }, cur: it.lg || "", list: function () { return cid ? lineLedgers(cid) : []; }, placeholder: cid ? "Type to search ledgers" : "Choose the company first", full: true });
+          var lc = ledCombo({ attrs: { "aria-label": "Ledger, line " + (i + 1), id: idp + "Lg" + i }, cur: it.lg || "", list: function () { return cid ? lineLedgers(cid) : []; }, placeholder: cid ? "Type to search ledgers" : "Choose the company first", full: true,
+            top: function () { var h = hsnNorm(it.hsn); if (!cid || !h) return null; var M = hsnMemory(), m = M.h[h] || {}, ids = hsnLedgers(cid, h, M), cnt = function (id) { return m[((S.ledgers || {})[id] || {}).name] || 0; }; ids.sort(function (a, b) { return cnt(b) - cnt(a); }); return ids.length ? { ids: ids, label: "Previously used for HSN / SAC " + h, n: cnt } : null; } });
           var lin = lc.querySelector("input"); if (lin) fitWidth(lin, wide.led); lc.disabled = off;
           lc.addEventListener("change", function () { it.lg = lc.value; it.man = !!lc.value; it.why = lc.value ? "Chosen" : ""; ch(); });
           if (chg) lc.style.marginTop = "4px"; ltd.appendChild(lc); if (it.why) sub(ltd, (it.man ? "" : "Suggested: ") + it.why, it.man ? "" : "color:var(--accent-ink,var(--accent))");
@@ -14126,13 +14127,20 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       shown = words.length ? ls.filter(function (l) { return match(l, words); }) : ls.slice();
       /* names starting with what was typed come first */
       if (q) shown.sort(function (a, b) { return (a.name.toLowerCase().indexOf(q) === 0 ? 0 : 1) - (b.name.toLowerCase().indexOf(q) === 0 ? 0 : 1) || ledCmp(a, b); });
+      /* earlier choices (o.top): first, under their own heading, and not repeated below */
+      var T = o.top ? o.top() : null, tops = [];
+      if (T && T.ids && T.ids.length) { tops = T.ids.map(function (id) { return shown.filter(function (l) { return l.id === id; })[0]; }).filter(Boolean); shown = tops.concat(shown.filter(function (l) { return tops.indexOf(l) < 0; })); }
       pop.textContent = ""; hi = shown.length ? Math.max(0, all ? shown.map(function (l) { return l.id; }).indexOf(val) : 0) : -1;
       if (!shown.length) pop.appendChild(el("div", { class: "lcnone" }, ls.length ? "No ledger matches \u201C" + t.value.trim() + "\u201D." : "No ledgers for this company yet."));
       var lastG = "";
       shown.forEach(function (l, k) {
-        var g = l.main + " \u203A " + l.sub; if (!q && g !== lastG) { pop.appendChild(el("div", { class: "lcgrp" }, g)); lastG = g; }
+        var isTop = k < tops.length;
+        if (isTop && k === 0) pop.appendChild(el("div", { class: "lcgrp lctop" }, T.label));
+        if (!isTop && k === tops.length && tops.length) { lastG = ""; if (q) pop.appendChild(el("div", { class: "lcgrp" }, "Other ledgers")); }
+        var g = l.main + " \u203A " + l.sub; if (!isTop && !q && g !== lastG) { pop.appendChild(el("div", { class: "lcgrp" }, g)); lastG = g; }
         var op = el("div", { class: "lcopt" + (k === hi ? " on" : "") + (l.id === val ? " sel" : ""), role: "option", id: lid + "_" + k, "aria-selected": l.id === val ? "true" : "false" });
         op.appendChild(el("b", null, l.name)); if (o.full) op.appendChild(el("span", null, l.main + " \u203A " + l.sub)); else if (q) op.appendChild(el("span", null, l.sub));
+        if (isTop && T.n) { var nu = T.n(l.id); if (nu) op.insertBefore(el("span", { class: "lcused", title: "Used " + nu + (nu === 1 ? " time" : " times") + " for this HSN / SAC" }, nu + "×"), op.children[1] || null); }
         op.addEventListener("mousedown", function (e) { e.preventDefault(); pick(l.id); });
         pop.appendChild(op);
       });

@@ -5293,20 +5293,23 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function billVendor() { var D = B.D; return D && D.vendorChoice && D.vendorChoice !== "new" ? S.vendors[D.vendorChoice] : null; }
   function paintVPortal() {
     var bx = $("bcVPortal"), v = billVendor(); if (!bx) return;
-    var g = v ? vGst(v) : null, key = v ? [v.id, v.gstin, v.address, g && g.checkedAt].join("|") : ""; if (bx._k === key) return; bx._k = key; bx.textContent = "";
+    /* once checked and matching Masters, only a short line shows; the comparison opens on Show details, after Fetch, or when
+       the portal differs from Masters (something to take over) */
+    B.vpOpen = B.vpOpen || {};
+    var g = v ? vGst(v) : null, key = v ? [v.id, v.gstin, v.address, v.name, v.pan, g && g.checkedAt, !!B.vpOpen[v.id]].join("|") : ""; if (bx._k === key) return; bx._k = key; bx.textContent = "";
     if (!v || !v.gstin || gstinCheck(v.gstin) || !window.bvGst) { bx.hidden = true; return; } bx.hidden = false;
     var row = el("div", { style: "display:flex;gap:10px;align-items:center;flex-wrap:wrap" }), fb = el("button", { type: "button", class: "btn sm" }, "Fetch from GST Portal");
-    row.appendChild(fb); row.appendChild(el("span", { class: "hint", style: "margin:0" }, g ? "Checked " + fmtDay(g.checkedAt) + ": " + [g.status || "status not given", g.type, g.constitution, "e-Invoice: " + (gstEinv(g) ? "Yes" : /^n/i.test(g.einv || "") ? "No" : "not stated (taken as No)")].filter(Boolean).join(" · ") + ". Shown from that check: the portal is asked again only when you press Fetch from GST Portal." : "Not checked on the GST portal yet."));
+    var hintS = el("span", { class: "hint", style: "margin:0" }); row.appendChild(fb); row.appendChild(hintS);
     bx.appendChild(row);
     fb.addEventListener("click", function () {
       fb.disabled = true; fb.textContent = "Fetching…";
       window.bvGst.search(normId(v.gstin)).then(function (r) {
         if (!r || !r.found) { toast((r && r.message) || "The GST portal has nothing for this GSTIN."); return; }
         var gd = gstFromHit(r); v.gst = gd;
-        return retry(function () { return S.db.doc("vendors/" + v.id).update({ gst: gd }); }).then(function () { invalidate(); toast("Fetched from the GST portal."); });
+        return retry(function () { return S.db.doc("vendors/" + v.id).update({ gst: gd }); }).then(function () { invalidate(); B.vpOpen[v.id] = true; toast("Fetched from the GST portal."); });
       }).catch(function (e) { toast("The GST portal couldn't be reached (" + ((e && (e.code || e.message)) || "error") + ")."); }).then(function () { bx._k = ""; updateDynamic(); });
     });
-    if (!g) return;
+    if (!g) { hintS.textContent = "Not checked on the GST portal yet."; return; }
     /* what Masters holds next to what the portal says; anything different can be taken from the portal */
     var upd = function (patch, what) { return retry(function () { return S.db.doc("vendors/" + v.id).update(patch); }).then(function () { Object.assign(v, patch); invalidate(); toast("The vendor's " + what + " is updated."); bx._k = ""; updateDynamic(); }, function (e) { toast(explain(e)); }); };
     var biz = gstBizName(g), pan = panFromGstin(normId(v.gstin)), cmp = [
@@ -5315,6 +5318,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       ["PAN", v.pan || "", pan, pan && pan !== (v.pan || "") ? function () { return upd({ pan: pan }, "PAN"); } : null],
       ["Status", "", g.status || "Not given", null], ["Taxpayer type", vtypeLabel(v.type) || "", [g.type, g.constitution].filter(Boolean).join(", "), null],
       ["e-Invoice", "", gstEinv(g) ? "Must issue e-invoices" : /^n/i.test(g.einv || "") ? "Need not issue e-invoices" : "Not stated (taken as No)", null]]);
+    var adsC = (g.addresses || []).length ? g.addresses : g.address ? [{ address: g.address }] : [], need = cmp.some(function (r) { return r[3] && !r[4] && normName(r[1]) !== normName(r[2]); }) || (adsC.length && !adsC.some(function (a) { return normName(a.address) === normName(v.address || ""); }));
+    var open = need || !!B.vpOpen[v.id];
+    hintS.textContent = "Checked " + fmtDay(g.checkedAt) + (gstIsBad(g) ? ": " + (g.status || "not active") : need ? ": the portal differs from Masters (below)" : ": Masters match the portal") + ". ";
+    if (!need) { var tg = el("button", { type: "button", class: "link-btn" }, open ? "Hide details" : "Show details"); tg.addEventListener("click", function () { B.vpOpen[v.id] = !open; bx._k = ""; paintVPortal(); }); hintS.appendChild(tg); }
+    if (!open) return;
     var tb = el("table", { class: "t", style: "margin-top:10px" }), hr = el("tr"); ["", "In Masters", "On the GST portal", ""].forEach(function (h) { hr.appendChild(el("th", null, h)); }); var th0 = el("thead"); th0.appendChild(hr); tb.appendChild(th0); var bd0 = el("tbody"); tb.appendChild(bd0);
     cmp.forEach(function (r) { var tr = el("tr"); tr.appendChild(elc("td", null, el("b", null, r[0]))); tr.appendChild(el("td", null, r[1] || "—")); tr.appendChild(el("td", r[3] ? { style: "color:var(--warn);font-weight:600" } : null, r[2] || "—")); var td = el("td"); if (r[3]) { var ub = el("button", { type: "button", class: "btn sm" }, r[4] || "Update"); ub.addEventListener("click", function () { ub.disabled = true; r[3](); }); td.appendChild(ub); } tr.appendChild(td); bd0.appendChild(tr); });
     var ads = (g.addresses || []).length ? g.addresses : g.address ? [{ kind: "principal", address: g.address, nature: "" }] : [], cur = normName(v.address || "");

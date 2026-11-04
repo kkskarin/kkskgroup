@@ -5489,7 +5489,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }
     return out;
   }
-  function itemsOut(items) { return items.map(function (x) { return { hsnBill: x.hsnBill || "", id: x.id || newId("i"), to: x.k === "charge" ? x.to || "" : "", rr: x.rcm && num(x.rr) != null ? num(x.rr) : null, k: x.k || "item", d: String(x.d || "").trim(), hsn: x.k !== "ro" ? hsnNorm(x.hsn) : "", qty: x.qty == null ? null : x.qty, unit: x.unit || "", rate: x.rate == null ? null : x.rate, gst: x.k === "ro" ? null : num(x.gst), rcm: x.k !== "ro" && !!x.rcm, itc: x.k === "ro" ? "" : x.itc || "elig", tx: num(x.tx), lg: x.lg || "", why: x.why || "", man: !!x.man }; }); }
+  function itemsOut(items) { return items.map(function (x) { return { hsnBill: x.hsnBill || "", id: x.id || newId("i"), to: x.k === "charge" ? x.to || "" : "", rr: null, k: x.k || "item", d: String(x.d || "").trim(), hsn: x.k !== "ro" ? hsnNorm(x.hsn) : "", qty: x.qty == null ? null : x.qty, unit: x.unit || "", rate: x.rate == null ? null : x.rate, gst: x.k === "ro" ? null : num(x.gst), rcm: x.k !== "ro" && !!x.rcm, itc: x.k === "ro" ? "" : x.itc || "elig", tx: num(x.tx), lg: x.lg || "", why: x.why || "", man: !!x.man }; }); }
   function hsnNorm(h) { return String(h || "").replace(/[^0-9]/g, "").slice(0, 8); }
   function itemsSum(items) { return round2(items.reduce(function (s0, x) { return s0 + (x.k !== "ro" ? num(x.tx) || 0 : 0); }, 0)); }
   /* Amounts that follow from the items: taxable (items and charges), GST (not on RCM lines), round off, total */
@@ -5740,11 +5740,14 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       else { var gs = el("select", { class: "field num", "aria-label": "GST %, line " + (i + 1) }); var rIn = gstRatesOn(c.day), rH = !ro ? hsnRates(hsnNorm(it.hsn), c.day).filter(function (r) { return rIn.indexOf(r) >= 0; }) : [], rts = rH.length ? rH : rIn, ro0 = rH.length ? hsnRateOpts(hsnNorm(it.hsn), c.day) : [], opts = rts.map(function (r) { var o0 = ro0.filter(function (q) { return q.rate === r; })[0]; return [String(r), r + "%" + (o0 && ro0.length > 1 ? " · " + o0.label.slice(0, 28) : "")]; }); if (it.gst === "" || it.gst == null) opts.unshift(["", "–"]); else if (rts.indexOf(num(it.gst)) < 0) opts.push([String(num(it.gst)), it.gst + "% (" + (rIn.indexOf(num(it.gst)) < 0 ? "not in force" : "not for this HSN") + ")"]); fillSelect(gs, opts, it.gst === "" || it.gst == null ? "" : String(num(it.gst))); fitWidth(gs, wide.gst); gs.disabled = off; gs.addEventListener("change", function () { it.gst = gs.value; ch(); }); gtd.appendChild(gs); }
       tr.appendChild(gtd);
       if (c.acct) {
-        var sel2 = function (cur, opts, on, lab, wd) { var sl = el("select", { class: "field", "aria-label": lab + ", line " + (i + 1) }); fillSelect(sl, opts, cur); fitWidth(sl, wd); if (ro || off || fits || rl0) { sl.disabled = true; if (ro || fits || rl0) fillSelect(sl, [["", "—"]], ""); } sl.addEventListener("change", function () { on(sl.value); ch(); }); var td = el("td"); td.appendChild(sl); return td; };
-        tr.appendChild(sel2(it.rcm ? "y" + (it.rr || it.gst || "18") : "no", [["no", "No"]].concat(RCM_RATES.map(function (r) { return ["y" + r[0], "Yes " + r[0] + "%"]; })), function (v) {
+        var sel2 = function (cur, opts, on, lab, wd) { var sl = el("select", { class: "field", "aria-label": lab + ", line " + (i + 1) }); fillSelect(sl, opts, cur); fitWidth(sl, wd); var nz = !ro && !(num(it.gst) > 0); if (ro || off || fits || rl0 || nz) { sl.disabled = true; if (ro || fits || rl0 || nz) fillSelect(sl, [["", "—"]], ""); } sl.addEventListener("change", function () { on(sl.value); ch(); }); var td = el("td"); td.appendChild(sl); return td; };
+        /* RCM is Yes or No: the tax is at the line's own GST %; No = charged by the supplier (input, added to its amount),
+           Yes = paid by the company through a Journal-GST (not added to the supplier's amount). A 0% / exempt line has neither. */
+        if (!(num(it.gst) > 0) && it.rcm) { it.rcm = false; it.rr = ""; }
+        tr.appendChild(sel2(it.rcm ? "yes" : "no", [["no", "No"], ["yes", "Yes"]], function (v) {
           /* reverse charge only on the notified list: anything else is confirmed first */
-          if (v !== "no" && !it.rcm && !rcmNotified(it.hsn) && !confirm("HSN / SAC " + (hsnNorm(it.hsn) || "(none)") + " isn't on the notified reverse-charge list (GTA, legal, security, sponsorship, director, residential renting and the like; raw cashew, tobacco leaves, silk yarn, raw cotton). If the vendor charged GST on this line, it is forward charge.\n\nMark it RCM anyway?")) { setTimeout(function () { c.redraw(); }, 0); return; }
-          it.rcm = v !== "no"; it.rr = it.rcm ? v.slice(1) : ""; if (it.rcm) it.itc = "elig"; }, "RCM", wide.rcm));
+          if (v === "yes" && !it.rcm && !rcmNotified(it.hsn) && !confirm("HSN / SAC " + (hsnNorm(it.hsn) || "(none)") + " isn't on the notified reverse-charge list (GTA, legal, security, sponsorship, director, residential renting and the like; raw cashew, tobacco leaves, silk yarn, raw cotton). If the vendor charged GST on this line, it is forward charge.\n\nMark it RCM anyway?")) { setTimeout(function () { c.redraw(); }, 0); return; }
+          it.rcm = v === "yes"; it.rr = ""; if (it.rcm) it.itc = "elig"; }, "RCM", wide.rcm));
         tr.appendChild(sel2(it.itc === "inel" ? "inel" : "elig", it.rcm ? [["elig", "Eligible"]] : [["elig", "Eligible"], ["inel", "Ineligible"]], function (v) { it.itc = v; }, "ITC", wide.itc));
       }
       var tx = inp(idp + "tx" + i, it.tx == null ? "" : String(it.tx), { class: "field num", inputmode: "decimal", autocomplete: "off", "aria-label": "Amount, line " + (i + 1) }); fitWidth(tx, wide.tx); tx.disabled = off;
@@ -5778,7 +5781,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         var vq = c.billId && verifyReqs(c.billId).filter(function (q) { return q.status === "pending" && (q.lineId === it.id || (q.lines || []).some(function (l) { return l.id === it.id; })); })[0];
         if (vq) mt.appendChild(el("span", { class: "hint", style: "display:block;margin:4px 0 0" }, "Sent to the Chief Accountant on " + fmtDay(vq.at) + (vq.byName ? " by " + vq.byName : "") + ": waiting for a reply."));
         /* the Chief Accountant (or the Super Admin), accounting it: answer on the line itself */
-        if (c.acct && tly() && canVerify() && c.billId && !off && iss.bad.concat(iss.warn).some(function (m) { return !/^RCM on |^Construction or works/.test(m); }) && hsnNorm(it.hsn)) {
+        if (c.acct && tly() && canVerify() && c.billId && !off && iss.bad.concat(iss.warn).some(function (m) { return !/^RCM |^Construction or works|^The bill's printed total includes/.test(m); }) && hsnNorm(it.hsn)) {
           var cc = el("button", { type: "button", class: "btn sm", style: "margin-left:8px", title: "Not a deviation: kept as correct for this HSN / SAC and item on every bill" }, "Confirm Correct (Always)");
           cc.addEventListener("click", function () { cc.disabled = true; hsnOkAdd([{ hsn: it.hsn, d: it.d, gst: it.gst }], c.billNo, c.vid).then(function () { toast("Confirmed correct: kept in Masters › HSN / SAC."); c.redraw(); verifySweep(c.billNo); }, function (e) { cc.disabled = false; toast(explain(e)); }); });
           mt.appendChild(cc);
@@ -5908,6 +5911,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var vk = (c.ver || {})[it.id];
     if (vk && r.bad.length && vk.sig === lineSig(it)) { r.warn = ["Verified by " + (vk.byName || "the Chief Accountant") + (vk.reply ? ": " + vk.reply : "") + " (" + r.bad.join(" ") + ")"].concat(r.warn); Object.keys(r.cells).forEach(function (k0) { r.wcells[k0] = 1; }); r.bad = []; r.cells = {}; r.verified = true; }
     if (it.k === "charge" && it.to && !fits) bad("led", "Its GST rate differs from the lines it goes to.");
+    if (it.rcm && (it.itc || "elig") === "inel") bad("led", "RCM with ITC Ineligible isn't used: set ITC to Eligible, or RCM to No.");
+    if (it.rcm && !(num(it.gst) > 0)) bad("gst", "RCM needs the line's GST %: the tax you pay by Journal-GST is at that rate.");
+    /* RCM only where the bill shows no GST on the line: a printed total that includes it means the vendor charged it */
+    if (it.rcm && num(it.gst) > 0 && c.printed) { var tt0 = itemTotals(its, c.inter), rg0 = round2(its.reduce(function (s0, x) { return s0 + (x.rcm && x.k !== "ro" ? (num(x.tx) || 0) * (num(x.gst) || 0) / 100 : 0); }, 0)); if (rg0 > 0.5 && Math.abs(round2(c.printed - tt0.total) - rg0) <= 1) bad("gst", "The bill's printed total includes the GST on this line, so the vendor charged it: forward charge. Set RCM to No."); }
     if (it.rcm && h && !rcmNotified(h)) { r.warn.push("RCM on " + h + ", which isn't on the notified reverse-charge list: check the vendor didn't charge GST on this line (if it did, it is forward charge)."); r.wcells.rcm = 1; }
     /* works contract / construction for immovable property: ITC blocked (s.17(5)(c), (d)) unless it is plant and machinery */
     if (h && h.indexOf("9954") === 0 && !it.rcm && (it.itc || "elig") === "elig" && !g0) { r.warn.push("Construction or works for immovable property (SAC 9954): its ITC is blocked under s.17(5)(c)/(d) unless it is plant and machinery. Check before keeping it Eligible."); r.wcells.itc = 1; }
@@ -6099,8 +6106,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var its = effItems(o.items), cid = o.cid, inter = !!o.inter, rows = [], grp = {}, gk = [], acct = o.acct !== false;
     var nm = function (id) { return ((S.ledgers || {})[id] || {}).name || "Choose a ledger"; };
     its.forEach(function (x) { if (x.k === "ro") return; var k = [x.lg, x.k === "item" ? hsnNorm(x.hsn) : "", num(x.gst), !!x.rcm, x.itc || "elig"].join("|"); if (!grp[k]) { grp[k] = { lg: x.lg, hsn: x.k === "item" ? hsnNorm(x.hsn) : "", k: x.k, gst: num(x.gst), rcm: !!x.rcm, rr: num(x.rr), itc: x.itc || "elig", amt: 0, chg: {} }; gk.push(k); } grp[k].amt = round2(grp[k].amt + (num(x.tx) || 0)); (x.chg || []).forEach(function (c0) { grp[k].chg[c0[0]] = round2((grp[k].chg[c0[0]] || 0) + c0[1]); }); });
-    gk.forEach(function (k) { var g = grp[k], ex = g.k === "charge" ? "Charged on the bill" : g.hsn ? (/^99/.test(g.hsn) ? "SAC " : "HSN ") + g.hsn : "No HSN", rt = g.rr != null ? g.rr : g.gst || 0, inc = Object.keys(g.chg).map(function (n0) { return n0 + " " + amt2(g.chg[n0]); });
-      rows.push({ dc: "Dr", led: nm(g.lg), lid: g.lg, amt: g.amt, sub: ex + (acct ? " · RCM: " + (g.rcm ? "Yes (" + rt + "%) · tax " + amt2(round2(g.amt * rt / 100)) + " by Journal-GST" : "No") : "") + (inc.length ? " · incl. " + inc.join(", ") : "") }); });
+    gk.forEach(function (k) { var g = grp[k], ex = g.k === "charge" ? "Charged on the bill" : g.hsn ? (/^99/.test(g.hsn) ? "SAC " : "HSN ") + g.hsn : "No HSN", rt = g.gst || 0, inc = Object.keys(g.chg).map(function (n0) { return n0 + " " + amt2(g.chg[n0]); });
+      rows.push({ dc: "Dr", led: nm(g.lg), lid: g.lg, amt: g.amt, sub: ex + (acct ? " · RCM: " + (g.rcm ? "Yes · tax at " + rt + "%, " + amt2(round2(g.amt * rt / 100)) + ", by Journal-GST" : "No") : "") + (inc.length ? " · incl. " + inc.join(", ") : "") }); });
     function gstRows(flav) {
       var heads = inter ? ["igst"] : ["cgst", "sgst"];
       heads.forEach(function (h) {

@@ -5296,7 +5296,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var g = v ? vGst(v) : null, key = v ? [v.id, v.gstin, v.address, g && g.checkedAt].join("|") : ""; if (bx._k === key) return; bx._k = key; bx.textContent = "";
     if (!v || !v.gstin || gstinCheck(v.gstin) || !window.bvGst) { bx.hidden = true; return; } bx.hidden = false;
     var row = el("div", { style: "display:flex;gap:10px;align-items:center;flex-wrap:wrap" }), fb = el("button", { type: "button", class: "btn sm" }, "Fetch from GST Portal");
-    row.appendChild(fb); row.appendChild(el("span", { class: "hint", style: "margin:0" }, g ? "Checked " + fmtDay(g.checkedAt) + ": " + [g.status || "status not given", g.type, g.constitution, "e-Invoice: " + (gstEinv(g) ? "Yes" : /^n/i.test(g.einv || "") ? "No" : "not stated (taken as No)")].filter(Boolean).join(" · ") : "Not checked on the GST portal yet."));
+    row.appendChild(fb); row.appendChild(el("span", { class: "hint", style: "margin:0" }, g ? "Checked " + fmtDay(g.checkedAt) + ": " + [g.status || "status not given", g.type, g.constitution, "e-Invoice: " + (gstEinv(g) ? "Yes" : /^n/i.test(g.einv || "") ? "No" : "not stated (taken as No)")].filter(Boolean).join(" · ") + ". Shown from that check: the portal is asked again only when you press Fetch from GST Portal." : "Not checked on the GST portal yet."));
     bx.appendChild(row);
     fb.addEventListener("click", function () {
       fb.disabled = true; fb.textContent = "Fetching…";

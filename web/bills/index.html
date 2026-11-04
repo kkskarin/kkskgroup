@@ -2268,7 +2268,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function coApps(c) { return c && c.apps && c.apps.length ? c.apps : ["mnt"]; }
   function coInApp(c) { if (PV_ALL || APP === "bnv") return !!c; return !DIV || coApps(c).indexOf(DIV) >= 0; }
   /* Tally (Demo) keeps the company order of the KKSK Group's Company Masters, not an order of its own */
-  function coRank(c) { if (!c) return 1e6; if (APP !== "tly" && c.orders && typeof c.orders[APP] === "number") return c.orders[APP]; return typeof c.order === "number" ? c.order : 1e6; }
+  /* one company order for every app (Company Masters' order), set by the Super Admin in Masters › Companies of any app */
+  function coRank(c) { if (!c) return 1e6; return typeof c.order === "number" ? c.order : 1e6; }
   function coCmp(a, b) { return coRank(a) - coRank(b) || natCmp(a && a.name, b && b.name); }
   function coCmpId(x, y) { if (x === y) return 0; if (!x) return 1; if (!y) return -1; return coCmp(S.companies[x], S.companies[y]); }
   function activeCompanies(all) {
@@ -11764,16 +11765,17 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var at = list.indexOf(targetId); if (at < 0) return;
     list.splice(where === "after" ? at + 1 : at, 0, id);
     var changes = [];
-    var G = tly();
+    var G = true;
     list.forEach(function (cid, i) { var c = S.companies[cid]; if (coRank(c) !== i) { if (G) { changes.push([cid, i, c.order]); c.order = i; } else { c.orders = Object.assign({}, c.orders || {}); c.orders[APP] = i; changes.push([cid, c.orders]); } } });
     if (!changes.length) return;
     renderList();
     var by = meId(), now = Date.now();
-    /* Tally (Demo): the order is the Company Masters' own (Live), not a Tally-only copy; a Tally copy of a company gets it too */
+    /* the order is the Company Masters' own (Live record), whichever app or mode it is set from; Tally (Demo) and Demo copies of a
+       company get it too, so every app shows the same order */
     var liveDb = (S.rawDb && S.rawDb.live) || S.db;
-    Promise.all(changes.map(function (ch) { return G ? retry(function () { return liveDb.doc("companies/" + ch[0]).update({ order: ch[1], updatedAt: now, updatedBy: by }); }).then(function () { var cp = liveDb.doc(nsPre() + "companies/" + ch[0]); return cp.get().then(function (d) { if (d.exists) return cp.update({ order: ch[1] }); }); })
+    Promise.all(changes.map(function (ch) { return G ? retry(function () { return liveDb.doc("companies/" + ch[0]).update({ order: ch[1], updatedAt: now, updatedBy: by }); }).then(function () { return Promise.all(["tly__", "demo__"].map(function (pre) { var cp = liveDb.doc(pre + "companies/" + ch[0]); return cp.get().then(function (d) { if (d.exists) return cp.update({ order: ch[1] }); }, function () {}); })); })
       : retry(function () { return S.db.doc("companies/" + ch[0]).update({ orders: ch[1], updatedAt: now, updatedBy: by }); }); }))
-      .then(function () { toast(G ? "Company order saved: Tally (Demo), and every app without an order of its own, now lists companies in this order." : "Company order saved for " + appName() + ". Every list in this app now shows companies in this order."); },
+      .then(function () { toast(G ? "Company order saved: every app now lists companies in this order." : "Company order saved for " + appName() + ". Every list in this app now shows companies in this order."); },
         function (e) { if (G) changes.forEach(function (ch) { var c = S.companies[ch[0]]; if (c) { if (ch[2] == null) delete c.order; else c.order = ch[2]; } }); renderList(); toast(explain(e)); });
   }
 

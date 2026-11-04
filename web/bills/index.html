@@ -289,6 +289,7 @@ body.tly .navbar #subnav button,body.tly .navbar #subnav button[aria-current="pa
 .ainhd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ainmk{color:var(--muted);font-size:calc(12.5px*var(--ts,1))}.ainmin{margin-left:auto}
 .aicard{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}.aicard p{margin:8px 0}.aicnt{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}.aichip{display:inline-flex;align-items:center;gap:6px;font-weight:600}
 .aisrc{font-size:calc(12.5px*var(--ts,1));color:var(--muted);overflow-wrap:anywhere}.aibusy{display:flex;gap:12px;align-items:center;padding:14px;background:var(--surface);border:1px dashed var(--line);border-radius:8px}.aibtn{border-color:#5B3FA8;color:#5B3FA8}
+.austats{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.austats .stat .tsub{margin-top:2px}
 .whogrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px;margin:12px 0 4px}.who1{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 12px;min-width:0}.who1 .k{font-size:calc(11px*var(--ts,1));font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.who1 .v{font-weight:600;color:var(--ink);overflow-wrap:anywhere}
 #avActs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}#avActs .grow{flex:1}
 .card.tlydone{background:none;border:0;box-shadow:none;padding:0;overflow:visible;border-radius:0}.tlydone .card{margin-bottom:14px}.tlydone>.card:last-child{margin-bottom:0}
@@ -1082,6 +1083,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     <div id="apFilt"></div>
     <div id="apBox"></div>
   </section>
+  <section id="secAiUse" hidden>
+    <div class="head"><div><h2>AI Usage Credits</h2><p class="sub" id="auSub">What Claude has cost in this app, in rupees: per bill (Entry, Accounting and Approval, narrations and remarks included), by purpose and by person.</p></div><span class="grow"></span><div class="acts2"><button class="btn" id="auRefresh" type="button">Refresh</button></div></div>
+    <div id="auFilt"></div>
+    <div id="auBox"></div>
+  </section>
   <section id="secApView" hidden>
     <div class="head"><div class="grow"><button class="link-btn" id="avBack" type="button">Back to Approvals</button><h2 id="avTitle"></h2><p class="sub" id="avSub"></p></div></div>
     <div class="avpick" id="avPick" hidden></div>
@@ -1772,7 +1778,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var S = { staff: {}, salruns: {}, regions: {}, ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secBillSub", "secApView", "secApprT", "secBillAll", "secVStmt", "secVerify", "secHsn", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
+  var VIEWS = ["secAiUse", "secBillSub", "secApView", "secApprT", "secBillAll", "secVStmt", "secVerify", "secHsn", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -2010,12 +2016,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS],
     /* Tally (Demo): purchaser, accountant and financier, nothing else; masters to look up */
     tly: [{ h: "Purchase", tabs: [["Bills", "Bill Entry", 0, "Bills"], ["Bill Sub", "Submitted Bills", 0, "Bills"], ["Bill All", "All Bills", 0, "Bills"], ["Vch T", "Vouchers"], ["Pro T", "Proformas"], ["Imp T", "Imports"]] }, { h: "Sales", tabs: [["Sales T", "Sales Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Purchase"], ["Sales Acct", "Sales"], ["Verify", "Verification"]] }, { h: "Approvals", tabs: [["Appr T", "Pending Final Approval"], ["Appr First", "Pending Checker Approval"], ["Appr Post", "Postponed Payments"], ["Appr Done", "Approval History"]] }, { h: "Finance", tabs: [["Mark Transaction", "Plan"], ["Pay Record", "Record"]] },
-      { h: "Reports", tabs: [["Transactions", "Transactions", 0, "Purchase"], ["Ledger Books", "Ledger Statements", 0, "Accounts"], ["Vendor Stmt", "Vendor Statement", 0, "Accounts"], ["Payables", "Payables", 0, "Finance"]].concat(MASTERS, [["HSN", "HSN / SAC", 0, "m"], ["Tally DL", "Tally Downloads"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
+      { h: "Reports", tabs: [["Transactions", "Transactions", 0, "Purchase"], ["Ledger Books", "Ledger Statements", 0, "Accounts"], ["Vendor Stmt", "Vendor Statement", 0, "Accounts"], ["Payables", "Payables", 0, "Finance"]].concat(MASTERS, [["HSN", "HSN / SAC", 0, "m"], ["Tally DL", "Tally Downloads"], ["AI Use", "AI Usage Credits"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
   var LAST_M = "", LAST_SET = {};
   var HOME_TAB = { acc: "Accounts", fin: "Payables", apr: "Approvals", tly: "Bills" }[APP] || "Transactions", LAST_IN = {};
-  var DATA_TABS = ["Bill All", "Bill Sub", "Appr T", "Appr Post", "Appr First", "Appr Done", "Pay Record", "Vendor Stmt", "Advance Requests", "Cash Approvals", "Approvals", "Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
+  var DATA_TABS = ["Bill All", "Bill Sub", "AI Use", "Appr T", "Appr Post", "Appr First", "Appr Done", "Pay Record", "Vendor Stmt", "Advance Requests", "Cash Approvals", "Approvals", "Notes", "Transactions", "Payables", "Advance Summary", "Accounts", "Ledger Books", "Ledgers", "Bills", "Vendors", "Checking Report", "Plan Advance", "Imports", "Mark Transaction", "Payment Planning", "Payment Ledger", "Cash Voucher", "Voucher Checking Report", "Cash Advance", "Advance Report"];
   /* Admins oversee rather than enter: the entry screens (and the accountant's queue) are left out for them.
      Reports > Transactions shows every item, where it stands and who is responsible. "View as" still opens a person's screens. */
   var ADMIN_HIDE = { "Bills": 1, "Plan Advance": 1, "Imports": 1, "Cash Voucher": 1, "Accounts": 1, "Mark Transaction": 1 };
@@ -2153,6 +2159,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       else if (t === "Vendor Stmt") { renderVStmt(); show("secVStmt"); }
       else if (t === "Bill All") { renderBillAll(); show("secBillAll"); }
       else if (t === "Bill Sub") { tlyMoveDone(); renderTlyDone(); show("secBillSub"); }
+      else if (t === "AI Use") { renderAiUse(true); show("secAiUse"); }
       else if (t === "Appr T" || t === "Appr Post" || t === "Appr First" || t === "Appr Done") { AP.tab = t === "Appr Done" ? "done" : t === "Appr Post" ? "post" : t === "Appr First" ? "first" : "wait"; renderApprT(); show("secApprT"); }
       else if (t === "Payment Ledger") { renderLedger(); show("secLedger"); }
       else { renderPlanning(); show("secPlanPay"); }
@@ -4467,7 +4474,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     files = Array.prototype.slice.call(files || []); if (!files.length) return;
     if (B.log.length && !B.pending.length && !B.running) B.log = [];
     var link = takeLink();
-    files.forEach(function (f) { var it = { name: f.name || "File", file: f, orig: f, state: "wait", msg: "Waiting", link: link }; B.log.push(it); B.pending.push(it); });
+    files.forEach(function (f) { var it = { name: f.name || "File", file: f, orig: f, state: "wait", msg: "Waiting", link: link, _rk: newId("rd") }; B.log.push(it); B.pending.push(it); });
     renderLog(); pump();
   }
   function pump() {
@@ -4566,7 +4573,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       batches.forEach(function (bt) {
         c2 = c2.then(function () {
           var tx = scanned ? "" : texts.slice(bt[0] - 1, bt[1]).map(function (t, k) { return "--- page " + (bt[0] + k) + " ---\n" + t.slice(0, 2500); }).join("\n");
-          return S.sample.json(sortPrompt(bt[0], bt[1], scanned, tx), { images: scanned ? thumbs.slice(bt[0] - 1, bt[1]) : undefined, modelTier: "quick" }).then(function (r) {
+          return S.sample.json(sortPrompt(bt[0], bt[1], scanned, tx), { images: scanned ? thumbs.slice(bt[0] - 1, bt[1]) : undefined, modelTier: "quick", meta: { purpose: "Bill reading", stage: "Entry", readKey: it._rk } }).then(function (r) {
             var got = (r && Array.isArray(r.pages) ? r.pages : []).filter(function (x) { return x && x.page >= bt[0] && x.page <= bt[1]; }), seen = {};
             got.forEach(function (x) { seen[x.page] = 1; });
             for (var q = bt[0]; q <= bt[1]; q++) if (!seen[q]) got.push({ page: q, kind: "bill_continued", supplier: "", bill_number: "" });
@@ -4592,7 +4599,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           return c4.then(function () { return pageImages(canv, scanned, scanned ? maxImgs : 1); }).then(function (im) {
             var parts = im.parts.map(function (x) { return { page: rd[x.page - 1], part: x.part }; });
             var sub = { name: it.name, text: scanned ? "" : g.read.map(function (pn) { return "--- page " + pn + " ---\n" + (texts[pn - 1] || ""); }).join("\n").slice(0, 30000), images: im.images, previews: [], parts: parts, scanned: scanned, pages: n };
-            return S.sample.json(buildPrompt(sub) + "\n\nThis upload holds several bills; only page" + (g.read.length > 1 ? "s " : " ") + g.read.join(", ") + " (one bill" + (g.no ? ", number " + g.no : "") + (g.supplier ? ", from " + g.supplier : "") + ") are given here. Read that one bill.", { images: im.images.length ? im.images : undefined, modelTier: scanned ? "default" : "quick" })
+            return S.sample.json(buildPrompt(sub) + "\n\nThis upload holds several bills; only page" + (g.read.length > 1 ? "s " : " ") + g.read.join(", ") + " (one bill" + (g.no ? ", number " + g.no : "") + (g.supplier ? ", from " + g.supplier : "") + ") are given here. Read that one bill.", { images: im.images.length ? im.images : undefined, modelTier: scanned ? "default" : "quick", meta: { purpose: "Bill reading", stage: "Entry", readKey: it._rk } })
               .then(function (res) { var l = res && Array.isArray(res.bills) ? res.bills : [res]; return l.filter(function (x) { return x && typeof x === "object"; })[0] || {}; }, function (e) { var k = aiKind(e); if (k.kind === "off" || k.kind === "limit") throw k; return { readable: false }; });
           }).then(function (res) {
             var d = linkInto(docFromResult(res, it), it.link); d.ex.aiMarks = billAiMarks(d); d.ex.pages = g.pages; d.ex.ofBills = groups.length; d.ex.splitNo = gi + 1;
@@ -4681,7 +4688,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function readSingle(it) {
     return prepFile(it.file).then(function (p) {
       it.prep = p; it.file = null;
-      return S.sample.json(buildPrompt(p), { images: p.images.length ? p.images : undefined, modelTier: p.scanned ? "default" : "quick" }).catch(function (e) {
+      return S.sample.json(buildPrompt(p), { images: p.images.length ? p.images : undefined, modelTier: p.scanned ? "default" : "quick", meta: { purpose: "Bill reading", stage: "Entry", readKey: it._rk } }).catch(function (e) {
         var c = e && e.code;
         if (e && e.code === "sampling_disabled" && e.message) REJECT.off = String(e.message).replace(/\.?$/, "") + ", so this file wasn't read.";
         if (c === "not_granted" || c === "sampling_disabled" || c === "not_declared" || c === "capability_disabled" || c === "capability_removed") { B.aiOff = "off"; throw { kind: "off" }; }
@@ -4701,7 +4708,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (empty && res.readable === false && !(it.prep.previews || []).length) throw { kind: "blank", manual: true };
       var id = newId("b");
       return retry(function () { return S.db.doc("bills/" + id).set(d); }).then(function () {
-        S.bills[id] = Object.assign({ id: id }, d); invalidate(); if (d.vendorId && S.vendors[d.vendorId]) gstRefresh(S.vendors[d.vendorId], null, true);
+        S.bills[id] = Object.assign({ id: id }, d); invalidate(); if (d.vendorId && S.vendors[d.vendorId]) gstRefresh(S.vendors[d.vendorId], null, true); aiLink(it._rk, id);
         if (rots) { var orig0 = it.orig, pv0 = it.prep.previews; it.prep = null; it.orig = null;
           /* Tally (Demo): pages turned upright before they are kept */
           turnPreviews(pv0, rots).then(function (pv) { S.previews[id] = pv; storePreviews(id, pv); onData(); });
@@ -4755,7 +4762,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         if (pages.length) d.ex.notes = ((d.ex.notes ? d.ex.notes + " " : "") + "Page" + (pages.length > 1 ? "s " : " ") + pages.join(", ") + " of " + (it.name || "the file") + ".").trim();
         var id = newId("b");
         return retry(function () { return S.db.doc("bills/" + id).set(d); }).then(function () {
-          S.bills[id] = Object.assign({ id: id }, d); invalidate(); if (d.vendorId && S.vendors[d.vendorId]) gstRefresh(S.vendors[d.vendorId], null, true);
+          S.bills[id] = Object.assign({ id: id }, d); invalidate(); if (d.vendorId && S.vendors[d.vendorId]) gstRefresh(S.vendors[d.vendorId], null, true); aiLink(it._rk, id);
           var pv = pages.length ? pages.map(function (pg) { return prev[pg - 1]; }).filter(Boolean) : [];
           S.previews[id] = pv.length ? pv : prev.slice(); storePreviews(id, S.previews[id]);
           var orig = it.orig;
@@ -5710,7 +5717,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     B.tidying = id;
     var prompt = ["Rewrite each item description from an Indian purchase bill so it reads neatly in accounting records.", DESC_RULE,
       "Reply with only this JSON: {\"items\":[\"...\"]}, one rewritten description per line below, in the same order. Each line gives the description as read and its quantity and unit if known.", "", JSON.stringify(its.map(function (x) { return { description: x.d, qty: x.qty, unit: x.unit }; }))].join("\n");
-    S.sample.json(prompt, { modelTier: "quick" }).then(function (r) {
+    S.sample.json(prompt, { modelTier: "quick", purpose: "Description tidy" }).then(function (r) {
       var out = r && Array.isArray(r.items) ? r.items : null; if (!out || out.length !== its.length || B.cardId !== id || !B.D) return;
       its.forEach(function (x, i) { var t = String(out[i] || "").replace(/\s+/g, " ").trim().slice(0, 200); if (t) x.d = t; });
       B.D.descTidy = 2; B.touched = true; scheduleSave(); var c = billCtx(); if (c) c.redraw();
@@ -5742,7 +5749,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       "Keep: what was bought or done, the vendor's name" + (vn ? " (" + vn + ")" : "") + ", the invoice number" + (D.billNo ? " (" + D.billNo + ")" : "") + " and date" + (bd ? " (" + bd.split("-").reverse().join("/") + ")" : "") + ".",
       "Combine the rest: put like items under one name (e.g. \"engine spares incl. spark plug, filters and O-rings\"), charges together (\"with labour and travel charges\"), and drop part numbers, model codes, quantities and repeated words. Don't add anything that isn't in it.",
       "Reply with only this JSON: {\"narration\":\"...\"}", "", cur].join("\n");
-    S.sample.json(prompt, { modelTier: "quick" }).then(function (r) { put(r && r.narration); }, function () { put(""); });
+    S.sample.json(prompt, { modelTier: "quick", purpose: "Narration" }).then(function (r) { put(r && r.narration); }, function () { put(""); });
   }
   /* Each column as wide as its widest value (or heading); only the description wraps. */
   function fitWidth(e, len) { e.style.width = "calc(" + Math.max(3, len) + "ch + " + (e.tagName === "SELECT" ? 26 : 14) + "px)"; }
@@ -5883,7 +5890,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var prompt = ["Check the HSN / SAC of each line of a purchase bill against what the item is. The code was read from the bill and may be smudged, misread or missing.",
       "For each line reply {\"line\": n, \"verdict\": \"ok\" if the code read fits the item, \"mismatch\" if it clearly doesn't, \"missing\" if none was read or it isn't in the official list, \"code\": the best-fitting code from that line's candidates or the code read (empty if nothing fits), \"why\": a short reason}.",
       "Pick codes only from the line's candidates or the code read. Reply with only JSON: {\"lines\":[...]}.", "", lines.join("\n")].join("\n");
-    var pr = S.sample.json(prompt, { modelTier: "quick" }).then(function (j) {
+    var pr = S.sample.json(prompt, { modelTier: "quick", purpose: "HSN check" }).then(function (j) {
       need.forEach(function (x) { HSN_CHK[hsnChkKey(x)] = { verdict: "", code: "", why: "" }; });
       (j && j.lines || []).forEach(function (l) { var x = need[Number(l.line) - 1]; if (!x) return; var code = hsnNorm(l.code || ""); if (code && !hsnEntry(code)) code = ""; HSN_CHK[hsnChkKey(x)] = { verdict: /^(ok|mismatch|missing)$/.test(l.verdict) ? l.verdict : "", code: code, why: str(l.why, 160) }; });
     }, function () { need.forEach(function (x) { HSN_CHK[hsnChkKey(x)] = { verdict: "", code: "", why: "" }; }); }).then(function () { need.forEach(function (x) { delete HSN_CHKQ[hsnChkKey(x)]; }); if (redraw) redraw(); });
@@ -6573,7 +6580,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var names = tidyNames(ta);
     var prompt = tidyPrompt(kind, said, names, tidyCtx(ta));
     tidyStatus(ta, kind === "bill" || kind === "proforma" ? "Writing the narration in English…" : "Tidying into clean English…");
-    var id = ta.id, p = S.sample(prompt, { modelTier: "quick" }).then(function (r) {
+    var id = ta.id, p = S.sample(prompt, { modelTier: "quick", purpose: kind === "bill" || kind === "proforma" ? "Narration" : "Remarks / text tidy" }).then(function (r) {
       var t = String((r && r.text) || "").trim().replace(/^["“]+|["”]+$/g, "");
       if (!ta.isConnected || ta.value.trim() !== said) { tidyStatus(ta, ""); return; }
       var bk = /^BLOCKED:?\s*/i.exec(t); if (bk) { ta._risk = t.slice(bk[0].length).replace(/\.$/, "") || "flagged by Claude"; ta._riskFor = said; tidyStatus(ta, "Not accepted: " + ta._risk + "."); ta.dispatchEvent(new Event("input", { bubbles: true })); return; }
@@ -6693,7 +6700,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return window.bvFiles.get(b.file.path).then(function (blob) {
       var f = new File([blob], b.file.name || "bill", { type: b.file.type || blob.type || "" });
       return prepFile(f).then(function (p) {
-        return S.sample.json(buildPrompt(p), { images: p.images.length ? p.images : undefined, modelTier: p.scanned ? "default" : "quick" }).then(function (res) {
+        return S.sample.json(buildPrompt(p), { images: p.images.length ? p.images : undefined, modelTier: p.scanned ? "default" : "quick", purpose: "Bill reading", meta: { stage: "Entry", billId: id } }).then(function (res) {
           var list = res && Array.isArray(res.bills) ? res.bills.filter(function (x) { return x && typeof x === "object"; }) : [res || {}], r = list[0] || {};
           var d = docFromResult(r, { name: b.file.name || "" }), now = Date.now(), cur = S.bills[id] || b;
           var up = { companyId: d.companyId || cur.companyId || null, vendorId: d.vendorId || cur.vendorId || null, billNo: d.billNo || cur.billNo || "", billDate: d.billDate || cur.billDate || "",
@@ -7221,6 +7228,90 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       row(el("tr"), [null, apVen(v.name || vendorLabelOfBill(b)), (function () { var d0 = apDet(b.billNo, fmtDate(b.billDate)); if (r) d0.appendChild(el("div", { class: "tsub" }, "in " + r.no)); return d0; })(), money(tlyPayable(b)), ap, money(it.amt), ymdOk(b.dueDate) ? fmtDate(b.dueDate) : "", w]);
     });
   }
+  /* ---- AI usage: every call to Claude carries where it was made (app, Entry / Accounting / Approval, the bill) and what for;
+     the server logs its tokens and cost (aiuse/<id>). A bill being read has no id yet: its calls are linked once it is made. ---- */
+  var AIU = { read: {} };
+  function aiStage() {
+    if ($("secApView") && !$("secApView").hidden && AP.view) return { stage: "Approval", billId: AP.view.ids[AP.view.i] || "" };
+    if ($("secAcctOne") && !$("secAcctOne").hidden && AC.id) return { stage: "Accounting", billId: AC.id };
+    if ($("secBills") && !$("secBills").hidden) return { stage: "Entry", billId: B.cardId || "" };
+    return { stage: S.tab || "", billId: "" };
+  }
+  function aiWrap(s0) {
+    var meta = function (o) { var st = aiStage(), m = Object.assign({ app: APP, ns: nsPre(), byName: pnm(preparedByText()) }, st, (o && o.meta) || {}); if (!m.purpose) m.purpose = o && o.purpose || ""; return Object.assign({}, o || {}, { meta: m }); };
+    var f = function (p, o) { return s0(p, meta(o)); };
+    f.json = function (p, o) { return s0.json(p, meta(o)); };
+    if (s0.jsonSources) f.jsonSources = function (p, o) { return s0.jsonSources(p, meta(o)); };
+    f.limits = s0.limits;
+    return f;
+  }
+  window.bvAiUsed = function (id, m) { if (m && m.readKey && !m.billId) (AIU.read[m.readKey] = AIU.read[m.readKey] || []).push(id); };
+  /* a read bill is made: its reading calls are now this bill's */
+  function aiLink(readKey, billId) { var ids = (readKey && AIU.read[readKey]) || []; delete AIU.read[readKey]; ids.forEach(function (id) { retry(function () { return S.db.doc("aiuse/" + id).update({ billId: billId }); }).catch(function () {}); }); }
+  /* ---- Reports › AI Usage Credits: the logged calls (aiuse) priced in USD by the server, shown in rupees at the latest rate ---- */
+  var AIR = { rows: null, loading: false, f: { per: "month", from: "", to: "", co: "", ven: "", stage: "", purpose: "", who: "" }, rate: null };
+  function auRate() {
+    if (AIR.rate) return Promise.resolve(AIR.rate);
+    var keep = null; try { keep = JSON.parse(localStorage.getItem("bvUsdInr") || "null"); } catch (e) {}
+    if (keep && keep.rate && keep.day === todayYmd()) { AIR.rate = keep; return Promise.resolve(keep); }
+    return fetch("https://open.er-api.com/v6/latest/USD").then(function (r) { return r.json(); }).then(function (j) {
+      var v = j && j.rates && Number(j.rates.INR); if (!v) throw new Error("no rate");
+      AIR.rate = { rate: v, day: todayYmd(), src: "open.er-api.com", at: j.time_last_update_utc || "" }; try { localStorage.setItem("bvUsdInr", JSON.stringify(AIR.rate)); } catch (e) {} return AIR.rate;
+    }).catch(function () { AIR.rate = keep && keep.rate ? Object.assign({}, keep, { stale: true }) : { rate: 88, day: "", src: "an estimate (the live rate couldn't be fetched)", stale: true }; return AIR.rate; });
+  }
+  function renderAiUse(reload) {
+    var box = $("auBox"); if (!box) return;
+    if (reload || !AIR.rows) {
+      if (AIR.loading) return; AIR.loading = true; box.textContent = ""; box.appendChild(el("div", { class: "card empty" }, "Loading the AI usage…"));
+      Promise.all([S.db.collection("aiuse").get().then(function (sn) { var o = []; sn.docs.forEach(function (d) { o.push(Object.assign({ id: d.id }, d.data() || {})); }); return o; }), auRate()])
+        .then(function (r) { AIR.rows = r[0]; }, function (e) { AIR.rows = []; toast(explain(e)); }).then(function () { AIR.loading = false; renderAiUse(false); });
+      return;
+    }
+    var f = AIR.f, R = AIR.rate || { rate: 88 }, inr = function (usd) { return (Number(usd) || 0) * R.rate; };
+    var rs = function (n) { return "\u20B9 " + (n < 10 ? n.toFixed(2) : amt2(round2(n))); };
+    var t = todayYmd(), ymdOf = function (ms) { return ymdOfMs(ms); }, rg = (function () {
+      var m0 = t.slice(0, 8) + "01"; if (f.per === "month") return [m0, t]; if (f.per === "lmonth") { var d = new Date(m0 + "T00:00:00Z"); d.setUTCMonth(d.getUTCMonth() - 1); var a = d.toISOString().slice(0, 10); return [a, addDays(m0, -1)]; }
+      if (f.per === "week") return [addDays(t, -6), t]; if (f.per === "fy") return [fyRange(fyOf(t)).from, t]; if (f.per === "range") return [f.from || "", f.to || ""]; return ["", ""]; })();
+    var billOf = function (r) { return r.billId ? S.bills[r.billId] || null : null; };
+    var all = AIR.rows || [], rows = all.filter(function (r) {
+      var d = ymdOf(r.at || 0); if (rg[0] && d < rg[0]) return false; if (rg[1] && d > rg[1]) return false;
+      if (f.stage && r.stage !== f.stage) return false; if (f.purpose && (r.purpose || "Other") !== f.purpose) return false; if (f.who && r.by !== f.who) return false;
+      var b = billOf(r); if (f.co && (!b || b.companyId !== f.co)) return false; if (f.ven && (!b || b.vendorId !== f.ven)) return false; return true; });
+    /* filters (choices from what has been logged) */
+    var fb = $("auFilt"); fb.textContent = ""; var g = el("div", { class: "tapfilt" }), uniq = function (fn) { var m = {}; all.forEach(function (r) { var k = fn(r); if (k) m[k] = 1; }); return Object.keys(m); };
+    var defs = [["per", "Period", null, [["month", "This month"], ["lmonth", "Last month"], ["week", "Last 7 days"], ["fy", "This financial year"], ["all", "All time"], ["range", "Between dates…"]]],
+      ["co", "Company", "All companies", uniq(function (r) { var b = billOf(r); return b && b.companyId; }).filter(function (k) { return S.companies[k]; }).sort(function (a, b) { return coRank(S.companies[a]) - coRank(S.companies[b]); }).map(function (k) { var c = S.companies[k]; return [k, c.internalName || c.shortName || c.name]; })],
+      ["ven", "Vendor", "All vendors", uniq(function (r) { var b = billOf(r); return b && b.vendorId; }).filter(function (k) { return S.vendors[k]; }).map(function (k) { return [k, S.vendors[k].name]; }).sort(function (a, b) { return natCmp(a[1], b[1]); })],
+      ["stage", "Stage", "All stages", ["Entry", "Accounting", "Approval"].concat(uniq(function (r) { return r.stage; }).filter(function (k) { return ["Entry", "Accounting", "Approval"].indexOf(k) < 0; })).map(function (k) { return [k, k]; })],
+      ["purpose", "Purpose", "All purposes", uniq(function (r) { return r.purpose || "Other"; }).sort().map(function (k) { return [k, k]; })],
+      ["who", "Person", "Everyone", uniq(function (r) { return r.by; }).map(function (k) { var n = personName(k) || (all.filter(function (r) { return r.by === k; })[0] || {}).byName || "Unknown"; return [k, n]; }).sort(function (a, b) { return natCmp(a[1], b[1]); })]];
+    defs.forEach(function (d) { var sl = el("select", { class: "field", "aria-label": d[1] }); fillSelect(sl, (d[2] ? [["", d[2]]] : []).concat(d[3]), f[d[0]] || (d[2] ? "" : "month")); if (d[2] && f[d[0]]) sl.classList.add("on"); sl.addEventListener("change", function () { f[d[0]] = sl.value; renderAiUse(false); }); var w = el("label", { class: "tapf" }); w.appendChild(el("span", null, d[1])); w.appendChild(sl); g.appendChild(w); });
+    if (f.per === "range") ["from", "to"].forEach(function (k) { var di = el("input", { class: "field", type: "date", value: f[k] || "", "aria-label": k === "from" ? "From" : "To" }); di.addEventListener("change", function () { f[k] = di.value; renderAiUse(false); }); var w = el("label", { class: "tapf" }); w.appendChild(el("span", null, k === "from" ? "From" : "To")); w.appendChild(di); g.appendChild(w); });
+    fb.appendChild(g);
+    var box2 = $("auBox"); box2.textContent = "";
+    $("auSub").textContent = "What Claude has cost in this app, in rupees at 1 USD = \u20B9" + R.rate.toFixed(2) + " (" + (R.day ? "rate of " + fmtDate(R.day) + ", " : "") + R.src + "). Per bill: Entry (reading, description tidy, narration), Accounting (HSN check, narration, remarks) and Approval (AI Check). Logged from 4 Nov 2026.";
+    if (!rows.length) { box2.appendChild(el("div", { class: "card empty" }, all.length ? "No AI use matches the filters." : "No AI use logged yet. Every call to Claude from now on is logged here.")); return; }
+    /* per bill */
+    var per = {}, loose = { usd: 0, n: 0 }, tot = 0;
+    rows.forEach(function (r) { var u = Number(r.usd) || 0; tot += u; if (!r.billId) { loose.usd += u; loose.n++; return; } var o = per[r.billId] || (per[r.billId] = { id: r.billId, Entry: 0, Accounting: 0, Approval: 0, other: 0, n: 0 }); if (o[r.stage] != null && r.stage !== "other") o[r.stage] += u; else o.other += u; o.n++; });
+    var bills = Object.keys(per).map(function (k) { var o = per[k]; o.total = o.Entry + o.Accounting + o.Approval + o.other; return o; }), nb = bills.length;
+    var sumOf = function (k) { return bills.reduce(function (s0, o) { return s0 + o[k]; }, 0); };
+    var st = el("div", { class: "stats austats" });
+    [["Total Spent", rs(inr(tot)), rows.length + " calls"], ["Bills", String(nb), "with AI use"], ["Average per Bill", nb ? rs(inr(sumOf("total") / nb)) : "—", "Entry + Accounting + Approval"], ["Entry, per Bill", nb ? rs(inr(sumOf("Entry") / nb)) : "—", "reading, descriptions, narration"], ["Accounting, per Bill", nb ? rs(inr(sumOf("Accounting") / nb)) : "—", "HSN check, narration, remarks"], ["Approval, per Bill", nb ? rs(inr(sumOf("Approval") / nb)) : "—", "AI Check"], ["Not on a Bill", rs(inr(loose.usd)), loose.n + " calls (masters, cheques, other)"]].forEach(function (k) { var c = el("div", { class: "stat" }); c.appendChild(el("div", { class: "k" }, k[0])); c.appendChild(el("div", { class: "v" }, k[1])); c.appendChild(el("div", { class: "tsub" }, k[2])); st.appendChild(c); });
+    box2.appendChild(st);
+    var tbl = function (title, cols, data) { box2.appendChild(el("h3", { class: "aph" }, title)); var w = el("div", { class: "card list scroll" }); box2.appendChild(w); sortTable(w, "au" + title.replace(/\W/g, ""), cols, data, { sortIndex: cols.length - 1, sortDir: -1 }); };
+    tbl("Per Bill", [{ label: "Bill", cell: function (o, td) { var b = S.bills[o.id] || {}; td.appendChild(el("b", null, b.billNo || "Deleted bill")); sub(td, [vendorLabelOfBill(b) || "", coLabel(b.companyId) || ""].filter(Boolean).join(" \u00B7 ")); } },
+      { label: "Entry", cls: "r num", sort: function (o) { return o.Entry; }, cell: function (o, td) { txt(td, rs(inr(o.Entry))); } }, { label: "Accounting", cls: "r num", sort: function (o) { return o.Accounting; }, cell: function (o, td) { txt(td, rs(inr(o.Accounting))); } },
+      { label: "Approval", cls: "r num", sort: function (o) { return o.Approval; }, cell: function (o, td) { txt(td, rs(inr(o.Approval))); } }, { label: "Calls", cls: "r num", sort: function (o) { return o.n; }, cell: function (o, td) { txt(td, String(o.n)); } },
+      { label: "Total", cls: "r num", sort: function (o) { return o.total; }, desc: true, cell: function (o, td) { td.appendChild(el("b", null, rs(inr(o.total)))); } }], bills);
+    var grp = function (keyFn) { var m = {}; rows.forEach(function (r) { var k = keyFn(r), o = m[k] || (m[k] = { k: k, n: 0, usd: 0, tin: 0, tout: 0, srch: 0 }); o.n++; o.usd += Number(r.usd) || 0; o.tin += (r.in || 0) + (r.cacheRead || 0) + (r.cacheWrite || 0); o.tout += r.out || 0; o.srch += r.searches || 0; }); return Object.keys(m).map(function (k) { return m[k]; }); };
+    var gcols = function (lab, nameFn) { return [{ label: lab, cell: function (o, td) { txt(td, nameFn(o.k)); } }, { label: "Calls", cls: "r num", sort: function (o) { return o.n; }, cell: function (o, td) { txt(td, String(o.n)); } },
+      { label: "Tokens In", cls: "r num", sort: function (o) { return o.tin; }, cell: function (o, td) { txt(td, o.tin.toLocaleString("en-IN")); } }, { label: "Tokens Out", cls: "r num", sort: function (o) { return o.tout; }, cell: function (o, td) { txt(td, o.tout.toLocaleString("en-IN")); } },
+      { label: "Web Searches", cls: "r num", sort: function (o) { return o.srch; }, cell: function (o, td) { txt(td, String(o.srch)); } }, { label: "Per Call", cls: "r num", sort: function (o) { return o.usd / o.n; }, cell: function (o, td) { txt(td, rs(inr(o.usd / o.n))); } },
+      { label: "Spent", cls: "r num", sort: function (o) { return o.usd; }, desc: true, cell: function (o, td) { td.appendChild(el("b", null, rs(inr(o.usd)))); } }]; };
+    tbl("By Stage and Purpose", gcols("Stage \u203A Purpose", function (k) { return k; }), grp(function (r) { return (r.stage || "Other") + " \u203A " + (r.purpose || "Other"); }));
+    tbl("By Person", gcols("Person", function (k) { return personName(k) || (rows.filter(function (r) { return r.by === k; })[0] || {}).byName || "Unknown"; }), grp(function (r) { return r.by || ""; }));
+  }
   /* ---- AI Check: Claude compares every line's rate with what the same product (or the closest match) sells for online,
      and leaves a note per line (green tick: fine; yellow question: doubtful; red cross: looks wrong) and a summary report.
      Run only when the button is pressed; the result is kept on the bill (aiCheck), so viewing it again costs nothing.
@@ -7241,7 +7332,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       "Verdicts: \"ok\" when the rate is within about 15% of the market or there is no reason to doubt it; \"doubt\" when it is 15-40% above the market, unclear, or the quantity, unit or amount look odd; \"danger\" when it is more than 40% above the market, the amount doesn't match quantity x rate, or something looks wrong.",
       "Reply with only JSON: {\"lines\":[{\"line\":n,\"verdict\":\"ok\"|\"doubt\"|\"danger\",\"match\":\"exact\"|\"close\"|\"none\",\"market\":\"the market rate found, per unit, with the seller or site, e.g. Rs 240-265 per kg (IndiaMART)\",\"note\":\"one or two plain sentences: what was compared and the conclusion\"}],\"summary\":\"3 to 6 sentences on the whole bill: overall price level, the lines to look at, anything else odd\"}"].join("\n");
     AP.aiBusy = b.id; renderApView();
-    (S.sample.jsonSources ? S.sample.jsonSources(prompt, { modelTier: "default", webSearch: 6, maxTokens: 6000 }) : S.sample.json(prompt, { modelTier: "default" }).then(function (d) { return { data: d, sources: [] }; }))
+    (S.sample.jsonSources ? S.sample.jsonSources(prompt, { modelTier: "default", webSearch: 6, maxTokens: 6000, purpose: "AI Check", meta: { stage: "Approval", billId: b.id } }) : S.sample.json(prompt, { modelTier: "default" }).then(function (d) { return { data: d, sources: [] }; }))
       .then(function (res) {
         var j = res.data || {}, out = {}; (j.lines || []).forEach(function (l) { var id = ids[Number(l.line)]; if (!id) return; out[id] = { v: /^(ok|doubt|danger)$/.test(l.verdict) ? l.verdict : "doubt", match: /^(exact|close|none)$/.test(l.match) ? l.match : "", market: str(l.market, 200), note: str(l.note, 600) }; });
         var rec = Object.assign({ lines: out, summary: str(j.summary, 2000), sources: (res.sources || []).slice(0, 12).map(function (x) { return { url: String(x.url || "").slice(0, 400), title: str(x.title, 160) }; }) }, apWho());
@@ -14147,7 +14238,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data() || {}; }); S.rates = m; if (S.tab === "Payment Planning") onData();
     }, function () {});
     Promise.resolve(window.claude.use("sample")).then(function (s) {
-      S.sample = s || null;
+      S.sample = s ? aiWrap(s) : null;
       if (!s || typeof s.limits !== "function") return;
       return s.limits().then(function (l) { S.sLimits = l; }, function () {});
     }).catch(function () { S.sample = null; }).then(onData);
@@ -15716,7 +15807,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         wb.addEventListener("click", function () {
           wb.disabled = true; wb.textContent = "Writing…";
           var facts = { vendor_name: vendorLabelOfBill(x), invoice_number: x.billNo || "", invoice_date: x.billDate ? x.billDate.split("-").reverse().join("/") : "", items: ((x.ex && x.ex.items) || []).map(function (i) { return { description: i.description, qty: i.qty, unit: i.unit }; }), purchaser_remarks: ta.value.trim() || x.narration || "", supply_of: sp.value || x.supplyOf || "" };
-          S.sample.json(NARR_RULES + "\n\nWrite the narration for this bill from these fields (authoritative for vendor, number and date). Reply with only JSON: {\"transaction_type\": \"goods | services | mixed | expense | review\", \"narration\": \"\", \"character_count\": 0, \"needs_review\": false, \"review_reasons\": []}\n\nFIELDS: " + JSON.stringify(facts), { modelTier: "default" }).then(function (r) {
+          S.sample.json(NARR_RULES + "\n\nWrite the narration for this bill from these fields (authoritative for vendor, number and date). Reply with only JSON: {\"transaction_type\": \"goods | services | mixed | expense | review\", \"narration\": \"\", \"character_count\": 0, \"needs_review\": false, \"review_reasons\": []}\n\nFIELDS: " + JSON.stringify(facts), { modelTier: "default", purpose: "Narration" }).then(function (r) {
             var t = narrFix(r && r.narration); if (!t) { toast("Claude couldn't write it. Type it instead."); return; }
             ta.value = t; ta._tidied = t; upd(); var ty = supplyOk(r.transaction_type === "mixed" ? "composite" : r.transaction_type); if (ty && !sp.value) sp.value = ty;
             if ((r.review_reasons || []).length || t.length > NARR_MAX) toast("Check it: " + ((r.review_reasons || []).join("; ") || "longer than " + NARR_MAX + " characters"));
@@ -18476,6 +18567,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("acSideB").addEventListener("click", function () { AC.side = "bills"; renderAcct(); }); $("acSideV").addEventListener("click", function () { AC.side = "vouchers"; renderAcct(); });
     ["acSt", "acCo", "acPrep", "acDept"].forEach(function (id) { $(id).addEventListener("change", renderAcct); }); $("acQ").addEventListener("input", renderAcct);
     $("aoBack").addEventListener("click", backToAcct);
+    $("auRefresh").addEventListener("click", function () { renderAiUse(true); });
     $("avBack").addEventListener("click", function () { AP.view = null; renderApprT(); show("secApprT"); });
     ["bills", "proformas", "vouchers"].forEach(function (k) { $("bkSide_" + k).addEventListener("click", function () { BK.side = k; renderBooks(); }); });
     $("bkLedW").appendChild(ledCombo({ attrs: { id: "bkLed", "aria-label": "Ledger" }, placeholder: "All ledgers (totals). Type to pick one", list: function () { var c = $("bkCo").value; return c ? ledFor(c).concat(ledAll().filter(function (l) { return l.tax && l.active !== false; })) : ledAll().filter(function (l) { return l.active !== false; }).sort(ledCmp); } }));

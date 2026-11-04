@@ -9,6 +9,13 @@ const MODELS: Record<string, string> = {
   default: "claude-sonnet-5-5",
   complex: "claude-opus-5-5",
 };
+// USD per million tokens (input, output, cache read, cache write) and per web search, to log what each call cost.
+const PRICES: Record<string, [number, number, number, number]> = {
+  "claude-haiku-4-5-20251001": [1, 5, 0.1, 1.25],
+  "claude-sonnet-5-5": [2, 10, 0.2, 2.5],
+  "claude-opus-5-5": [4, 20, 0.2, 5],
+};
+const SEARCH_USD = 0.01;
 const MAX_IMAGES = 8;
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 
@@ -42,7 +49,7 @@ Deno.serve(async (req) => {
   if (!key) return fail(503, "sampling_disabled", "Reading with Claude is not set up yet.");
   const workspace = Deno.env.get("ANTHROPIC_WORKSPACE_ID")?.trim();
 
-  let body: { messages?: Turn[]; images?: Img[]; modelTier?: string; maxTokens?: number; webSearch?: number };
+  let body: { messages?: Turn[]; images?: Img[]; modelTier?: string; maxTokens?: number; webSearch?: number; meta?: Record<string, unknown> };
   try { body = await req.json(); } catch { return fail(400, "invalid_argument", "Bad JSON"); }
 
   const turns = Array.isArray(body.messages) ? body.messages : [];
@@ -88,15 +95,32 @@ Deno.serve(async (req) => {
     return fail(502, "upstream_error", "Claude did not answer (" + r.status + "): " + why.slice(0, 200));
   }
   let out = await r.json();
+  const use = { in: 0, out: 0, cr: 0, cw: 0, search: 0 };
+  const add = (u: Record<string, any> | undefined) => { if (!u) return; use.in += u.input_tokens || 0; use.out += u.output_tokens || 0; use.cr += u.cache_read_input_tokens || 0; use.cw += u.cache_creation_input_tokens || 0; use.search += u.server_tool_use?.web_search_requests || 0; };
+  add(out.usage);
   // A long web search can pause the turn: hand it back to continue (twice at most).
   let convo: unknown[] = messages;
   for (let k = 0; k < 2 && out.stop_reason === "pause_turn"; k++) {
     convo = [...convo, { role: "assistant", content: out.content }];
-    r = await call(convo); if (!r.ok) break; out = await r.json();
+    r = await call(convo); if (!r.ok) break; out = await r.json(); add(out.usage);
   }
+  // Usage log (Reports › AI Usage Credits): who, where in the app, which bill, tokens and what it cost in USD.
+  let logId = "";
+  try {
+    const m = (body.meta && typeof body.meta === "object" ? body.meta : {}) as Record<string, unknown>;
+    const ns = /^(tly__|demo__)$/.test(String(m.ns || "")) ? String(m.ns) : "";
+    const pr = PRICES[MODELS[tier]] || PRICES["claude-sonnet-5-5"];
+    const usd = (use.in * pr[0] + use.out * pr[1] + use.cr * pr[2] + use.cw * pr[3]) / 1e6 + use.search * SEARCH_USD;
+    const s = (v: unknown, n: number) => String(v ?? "").slice(0, n);
+    logId = "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    const data = { at: Date.now(), by: who.data?.uid ?? who.data?.id ?? "", byName: s(m.byName, 80), app: s(m.app, 12), stage: s(m.stage, 20), purpose: s(m.purpose, 40), billId: s(m.billId, 40), readKey: s(m.readKey, 40),
+      model: MODELS[tier], in: use.in, out: use.out, cacheRead: use.cr, cacheWrite: use.cw, searches: use.search, usd: Math.round(usd * 1e6) / 1e6, images: images.length };
+    const ins = await sb.from("app_docs").insert({ path: ns + "aiuse/" + logId, data });
+    if (ins.error) { console.error("usage log", ins.error.message); logId = ""; }
+  } catch (e) { console.error("usage log", String(e)); logId = ""; }
   const blocks = (out.content ?? []) as { type: string; text?: string; citations?: { url?: string; title?: string }[] }[];
   const text = blocks.filter((c) => c.type === "text").map((c) => c.text ?? "").join("");
   const seen = new Set<string>(), sources: { url: string; title: string }[] = [];
   blocks.forEach((c) => (c.citations ?? []).forEach((ci) => { if (ci.url && !seen.has(ci.url)) { seen.add(ci.url); sources.push({ url: ci.url, title: ci.title ?? "" }); } }));
-  return reply(200, { text, truncated: out.stop_reason === "max_tokens", modelTierApplied: tier, sources });
+  return reply(200, { text, truncated: out.stop_reason === "max_tokens", modelTierApplied: tier, sources, logId });
 });

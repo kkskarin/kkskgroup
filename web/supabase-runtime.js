@@ -691,14 +691,14 @@
         return fetch(CFG.supabaseUrl + "/functions/v1/ai-sample", {
           method: "POST", signal: opts.signal,
           headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok, apikey: CFG.supabaseKey },
-          body: JSON.stringify({ messages: turns, images: images, modelTier: opts.modelTier || "default" })
+          body: JSON.stringify({ messages: turns, images: images, modelTier: opts.modelTier || "default", webSearch: opts.webSearch || 0 })
         });
       });
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
         if (!r.ok) throw err(j.code || "upstream_error", j.message || ("HTTP " + r.status));
         if (typeof opts.onText === "function") { try { opts.onText({ text: j.text || "", delta: j.text || "" }); } catch (e) {} }
-        return { text: j.text || "", truncated: !!j.truncated, modelTierApplied: j.modelTierApplied };
+        return { text: j.text || "", truncated: !!j.truncated, modelTierApplied: j.modelTierApplied, sources: j.sources || [] };
       });
     }, function (e) {
       if (e && e.name === "AbortError") throw err("cancelled", "Cancelled");
@@ -715,6 +715,8 @@
   }
   var SAMPLE = function (input, opts) { return ask(input, opts, false); };
   SAMPLE.json = function (input, opts) { return ask(input, opts, true).then(function (r) { return parseJson(r.text); }); };
+  /* the JSON answer with the web pages Claude cited (opts.webSearch: how many searches it may make) */
+  SAMPLE.jsonSources = function (input, opts) { return ask(input, opts, true).then(function (r) { return { data: parseJson(r.text), sources: r.sources || [] }; }); };
   SAMPLE.limits = function () { return Promise.resolve({ images: { maxCount: 8, maxInputBytes: 20 * 1024 * 1024, mediaTypes: IMG_TYPES.slice() } }); };
   Object.freeze(SAMPLE);
 

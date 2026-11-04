@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
   if (!key) return fail(503, "sampling_disabled", "Reading with Claude is not set up yet.");
   const workspace = Deno.env.get("ANTHROPIC_WORKSPACE_ID")?.trim();
 
-  let body: { messages?: Turn[]; images?: Img[]; modelTier?: string; maxTokens?: number };
+  let body: { messages?: Turn[]; images?: Img[]; modelTier?: string; maxTokens?: number; webSearch?: number };
   try { body = await req.json(); } catch { return fail(400, "invalid_argument", "Bad JSON"); }
 
   const turns = Array.isArray(body.messages) ? body.messages : [];
@@ -63,15 +63,18 @@ Deno.serve(async (req) => {
   });
   const tier = body.modelTier && MODELS[body.modelTier] ? body.modelTier : "default";
   const maxTokens = Math.min(Math.max(Number(body.maxTokens) || 8192, 256), 16000);
-
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
+  // Web search only when the page asks for it (Approvals › AI Check: market prices), at most 8 searches a request.
+  const searches = Math.min(Math.max(Math.floor(Number(body.webSearch) || 0), 0), 8);
+  const tools = searches ? [{ type: "web_search_20260209", name: "web_search", max_uses: searches, user_location: { type: "approximate", country: "IN" } }] : undefined;
+  const call = (msgs: unknown[]) => fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json",
       ...(workspace ? { "anthropic-workspace-id": workspace } : {}),
     },
-    body: JSON.stringify({ model: MODELS[tier], max_tokens: maxTokens, messages }),
+    body: JSON.stringify({ model: MODELS[tier], max_tokens: maxTokens, messages: msgs, ...(tools ? { tools } : {}) }),
   });
+  let r = await call(messages);
   if (!r.ok) {
     // Keep Anthropic's reason in the function logs (Edge Functions > ai-sample > Logs).
     const detail = await r.text().catch(() => "");
@@ -84,7 +87,16 @@ Deno.serve(async (req) => {
     if (/usage limit/i.test(why)) return fail(503, "sampling_disabled", "The Anthropic account has reached its usage limit" + ((/regain access on ([0-9-]+)/i.exec(why) || [])[1] ? " until " + (/regain access on ([0-9-]+)/i.exec(why) || [])[1] : "") + ": raise it in the Anthropic Console (Limits).");
     return fail(502, "upstream_error", "Claude did not answer (" + r.status + "): " + why.slice(0, 200));
   }
-  const out = await r.json();
-  const text = (out.content ?? []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join("");
-  return reply(200, { text, truncated: out.stop_reason === "max_tokens", modelTierApplied: tier });
+  let out = await r.json();
+  // A long web search can pause the turn: hand it back to continue (twice at most).
+  let convo: unknown[] = messages;
+  for (let k = 0; k < 2 && out.stop_reason === "pause_turn"; k++) {
+    convo = [...convo, { role: "assistant", content: out.content }];
+    r = await call(convo); if (!r.ok) break; out = await r.json();
+  }
+  const blocks = (out.content ?? []) as { type: string; text?: string; citations?: { url?: string; title?: string }[] }[];
+  const text = blocks.filter((c) => c.type === "text").map((c) => c.text ?? "").join("");
+  const seen = new Set<string>(), sources: { url: string; title: string }[] = [];
+  blocks.forEach((c) => (c.citations ?? []).forEach((ci) => { if (ci.url && !seen.has(ci.url)) { seen.add(ci.url); sources.push({ url: ci.url, title: ci.title ?? "" }); } }));
+  return reply(200, { text, truncated: out.stop_reason === "max_tokens", modelTierApplied: tier, sources });
 });

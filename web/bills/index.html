@@ -281,6 +281,14 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 body.tly .navbar #subnav button,body.tly .navbar #subnav button[aria-current="page"]{font-weight:600}#nav.hnav button,#nav.hnav button.grp-on{font-weight:600}
 .drsub{padding:9px 16px;font-size:calc(11px*var(--ts,1));font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--soft);border-bottom:1px solid var(--line)}.qcount{color:var(--muted);font-weight:500}
 .pplgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px 16px;padding-top:12px;border-top:1px dashed var(--line)}.pplgrid .f{margin:0}
+.aphrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px}.apitems th.aicol,.apitems td.aicol{width:40px;text-align:center}
+.aiico{all:unset;box-sizing:border-box;cursor:pointer;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;font-weight:800;font-size:13px;color:#fff;line-height:1}.aiico:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.aiico.ai-ok{background:#16803C}.aiico.ai-doubt{background:#E0A100;color:#3D2C00}.aiico.ai-danger{background:#C62828}.aiico.big{cursor:default;width:20px;height:20px;font-size:12px}
+.apitems tr.ainoterow td{padding:0 12px 10px;background:transparent;border-top:0}.ainote{border-radius:8px;padding:10px 12px;border:1px solid;box-shadow:0 2px 6px rgba(0,0,0,.06);white-space:normal}.ainote p{margin:6px 0 2px}
+.ainote.ai-ok{background:#EEF8F1;border-color:#B7E0C4}.ainote.ai-doubt{background:#FFF8DD;border-color:#F0D98A}.ainote.ai-danger{background:#FDECEC;border-color:#F2B8B5}
+.ainhd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ainmk{color:var(--muted);font-size:calc(12.5px*var(--ts,1))}.ainmin{margin-left:auto}
+.aicard{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}.aicard p{margin:8px 0}.aicnt{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}.aichip{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.aisrc{font-size:calc(12.5px*var(--ts,1));color:var(--muted);overflow-wrap:anywhere}.aibusy{display:flex;gap:12px;align-items:center;padding:14px;background:var(--surface);border:1px dashed var(--line);border-radius:8px}.aibtn{border-color:#5B3FA8;color:#5B3FA8}
 .whogrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px;margin:12px 0 4px}.who1{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 12px;min-width:0}.who1 .k{font-size:calc(11px*var(--ts,1));font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.who1 .v{font-weight:600;color:var(--ink);overflow-wrap:anywhere}
 #avActs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}#avActs .grow{flex:1}
 .card.tlydone{background:none;border:0;box-shadow:none;padding:0;overflow:visible;border-radius:0}.tlydone .card{margin-bottom:14px}.tlydone>.card:last-child{margin-bottom:0}
@@ -2001,7 +2009,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS],
     /* Tally (Demo): purchaser, accountant and financier, nothing else; masters to look up */
-    tly: [{ h: "Purchase", tabs: [["Bills", "Bill Entry", 0, "Bills"], ["Bill Sub", "Submitted Bills", 0, "Bills"], ["Bill All", "All Bills", 0, "Bills"], ["Vch T", "Vouchers"], ["Pro T", "Proformas"], ["Imp T", "Imports"]] }, { h: "Sales", tabs: [["Sales T", "Sales Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Purchase"], ["Sales Acct", "Sales"], ["Verify", "Verification"]] }, { h: "Approvals", tabs: [["Appr T", "Pending Final Approval"], ["Appr Post", "Postponed Payments"], ["Appr First", "Pending Check"], ["Appr Done", "Approval History"]] }, { h: "Finance", tabs: [["Mark Transaction", "Plan"], ["Pay Record", "Record"]] },
+    tly: [{ h: "Purchase", tabs: [["Bills", "Bill Entry", 0, "Bills"], ["Bill Sub", "Submitted Bills", 0, "Bills"], ["Bill All", "All Bills", 0, "Bills"], ["Vch T", "Vouchers"], ["Pro T", "Proformas"], ["Imp T", "Imports"]] }, { h: "Sales", tabs: [["Sales T", "Sales Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Purchase"], ["Sales Acct", "Sales"], ["Verify", "Verification"]] }, { h: "Approvals", tabs: [["Appr T", "Pending Final Approval"], ["Appr First", "Pending Checker Approval"], ["Appr Post", "Postponed Payments"], ["Appr Done", "Approval History"]] }, { h: "Finance", tabs: [["Mark Transaction", "Plan"], ["Pay Record", "Record"]] },
       { h: "Reports", tabs: [["Transactions", "Transactions", 0, "Purchase"], ["Ledger Books", "Ledger Statements", 0, "Accounts"], ["Vendor Stmt", "Vendor Statement", 0, "Accounts"], ["Payables", "Payables", 0, "Finance"]].concat(MASTERS, [["HSN", "HSN / SAC", 0, "m"], ["Tally DL", "Tally Downloads"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
@@ -7169,7 +7177,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function renderApprT() {
     var box = $("apBox"); if (!box) return; box.textContent = ""; var tab = AP.tab;
     var T = { wait: ["Pending Final Approval", "Bills and Bill Checking Reports waiting for their Final Approver. Approve sets how much is paid, in which instalments and by when; anything not approved is postponed. Return sends it back to the purchaser with remarks."],
-      first: ["Pending Check", "Bills and Bill Checking Reports whose checker is someone other than the final approver: the checker approves and passes them on for the final approval, or returns them with remarks."],
+      first: ["Pending Checker Approval", "Bills and Bill Checking Reports whose checker is someone other than the final approver: the checker approves and passes them on for the final approval, or returns them with remarks."],
       post: ["Postponed Payments", "Amounts of approved bills not yet approved for payment. Approve them when it is decided; until then Finance can't pay them."],
       done: ["Approval History", "Every decided item: approved (the instalments are with Finance; anything postponed is listed too) or returned with remarks. An approval can be reversed while nothing has been paid on it."] }[tab];
     $("apTitle").textContent = T[0]; $("apSub").textContent = T[1]; apFilters();
@@ -7189,7 +7197,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         var bs = apBillsOf(it), x = it.x, st = apState(it), v = S.vendors[it.vid] || {}, dd = bs.map(function (b) { return b.dueDate || ""; }).filter(ymdOk).sort()[0] || "";
         var tag = el("div");
         if (st === "wait") { tag.appendChild(el("span", { class: "tag stg tst-appr" }, "Pending Final Approval")); if (x.appr1Ok) tag.appendChild(el("div", { class: "tsub" }, "Checked: " + (x.appr1Ok.byName || "") + ", " + fmtDay(x.appr1Ok.at))); }
-        if (st === "first") { tag.appendChild(el("span", { class: "tag stg tst-appr" }, "Pending Check")); tag.appendChild(el("div", { class: "tsub" }, "With " + (apPpl(it).a1Name || "the checker"))); }
+        if (st === "first") { tag.appendChild(el("span", { class: "tag stg tst-appr" }, "Pending Checker Approval")); tag.appendChild(el("div", { class: "tsub" }, "With " + (apPpl(it).a1Name || "the checker"))); }
         if (st === "ret") { tag.appendChild(el("span", { class: "tag stg tst-open" }, "Returned")); tag.appendChild(el("div", { class: "tsub late" }, x.apprRej.reason || "")); tag.appendChild(el("div", { class: "tsub" }, fmtDay(x.apprRej.at))); }
         if (st === "ok") { var ap = apSum(bs, tlyApAmt), pp = apSum(bs, tlyPostAmt); tag.appendChild(el("span", { class: "tag stg tst-" + (ap > 0.5 ? "pay" : "post") }, ap > 0.5 ? "Approved" : "Postponed"));
           if (ap > 0.5) tag.appendChild(el("div", { class: "tsub" }, money(ap) + " approved")); if (pp > 0.5) tag.appendChild(el("div", { class: "tsub" }, money(pp) + " postponed")); if (bs.length === 1) apInstLines(bs[0]).forEach(function (t0) { tag.appendChild(el("div", { class: "tsub" }, t0)); });
@@ -7212,6 +7220,47 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var ap = el("div"); ap.appendChild(el("span", { class: "num" }, money(tlyApAmt(b)))); apInstLines(b).forEach(function (t0) { ap.appendChild(el("div", { class: "tsub" }, t0)); });
       row(el("tr"), [null, apVen(v.name || vendorLabelOfBill(b)), (function () { var d0 = apDet(b.billNo, fmtDate(b.billDate)); if (r) d0.appendChild(el("div", { class: "tsub" }, "in " + r.no)); return d0; })(), money(tlyPayable(b)), ap, money(it.amt), ymdOk(b.dueDate) ? fmtDate(b.dueDate) : "", w]);
     });
+  }
+  /* ---- AI Check: Claude compares every line's rate with what the same product (or the closest match) sells for online,
+     and leaves a note per line (green tick: fine; yellow question: doubtful; red cross: looks wrong) and a summary report.
+     Run only when the button is pressed; the result is kept on the bill (aiCheck), so viewing it again costs nothing.
+     It uses Claude with web search (up to 6 searches a bill). It never stops an approval. ---- */
+  var AI_V = { ok: "Price looks fine", doubt: "Doubtful: check it", danger: "Looks wrong" };
+  function aiIcon(v, big) { var s0 = el("button", { type: "button", class: "aiico ai-" + (AI_V[v] ? v : "doubt") + (big ? " big" : ""), "aria-label": AI_V[v] || "AI note" }); s0.textContent = v === "ok" ? "\u2713" : v === "danger" ? "\u2715" : "?"; if (big) s0.tabIndex = -1; return s0; }
+  function aiMay(V) { if (!S.sample) return false; if (V.it) return apMay(V.it) || !!S.isSuper; if (V.post) return apPostMay(V.post); return !!S.isSuper; }
+  function aiCheck(b) {
+    if (AP.aiBusy) return; var V = AP.view; if (!V || !aiMay(V)) return;
+    if (b.aiCheck && !confirm("Run the AI Check again? It searches the web again and replaces the notes from " + fmtDay(b.aiCheck.at) + ".")) return;
+    var lines = [], n = 0, ids = {}; (b.items || []).forEach(function (x) { if (x.k === "ro") return; n++; ids[n] = x.id; var q = apQty(x); lines.push(n + ". " + String(q.name || "").slice(0, 200) + " | qty " + (q.q != null ? q.q : "?") + " " + (q.u || "") + " | rate \u20B9" + (q.rate != null ? amt2(q.rate) : "?") + " | amount \u20B9" + (q.amt != null ? amt2(q.amt) : "?") + " | GST " + (x.gst === "" || x.gst == null ? "?" : x.gst + "%") + (x.hsn ? " | HSN/SAC " + x.hsn : "")); });
+    if (!lines.length) { toast("This bill has no line items to check."); return; }
+    var v = S.vendors[b.vendorId] || {}, co = S.companies[b.companyId] || {}, place = (v.address || "").split(/\n|,/).slice(-3).join(",").trim();
+    var prompt = ["You check a purchase bill of an Indian company before its payment is approved. For each line, use web search to find what the same product (exact make, size and grade) sells for in India now; if the exact product can't be found, use the closest match and say so. For services and labour, judge whether the rate is reasonable for the work described.",
+      "Rates and amounts are before GST. Compare the bill's rate per unit with the market rate per unit.",
+      "Bill " + (b.billNo || "") + " dated " + (b.billDate || "") + " from " + (v.name || "the vendor") + (place ? " (" + place + ")" : "") + " to " + (co.name || "the company") + ".",
+      "Lines:", lines.slice(0, 40).join("\n"), "",
+      "Verdicts: \"ok\" when the rate is within about 15% of the market or there is no reason to doubt it; \"doubt\" when it is 15-40% above the market, unclear, or the quantity, unit or amount look odd; \"danger\" when it is more than 40% above the market, the amount doesn't match quantity x rate, or something looks wrong.",
+      "Reply with only JSON: {\"lines\":[{\"line\":n,\"verdict\":\"ok\"|\"doubt\"|\"danger\",\"match\":\"exact\"|\"close\"|\"none\",\"market\":\"the market rate found, per unit, with the seller or site, e.g. Rs 240-265 per kg (IndiaMART)\",\"note\":\"one or two plain sentences: what was compared and the conclusion\"}],\"summary\":\"3 to 6 sentences on the whole bill: overall price level, the lines to look at, anything else odd\"}"].join("\n");
+    AP.aiBusy = b.id; renderApView();
+    (S.sample.jsonSources ? S.sample.jsonSources(prompt, { modelTier: "default", webSearch: 6, maxTokens: 6000 }) : S.sample.json(prompt, { modelTier: "default" }).then(function (d) { return { data: d, sources: [] }; }))
+      .then(function (res) {
+        var j = res.data || {}, out = {}; (j.lines || []).forEach(function (l) { var id = ids[Number(l.line)]; if (!id) return; out[id] = { v: /^(ok|doubt|danger)$/.test(l.verdict) ? l.verdict : "doubt", match: /^(exact|close|none)$/.test(l.match) ? l.match : "", market: str(l.market, 200), note: str(l.note, 600) }; });
+        var rec = Object.assign({ lines: out, summary: str(j.summary, 2000), sources: (res.sources || []).slice(0, 12).map(function (x) { return { url: String(x.url || "").slice(0, 400), title: str(x.title, 160) }; }) }, apWho());
+        return apBillSave(b, { aiCheck: rec }).then(function () { var c = { ok: 0, doubt: 0, danger: 0 }; Object.keys(out).forEach(function (k) { c[out[k].v]++; }); toast("AI Check done: " + c.ok + " fine, " + c.doubt + " doubtful, " + c.danger + " look wrong."); AP.notesAll = c.doubt + c.danger > 0; AP.notes = {}; });
+      }, function (e) { toast("AI Check couldn't run: " + ((e && e.code === "sampling_disabled" && e.message) || (e && (e.message || e.code)) || "error") + "."); })
+      .then(function () { AP.aiBusy = null; if (AP.view) renderApView(); });
+  }
+  function aiReport(b) {
+    var w = el("div", { class: "aireport" }), A = b.aiCheck;
+    if (AP.aiBusy === b.id) { w.appendChild(el("h3", { class: "aph" }, "AI Check Report")); var bz = el("div", { class: "aibusy" }); bz.appendChild(el("div", { class: "scanspin", "aria-hidden": "true" })); bz.appendChild(el("span", null, "Claude is looking up market prices for each line. This can take a minute.")); w.appendChild(bz); return w; }
+    if (!A) return w;
+    var c = { ok: 0, doubt: 0, danger: 0 }; Object.keys(A.lines || {}).forEach(function (k) { c[A.lines[k].v] = (c[A.lines[k].v] || 0) + 1; });
+    w.appendChild(el("h3", { class: "aph" }, "AI Check Report"));
+    var card = el("div", { class: "aicard" }), cnt = el("div", { class: "aicnt" });
+    [["ok", "fine"], ["doubt", "doubtful"], ["danger", "look wrong"]].forEach(function (k) { var s0 = el("span", { class: "aichip" }); s0.appendChild(aiIcon(k[0], true)); s0.appendChild(document.createTextNode(c[k[0]] + " " + k[1])); cnt.appendChild(s0); });
+    cnt.appendChild(el("span", { class: "tsub" }, "Checked " + fmtDay(A.at) + (A.byName ? " by " + A.byName : "") + ". Advice only: approving is still your decision."));
+    card.appendChild(cnt); if (A.summary) card.appendChild(el("p", null, A.summary));
+    if ((A.sources || []).length) { var sl = el("div", { class: "aisrc" }); sl.appendChild(el("b", null, "Sources: ")); A.sources.forEach(function (x, i) { var a = el("a", { href: x.url, target: "_blank", rel: "noopener" }, x.title || x.url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]); sl.appendChild(a); if (i < A.sources.length - 1) sl.appendChild(document.createTextNode(" · ")); }); card.appendChild(sl); }
+    w.appendChild(card); return w;
   }
   /* ---- View: the bill beside its breakup (no GST rate, ITC, RCM or HSN: what the approver needs) ---- */
   function apView(ids, no, it, post) { AP.view = { ids: ids, i: 0, no: no || "", back: S.tab, it: it || null, post: post || null }; renderApView(); show("secApView"); }
@@ -7246,23 +7295,43 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     main.appendChild(el("h3", { class: "aph" }, "Totals")); main.appendChild(tc);
     if (apInstText(b)) main.appendChild(el("p", { class: "tsub", style: "margin:6px 2px 0" }, "Instalments: " + apInstText(b)));
     /* line items */
+    var AI = b.aiCheck || null; AP.notes = AP.notes || {};
     var ic = el("div", { class: "card list scroll" }), it = el("table", { class: "t apitems" }), ih = el("thead"), ihr = el("tr");
-    [["#", "r"], ["Item", ""], ["Qty", "r"], ["Units", ""], ["Rate", "r"], ["Amount", "r"], ["Ledger", ""]].forEach(function (h) { ihr.appendChild(el("th", h[1] ? { class: h[1] } : null, h[0])); }); ih.appendChild(ihr); it.appendChild(ih);
-    var ib = el("tbody"); it.appendChild(ib); var n = 0;
+    [["#", "r"], ["Item", ""], ["Qty", "r"], ["Units", ""], ["Rate", "r"], ["Amount", "r"], ["Ledger", ""]].concat(AI ? [["AI", "aicol"]] : []).forEach(function (h) { ihr.appendChild(el("th", h[1] ? { class: h[1] } : null, h[0])); }); ih.appendChild(ihr); it.appendChild(ih);
+    var ib = el("tbody"); it.appendChild(ib); var n = 0, ncol = AI ? 8 : 7;
     (b.items || []).forEach(function (x) {
       if (x.k === "ro") return; var q = apQty(x), L = (S.ledgers || {})[x.lg], tr = el("tr"); n++;
       [[String(n), "r"], [q.name, "apname"], [q.q != null ? String(q.q) : "", "r num"], [q.u, ""], [q.rate != null ? amt2(q.rate) : "", "r num"], [q.amt != null ? amt2(q.amt) : "", "r num"], [(L && L.name) || "", ""]].forEach(function (c) { tr.appendChild(el("td", c[1] ? { class: c[1] } : null, c[0])); });
       ib.appendChild(tr);
+      /* AI Check: a sticky note per line (open or minimised), its icon beside the ledger */
+      if (AI) {
+        var r0 = (AI.lines || {})[x.id], td = el("td", { class: "aicol" });
+        if (r0) {
+          var key = b.id + ":" + x.id, open = AP.notes[key] !== false && AP.notes[key] !== undefined ? true : AP.notes[key] === undefined ? AP.notesAll === true : false;
+          var ico = aiIcon(r0.v); ico.setAttribute("aria-expanded", open ? "true" : "false"); ico.title = (open ? "Minimise" : "Open") + " the AI note for line " + n;
+          ico.addEventListener("click", function () { AP.notes[key] = !open; renderApView(); }); td.appendChild(ico);
+          tr.appendChild(td);
+          if (open) { var nt = el("tr", { class: "ainoterow" }), ntd = el("td", { colspan: String(ncol) }), card = el("div", { class: "ainote ai-" + r0.v });
+            var hd = el("div", { class: "ainhd" }); hd.appendChild(aiIcon(r0.v, true)); hd.appendChild(el("b", null, "Line " + n + ": " + AI_V[r0.v])); if (r0.market) hd.appendChild(el("span", { class: "ainmk" }, "Market: " + r0.market));
+            var mn = el("button", { type: "button", class: "link-btn ainmin" }, "Minimise"); mn.addEventListener("click", function () { AP.notes[key] = false; renderApView(); }); hd.appendChild(mn); card.appendChild(hd);
+            if (r0.note) card.appendChild(el("p", null, r0.note)); if (r0.match) card.appendChild(el("div", { class: "tsub" }, r0.match === "exact" ? "Compared with the same product" : r0.match === "close" ? "Compared with the closest match found" : "No comparable product found"));
+            ntd.appendChild(card); nt.appendChild(ntd); ib.appendChild(nt); }
+        } else tr.appendChild(td);
+      }
     });
-    if (!n) ib.appendChild(el("tr", null, el("td", { colspan: "7", class: "tsub" }, "No line items.")));
-    ic.appendChild(it); main.appendChild(el("h3", { class: "aph" }, "Line Items")); main.appendChild(ic);
+    if (!n) ib.appendChild(el("tr", null, el("td", { colspan: String(ncol), class: "tsub" }, "No line items.")));
+    ic.appendChild(it); var lh = el("div", { class: "aphrow" }); lh.appendChild(el("h3", { class: "aph" }, "Line Items"));
+    if (AI) { var ta = el("button", { type: "button", class: "link-btn" }, AP.notesAll ? "Minimise all notes" : "Open all notes"); ta.addEventListener("click", function () { AP.notesAll = !AP.notesAll; AP.notes = {}; renderApView(); }); lh.appendChild(ta); }
+    main.appendChild(lh); main.appendChild(ic);
     if (b.narration) { main.appendChild(el("h3", { class: "aph" }, "Narration")); main.appendChild(el("p", { class: "apnar" }, b.narration)); }
+    main.appendChild(aiReport(b));
 
     /* what can be done from here: the same as on the list */
     var fa = $("avActs"); fa.textContent = ""; var it = V.it, back = el("button", { class: "btn", type: "button" }, "Cancel"); back.title = "Back to Approvals without doing anything"; back.addEventListener("click", function () { AP.view = null; renderApprT(); show("secApprT"); });
     var neg = null;
     if (it && apState(it) === "first" && apMay(it)) { var q1 = el("button", { class: "btn primary", type: "button" }, "Approve and Pass On"), q2 = el("button", { class: "btn danger", type: "button" }, "Return"); q1.addEventListener("click", function () { apPass1(it); }); q2.addEventListener("click", function () { apReturn(it); }); fa.appendChild(q1); neg = q2; }
     if (it && apState(it) === "wait" && apMay(it)) { var ok = el("button", { class: "btn primary", type: "button" }, "Approve" + (it.kind === "bcr" ? " " + it.x.no : "")), rt = el("button", { class: "btn danger", type: "button" }, "Return"); ok.addEventListener("click", function () { apApprove(it); }); rt.addEventListener("click", function () { apReturn(it); }); fa.appendChild(ok); neg = rt; }
+    if (aiMay(V)) { var ai = el("button", { class: "btn aibtn", type: "button", title: "Claude compares each line's rate with prices found online" }, b.aiCheck ? "AI Check Again" : "AI Check"); ai.disabled = AP.aiBusy === b.id; ai.addEventListener("click", function () { aiCheck(b); }); fa.appendChild(ai); }
     if (V.post && apPostMay(V.post) && tlyPostAmt(V.post) > 0.5) { var pa = el("button", { class: "btn primary", type: "button" }, "Approve Payment"); pa.addEventListener("click", function () { apPostApprove(V.post); }); fa.appendChild(pa); }
     fa.appendChild(el("span", { class: "grow" })); fa.appendChild(back); if (neg) fa.appendChild(neg);
   }

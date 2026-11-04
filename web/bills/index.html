@@ -1103,6 +1103,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         <div class="f wide"><label for="fAddr">Address</label><textarea class="field" id="fAddr" rows="2" maxlength="240"></textarea><span class="hint">Printed on vouchers, under the company name.</span></div>
         <div class="f"><label for="fPhone">Phone</label><input class="field" id="fPhone" inputmode="tel" maxlength="20" autocomplete="off"><span class="hint">Goes on NEFT / RTGS forms as the remitter's phone.</span></div>
         <div class="f"><label for="fShort">Short Name</label><input class="field" id="fShort" data-fmt="upper" maxlength="12" autocomplete="off"><span class="hint">Shown in dropdowns, for example LLP or TCPL.</span><span class="err" id="eShort" hidden></span></div>
+        <div class="f"><label for="fNature">Nature of Business</label><select class="field" id="fNature"></select><span class="hint">Its divisions (on bills and other entries) come from this.</span><span class="err" id="eNature" hidden></span></div>
         <div class="f"><label for="coLoc">Base Location</label><select class="field" id="coLoc"></select>
           <div class="newloc" id="coNewLoc" hidden>
             <input class="field" id="coNewLocName" data-fmt="name" maxlength="40" autocomplete="off" aria-label="New location name" placeholder="New location name">
@@ -1941,6 +1942,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
      are planned and recorded (for every division). Renewable Energy keeps its Sales. Every entry carries the division it came from. */
   var APP = window.BV_APP || "mnt";
   /* Bills & Vouchers (bnv): its own division, a copy of Maintenance & Civil worked by Expenses Operators, who pick who prepared each entry. */
+  /* Nature of Business of each company (companies.nature), and the divisions under it (a bill's Division) */
+  var NATURES = {
+    leather: { name: "Leather", divs: ["Maintenance & Civil", "Chemicals", "Raw Hides", "Sales", "Human Resources", "Auditing", "Legal & Compliance", "KKSK Group", "Top Management", "Miscellaneous"] },
+    re: { name: "Renewable Energy", divs: ["Maintenance", "AMC", "Sales", "Legal & Compliance", "Insurance", "KKSK Group", "Top Management", "Miscellaneous"] }
+  };
+  function natureOf(cid) { var c = cid && S.companies[cid]; return c && NATURES[c.nature] ? c.nature : ""; }
+  function natureDivs(cid) { var n = natureOf(cid); if (n) return NATURES[n].divs.slice(); var all = []; Object.keys(NATURES).forEach(function (k) { NATURES[k].divs.forEach(function (d) { if (all.indexOf(d) < 0) all.push(d); }); }); return all; }
   var DIVS = { mnt: { name: "Maintenance & Civil", payIn: "fin" }, re: { name: "Renewable Energy", payIn: "fin" }, bnv: { name: "Bills & Vouchers", payIn: "fin" }, chm: { name: "Chemicals", payIn: "fin", ext: true } };
   /* Chemicals (ext) has no entry app here: its purchases, proformas and imports are entered and approved in the Chemicals app
      and only accounted and paid here. */
@@ -3415,6 +3423,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("editSub").textContent = c ? "Changes apply to every purchase that points to this company." : "The company gets a permanent ID when you save it.";
     $("fName").value = c ? c.name || "" : ""; $("fPhone").value = c ? c.phone || "" : ""; $("fInternal").value = c ? c.internalName || "" : ""; $("fShort").value = c ? c.shortName || "" : ""; $("fGstin").value = c ? c.gstin || "" : ""; $("fState").value = c ? c.stateCode || "" : ""; $("fAddr").value = c ? c.address || "" : "";
     coLoc.close(); coLoc.fill(locIdOf(c));
+    fillSelect($("fNature"), [["", "Choose"]].concat(Object.keys(NATURES).map(function (k) { return [k, NATURES[k].name]; })), (c && c.nature) || ""); $("fNature").disabled = !canCoEdit();
     /* Which divisions use it: chosen in Accounts and Finance; a company added in a division app starts in that division. */
     var ua = c ? coApps(c) : DIV ? [DIV] : [], fa = $("fApps"); fa.textContent = "";
     Object.keys(DIVS).forEach(function (k) { var lb = el("label", { class: "ck" }), cb = el("input", { type: "checkbox", value: k }); cb.checked = ua.indexOf(k) >= 0; cb.disabled = (!!DIV && k === DIV) || !canCoEdit(); lb.appendChild(cb); lb.appendChild(el("span", null, DIVS[k].name)); fa.appendChild(lb); });
@@ -3466,6 +3475,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (clash) { $("eShort").textContent = "Another company already uses this short name."; $("eShort").hidden = false; $("fShort").classList.add("bad"); ok = false; }
     }
     if (!S.draftLogo) { $("eLogo").textContent = "Choose the company's logo."; $("eLogo").hidden = false; ok = false; }
+    if (!$("fNature").value) { $("eNature").textContent = "Choose the nature of business."; $("eNature").hidden = false; $("fNature").classList.add("bad"); ok = false; }
     var apps = Array.prototype.filter.call($("fApps").querySelectorAll("input"), function (x) { return x.checked; }).map(function (x) { return x.value; });
     if (DIV && apps.indexOf(DIV) < 0) apps.push(DIV);
     if (!apps.length) { $("eApps").textContent = "Tick at least one division."; $("eApps").hidden = false; ok = false; }
@@ -3475,7 +3485,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var id = isNew ? "c_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) : S.editing;
     var locId = coLoc.value();
     var body = { gstin: normId($("fGstin").value), stateCode: $("fState").value.trim(), address: $("fAddr").value.trim(), phone: $("fPhone").value.trim(), name: name, internalName: internal, shortName: short, baseLocationId: locId, baseLocation: locId ? S.locations[locId].name : "", logo: S.draftLogo || "", updatedAt: Date.now(), updatedBy: (S.me && S.me.id) || "" };
-    body.apps = apps; if (APP === "re") body.re = coReOut();
+    body.apps = apps; body.nature = $("fNature").value; if (APP === "re") body.re = coReOut();
     var ref = S.db.doc("companies/" + id);
     S.busy = true; $("save").disabled = true;
     retry(function () {
@@ -4964,8 +4974,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return Object.assign({ acct: "approved", acctNote: "", tds: t, tdsSection: t > 0 ? D.tdsSec || "" : "" }, tdsBaseRate(t, num(D.taxable)), acctWho());
   }
   /* Tally (Demo): who prepared the bill, its division, and its 1st and 2nd approvers (tlyPpl); each defaults to whoever is signed in */
-  function tlyPplDef() { var me = meId(), dv = (typeof myDivs === "function" ? myDivs() : [])[0] || "mnt"; return { prep: me, div: dv, a1: "", a2: me }; }
-  function tlyPplDoc(P) { P = Object.assign(tlyPplDef(), P || {}); return { prep: P.prep, prepName: personName(P.prep), div: P.div, divName: (DIVS[P.div] || {}).name || "", a1: P.a1, a1Name: personName(P.a1), a2: P.a2, a2Name: personName(P.a2) }; }
+  function tlyPplDef() { var me = meId(); return { prep: me, div: "", a1: "", a2: me }; }
+  function tlyPplDoc(P) { P = Object.assign(tlyPplDef(), P || {}); return { prep: P.prep, prepName: personName(P.prep), div: P.div, divName: (DIVS[P.div] || {}).name || P.div || "", a1: P.a1, a1Name: personName(P.a1), a2: P.a2, a2Name: personName(P.a2) }; }
   function draftToDoc(D) { var d0 = draftToDoc1(D); if (tly()) d0.tlyPpl = tlyPplDoc(D.ppl); return d0; }
   function draftToDoc1(D) {
     var doc = draftToDoc0(D), cc = doc.settle ? billCash(D, B.cardId) : null; doc.cashCheck = cc ? cashRec(cc) : null;
@@ -5097,6 +5107,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }
     if (!D.billNo.trim()) E("bcNo", "Enter the bill number.");
     if (!D.supplyOf) E("bcSupply", "Choose whether the bill is for goods, services or both.");
+    if (tly() && D.ppl && !D.ppl.div) E("bcPDiv", "Choose the division.");
+    if (tly() && D.ppl && !D.ppl.a2) E("bcPA2", "Choose the final approver.");
     if (narrPayCheck(D.narration)) E("bcNar", narrPayCheck(D.narration));
     if (riskMsg(D.narration, $("bcNar"))) E("bcNar", riskMsg(D.narration, $("bcNar")));
     if (String(D.narration || "").trim().length > NARR_MAX) E("bcNar", "The narration is " + String(D.narration).trim().length + " characters; keep it to " + NARR_MAX + ".");
@@ -6821,7 +6833,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var w = el("div", { class: "f wide tlyppl" }), g = el("div", { class: "pplgrid" }), ps = tlyPersons().map(function (p) { return [p.id, p.name]; });
     var mk = function (id, lab, key, opts) { var sl = el("select", { class: "field", id: id }); fillSelect(sl, opts, D.ppl[key]); if (!opts.some(function (o) { return o[0] === D.ppl[key]; }) && D.ppl[key]) { var o0 = el("option", { value: D.ppl[key] }, personName(D.ppl[key]) || "Former person"); sl.insertBefore(o0, sl.firstChild); sl.value = D.ppl[key]; }
       sl.addEventListener("change", function () { D.ppl[key] = sl.value; B.touched = true; scheduleSave(); }); var fl = fld(lab, sl), lb = fl.querySelector("label"); if (lb) lb.style.textTransform = "none"; g.appendChild(fl); };
-    mk("bcPPrep", "Prepared By", "prep", ps); mk("bcPDiv", "Division", "div", Object.keys(DIVS).map(function (k) { return [k, DIVS[k].name]; })); mk("bcPA1", "Checker (optional)", "a1", [["", "None: straight to the final approver"]].concat(ps)); mk("bcPA2", "Final Approver", "a2", ps);
+    /* divisions of the bill's company's nature of business (all of them while no company is chosen) */
+    var divOpts = function () { var cid = D.companyId, ds = natureDivs(cid); if (D.ppl.div && ds.indexOf(D.ppl.div) < 0 && !DIVS[D.ppl.div]) ds = ds.concat([D.ppl.div]); return [["", cid && natureOf(cid) ? "Choose the division" : "Choose"]].concat(ds.map(function (d) { return [d, d]; })); };
+    mk("bcPPrep", "Prepared By", "prep", ps); mk("bcPDiv", "Division", "div", divOpts());
+    setTimeout(function () { var co = $("bcCo"), ds = $("bcPDiv"); if (!co || !ds || co._divL) return; co._divL = 1; co.addEventListener("change", function () { if (D.ppl.div && natureDivs(co.value).indexOf(D.ppl.div) < 0) D.ppl.div = ""; fillSelect(ds, divOpts(), D.ppl.div || ""); }); }, 0); mk("bcPA1", "Checker (optional)", "a1", [["", "None: straight to the final approver"]].concat(ps)); mk("bcPA2", "Final Approver", "a2", ps);
     w.appendChild(g); return w;
   }
   /* for the approver: who prepared and accounted the bill, its 1st and 2nd approvers as entered by the preparer, and the 1st
@@ -11717,6 +11732,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           co.appendChild(tx); td.appendChild(co); } },
       { label: "Short Name", cell: function (c, td) { txt(td, c.shortName); } },
       { label: "Base Location", cell: function (c, td) { txt(td, locNameOf(c) || "Not set"); } },
+      { label: "Nature of Business", cell: function (c, td) { txt(td, NATURES[c.nature] ? NATURES[c.nature].name : "Not set"); if (NATURES[c.nature]) sub(td, NATURES[c.nature].divs.length + " divisions"); } },
       !DIV ? { label: "Used In", cell: function (c, td) { txt(td, coApps(c).map(function (k) { return DIVS[k] ? DIVS[k].name : k; }).join(", ")); } } : null,
       APP === "re" ? { label: "Generators", cell: function (c, td) { var r = c.re || {}, n = (r.htscs || []).length; txt(td, n ? (r.kind === "wind" ? "Windmill" : "Solar") + " · " + plural(n, "HTSC") : "Not set up"); if (n) sub(td, reCapText(r)); if (!n) sub(td, "Add at least one HTSC to finish setting it up", "color:var(--bad)"); } } : null,
       false && { label: "Outstanding", cls: "r num", cell: function (c, td) {

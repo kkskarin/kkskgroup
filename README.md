@@ -115,6 +115,13 @@
   (`hsnChk`); Accounting then opens without scanning again. Cancel Entry undoes only the person's own changes: what was
   read, the HSN / SAC checks and descriptions tidied by Claude stay, so a bill opened again needs no new scan. Only
   Discard removes them.
+- **Bill files shown upright, and Rescan Bill (Tally (Demo)).** The app's file viewer now keeps a PDF page's own rotation
+  (the turn set when Claude found the page sideways) instead of drawing every page unturned, so a bill turned when read
+  shows upright. Purchase Entry's file toolbar has **Rescan Bill** (after Open in new tab): after a confirmation, Claude
+  reads the bill again from the start, as when uploaded (the file turned upright and kept again, every field, line and
+  the narration read afresh, the HSN / SAC check made again); what was typed in the entry is replaced.
+- **Narration required (Tally (Demo)).** A bill (Purchase Entry and Accounting), proforma or import can't be saved without
+  its narration (red *); vouchers and duties write theirs from the lines.
 - **Voucher accounting shows Supply of.** The summary at the top of a voucher's accounting includes Supply of (or "Not
   given").
 - **Item descriptions (Tally (Demo)).** A line typed or spoken in Bill Entry is rewritten by Claude to the description rules,

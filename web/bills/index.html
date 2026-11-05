@@ -2012,7 +2012,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     "vfCo", "vfType", "vfPayeeSel", "vfPayee", "vfIdNo", "vfSupply", "vfDays", "vfPPrep", "vfPDiv", "vfPA2", "vfLines", "vfMode", "vfSet",
     "adCo", "adVen", "adVName", "adVAddr", "adVType", "adVTerm", "adNo", "adDate", "adTotal", "adPPrep", "adPDiv", "adPA2",
     "duImp", "duKind", "duVen", "duParty", "duAmt", "duDue", "duPPrep", "duPDiv", "duPA2",
-    "caCo", "caAmt", "caPur", "caPPrep", "caPDiv", "caPA2", "aoVNar", "aoTlyNar", "aoType"];
+    "caCo", "caAmt", "caPur", "caPPrep", "caPDiv", "caPA2", "aoVNar", "aoTlyNar", "aoType", "bcNar", "adNar"];
   function tlyReqMark() {
     TLY_REQ.forEach(function (id) { var c = document.getElementById(id); if (!c) return; var f = c.closest(".f"); if (!f) return;
       var lb = f.querySelector(":scope > label, :scope > .lb"); if (lb && !lb.classList.contains("rq")) lb.classList.add("rq"); });
@@ -4140,7 +4140,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
 
   /* The viewer: pages, zoom in and out, fit to width or page, rotate, drag to move, and open in a new tab. */
-  function fileViewer(meta) {
+  function fileViewer(meta, opt) {
     var box = el("div", { class: "fv" }), bar = el("div", { class: "fv-bar", role: "toolbar", "aria-label": "Bill file" });
     var stage = el("div", { class: "fv-stage", tabindex: "0", "aria-label": "Bill file. Drag to move, use the buttons or + and - to zoom, arrows for pages." }), sheet = el("div", { class: "fv-sheet" });
     stage.appendChild(sheet); box.appendChild(bar); box.appendChild(stage);
@@ -4160,6 +4160,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     function natShow(on) { if (!V.pdf || !V.url) on = false; stage.hidden = !!on; nat.hidden = !on; if (on && nat.src !== V.url) nat.src = V.url; nb.textContent = on ? "App view" : "Browser view"; nb.setAttribute("aria-pressed", on ? "true" : "false"); [prevB, nextB, fw, fp].forEach(function (x) { x.disabled = !!on; }); if (!on) paint(); }
     var nb = b("Browser view", "Show the PDF in the browser's own viewer (if it looks doubled or blurred here)", function () { var on = stage.hidden ? false : true; try { localStorage.setItem("bv_fv_native", on ? "1" : "0"); } catch (e) {} natShow(on); if (!on) draw(); }); nb.hidden = true;
     var nt = b("Open in new tab", "Open the file in a new tab", function () { window.bvFiles.link(meta.path).then(function (u) { window.open(u, "_blank", "noopener"); }, function () { if (V.url) window.open(V.url, "_blank", "noopener"); }); });
+    ((opt && opt.extra) || []).forEach(function (x) { var eb = b(x.label, x.title, x.fn); eb.classList.add("fv-extra"); });
     var note = el("div", { class: "fv-note" }, "Loading the bill file…"); sheet.appendChild(note);
     function baseSize() { if (V.img) return { w: V.img.naturalWidth || 800, h: V.img.naturalHeight || 1100 }; return V.vp ? { w: V.vp.width, h: V.vp.height } : { w: 800, h: 1100 }; }
     function fitScale() { var s = baseSize(), r = V.rot % 180 ? { w: s.h, h: s.w } : s, aw = Math.max(200, stage.clientWidth - 24), ah = Math.max(200, stage.clientHeight - 24); return V.fit === "page" ? ah / r.h : aw / r.w; }
@@ -4181,7 +4182,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       } else if (V.pdf) {
         p = V.pdf.getPage(V.page).then(function (pg) {
           V.vp = pg.getViewport({ scale: 1 });
-          var s = scale(), dpr = Math.min(2.5, window.devicePixelRatio || 1), vp = pg.getViewport({ scale: s * dpr, rotation: V.rot });
+          var s = scale(), dpr = Math.min(2.5, window.devicePixelRatio || 1), vp = pg.getViewport({ scale: s * dpr, rotation: ((pg.rotate || 0) + V.rot) % 360 }); /* the page's own turn (set when the bill was read) plus the viewer's */
           var cv = el("canvas"); cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height); cv.style.width = Math.floor(vp.width / dpr) + "px"; cv.style.height = Math.floor(vp.height / dpr) + "px";
           return pg.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise.then(function () { sheet.textContent = ""; sheet.style.width = cv.style.width; sheet.style.height = cv.style.height; sheet.appendChild(cv); });
         });
@@ -5189,6 +5190,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!D.supplyOf) E("bcSupply", "Choose whether the bill is for goods, services or both.");
     if (tly() && D.ppl && !D.ppl.div) E("bcPDiv", "Choose the division.");
     if (tly() && D.ppl && !D.ppl.a2) E("bcPA2", "Choose the final approver.");
+    if (tly() && !String(D.narration || "").trim()) E("bcNar", "Write the narration.");
     if (narrPayCheck(D.narration)) E("bcNar", narrPayCheck(D.narration));
     if (riskMsg(D.narration, $("bcNar"))) E("bcNar", riskMsg(D.narration, $("bcNar")));
     if (String(D.narration || "").trim().length > NARR_MAX) E("bcNar", "The narration is " + String(D.narration).trim().length + " characters; keep it to " + NARR_MAX + ".");
@@ -5435,7 +5437,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     card.appendChild(head);
     var prev = S.previews[b.id], useFile = tly() && b.file && b.file.path && window.bvFiles, body = el("div", { class: "bc-body" + ((prev && prev.length) || useFile ? "" : " noprev") });
     /* Tally (Demo): the bill's own file with the viewer's tools (pages, zoom, fit, rotate, browser view, new tab), not page pictures */
-    if (useFile) { var fwT = el("div", { class: "bc-prev bc-fv" }); fwT.appendChild(fileViewer(b.file)); body.appendChild(fwT); }
+    if (useFile) { var fwT = el("div", { class: "bc-prev bc-fv" }); fwT.appendChild(fileViewer(b.file, { extra: S.sample && !B.aiOff ? [{ label: "Rescan Bill", title: "Read the bill again from the start: turned upright, every field and line read afresh", fn: function () { rescanBill(b.id); } }] : [] })); body.appendChild(fwT); }
     else if (prev && prev.length) body.appendChild(previewEl(prev));
     else if (b.previewPages) setTimeout(function () { loadPreviews(b.id); }, 0);
     /* a bill back for editing has no page pictures any more: its kept file opens in their place */
@@ -6862,6 +6864,19 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var store = k === "vch" ? S.vouchers : k === "cash" ? S.cashadv : S.advances;
     return retry(function () { return S.db.doc(K.col + "/" + id).set(doc); }).then(function () { store[id] = Object.assign({ id: id }, doc); invalidate(); return id; }, function (e) { toast("The copy couldn't be made (" + ((e && (e.code || e.message)) || "error") + ")."); return null; });
   }
+  /* Rescan Bill (Purchase Entry): the bill is read again from the start, as when uploaded: turned upright, every field,
+     line and the narration read afresh (what was typed in this entry is replaced), and the HSN / SAC check made again. */
+  function rescanBill(id) {
+    var b = S.bills[id]; if (!b || B.busy) return;
+    var body = el("div", { class: "mform" }); body.appendChild(el("p", null, "Claude reads " + (b.billNo || "this bill") + " again from the start: the file is turned upright, and the company, vendor, bill number and date, amounts, line items and narration are read afresh. What was typed or changed in this entry is replaced."));
+    popForm("Rescan Bill?", "", body, "Rescan Bill", function () {
+      clearTimeout(B.saveTimer); B.dirty = false;
+      (B.savePromise || Promise.resolve()).then(function () {
+        S.tlyScan = id; S.openBill = id; B.cardId = null; renderBills();
+        return tlyReread(id).then(function (ok) { S.tlyScan = ""; B.cardId = null; B.snap = null; S.openBill = id; renderBills(); if (ok) toast((b.billNo || "The bill") + " has been scanned again: check the line items and ledgers."); });
+      });
+    });
+  }
   function tlyReread(id) {
     var b = S.bills[id]; if (!b || !b.file || !b.file.path || !window.bvFiles || !S.sample || B.aiOff) return Promise.resolve(false);
     return window.bvFiles.get(b.file.path).then(function (blob) {
@@ -6875,7 +6890,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
             narration: d.narration || cur.narration || "", supplyOf: d.supplyOf || cur.supplyOf || "", einv: d.einv, ex: d.ex, items: [], ledgers: [], descTidy: 2, rereadAt: now, updatedAt: now };
           if (!up.vendorId) up.vendorNew = d.vendorNew; if (d.termDays != null) up.termDays = d.termDays;
           if (p.previews && p.previews.length) { S.previews[id] = p.previews; storePreviews(id, p.previews); }
-          return retry(function () { return S.db.doc("bills/" + id).update(up); }).then(function () { S.bills[id] = Object.assign({}, S.bills[id] || b, up); hsnPrecheck(id); return true; });
+          var rots = turnsOf(res && (res.page_rotations || (list[0] || {}).page_rotations));
+          return retry(function () { return S.db.doc("bills/" + id).update(up); }).then(function () { S.bills[id] = Object.assign({}, S.bills[id] || b, up); hsnPrecheck(id);
+            /* pages Claude found turned are set upright in the kept file */
+            if (rots) return turnFile(f, rots).then(function (tf) { return tf ? keepFile(id, tf) : null; }).then(function () { return true; });
+            return true; });
         });
       });
     }).catch(function (e) { toast("Claude couldn't read the copied bill again: " + ((e && e.code === "sampling_disabled" && e.message) || (e && (e.code || e.kind || e.message)) || "error") + ". Its copied details are kept."); return false; });
@@ -9979,6 +9998,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     function E(id, m) { errOn(id, m); ok = false; }
     if (!D.companyId) E("adCo", "Choose the company."); else if (!canStep("adv", D.companyId)) E("adCo", "You don't have access to this company.");
     var cce = ccCheck("adCc", num(D.total)); if (cce) E("adCc", cce);
+    if (tly() && !String(D.narration || "").trim()) E("adNar", "Write the narration.");
     if (narrPayCheck(D.narration)) E("adNar", narrPayCheck(D.narration));
     if (riskMsg(D.narration, $("adNar"))) E("adNar", riskMsg(D.narration, $("adNar")));
     var g = "";
@@ -16722,7 +16742,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var nta = el("textarea", { class: "field", id: "aoTlyNar", rows: "3", maxlength: String(NARR_MAX) }); nta.value = AC.T.narration; nta.disabled = locked;
       var ncount = el("span", { class: "hint" }); var nc = function () { ncount.textContent = nta.value.length + " of " + NARR_MAX + " characters"; }; nc();
       nta.addEventListener("input", function () { AC.T.narration = nta.value; nc(); });
-      var nf = el("div", { class: "f", style: "margin-top:12px" }); nf.appendChild(el("label", { for: "aoTlyNar" }, "Narration")); nf.appendChild(nta); nf.appendChild(ncount); if (x.ex && (x.ex.narrReview || []).length) nf.appendChild(el("span", { class: "hint" }, "Narration to check: " + x.ex.narrReview.join("; "))); s2.appendChild(nf);
+      var nf = el("div", { class: "f", style: "margin-top:12px" }); nf.appendChild(el("label", { for: "aoTlyNar" }, "Narration")); nf.appendChild(nta); nf.appendChild(ncount); var ne0 = el("span", { class: "err", id: "aoTlyNarE" }); ne0.hidden = true; nf.appendChild(ne0); if (x.ex && (x.ex.narrReview || []).length) nf.appendChild(el("span", { class: "hint" }, "Narration to check: " + x.ex.narrReview.join("; "))); s2.appendChild(nf);
       s2.appendChild(el("div", { id: "aoTlyErr" }));
       setTimeout(function () { var c = acctCtx(); if (c) c.redraw(); }, 0);
     } else if (isB && x.ex && (x.ex.items || []).length) {
@@ -17021,6 +17041,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (D.vl && D.vtype === GTA_TYPE && !D.gtSet) errs.push(["aoType", "Choose Freight & Transport, Intrastate or Interstate."]);
       if ((D.vl || []).some(function (l) { return !String(l.d || "").trim(); })) errs.push(["aoLed", "Describe every line."]);
       if (D.vl && !String(D.narration || "").trim()) errs.push(["aoVNar", "Write the narration."]); }
+    if (AC.kind === "bill" && tly() && AC.T && !String(AC.T.narration || "").trim()) errs.push(["aoTlyNar", "Write the narration."]);
     else if (AC.kind === "voucher" && D.vtype && D.vtype !== "Cash Voucher" && D.gstApp === "RCM") { if (!D.gstRate) errs.push(["aoRate", "Choose the GST (RCM) percent."]); var rb = rcmLines(D, []); if (rb) errs.push(["aoRcm", rb]); }
     return errs;
   }

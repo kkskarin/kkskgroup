@@ -4770,7 +4770,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (empty && res.readable === false && !(it.prep.previews || []).length) throw { kind: "blank", manual: true };
       var id = newId("b");
       return retry(function () { return S.db.doc("bills/" + id).set(d); }).then(function () {
-        S.bills[id] = Object.assign({ id: id }, d); invalidate(); if (d.vendorId && S.vendors[d.vendorId]) gstRefresh(S.vendors[d.vendorId], null, true); aiLink(it._rk, id);
+        S.bills[id] = Object.assign({ id: id }, d); invalidate(); if (d.vendorId && S.vendors[d.vendorId]) gstRefresh(S.vendors[d.vendorId], null, true); aiLink(it._rk, id); if (tly()) hsnPrecheck(id); /* the accounting's HSN / SAC check runs with the reading, once */
         if (rots) { var orig0 = it.orig, pv0 = it.prep.previews; it.prep = null; it.orig = null;
           /* Tally (Demo): pages turned upright before they are kept */
           turnPreviews(pv0, rots).then(function (pv) { S.previews[id] = pv; storePreviews(id, pv); onData(); });
@@ -4824,7 +4824,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         if (pages.length) d.ex.notes = ((d.ex.notes ? d.ex.notes + " " : "") + "Page" + (pages.length > 1 ? "s " : " ") + pages.join(", ") + " of " + (it.name || "the file") + ".").trim();
         var id = newId("b");
         return retry(function () { return S.db.doc("bills/" + id).set(d); }).then(function () {
-          S.bills[id] = Object.assign({ id: id }, d); invalidate(); if (d.vendorId && S.vendors[d.vendorId]) gstRefresh(S.vendors[d.vendorId], null, true); aiLink(it._rk, id);
+          S.bills[id] = Object.assign({ id: id }, d); invalidate(); if (d.vendorId && S.vendors[d.vendorId]) gstRefresh(S.vendors[d.vendorId], null, true); aiLink(it._rk, id); if (tly()) hsnPrecheck(id); /* the accounting's HSN / SAC check runs with the reading, once */
           var pv = pages.length ? pages.map(function (pg) { return prev[pg - 1]; }).filter(Boolean) : [];
           S.previews[id] = pv.length ? pv : prev.slice(); storePreviews(id, S.previews[id]);
           var orig = it.orig;
@@ -5794,6 +5794,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var out = r && Array.isArray(r.items) ? r.items : null; if (!out || out.length !== its.length || B.cardId !== id || !B.D) return;
       its.forEach(function (x, i) { var t = String(out[i] || "").replace(/\s+/g, " ").trim().slice(0, 200); if (t) x.d = t; });
       B.D.descTidy = 2; B.touched = true; scheduleSave(); var c = billCtx(); if (c) c.redraw();
+      /* Cancel Entry keeps the tidied descriptions: tidying is Claude's work, not an edit */
+      if (B.snap && B.snap.id === id) { B.snap.doc.items = itemsOut(B.D.items || []); B.snap.doc.descTidy = 2; }
     }, function () {}).then(function () { if (B.tidying === id) B.tidying = ""; });
   }
   /* Tally (Demo): one item description typed or spoken in Bill Entry is rewritten by Claude to the description rules, with the
@@ -5974,11 +5976,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function hsnKeep(id, its) {
     var b = S.bills[id]; if (!b) return; var m = Object.assign({}, b.hsnChk || {}), add = 0;
     its.forEach(function (x) { var k = hsnChkKey(x); if (HSN_CHK[k] && !HSN_CHK[k].fail && !(k in m)) { m[k] = HSN_CHK[k]; add++; } }); if (!add) return;
-    retry(function () { return S.db.doc("bills/" + id).update({ hsnChk: m }); }).then(function () { if (S.bills[id]) S.bills[id].hsnChk = m; }, function () {});
+    retry(function () { return S.db.doc("bills/" + id).update({ hsnChk: m }); }).then(function () { if (S.bills[id]) S.bills[id].hsnChk = m; if (B.snap && B.snap.id === id) B.snap.doc.hsnChk = m; }, function () {});
   }
   function hsnPrecheck(id) {
     var b = S.bills[id]; if (!b || !S.sample || B.aiOff) return; hsnSeed(b);
-    hsnMaster().then(function () { var its = effItems(itemsIn(JSON.parse(JSON.stringify(S.bills[id] || b))) || []); return hsnCheckLines(its, null, id); }).catch(function () {});
+    hsnMaster().then(function () { var its = itemsIn(JSON.parse(JSON.stringify(S.bills[id] || b))) || [], left = function () { return its.some(function (x) { return x.k !== "ro" && String(x.d || "").trim().length > 2 && !(hsnChkKey(x) in HSN_CHK); }); };
+      /* the same lines Accounting checks, 20 at a time, so Accounting opens without checking again */
+      var round = function (n) { return hsnCheckLines(its, null, id).then(function () { if (n < 5 && left() && S.sample && !B.aiOff) return round(n + 1); }); }; return round(1); }).catch(function () {});
   }
   function hsnCheckLines(its, redraw, billId) {
     if (!tly() || !S.sample || !HSNM || B.aiOff) return Promise.resolve();
@@ -6586,6 +6590,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (B.busy) return; var b = S.bills[B.cardId]; if (!b) return;
     B.busy = true; setCardBusy(true); clearTimeout(B.saveTimer); B.dirty = false;
     var snap = B.snap && B.snap.id === b.id ? B.snap.doc : null;
+    /* what Claude found while the bill was open (the HSN / SAC checks) stays: only the person's own changes are undone */
+    if (snap && b.hsnChk) snap.hsnChk = Object.assign({}, snap.hsnChk || {}, b.hsnChk);
     (B.savePromise || Promise.resolve()).then(function () { return snap ? retry(function () { return S.db.doc("bills/" + b.id).set(snap); }) : null; })
       .then(function () { if (snap) S.bills[b.id] = Object.assign({ id: b.id }, snap); invalidate(); S.skipOpen = b.id; B.cardId = null; B.D = null; S.openBill = null; toast("Entry cancelled: the bill is as it was."); renderBills(); }, function (e) { toast(explain(e)); setCardBusy(false); })
       .then(function () { B.busy = false; });
@@ -6869,7 +6875,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
             narration: d.narration || cur.narration || "", supplyOf: d.supplyOf || cur.supplyOf || "", einv: d.einv, ex: d.ex, items: [], ledgers: [], descTidy: 2, rereadAt: now, updatedAt: now };
           if (!up.vendorId) up.vendorNew = d.vendorNew; if (d.termDays != null) up.termDays = d.termDays;
           if (p.previews && p.previews.length) { S.previews[id] = p.previews; storePreviews(id, p.previews); }
-          return retry(function () { return S.db.doc("bills/" + id).update(up); }).then(function () { S.bills[id] = Object.assign({}, S.bills[id] || b, up); return true; });
+          return retry(function () { return S.db.doc("bills/" + id).update(up); }).then(function () { S.bills[id] = Object.assign({}, S.bills[id] || b, up); hsnPrecheck(id); return true; });
         });
       });
     }).catch(function (e) { toast("Claude couldn't read the copied bill again: " + ((e && e.code === "sampling_disabled" && e.message) || (e && (e.code || e.kind || e.message)) || "error") + ". Its copied details are kept."); return false; });
@@ -16656,6 +16662,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
      line's HSN / SAC against the item), with the bill under a scanning bar meanwhile, as in Purchase Entry. A bill already
      analysed in this session opens straight away; only if the analysis hangs for 2 minutes does the bill open without it. */
   function acctAnalyse(x) {
+    hsnSeed(x); /* checks already made when the bill was read are used, not made again */
     var id = x.id; AC.loading = id; AC.ready = AC.ready || {};
     $("aoTitle").textContent = "Bill " + (x.billNo || "") + ", " + vendorLabelOfBill(x); $("aoSub").textContent = "Analysing the bill…"; $("aoActs").textContent = "";
     var f = $("aoBody"); f.textContent = "";
@@ -16664,6 +16671,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     setTimeout(finish, 120000);
     /* 20 lines go to Claude at a time: a longer bill takes a few rounds */
     var its = (AC.T && AC.T.items) || [], left = function () { return its.some(function (it) { var k = hsnChkKey(it); return it.k !== "ro" && String(it.d || "").trim().length > 2 && !(k in HSN_CHK); }); };
+    if (HSNM && !left()) { finish(); return; } /* every line was checked when the bill was read */
     var round = function (n) { return hsnCheckLines(its).then(function () { if (n < 5 && left() && S.sample && !B.aiOff) return round(n + 1); }); };
     hsnMaster().then(function () { return round(1); }).then(finish, finish);
   }

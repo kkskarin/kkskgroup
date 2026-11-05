@@ -110,6 +110,11 @@
   (`TLY_REQ`, `.rq`): bills, vouchers, proformas and imports, duties and charges, cash advances, and the accounting
   narration. In the voucher form these are Company, Type of Voucher, Paid To, Supply Of, Payment in (days), Prepared By,
   Division, Final Approver, at least one line with its ledger and amount, and Mode of Payment.
+- **One scan per bill (Tally (Demo)).** When a bill is read (uploaded, split from a file, or a copied live bill read
+  again), the accounting's HSN / SAC check of every line starts at once in the background and is kept on the bill
+  (`hsnChk`); Accounting then opens without scanning again. Cancel Entry undoes only the person's own changes: what was
+  read, the HSN / SAC checks and descriptions tidied by Claude stay, so a bill opened again needs no new scan. Only
+  Discard removes them.
 - **Voucher accounting shows Supply of.** The summary at the top of a voucher's accounting includes Supply of (or "Not
   given").
 - **Item descriptions (Tally (Demo)).** A line typed or spoken in Bill Entry is rewritten by Claude to the description rules,

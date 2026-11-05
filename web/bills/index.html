@@ -9601,11 +9601,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
 
   /* ---- list page ---- */
   function renderAdvList() {
+    if ($("alManual")) $("alManual").hidden = tly(); /* Tally (Demo): a proforma or import comes only from its uploaded file */
     if ($("alCopy")) { $("alCopy").hidden = !tly(); $("alCopy").textContent = ADV.kind === "import" ? "Copy a Live Import" : "Copy a Live Proforma"; }
     var kind = ADV.kind, imp = kind === "import";
     $("alTitle").textContent = imp ? "Imports" : "Proformas";
     $("alSub").textContent = imp ? "Imports from overseas vendors, in their own currency, paid in instalments. Add IGST, transport, duty and other fees in rupees as they are paid, then close the import."
       : "Payments planned in two or more instalments against a proforma invoice. Instalments carry no GST or TDS. When the tax bill comes, attach it here and the instalments paid are set against it.";
+    if (tly()) $("alSub").textContent = (imp ? "Imports from overseas vendors, paid in instalments in their own currency." : "Payments in instalments against a proforma invoice, with no GST or TDS.") + " Each is entered only by uploading its " + (imp ? "import order" : "proforma") + " (PDF or photo): Claude reads it into the form, and the file stays with it. " + (imp ? "Duties and customs go under Duties & Customs." : "Close it with the tax bill when it comes.");
     $("alUpload").textContent = imp ? "Upload import (PDF or photo)" : "Upload proforma (PDF or photo)";
     var noAi = !S.sample ? "Reading files needs Claude, which isn't available in this view. You can still enter it by hand." : B.aiOff ? REJECT[B.aiOff] : "";
     $("alUpload").disabled = !!noAi; $("alNote").hidden = !noAi; $("alNote").textContent = noAi;
@@ -9885,6 +9887,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var costs = {};
     if (imp && !tly()) [["adIgst", "igst"], ["adTrans", "transport"], ["adDuty", "duty"], ["adOther", "other"]].forEach(function (k) { var s0 = $(k[0]).value.trim(); if (!s0) { costs[k[1]] = null; return; } var n = num(s0); if (n == null || n < 0) E(k[0], "Enter rupees as a number."); else costs[k[1]] = round2(n); });
     if (!ok) { var first = box.querySelector(".field.bad"); if (first) first.focus(); else if (!$("adInstE").hidden) $("adInstE").scrollIntoView({ block: "center" }); return; }
+    if (tly() && !real && !ADV.srcFile && !D.copiedFrom) { toast("Upload the " + (imp ? "import order" : "proforma") + " first: it is entered only from its file."); return; }
     var dupe = Object.keys(S.advances).map(function (k) { return S.advances[k]; }).filter(function (x) { return x.id !== ADV.id && x.kind === ADV.kind && normId(x.piNo) === normId(D.piNo) && x.vendorId && x.vendorId === D.vendorChoice; })[0];
     if (dupe) { E("adNo", "This number is already saved for this vendor."); $("adNo").focus(); return; }
     var vid = D.vendorChoice !== "new" ? D.vendorChoice : null, job = Promise.resolve(), madeVendor = "";
@@ -10054,7 +10057,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   function readAdvFile(file) {
     if (!file) return;
-    if (!S.sample || B.aiOff) { toast("Files can't be read here. Enter it by hand."); return; }
+    if (!S.sample || B.aiOff) {
+      if (!tly()) { toast("Files can't be read here. Enter it by hand."); return; }
+      var k0 = ADV.kind; (isPdf(file) ? prepPdf(file, 1) : prepImage(file, 1)).then(function (p) { ADV.kind = k0; newAdv(null, p.previews, file.name || "the file", file); toast("Claude can't read files just now: fill it in from the file beside the form."); }, function () { toast("The file couldn't be opened. Try a PDF or a photo."); }); return; }
     var kind = ADV.kind; ADV.log = "Reading " + (file.name || "the file") + "…"; renderAdvList(); $("alUpload").disabled = true;
     var sc = scanOverlay(file, { title: "Reading " + (kind === "import" ? "the import order" : "the proforma") + "…", text: "Claude is reading " + (file.name || "the file") + ": the vendor, number and date, the amount and currency, the payment terms and instalments, and what is being bought. The form opens when it is done.", steps: ["Reading the pages", "Finding the vendor and the number", "Working out the instalments", "Writing what is being bought"] });
     prepFile(file).then(function (p) {
@@ -19391,7 +19396,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("bDoneCo").addEventListener("change", function () { B.doneLimit = 100; renderDone(); });
     $("alUpload").addEventListener("click", function () { $("alFile").click(); });
     $("alFile").addEventListener("change", function () { var f = this.files && this.files[0]; this.value = ""; readAdvFile(f); });
-    $("alManual").addEventListener("click", function () { ADV.log = ""; newAdv(null, null, ""); });
+    $("alManual").addEventListener("click", function () { if (tly()) return; ADV.log = ""; newAdv(null, null, ""); });
     $("alCo").addEventListener("change", renderAdvList); $("alQ").addEventListener("input", renderAdvList); $("alClosed").addEventListener("change", renderAdvList);
     $("adBack").addEventListener("click", backToAdvList); $("adCancel").addEventListener("click", backToAdvList); $("adSave").addEventListener("click", saveAdv);
     $("adClose").addEventListener("click", function () { closeAdv(this); }); $("adDelete").addEventListener("click", function () { deleteAdv(this); });

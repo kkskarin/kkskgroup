@@ -80,6 +80,9 @@
   After Accounting. A saved payee shows its PAN / Aadhaar and address under More Details, read-only (a payee's saved details
   are not changed from a voucher; only what is missing can be filled in). **Uploads being read:** a proforma, an import order
   or a voucher's document shows its first page under the scanning bar, beside what Claude is reading, until the form opens.
+- **Tally (Demo): proformas and imports only from their file.** Enter by Hand is gone; each is entered by uploading the
+  proforma or import order (PDF or photo), which Claude reads into the form and which stays with it. One can't be saved
+  without its file (a Live copy keeps its own). If Claude can't read just then, the form still opens with the file beside it.
 - **One header everywhere.** The page always keeps room for its scrollbar (`html{overflow-y:scroll}`), so the header, tabs
   and sub-tabs never move sideways between short and long pages; in Tally (Demo) the white sub-tab row is always shown (a tab
   without pages of its own shows its own name there), so the header is the same height on every screen, accounting included.

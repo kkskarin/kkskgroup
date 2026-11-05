@@ -17756,6 +17756,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     /* ---- comments · mode · payment date · cashier seal · approved by ---- */
     lab("COMMENTS & PAYABLE ADJUSTMENTS", px - 0.53 + (P ? 0.53 : 0), yO + (P ? 2.91 : 2.64), null, 0.135);
     lab("PAYMENT REFERENCE (IF ANY):", px - 0.53 + (P ? 0.53 : 0), yO + (P ? 12.7 : 12.96), null, 0.135);
+    /* no tax box (Cash Voucher, or a Self Invoice without RCM): Accounted By sits left of Mode of Payment, in a box its size */
+    if (!taxT) { var aw = 115.36 - 84.93, ax = 84.93 - aw; vl(ax, yO, yE); lab("ACCOUNTED BY", ax + aw / 2, yO + 12.7, "center"); sigAt(sig.acct, ax + aw / 2, yO + 10.6, aw - 3.4, 9.6); }
     vl(84.93, yO, yE); lab("MODE OF PAYMENT", 100.07, yO + 5.55, "center"); F("Lato", "bold", 8.25, INK); T("Cash / Cheque", 100.07, yO + (P ? 10.05 : 9.79), "center");
     vl(115.36, yO, yE); lab("PAYMENT DATE", 130.44, yO + 12.7, "center");
     vl(145.52, yO, yE); lab("CASHIER SEAL", 160.73, yO + 12.7, "center");

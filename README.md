@@ -74,6 +74,9 @@
   the voucher's accounting screen. **HSN / SAC check in the background:** submitting a bill
   starts Accounting's HSN / SAC check at once; its answers are kept on the bill (`hsnChk`) and reused when it is opened, so a
   line is checked by Claude only once (a failed check is not kept and is tried again another time, never in a loop).
+- **Voucher print: Accounted By on every voucher.** A Cash Voucher, or a Self Invoice without RCM (no tax box, where the
+  Accounted By box used to be), has an Accounted By box left of Mode of Payment, the same size, with the accountant's
+  signature.
 - **Item descriptions (Tally (Demo)).** A line typed or spoken in Bill Entry is rewritten by Claude to the description rules,
   with words speech recognition got wrong put right from the company's line of business ("leather heights" → "Leather
   Hides"); ordinary words are never put in capitals.

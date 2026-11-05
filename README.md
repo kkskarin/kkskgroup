@@ -93,6 +93,10 @@
   Sub Group under its Primary Group), the company's ledgers (GST ledgers with their duty head; one per name, duplicates
   flagged), vendors and voucher payees as Sundry Creditors (bill-wise on, address, GSTIN or Unregistered, PAN), and bank
   accounts; customers as Sundry Debtors once sales are kept.
+- **Text wraps instead of overlapping.** Buttons, column headers, labels, tags, card titles and headings wrap onto more lines
+  when they don't fit, and a single word too long for its space is hyphenated at the end of the line (the page is marked
+  `lang="en"` so the browser can; desktop Chrome and Edge hyphenate, a browser without a hyphenation dictionary breaks the word
+  without the hyphen). Row actions in tables wrap onto a second line instead of running over the status.
 - **One header everywhere.** The page always keeps room for its scrollbar (`html{overflow-y:scroll}`), so the header, tabs
   and sub-tabs never move sideways between short and long pages; in Tally (Demo) the white sub-tab row is always shown (a tab
   without pages of its own shows its own name there), so the header is the same height on every screen, accounting included.

@@ -16,6 +16,35 @@
 | `/production/` (`web/production/index.html`) | Production Planning (Live on the KKSK-Production tables; Demo sample for admins) | KKSK-Production, through the hand-over |
 | `/inv/` (`web/inv/index.html`) | **Trial App**. Public: anyone with the address opens it and can change its data, no sign-in; not on the All Apps page. Tabs, each with Entry (or a sub-tab per place), Reports and Masters; the open one is kept in the address (`#tab/sub`). The day is picked on a 7-day calendar (today and the 6 days before, with weekdays): green when every table is saved, an orange dot when some are, red for earlier days with nothing (from the first entry on), Sundays plain. **Raw to Tanned**: Entry has a table each for Erode, Ambur and Ranipet, a row per stage (Masters: Rawhide, Liming / Tanning, Pickling, WB Fresh Lot, WW Fresh Lot), Domestic and Import pieces. **Tanned & Assorted**: Entry has Grain and Split, each with a Domestic and an Import table: Wet Blue then Wet White, a row per grade, columns Grade, Pieces, Area. Grades are added in bulk (one per line) as Grain or Split, Domestic / Import / Both and Wet Blue / Wet White / Both. **WB Split - Ambur**: Input and Output, stages from Masters. Reports: a pivot of the stock position on a chosen day (each place's latest entry on or before it), filtered and laid out by any of its dimensions; Tanned & Assorted shows pieces or area. Data in its own table `trial_docs` (migration 20261030170000), open to everyone | KKSK Group (own table) |
 
+- **Tally (Demo): Vouchers, Proformas, Imports and Cash Advances.** Purchase has main tabs Bills, Vouchers (Voucher Entry,
+  Voucher Checking), Proformas (Proforma Entry, Advance Checking), Imports (Import Entry, Duties & Customs, Advance Checking)
+  and Cash Advances. Each starts empty here; **Copy a Live Voucher / Proforma / Import / Cash Advance** brings in one Live record
+  as it was entered (no reading by Claude; `copiedFrom`), to be completed and sent on from the beginning. In Tally (Demo) the
+  Super Admin works like the Chief Accountant (`adm()` is false there; the old screens' admin-only views are not used). Every
+  record has Prepared By, Division (from the company's Nature of Business), Checker (optional) and Final Approver (`tlyPpl`).
+  **Vouchers** keep their ledger lines (no HSN or GST: the payees are unregistered); Supply Of (Goods / Services / Composite) on
+  every type; payee identity as before (a PAN or Aadhaar can't be on two payees; a similar name is asked about); TDS in
+  accounting. RCM only on a Freight & Transport (GTA) voucher, set by the accountant line by line (ticked by default, 5% or
+  18%, intrastate or interstate: `rcmLines`, `gstLedgers` on the Input (RCM) ledgers). Narration: "Being purchase of goods /
+  services / goods and services vide Voucher No. … dated … from <payee> (GTA) towards <details>." Accounted vouchers go for
+  approval from Voucher Checking: 3 or fewer per person and company as they are, 4 or more in a Voucher Checking Report (both
+  are `reports` of kind vcr). Statuses as bills; a returned voucher can be sent again or edited (unchanged it stays
+  accounted). **Proformas and imports** stay header only; the purchaser sets the instalments and the approver can change the
+  amounts and dates. Advance Checking lists every instalment until the record is closed (due ones marked); one ACR per
+  instalment goes straight to Approvals. **Close with Tax Bill** opens Bill Entry linked to it (the instalments paid are set
+  against it; its narration names the proforma). **Duties & Customs** (`duties`): customs duty, IGST on import, SWS, cess, CHA,
+  freight, insurance, port and other charges, each with its BOE, its own party (a vendor or a typed name such as the
+  Commissioner of Customs), amount and pay-by date; each is approved and paid on its own and never touches the import
+  vendor's account. **Cash advances** go to Approvals (the approver can cut the amount or return it) and are handed over under
+  Finance › Cash Advances (no Pay Directly); vouchers paid from the cash settle them. **Approvals** has a main tab per kind
+  (Bills, Vouchers, Proformas, Imports, Cash Advances), each with Pending Final Approval, Pending Checker Approval, Postponed
+  Payments (not for cash) and Approval History, the same filters and a View with the file beside the details. Approving
+  writes `tlyAp` on the voucher, ACR or duty (instalments with pay-by dates) and the marks Finance pays from (`approvedAt`,
+  ACR `stage: payment` with `apprAmt`, cash `status: approved` with `approvedAmount`). Finance › Plan lists approved
+  vouchers, instalments and duties with bills. AI Usage Credits counts Claude's use on vouchers and proformas per record.
+- **Item descriptions (Tally (Demo)).** A line typed or spoken in Bill Entry is rewritten by Claude to the description rules,
+  with words speech recognition got wrong put right from the company's line of business ("leather heights" → "Leather
+  Hides"); ordinary words are never put in capitals.
 - **One page, five apps.** Maintenance, Renewable Energy, Accounts and Finance are all `web/bills/index.html`; `netlify.toml`
   serves it at each address and the address picks the app (`BV_APP`: mnt, re, acc, fin). `/bills/` (the old Bills & Vouchers)
   moves to `/maintenance/`. Every bill, report, proforma, voucher, payment, note and cash advance carries `div` (mnt or re;

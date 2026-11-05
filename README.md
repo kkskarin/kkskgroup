@@ -58,6 +58,15 @@
   Voucher accounting is laid out in sections (Voucher Details, Ledgers, Voucher Type & RCM, TDS, **Tally Line Items**): the
   purchase voucher as Tally gets it (Dr each ledger with its RCM note, Cr TDS, Cr the payee bill-wise New Ref) and, when there
   is RCM, the Journal-GST (Dr CGST / SGST / IGST Input (RCM), Cr the RCM Payable ledgers), redrawn as anything changes.
+- **Tally (Demo) voucher accounting** (no file to show): Base Details on the left (Company, Vendor, Voucher No., Voucher Date,
+  Payment in (days) with the Due Date worked out, Supply of, Prepared By, Narration with Edit), Voucher Line Items on the right
+  with the type of voucher beside the heading (per line: Description, Ledger, RCM Yes / No with 5% or 18% on a Freight &
+  Transport or Self Invoice voucher, ITC Eligible / Ineligible (Ineligible by default on a Cash Voucher; RCM lines are
+  Eligible), Amount), and below them Tally Line Items with TDS, the purchase voucher and the Journal-GST, and the narration to
+  edit (Write Again). The line ledgers make the voucher's ledger lines; `lines`, `rcmLines` (with `itc`), `termDays`,
+  `dueDate` and `narration` are saved. **HSN / SAC check in the background:** submitting a bill starts Accounting's HSN /
+  SAC check at once; its answers are kept on the bill (`hsnChk`) and reused when it is opened, so a line is checked by Claude
+  only once (a failed check is not kept and is tried again another time, never in a loop).
 - **Item descriptions (Tally (Demo)).** A line typed or spoken in Bill Entry is rewritten by Claude to the description rules,
   with words speech recognition got wrong put right from the company's line of business ("leather heights" → "Leather
   Hides"); ordinary words are never put in capitals.

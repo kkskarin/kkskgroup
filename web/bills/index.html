@@ -698,6 +698,11 @@ body.tly .bc-fv{height:calc(100vh - 24px)}
 /* Tally (Demo) takes the TARS Creations layout (cards, 6px corners) in the app's own fonts and colours */
 body.tly{line-height:1.5}body.tly .field{border-radius:6px;padding:.55rem .7rem;border-color:#cdbcad}body.tly .card{border-radius:6px}body.tly .btn{border-radius:6px}
 body.tly .t th{background:var(--brand-soft);color:var(--brand-dark);font-size:calc(13px*var(--ts,1));font-weight:600}body.tly .t td{border-bottom:1px solid var(--line)}
+.vacc{display:grid;gap:16px;margin:12px 0}.vacc2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:16px;align-items:start}@media (max-width:1000px){.vacc2{grid-template-columns:1fr}}
+.vacc .tlysec>.vsechd{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;padding:7px 18px;min-height:46px;box-sizing:border-box;background:var(--brand-soft,var(--soft));border-bottom:1px solid var(--line);border-radius:0 6px 0 0}
+.vacc .vsechd h3{text-transform:none;letter-spacing:0;margin:0;font-family:var(--serif);font-size:calc(18px*var(--ts,1));font-weight:400;color:var(--brand-dark,var(--brand))}.vacc .vsechd select.field{padding-top:6px;padding-bottom:6px}.vacc .tlysec>.vsecb{padding:16px 20px 20px}
+.vacc .vgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}.vacc .vgrid .f.wide{grid-column:1/-1}.vacc .vgrid .field.ro{overflow-wrap:anywhere}
+.vlitems td{vertical-align:top}.vlitems td.itd{white-space:normal;min-width:160px}.vlitems select.field{min-width:0;width:auto;max-width:220px}.vlitems .vrcm{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.vlitems .vrcm .tsub{flex-basis:100%}
 .tlysecs{padding:12px 14px 14px;display:grid;gap:16px;background:var(--bg)}
 .tlysecs,.tlysecs>.tlysec{min-width:0}.ao-tly .form{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}.ao-tly .field.ro{overflow-wrap:anywhere;min-width:0}
 @media (max-width:1500px) and (min-width:981px){body.tly .ao-split{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}}
@@ -5907,7 +5912,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     setTimeout(function () { Array.prototype.forEach.call(w.querySelectorAll("textarea.itdesc"), growTa); }, 0);
     if (!HSNM) hsnMaster().then(function (m) { if (m && $(c.wrap)) c.redraw(); });
     if (off) return;
-    if (c.acct) hsnCheckLines(its, function () { if ($(c.wrap)) c.redraw(); });
+    if (c.acct) { hsnSeed(S.bills[c.billId]); hsnCheckLines(its, function () { if ($(c.wrap)) c.redraw(); }, c.billId); }
     var foot = el("div", { class: "row", style: "display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:8px" });
     var mk = function (lab, k, d0) { var a = el("button", { type: "button", class: "link-btn" }, lab); a.addEventListener("click", function () { var nw = { id: newId("i"), k: k, to: "", d: d0, hsn: "", qty: null, unit: "", rate: null, gst: "", rcm: false, rr: "", itc: k === "ro" ? "" : "elig", tx: "", lg: "", why: "", man: false }; if (k === "charge" && items.length && chargeFits(nw, items)) nw.to = "all"; D.items.push(nw); if (k !== "ro") suggestItems(sd, false); ch(); var n = $(idp + (k === "ro" ? "tx" : "d") + (D.items.length - 1)); if (n) n.focus(); }); foot.appendChild(a); };
     mk("+ Add an item", "item", ""); mk("+ Add a charge (cartage, freight…)", "charge", ""); if (!its.some(function (x) { return x.k === "ro"; })) mk("+ Add round off", "ro", "Round Off");
@@ -5929,7 +5934,19 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     sc.sort(function (a, b) { return b[0] - a[0]; });
     return sc.slice(0, 20).map(function (p) { return p[1]; });
   }
-  function hsnCheckLines(its, redraw) {
+  /* the check's answers are kept on the bill (hsnChk, by description and code), so a bill is never checked twice for the same
+     lines: on another day, by another person or after a reload */
+  function hsnSeed(b) { var m = b && b.hsnChk; if (m) Object.keys(m).forEach(function (k) { if (!(k in HSN_CHK)) HSN_CHK[k] = m[k]; }); }
+  function hsnKeep(id, its) {
+    var b = S.bills[id]; if (!b) return; var m = Object.assign({}, b.hsnChk || {}), add = 0;
+    its.forEach(function (x) { var k = hsnChkKey(x); if (HSN_CHK[k] && !HSN_CHK[k].fail && !(k in m)) { m[k] = HSN_CHK[k]; add++; } }); if (!add) return;
+    retry(function () { return S.db.doc("bills/" + id).update({ hsnChk: m }); }).then(function () { if (S.bills[id]) S.bills[id].hsnChk = m; }, function () {});
+  }
+  function hsnPrecheck(id) {
+    var b = S.bills[id]; if (!b || !S.sample || B.aiOff) return; hsnSeed(b);
+    hsnMaster().then(function () { var its = effItems(itemsIn(JSON.parse(JSON.stringify(S.bills[id] || b))) || []); return hsnCheckLines(its, null, id); }).catch(function () {});
+  }
+  function hsnCheckLines(its, redraw, billId) {
     if (!tly() || !S.sample || !HSNM || B.aiOff) return Promise.resolve();
     var busy = its.map(function (x) { return HSN_CHKQ[hsnChkKey(x)]; }).filter(function (q) { return q && q.then; });
     var need = its.filter(function (x) { var k = hsnChkKey(x); return x.k !== "ro" && String(x.d || "").trim().length > 2 && !(k in HSN_CHK) && !HSN_CHKQ[k]; }).slice(0, 20);
@@ -5938,10 +5955,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var prompt = ["Check the HSN / SAC of each line of a purchase bill against what the item is. The code was read from the bill and may be smudged, misread or missing.",
       "For each line reply {\"line\": n, \"verdict\": \"ok\" if the code read fits the item, \"mismatch\" if it clearly doesn't, \"missing\" if none was read or it isn't in the official list, \"code\": the best-fitting code from that line's candidates or the code read (empty if nothing fits), \"why\": a short reason}.",
       "Pick codes only from the line's candidates or the code read. Reply with only JSON: {\"lines\":[...]}.", "", lines.join("\n")].join("\n");
-    var pr = S.sample.json(prompt, { modelTier: "quick", purpose: "HSN check" }).then(function (j) {
+    var pr = S.sample.json(prompt, { modelTier: "quick", purpose: "HSN check", meta: billId ? { stage: "Accounting", billId: billId } : undefined }).then(function (j) {
       need.forEach(function (x) { HSN_CHK[hsnChkKey(x)] = { verdict: "", code: "", why: "" }; });
       (j && j.lines || []).forEach(function (l) { var x = need[Number(l.line) - 1]; if (!x) return; var code = hsnNorm(l.code || ""); if (code && !hsnEntry(code)) code = ""; HSN_CHK[hsnChkKey(x)] = { verdict: /^(ok|mismatch|missing)$/.test(l.verdict) ? l.verdict : "", code: code, why: str(l.why, 160) }; });
-    }, function () { need.forEach(function (x) { HSN_CHK[hsnChkKey(x)] = { verdict: "", code: "", why: "" }; }); }).then(function () { need.forEach(function (x) { delete HSN_CHKQ[hsnChkKey(x)]; }); if (redraw) redraw(); });
+    }, function () { need.forEach(function (x) { HSN_CHK[hsnChkKey(x)] = { verdict: "", code: "", why: "", fail: true }; }); }).then(function () { need.forEach(function (x) { delete HSN_CHKQ[hsnChkKey(x)]; }); if (billId) hsnKeep(billId, need); if (redraw) redraw(); });
     need.forEach(function (x) { HSN_CHKQ[hsnChkKey(x)] = pr; });
     return Promise.all(busy.concat([pr])).then(function () {});
   }
@@ -6508,6 +6525,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         keepAcct = was0 && sg(was0) === sg(Object.assign({}, doc, { vendorId: vid })) ? { acct: "approved" } : { acct: "pending", acctNote: "", apprRej: null, apprRejOld: b.apprRej || (tlyBcrOf(b) || {}).apprRej || null }; }
       return retry(function () { return S.db.doc("bills/" + b.id).update(Object.assign(doc, { vendorId: vid, termDays: days, dueDate: addDays(doc.billDate, days), status: "done", submittedAt: now, submittedBy: meId(), autoPostponed: null, acct: "pending", acctNote: "" }, oneStopAcct(D, vid), keepAcct || {})); });
     }).then(function () {
+      if (tly()) hsnPrecheck(b.id); /* the accounting's HSN / SAC check starts now, in the background, and is kept on the bill */
       var la = (b.advanceId || doc.advanceId) && S.advances[b.advanceId || doc.advanceId];
       if (la && !la.taxBillId) retry(function () { return S.db.doc("advances/" + la.id).update({ taxBillId: b.id, updatedAt: Date.now(), updatedBy: meId() }); }).then(function () { la.taxBillId = b.id; invalidate(); }, function () {});
       var os = B.oneStopDone; B.oneStopDone = false;
@@ -7186,7 +7204,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function recPaid(r) { var k = rkOf(r); return k === "vch" ? vchPaid(r.id) : k === "acr" ? advPaid(r.advanceId, r.inst) : k === "duty" ? dutyPaid(r.id) : k === "cash" ? (r.receivedAt ? round2(Number(r.approvedAmount) || 0) : 0) : 0; }
   function recNo(r) { var k = rkOf(r); return k === "vch" ? r.voucherNo || "" : k === "acr" ? r.no || "" : k === "duty" ? (r.boeNo ? "BOE " + r.boeNo : DUTY_KINDS_O[r.dutyKind] || "Duty") : k === "cash" ? "Cash advance" : r.billNo || ""; }
   function recDate(r) { var k = rkOf(r); return k === "vch" ? r.voucherDate : k === "acr" ? ymdOfMs(r.createdAt || Date.now()) : k === "duty" ? r.boeDate || ymdOfMs(r.createdAt || Date.now()) : k === "cash" ? ymdOfMs(r.requestedAt || Date.now()) : r.billDate; }
-  function recDue(r) { var k = rkOf(r); if (k === "acr") { var a = S.advances[r.advanceId]; return (a && instDue(a, r.inst)) || ""; } if (k === "duty") return r.dueDate || ""; if (k === "vch" || k === "cash") return ""; return r.dueDate || ""; }
+  function recDue(r) { var k = rkOf(r); if (k === "acr") { var a = S.advances[r.advanceId]; return (a && instDue(a, r.inst)) || ""; } if (k === "duty") return r.dueDate || ""; if (k === "vch") return r.dueDate || ""; if (k === "cash") return ""; return r.dueDate || ""; }
   function recParty(it) { var x = it.x, r0 = (it.recs || [])[0] || x; if (it.kind === "vcr") { var ps = {}; (it.recs || []).forEach(function (v) { if (v.payee) ps[v.payee] = 1; }); var n = Object.keys(ps); return n.length > 1 ? n[0] + " and " + (n.length - 1) + " more" : n[0] || ""; } if (it.kind === "cash") return caName(x); if (it.kind === "duty") return dutyParty(x); if (it.kind === "acr") { var a = S.advances[x.advanceId]; return (S.vendors[x.vendorId] || {}).name || (a ? advVendorName(a) : ""); } return (S.vendors[it.vid] || {}).name || vendorLabelOfBill(r0); }
   /* what approving, returning or reversing also changes, so Finance and the old screens see it */
   function apSide(it, how) {
@@ -16333,7 +16351,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var GTA_TYPE = "Freight & Transport";
   function vchLinesOf(v) { return (v.lines && v.lines.length) ? v.lines : [{ d: v.narration || "", amt: v.total }]; }
   function vchRcmOut(D) {
-    var h = {}, gl = [], bad = "", tax = 0; if (D.vtype !== GTA_TYPE) return { h: h, gl: gl, tax: 0, bad: "" };
+    var h = {}, gl = [], bad = "", tax = 0; if (!rcmOk(D.vtype)) return { h: h, gl: gl, tax: 0, bad: "" };
     (D.rcmL || []).forEach(function (r) { if (!r.on) return; var t = round2(r.amt * Number(r.rate) / 100); tax = round2(tax + t); if (D.gstType === "inter") h.igst = round2((h.igst || 0) + t); else { var c = Math.round(t * 50) / 100; h.cgst = round2((h.cgst || 0) + c); h.sgst = round2((h.sgst || 0) + t - c); } });
     Object.keys(h).forEach(function (k) { var l = rcmLed(k); if (!l) bad = bad || "There is no " + k.toUpperCase() + " Input (RCM) ledger. Add it under Masters › Ledgers › GST."; else gl.push({ id: l.id, amt: h[k] }); });
     return { h: h, gl: gl, tax: tax, bad: bad };
@@ -16633,30 +16651,86 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!cn.parentNode) acts.appendChild(cn);
     acts.classList.toggle("tlyfoot", !!tlyB);
   }
-  /* Tally (Demo) voucher accounting, in sections like a bill's: Voucher Details, Ledgers, Voucher Type & RCM, TDS, and Tally
-     Line Items (the voucher as Tally gets it, redrawn as anything changes) */
+  /* Tally (Demo) voucher accounting (no file to show): Base Details on the left, Voucher Line Items on the right (type of voucher,
+     and per line its ledger, RCM with its rate, ITC and amount), and below them Tally Line Items with TDS, the entries as Tally
+     gets them and the narration to edit. */
+  var RCM_VT = { "Freight & Transport": 1, "Self Invoice": 1 };
+  function rcmOk(vt) { return !!RCM_VT[vt]; }
+  function tlyVchInit(x, D) {
+    if (D.vl) return; var vt = x.vtype || "";
+    D.vl = vchLinesOf(x).map(function (ln, i) { var o = (x.rcmLines || [])[i]; return { d: ln.d || "", amt: Number(ln.amt) || 0, lg: ln.lg || ((D.lines || [])[0] || {}).id || "", on: o ? !!o.on : vt === GTA_TYPE, rate: o && o.rate ? String(o.rate) : "5", itc: o && o.itc ? o.itc : vt === "Cash Voucher" ? "inel" : "elig" }; });
+    D.rcmL = D.vl; D.days = x.termDays != null ? String(x.termDays) : "0"; D.narration = x.narration || "";
+  }
+  /* the ledger lines Tally gets: each line's ledger, added up */
+  function tlyVchSync(D) { if (!D.vl) return; var m = {}, o = []; D.vl.forEach(function (l) { var k = l.lg || ""; if (m[k] == null) { m[k] = 0; o.push(k); } m[k] = round2(m[k] + l.amt); }); D.lines = o.map(function (k) { return { id: k, amt: fmtInput(m[k]) }; }); }
   function tlyVchSections(f, x, D, det, lw, form, locked) {
-    var W = el("div", { class: "tlysecs ao-tly" }), sec = function (h, nodes, id) { var s0 = el("section", { class: "tlysec" }), g = el("div", { class: "form" }); if (id) s0.id = id; s0.appendChild(el("h3", null, h)); nodes.forEach(function (n) { if (n) g.appendChild(n); }); s0.appendChild(g); W.appendChild(s0); return g; };
-    var dd = el("div", { class: "f wide" }); while (det.firstChild) dd.appendChild(det.firstChild);
-    var P = x.tlyPpl || {}, info = el("div", { class: "f wide hint" }, [x.vtype || "", x.payeeIdNo ? idText(x.payeeIdNo, true) : "", vPayModeText(x), P.divName ? "Division: " + P.divName : "", x.autoAppr ? "Goes for approval as soon as it is accounted" : ""].filter(Boolean).join(" · "));
-    sec("Voucher Details", [dd, info]);
-    var lf = lw.firstChild; sec("Ledgers", [lf]);
-    var fOf = function (id) { var e = $(id); return e ? e.closest(".f") : null; };
-    sec("Voucher Type & RCM", [fOf("aoType"), fOf("aoGstType"), $("aoRcm")]);
-    sec("TDS", [fOf("aoTds"), fOf("aoSec")]);
-    var tw = el("div", { class: "f wide", id: "aoVchTally" }); sec("Tally Line Items", [tw]);
-    if (det.parentNode) det.parentNode.replaceChild(W, det); else f.appendChild(W); if (lw.parentNode) lw.remove(); if (form.parentNode) form.remove();
-    var draw = function () { tw.textContent = ""; var v = vchTally(x, D); tw.appendChild(el("div", { class: "lb", style: "margin-bottom:6px" }, "Purchase voucher")); tw.appendChild(tallyTable(v.main));
-      if (v.jrnl) { tw.appendChild(el("div", { class: "lb", style: "margin:14px 0 6px" }, "Journal-GST (reverse charge)")); tw.appendChild(tallyTable(v.jrnl)); }
-      tw.appendChild(el("div", { class: "hint", style: "margin-top:6px" }, v.jrnl ? "The RCM GST is not paid to the transporter: it is booked by Journal-GST (Input (RCM) against RCM Payable) and paid to the government." : "No RCM on this voucher.")); };
-    var t0 = null; W.addEventListener("input", function () { clearTimeout(t0); t0 = setTimeout(draw, 150); }); W.addEventListener("change", function () { clearTimeout(t0); t0 = setTimeout(draw, 0); }); W.addEventListener("click", function () { clearTimeout(t0); t0 = setTimeout(draw, 50); });
-    draw();
+    tlyVchInit(x, D); [det, lw, form].forEach(function (n) { if (n && n.parentNode) n.parentNode.removeChild(n); });
+    var st0 = $("aoBody").querySelector(".stats"); if (st0) st0.remove(); /* Base Details shows the same */
+    var W = el("div", { class: "vacc" }), top = el("div", { class: "vacc2" }); W.appendChild(top);
+    var sec = function (host, h, extra) { var s0 = el("section", { class: "tlysec" }), hd = el("div", { class: "vsechd" }); hd.appendChild(el("h3", null, h)); if (extra) hd.appendChild(extra); s0.appendChild(hd); var body = el("div", { class: "vsecb" }); s0.appendChild(body); host.appendChild(s0); return body; };
+    /* Base Details */
+    var bd = sec(top, "Base Details"), g = el("div", { class: "vgrid" }); bd.appendChild(g);
+    var ro = function (lab, val) { var w0 = el("div", { class: "f" }); w0.appendChild(el("label", null, lab)); w0.appendChild(el("div", { class: "field ro" }, val || "—")); g.appendChild(w0); };
+    ro("Company", (S.companies[x.companyId] || {}).name || coLabel(x.companyId)); ro("Vendor", (x.payee || "") + (x.payeeIdNo ? " (" + idText(x.payeeIdNo, true) + ")" : ""));
+    ro("Voucher No.", x.voucherNo || ""); ro("Voucher Date", fmtDate(x.voucherDate));
+    var dy = inp("aoVDays", D.days, { inputmode: "numeric", class: "field num" }); dy.disabled = locked; var dw = el("div", { class: "f" }); dw.appendChild(el("label", { for: "aoVDays" }, "Payment in (days)")); dw.appendChild(dy); dw.appendChild(el("span", { class: "err", id: "aoVDaysE", hidden: "" })); g.appendChild(dw);
+    var due = el("div", { class: "field ro", id: "aoVDue" }), uw = el("div", { class: "f" }); uw.appendChild(el("label", null, "Due Date")); uw.appendChild(due); g.appendChild(uw);
+    var setDue = function () { var n = dayCount(D.days); due.textContent = n == null ? "—" : fmtDate(addDays(x.voucherDate || todayYmd(), n)); }; dy.addEventListener("input", function () { D.days = dy.value; setDue(); }); setDue();
+    ro("Supply of", x.supplyOf || ""); var P = x.tlyPpl || {}; ro("Prepared By", (pnm(P.prepName || x.preparedByName || "") || personName(prepOf(x))) + (P.divName ? " · " + P.divName : ""));
+    var nw = el("div", { class: "f wide" }), nl = el("label", null, "Narration"), nv = el("div", { class: "field ro", id: "aoVNarV", style: "height:auto;min-height:44px;white-space:normal;line-height:1.45" }, D.narration || "—");
+    var ne = el("button", { type: "button", class: "link-btn", style: "margin-left:10px;text-transform:none" }, "Edit"); ne.disabled = locked; ne.addEventListener("click", function () { var t = $("aoVNar"); if (t) { t.scrollIntoView({ block: "center" }); t.focus(); } }); nl.appendChild(ne);
+    nw.appendChild(nl); nw.appendChild(nv); g.appendChild(nw);
+    /* Voucher Line Items */
+    var vt = el("select", { class: "field", id: "aoType", "aria-label": "Type of voucher", style: "width:auto;min-width:200px" }); fillSelect(vt, [["", "Type of voucher"]].concat(VTYPES_V), D.vtype); vt.disabled = locked;
+    var li = sec(top, "Voucher Line Items", vt), gw = el("div", { class: "f", id: "aoGstTypeF", style: "max-width:300px;margin-bottom:10px" }), gtS = el("select", { class: "field", id: "aoGstType" }); fillSelect(gtS, RCM_TYPES, D.gstType); gtS.disabled = locked;
+    gw.appendChild(el("label", { for: "aoGstType" }, "GST Type (RCM)")); gw.appendChild(gtS); li.appendChild(gw);
+    var tbw = el("div", { class: "list scroll", id: "aoRcm" }); li.appendChild(tbw); li.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" })); li.appendChild(el("span", { class: "err", id: "aoRcmE", hidden: "" })); li.appendChild(el("span", { class: "err", id: "aoTypeE", hidden: "" }));
+    var drawL = function () {
+      tbw.textContent = ""; var on = rcmOk(D.vtype); gw.hidden = !D.vl.some(function (l) { return on && l.on; });
+      var tb = el("table", { class: "t vlitems" }), hr = el("tr"); ["#", "Description", "Ledger", "RCM", "ITC", "Amount"].forEach(function (h, k) { hr.appendChild(el("th", k === 5 ? { class: "r" } : k === 1 ? { class: "itd" } : null, h)); }); var th = el("thead"); th.appendChild(hr); tb.appendChild(th); var tbd = el("tbody"); tb.appendChild(tbd);
+      D.vl.forEach(function (l, i) {
+        var tr = el("tr"); tr.appendChild(el("td", { class: "num" }, String(i + 1))); tr.appendChild(el("td", { class: "itd" }, l.d || ""));
+        var lg = ledSelect(x.companyId, l.lg, { id: "aoVLg" + i, "aria-label": "Ledger, line " + (i + 1) }); lg.disabled = locked; lg.addEventListener("change", function () { l.lg = lg.value; refresh(); }); var ltd = el("td"); ltd.appendChild(lg); tr.appendChild(ltd);
+        var rtd0 = el("td"), rtd = el("div", { class: "vrcm" }); rtd0.appendChild(rtd);
+        if (on) { var ys = el("select", { class: "field", "aria-label": "RCM, line " + (i + 1) }); fillSelect(ys, [["no", "No"], ["yes", "Yes"]], l.on ? "yes" : "no"); ys.disabled = locked; rtd.appendChild(ys);
+          if (l.on) { var rs = el("select", { class: "field", "aria-label": "RCM GST %, line " + (i + 1) }); fillSelect(rs, RCM_RATES, l.rate); rs.disabled = locked; rs.addEventListener("change", function () { l.rate = rs.value; refresh(); }); rtd.appendChild(rs); rtd.appendChild(el("div", { class: "tsub" }, "GST " + amt2(round2(l.amt * Number(l.rate) / 100)))); }
+          ys.addEventListener("change", function () { l.on = ys.value === "yes"; if (l.on) l.itc = "elig"; drawL(); refresh(); }); }
+        else rtd.appendChild(el("span", { class: "tsub" }, "Not for a " + (D.vtype || "voucher")));
+        tr.appendChild(rtd0);
+        var itd = el("td"), is = el("select", { class: "field", "aria-label": "ITC, line " + (i + 1) }); fillSelect(is, [["elig", "Eligible"], ["inel", "Ineligible"]], l.itc); is.disabled = locked || (on && l.on); if (on && l.on) is.title = "RCM tax is taken as eligible input credit";
+        is.addEventListener("change", function () { l.itc = is.value; refresh(); }); itd.appendChild(is); tr.appendChild(itd);
+        tr.appendChild(el("td", { class: "r num" }, amt2(l.amt))); tbd.appendChild(tr);
+      });
+      var tf = el("tfoot"), fr = el("tr"); fr.appendChild(elc("td", { colspan: "5" }, el("b", null, "Total"))); fr.appendChild(elc("td", { class: "r num" }, el("b", null, amt2(round2(D.vl.reduce(function (s0, l) { return s0 + l.amt; }, 0)))))); tf.appendChild(fr); tb.appendChild(tf); tbw.appendChild(tb);
+    };
+    vt.addEventListener("change", function () { var was = D.vtype; D.vtype = vt.value; D.vl.forEach(function (l) { if (D.vtype === GTA_TYPE && was !== GTA_TYPE) l.on = true; if (!rcmOk(D.vtype)) l.on = false; if (D.vtype === "Cash Voucher") l.itc = "inel"; }); drawL(); refresh(); });
+    gtS.addEventListener("change", function () { D.gstType = gtS.value; refresh(); });
+    drawL();
+    /* Tally Line Items: TDS, the entries, the narration */
+    var tl = sec(W, "Tally Line Items"), tr0 = el("div", { class: "vgrid", style: "margin-bottom:12px" });
+    var ts = el("select", { class: "field", id: "aoSec" }); fillSelect(ts, [["", "No TDS"]].concat(tdsOptions(D.sec)), D.sec); ts.disabled = locked;
+    var ti = inp("aoTds", D.tds, { inputmode: "decimal", class: "field num" }); ti.disabled = locked || !D.sec;
+    var sf = el("div", { class: "f" }); sf.appendChild(el("label", { for: "aoSec" }, "TDS Section")); sf.appendChild(ts); sf.appendChild(el("span", { class: "hint", id: "aoSecH" })); sf.appendChild(el("span", { class: "err", id: "aoSecE", hidden: "" }));
+    var tf0 = el("div", { class: "f" }); tf0.appendChild(el("label", { for: "aoTds" }, "TDS (₹)")); tf0.appendChild(ti); tf0.appendChild(el("span", { class: "hint" }, "On " + amt2(D.base) + ", the voucher's amount (no GST)." )); tf0.appendChild(el("span", { class: "err", id: "aoTdsE", hidden: "" }));
+    tr0.appendChild(sf); tr0.appendChild(tf0); tl.appendChild(tr0);
+    ts.addEventListener("change", function () { D.sec = ts.value; if (!D.sec) D.tds = "0"; else { var r = tdsRateFor(x, D.sec); if (r && r.rate != null) D.tds = fmtInput(String(Math.round((Number(D.base) || 0) * r.rate / 100))); } ti.value = D.tds; ti.disabled = locked || !D.sec; aoTdsHint(); refresh(); });
+    ti.addEventListener("input", function () { D.tds = ti.value; refresh(); }); ti.addEventListener("blur", function () { if (num(ti.value) != null) ti.value = fmtInput(ti.value); });
+    if (!D.sec && !String(D.tds || "").trim()) D.tds = "0";
+    var tw = el("div", { id: "aoVchTally" }); tl.appendChild(tw);
+    var nf = el("div", { class: "f wide", style: "margin-top:14px" }), nlb = el("label", { for: "aoVNar" }, "Narration"), ta = el("textarea", { class: "field", id: "aoVNar", rows: "3", maxlength: String(NARR_MAX) }); ta.value = D.narration; ta.disabled = locked;
+    var rw = el("button", { type: "button", class: "link-btn", style: "margin-left:10px;text-transform:none" }, "Write Again"); rw.disabled = locked; rw.addEventListener("click", function () { D.narration = tlyVchNarr(Object.assign({}, x, { vtype: D.vtype }), x.voucherNo, x.voucherDate, D.vl); ta.value = D.narration; nv.textContent = D.narration; }); nlb.appendChild(rw);
+    var nc = el("span", { class: "hint" }); var cnt = function () { nc.textContent = ta.value.length + " of " + NARR_MAX + " characters."; };
+    ta.addEventListener("input", function () { D.narration = ta.value; nv.textContent = ta.value || "—"; cnt(); }); cnt();
+    nf.appendChild(nlb); nf.appendChild(ta); nf.appendChild(nc); nf.appendChild(el("span", { class: "err", id: "aoVNarE", hidden: "" })); tl.appendChild(nf);
+    function refresh() { tlyVchSync(D); tw.textContent = ""; var v = vchTally(x, D); tw.appendChild(el("div", { class: "lb", style: "margin-bottom:6px" }, "Purchase Voucher")); tw.appendChild(tallyTable(v.main));
+      if (v.jrnl) { tw.appendChild(el("div", { class: "lb", style: "margin:14px 0 6px" }, "Journal-GST (Reverse Charge)")); tw.appendChild(tallyTable(v.jrnl)); tw.appendChild(el("div", { class: "hint", style: "margin-top:6px" }, "The RCM GST is not paid to the payee: it is booked by Journal-GST (Input (RCM) against RCM Payable) and paid to the government.")); } }
+    f.appendChild(W); refresh(); aoTdsHint();
   }
   function rcmPayLed(h) { return ledAll().filter(function (l) { return l.tax === "gst" && l.active !== false && gstFlavour(l) === "pay" && gstHead(l) === h; })[0] || null; }
   function vchTally(x, D) {
     var nm = function (id) { return ((S.ledgers || {})[id] || {}).name || "Choose a ledger"; }, rows = [], rcm = vchRcmOut(D), byLg = {};
-    vchLinesOf(x).forEach(function (ln, i) { var r = (D.rcmL || [])[i]; if (r && r.on && D.vtype === GTA_TYPE && ln.lg) { var a0 = byLg[ln.lg] = byLg[ln.lg] || []; if (a0.indexOf(r.rate + "%") < 0) a0.push(r.rate + "%"); } });
-    (D.lines || []).forEach(function (l) { var a = num(l.amt); if (!l.id && a == null) return; rows.push({ dc: "Dr", led: nm(l.id), lid: l.id, amt: a || 0, sub: D.vtype === GTA_TYPE ? "RCM: " + (byLg[l.id] ? "Yes · " + byLg[l.id].join(", ") + ", by Journal-GST" : "No") : "", noLed: !l.id }); });
+    (D.vl || []).forEach(function (r) { if (r.on && rcmOk(D.vtype) && r.lg) { var a0 = byLg[r.lg] = byLg[r.lg] || []; if (a0.indexOf(r.rate + "%") < 0) a0.push(r.rate + "%"); } });
+    (D.lines || []).forEach(function (l) { var a = num(l.amt); if (!l.id && a == null) return; rows.push({ dc: "Dr", led: nm(l.id), lid: l.id, amt: a || 0, sub: rcmOk(D.vtype) ? "RCM: " + (byLg[l.id] ? "Yes · " + byLg[l.id].join(", ") + ", by Journal-GST" : "No") : "", noLed: !l.id }); });
     var tds = num(D.tds) || 0; if (tds > 0) { var tt = taxAll("tds").filter(function (t) { return t.sec === D.sec; })[0]; rows.push({ dc: "Cr", led: tt ? tdsLedName(tt) : "TDS Payable u/s " + (D.sec || ""), amt: tds, sub: D.base > 0 ? pct(Math.round(tds / D.base * 10000) / 100) + " on " + amt2(D.base) : "" }); }
     var dr = round2(rows.reduce(function (s0, r) { return s0 + (r.dc === "Dr" ? r.amt : 0); }, 0)), cr = round2(rows.reduce(function (s0, r) { return s0 + (r.dc === "Cr" ? r.amt : 0); }, 0)), party = round2(dr - cr);
     rows.push({ dc: "Cr", led: x.payee || "The payee", amt: party, sub: "Bill-wise: New Ref " + (x.voucherNo || "") + "  " + amt2(party) + " Cr", party: true });
@@ -16668,14 +16742,17 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return out;
   }
   function acctCheck() {
-    var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, errs = [];
+    var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, errs = []; if (tly() && AC.kind === "voucher") tlyVchSync(D);
     var le = ledCheck(D.lines, D.base, x.companyId, AC.kind === "bill" ? MAX_LED.bill : MAX_LED.voucher); if (le) errs.push(["aoLed", le + (/must equal/.test(le) ? " These are the purchaser's figures: if the bill says otherwise, send it back." : "")]);
     var t = num(D.tds); if (!String(D.tds).trim()) errs.push(["aoTds", "Enter the TDS. Enter 0 if none is deducted."]); else if (t == null || t < 0) errs.push(["aoTds", "Enter the TDS as a number, 0 or more."]); else if (t > (Number(AC.kind === "bill" ? (x.fcTaxable != null ? x.fcTaxable + (x.fcGst || 0) : x.total) : x.total) || 0)) errs.push(["aoTds", "TDS can't be more than the total."]);
     if (t > 0 && !D.sec) errs.push(["aoSec", "Choose the TDS section."]);
     if (AC.kind === "bill") { var ge = gstCheck(x, D); if (ge) errs.push(["aoGstLed", ge]);
       if (billGst(x) > 0 && gstIsComp(vGst(S.vendors[x.vendorId]))) errs.push(["aoGstLed", "The vendor is a composition dealer (GST portal), so its GST can't be claimed or accounted. Send the bill back for a bill of supply without GST."]); }
     if (AC.kind === "voucher" && !D.vtype) errs.push(["aoType", "Choose the type of voucher."]);
-    if (AC.kind === "voucher" && tly()) { var rg0 = vchRcmOut(D); if (rg0.bad) errs.push(["aoRcm", rg0.bad]); }
+    if (AC.kind === "voucher" && tly()) { var rg0 = vchRcmOut(D); if (rg0.bad) errs.push(["aoRcm", rg0.bad]);
+      if ((D.vl || []).some(function (l) { return !l.lg; })) errs.push(["aoLed", "Choose the ledger on every line."]);
+      if (D.vl && dayCount(D.days) == null) errs.push(["aoVDays", "Enter the days, a whole number (0 is fine)."]);
+      if (D.vl && !String(D.narration || "").trim()) errs.push(["aoVNar", "Write the narration."]); }
     else if (AC.kind === "voucher" && D.vtype && D.vtype !== "Cash Voucher" && D.gstApp === "RCM") { if (!D.gstRate) errs.push(["aoRate", "Choose the GST (RCM) percent."]); var rb = rcmLines(D, []); if (rb) errs.push(["aoRcm", rb]); }
     return errs;
   }
@@ -16730,9 +16807,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var x = AC.kind === "bill" ? S.bills[AC.id] : S.vouchers[AC.id], D = AC.D, tds = round2(num(D.tds) || 0), up = Object.assign({ acct: "approved", acctNote: "", ledgers: ledLinesOut(AC.kind === "bill" ? nonRo(D.lines) : D.lines), tds: tds, tdsSection: tds > 0 ? D.sec : "" }, tdsBaseRate(tds, D.base), acctWho());
     Object.assign(up, roundUp(x, D));
     if (AC.kind === "bill") { var gG = billGst(x) > 0; up.gstLedgers = gG ? gstLinesOut(x, D) : []; up.gstSupply = gG ? (D.gstInter ? "inter" : "intra") : null; up.gstTypes = gG ? D.gstTypes.slice() : null; }
-    if (AC.kind === "voucher" && tly()) { var rg1 = vchRcmOut(D), on1 = rg1.tax > 0, rts = {}; D.rcmL.forEach(function (r) { if (r.on && D.vtype === GTA_TYPE) rts[r.rate] = 1; });
+    if (AC.kind === "voucher" && tly()) { var rg1 = vchRcmOut(D), on1 = rg1.tax > 0, rts = {}; D.rcmL.forEach(function (r) { if (r.on && rcmOk(D.vtype)) rts[r.rate] = 1; });
+      var dn = dayCount(D.days); Object.assign(up, { lines: D.vl.map(function (l) { return { d: l.d, amt: l.amt, lg: l.lg }; }), termDays: dn == null ? 0 : dn, dueDate: addDays(x.voucherDate || todayYmd(), dn == null ? 0 : dn), narration: String(D.narration || "").replace(/\s+/g, " ").trim() || x.narration || "" });
       Object.assign(up, { vtype: D.vtype, gstType: on1 ? D.gstType : null, gstLedgers: rg1.gl, rcmAmt: rg1.tax, gstApp: on1 ? "RCM" : "N/A", gstRate: on1 && Object.keys(rts).length === 1 ? Number(Object.keys(rts)[0]) : null, taxable: Number(x.total) || 0, payable: round2((Number(x.total) || 0) - tds),
-        rcmLines: D.rcmL.map(function (r) { var on = r.on && D.vtype === GTA_TYPE; return { on: on, rate: Number(r.rate), amt: r.amt, tax: on ? round2(r.amt * Number(r.rate) / 100) : 0 }; }) }); }
+        rcmLines: D.rcmL.map(function (r) { var on = r.on && rcmOk(D.vtype); return { on: on, rate: Number(r.rate), amt: r.amt, tax: on ? round2(r.amt * Number(r.rate) / 100) : 0, itc: on ? "elig" : r.itc || "elig" }; }) }); }
     else if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher", rcm = oth && D.gstApp === "RCM", gl = []; if (rcm) rcmLines(D, gl);
       up.gstType = rcm ? D.gstType : null; up.gstLedgers = gl; up.rcmAmt = round2(gl.reduce(function (s0, g) { return s0 + g.amt; }, 0));
       up.vtype = D.vtype; up.gstApp = oth ? D.gstApp : "N/A"; up.gstRate = rcm ? Number(D.gstRate) : null; up.taxable = Number(x.total) || 0; up.payable = round2((Number(x.total) || 0) - tds); }

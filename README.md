@@ -103,6 +103,15 @@
 - **Voucher print: Accounted By on every voucher.** A Cash Voucher, or a Self Invoice without RCM (no tax box, where the
   Accounted By box used to be), has an Accounted By box left of Mode of Payment, the same size, with the accountant's
   signature.
+- **Several Final Approvers on a voucher (Tally (Demo)).** Final Approver on the voucher form is a tick list: one or
+  more people (`tlyPpl.a2s`, `a2` keeps the first); any one of them may approve or return it, and the approvals filter
+  finds the voucher under each of them. Everything else still names one Final Approver.
+- **Required fields marked (Tally (Demo)).** Every field a Tally (Demo) form always requires has a red * after its heading
+  (`TLY_REQ`, `.rq`): bills, vouchers, proformas and imports, duties and charges, cash advances, and the accounting
+  narration. In the voucher form these are Company, Type of Voucher, Paid To, Supply Of, Payment in (days), Prepared By,
+  Division, Final Approver, at least one line with its ledger and amount, and Mode of Payment.
+- **Voucher accounting shows Supply of.** The summary at the top of a voucher's accounting includes Supply of (or "Not
+  given").
 - **Item descriptions (Tally (Demo)).** A line typed or spoken in Bill Entry is rewritten by Claude to the description rules,
   with words speech recognition got wrong put right from the company's line of business ("leather heights" → "Leather
   Hides"); ordinary words are never put in capitals.

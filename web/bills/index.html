@@ -698,11 +698,13 @@ body.tly .bc-fv{height:calc(100vh - 24px)}
 /* Tally (Demo) takes the TARS Creations layout (cards, 6px corners) in the app's own fonts and colours */
 body.tly{line-height:1.5}body.tly .field{border-radius:6px;padding:.55rem .7rem;border-color:#cdbcad}body.tly .card{border-radius:6px}body.tly .btn{border-radius:6px}
 body.tly .t th{background:var(--brand-soft);color:var(--brand-dark);font-size:calc(13px*var(--ts,1));font-weight:600}body.tly .t td{border-bottom:1px solid var(--line)}
-.vacc{display:grid;gap:16px;margin:12px 0}.vacc2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:16px;align-items:start}@media (max-width:1000px){.vacc2{grid-template-columns:1fr}}
-.vacc .tlysec>.vsechd{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;padding:7px 18px;min-height:46px;box-sizing:border-box;background:var(--brand-soft,var(--soft));border-bottom:1px solid var(--line);border-radius:0 6px 0 0}
-.vacc .vsechd h3{text-transform:none;letter-spacing:0;margin:0;font-family:var(--serif);font-size:calc(18px*var(--ts,1));font-weight:400;color:var(--brand-dark,var(--brand))}.vacc .vsechd select.field{padding-top:6px;padding-bottom:6px}.vacc .tlysec>.vsecb{padding:16px 20px 20px}
-.vacc .vgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}.vacc .vgrid .f.wide{grid-column:1/-1}.vacc .vgrid .field.ro{overflow-wrap:anywhere}
-.vlitems td{vertical-align:top}.vlitems td.itd{white-space:normal;min-width:160px}.vlitems select.field{min-width:0;width:auto;max-width:220px}.vlitems .vrcm{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.vlitems .vrcm .tsub{flex-basis:100%}
+.vacc2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start;margin:12px 0}@media (max-width:1100px){.vacc2{grid-template-columns:1fr}}.vacc2 .vcol{display:grid;gap:16px;min-width:0}.vcolr{position:sticky;top:12px}@media (max-width:1100px){.vcolr{position:static}}
+.vpbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.vpbox{max-height:620px;overflow:auto;border:1px solid var(--line);border-radius:6px;background:#e9ece9;padding:12px;display:flex;justify-content:center;align-items:flex-start}.vpbox.fit{max-height:none;overflow:hidden}.vpin{flex:none;max-width:none}.vpcv{display:block;width:100%;height:auto;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.18)}
+.vacc2 .tlysec>.vsechd{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;padding:7px 18px;min-height:46px;box-sizing:border-box;background:var(--brand-soft,var(--soft));border-bottom:1px solid var(--line);border-radius:0 6px 0 0}
+.vacc2 .vsechd h3{text-transform:none;letter-spacing:0;margin:0;font-family:var(--serif);font-size:calc(18px*var(--ts,1));font-weight:400;color:var(--brand-dark,var(--brand))}.vacc2 .vsechd select.field{padding-top:6px;padding-bottom:6px}.vacc2 .tlysec>.vsecb{padding:16px 20px 20px}
+.vacc2 .vgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}.vacc2 .vgrid .f.wide{grid-column:1/-1}.vacc2 .vgrid .field.ro{overflow-wrap:anywhere}
+.vlitems td{vertical-align:top}.vlitems td.itd{white-space:normal;min-width:160px;width:34%}.vlitems td .lcombo,.vlitems td select[id^=aoVLg]{min-width:170px}.vlitems td.itd textarea{width:100%;resize:none;overflow:hidden;min-height:38px}.vlitems select.field{min-width:0;width:auto;max-width:200px}
+.vlitems .vrcm{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.vlitems .vrcm .tsub{flex-basis:100%}
 .tlysecs{padding:12px 14px 14px;display:grid;gap:16px;background:var(--bg)}
 .tlysecs,.tlysecs>.tlysec{min-width:0}.ao-tly .form{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}.ao-tly .field.ro{overflow-wrap:anywhere;min-width:0}
 @media (max-width:1500px) and (min-width:981px){body.tly .ao-split{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}}
@@ -6023,7 +6025,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (vk && r.bad.length && vk.sig === lineSig(it)) { r.warn = ["Verified by " + (vk.byName || "the Chief Accountant") + (vk.reply ? ": " + vk.reply : "") + " (" + r.bad.join(" ") + ")"].concat(r.warn); Object.keys(r.cells).forEach(function (k0) { r.wcells[k0] = 1; }); r.bad = []; r.cells = {}; r.verified = true; }
     if (it.k === "charge" && it.to && !fits) bad("led", "Its GST rate differs from the lines it goes to.");
     if (it.rcm && (it.itc || "elig") === "inel") bad("led", "RCM with ITC Ineligible isn't used: set ITC to Eligible, or RCM to No.");
-    if (it.rcm && !(num(it.gst) > 0)) bad("gst", "RCM needs the line's GST %: the tax you pay by Journal-GST is at that rate.");
+    if (it.rcm && !(num(it.gst) > 0)) bad("gst", "RCM needs the line's GST %: the tax you pay by Journal Entry - GST is at that rate.");
     /* RCM only where the bill shows no GST on the line: a printed total that includes it means the vendor charged it */
     if (it.rcm && num(it.gst) > 0 && c.printed) { var tt0 = itemTotals(its, c.inter), rg0 = round2(its.reduce(function (s0, x) { return s0 + (x.rcm && x.k !== "ro" ? (num(x.tx) || 0) * (num(x.gst) || 0) / 100 : 0); }, 0)); if (rg0 > 0.5 && Math.abs(round2(c.printed - tt0.total) - rg0) <= 1) bad("gst", "The bill's printed total includes the GST on this line, so the vendor charged it: forward charge. Set RCM to No."); }
     if (it.rcm && h && !rcmNotified(h)) { r.warn.push("RCM on " + h + ", which isn't on the notified reverse-charge list: check the vendor didn't charge GST on this line (if it did, it is forward charge)."); r.wcells.rcm = 1; }
@@ -6218,7 +6220,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var nm = function (id) { return ((S.ledgers || {})[id] || {}).name || "Choose a ledger"; };
     its.forEach(function (x) { if (x.k === "ro") return; var k = [x.lg, x.k === "item" ? hsnNorm(x.hsn) : "", num(x.gst), !!x.rcm, x.itc || "elig"].join("|"); if (!grp[k]) { grp[k] = { lg: x.lg, hsn: x.k === "item" ? hsnNorm(x.hsn) : "", k: x.k, gst: num(x.gst), rcm: !!x.rcm, rr: num(x.rr), itc: x.itc || "elig", amt: 0, chg: {} }; gk.push(k); } grp[k].amt = round2(grp[k].amt + (num(x.tx) || 0)); (x.chg || []).forEach(function (c0) { grp[k].chg[c0[0]] = round2((grp[k].chg[c0[0]] || 0) + c0[1]); }); });
     gk.forEach(function (k) { var g = grp[k], ex = g.k === "charge" ? "Charged on the bill" : g.hsn ? (/^99/.test(g.hsn) ? "SAC " : "HSN ") + g.hsn : "No HSN", rt = g.gst || 0, inc = Object.keys(g.chg).map(function (n0) { return n0 + " " + amt2(g.chg[n0]); });
-      rows.push({ dc: "Dr", led: nm(g.lg), lid: g.lg, amt: g.amt, sub: ex + (acct ? " · RCM: " + (g.rcm ? "Yes · tax at " + rt + "%, " + amt2(round2(g.amt * rt / 100)) + ", by Journal-GST" : "No") : "") + (inc.length ? " · incl. " + inc.join(", ") : "") }); });
+      rows.push({ dc: "Dr", led: nm(g.lg), lid: g.lg, amt: g.amt, sub: ex + (acct ? " · RCM: " + (g.rcm ? "Yes · tax at " + rt + "%, " + amt2(round2(g.amt * rt / 100)) + ", by Journal Entry - GST" : "No") : "") + (inc.length ? " · incl. " + inc.join(", ") : "") }); });
     function gstRows(flav) {
       var heads = inter ? ["igst"] : ["cgst", "sgst"];
       heads.forEach(function (h) {
@@ -6262,6 +6264,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       amt.addEventListener("change", function () { D.tds = num(amt.value) == null ? "" : fmtInput(amt.value); c.changed(); drawTallyC(c); });
     }
     w.appendChild(tallyTable(tallyVoucher({ items: D.items, cid: c.cid, inter: c.inter, acct: c.acct, tds: D.tds, tdsSec: D.tdsSec, tdsBase: base, billNo: c.billNo, party: c.party })));
+    var jr = c.acct ? rcmJournal(D.items, c.inter) : null;
+    if (jr) { w.appendChild(el("div", { class: "lb", style: "margin:14px 0 6px" }, "Journal Entry - GST (Reverse Charge)")); w.appendChild(tallyTable(jr)); w.appendChild(el("div", { class: "hint", style: "margin-top:6px" }, "The RCM GST is not paid to the vendor: it is booked by this Journal Entry (Input (RCM) against RCM Payable) and paid to the government.")); }
     if (c.inter == null) w.appendChild(el("div", { class: "flag w", style: "margin-top:8px" }, "CGST + SGST or IGST can't be told yet: the company's or the vendor's GSTIN is missing."));
     if (!c.acct) w.appendChild(el("div", { class: "hint", style: "margin-top:6px" }, "RCM, ITC and TDS are set by the accountant in Accounting."));
   }
@@ -16658,7 +16662,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function rcmOk(vt) { return !!RCM_VT[vt]; }
   function tlyVchInit(x, D) {
     if (D.vl) return; var vt = x.vtype || "";
-    D.vl = vchLinesOf(x).map(function (ln, i) { var o = (x.rcmLines || [])[i]; return { d: ln.d || "", amt: Number(ln.amt) || 0, lg: ln.lg || ((D.lines || [])[0] || {}).id || "", on: o ? !!o.on : vt === GTA_TYPE, rate: o && o.rate ? String(o.rate) : "5", itc: o && o.itc ? o.itc : vt === "Cash Voucher" ? "inel" : "elig" }; });
+    D.vl = vchLinesOf(x).map(function (ln, i) { var o = (x.rcmLines || [])[i]; return { d: ln.d || "", amt: Number(ln.amt) || 0, lg: ln.lg || ((D.lines || [])[0] || {}).id || "", on: o ? !!o.on : vt === GTA_TYPE, rate: o && o.rate ? String(o.rate) : "5" }; });
     D.rcmL = D.vl; D.days = x.termDays != null ? String(x.termDays) : "0"; D.narration = x.narration || "";
   }
   /* the ledger lines Tally gets: each line's ledger, added up */
@@ -16666,10 +16670,55 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function tlyVchSections(f, x, D, det, lw, form, locked) {
     tlyVchInit(x, D); [det, lw, form].forEach(function (n) { if (n && n.parentNode) n.parentNode.removeChild(n); });
     var st0 = $("aoBody").querySelector(".stats"); if (st0) st0.remove(); /* Base Details shows the same */
-    var W = el("div", { class: "vacc" }), top = el("div", { class: "vacc2" }); W.appendChild(top);
+    if (D.narMan == null) D.narMan = !!x.narration && x.narration !== tlyVchNarr(x, x.voucherNo, x.voucherDate, vchLinesOf(x));
+    if (D.gtSet == null) D.gtSet = !!x.gstType || x.acct === "approved";
+    var W = el("div", { class: "vacc2" }), L = el("div", { class: "vcol" }), R = el("div", { class: "vcol vcolr" }); W.appendChild(L); W.appendChild(R);
     var sec = function (host, h, extra) { var s0 = el("section", { class: "tlysec" }), hd = el("div", { class: "vsechd" }); hd.appendChild(el("h3", null, h)); if (extra) hd.appendChild(extra); s0.appendChild(hd); var body = el("div", { class: "vsecb" }); s0.appendChild(body); host.appendChild(s0); return body; };
+    /* Voucher Line Items: the type (Freight & Transport with its GST type, in one choice) at the heading */
+    var VT = [["", "Type of voucher"], ["Cash Voucher", "Cash Voucher"], ["Self Invoice", "Self Invoice"], [GTA_TYPE + "|intra", "Freight & Transport, Intrastate (CGST + SGST)"], [GTA_TYPE + "|inter", "Freight & Transport, Interstate (IGST)"]];
+    var vtv = function () { return D.vtype === GTA_TYPE ? (D.gtSet ? GTA_TYPE + "|" + (D.gstType || "intra") : "") : D.vtype || ""; };
+    var vt = el("select", { class: "field", id: "aoType", "aria-label": "Type of voucher", style: "width:auto;min-width:220px;max-width:100%" }); fillSelect(vt, VT, vtv()); vt.disabled = locked;
+    var li = sec(L, "Voucher Line Items", vt), gw = el("div", { class: "f", id: "aoGstTypeF", style: "max-width:320px;margin-bottom:10px" }), gtS = el("select", { class: "field", id: "aoGstType" }); fillSelect(gtS, RCM_TYPES, D.gstType); gtS.disabled = locked;
+    gw.appendChild(el("label", { for: "aoGstType" }, "GST Type (RCM)")); gw.appendChild(gtS); li.appendChild(gw);
+    var tbw = el("div", { class: "list scroll", id: "aoRcm" }); li.appendChild(tbw); ["aoTypeE", "aoLedE", "aoRcmE"].forEach(function (id) { li.appendChild(el("span", { class: "err", id: id, hidden: "" })); });
+    var drawL = function () {
+      tbw.textContent = ""; var on = rcmOk(D.vtype); gw.hidden = !(D.vtype === "Self Invoice" && D.vl.some(function (l) { return l.on; }));
+      var tb = el("table", { class: "t vlitems" }), hr = el("tr"); ["#", "Description", "Ledger", "RCM", "Amount"].forEach(function (h, k) { hr.appendChild(el("th", k === 4 ? { class: "r" } : k === 1 ? { class: "itd" } : null, h)); }); var th = el("thead"); th.appendChild(hr); tb.appendChild(th); var tbd = el("tbody"); tb.appendChild(tbd);
+      D.vl.forEach(function (l, i) {
+        var tr = el("tr"); tr.appendChild(el("td", { class: "num" }, String(i + 1)));
+        var dtd = el("td", { class: "itd" }), dta = el("textarea", { class: "field itdesc", rows: "1", maxlength: "160", id: "aoVD" + i, "aria-label": "Description, line " + (i + 1) }); dta.value = l.d; dta.disabled = locked;
+        dta.addEventListener("input", function () { l.d = dta.value; growTa(dta); changed(true); }); dta.addEventListener("change", function () { l.d = dta.value.replace(/\s+/g, " ").trim(); dta.value = l.d; changed(true); }); dtd.appendChild(dta); tr.appendChild(dtd); setTimeout(function () { growTa(dta); }, 0);
+        var lg = ledSelect(x.companyId, l.lg, { id: "aoVLg" + i, "aria-label": "Ledger, line " + (i + 1) }); lg.disabled = locked; lg.addEventListener("change", function () { l.lg = lg.value; changed(); }); var ltd = el("td"); ltd.appendChild(lg); tr.appendChild(ltd);
+        var rtd0 = el("td"), rtd = el("div", { class: "vrcm" }); rtd0.appendChild(rtd);
+        if (on) { var ys = el("select", { class: "field", "aria-label": "RCM, line " + (i + 1) }); fillSelect(ys, [["no", "No"], ["yes", "Yes"]], l.on ? "yes" : "no"); ys.disabled = locked; rtd.appendChild(ys);
+          if (l.on) { var rs = el("select", { class: "field", "aria-label": "RCM GST %, line " + (i + 1) }); fillSelect(rs, RCM_RATES, l.rate); rs.disabled = locked; rs.addEventListener("change", function () { l.rate = rs.value; drawL(); changed(); }); rtd.appendChild(rs); rtd.appendChild(el("div", { class: "tsub" }, "GST " + amt2(round2(l.amt * Number(l.rate) / 100)))); }
+          ys.addEventListener("change", function () { l.on = ys.value === "yes"; drawL(); changed(); }); }
+        else rtd.appendChild(el("span", { class: "tsub" }, D.vtype ? "Not on a " + D.vtype : "Choose the type"));
+        tr.appendChild(rtd0); tr.appendChild(el("td", { class: "r num" }, amt2(l.amt))); tbd.appendChild(tr);
+      });
+      var tf = el("tfoot"), fr = el("tr"); fr.appendChild(elc("td", { colspan: "4" }, el("b", null, "Total"))); fr.appendChild(elc("td", { class: "r num" }, el("b", null, amt2(round2(D.vl.reduce(function (s0, l) { return s0 + l.amt; }, 0)))))); tf.appendChild(fr); tb.appendChild(tf); tbw.appendChild(tb);
+    };
+    vt.addEventListener("change", function () { var p = vt.value.split("|"), was = D.vtype; D.vtype = p[0]; if (p[1]) { D.gstType = p[1]; D.gtSet = true; } else if (D.vtype !== GTA_TYPE) D.gtSet = D.vtype === "Self Invoice" ? D.gtSet : false;
+      D.vl.forEach(function (l) { if (D.vtype === GTA_TYPE && was !== GTA_TYPE) l.on = true; if (!rcmOk(D.vtype)) l.on = false; }); drawL(); changed(true); });
+    gtS.addEventListener("change", function () { D.gstType = gtS.value; D.gtSet = true; changed(); });
+    drawL();
+    /* the print, as it will come out (A5), redrawn as anything changes */
+    var pv = sec(L, "Voucher Preview"), pbar = el("div", { class: "vpbar" }), pbox = el("div", { class: "vpbox" }), pin = el("div", { class: "vpin" }), cv = el("canvas", { class: "vpcv", "aria-label": "Preview of the voucher print" }); pin.appendChild(cv); pbox.appendChild(pin);
+    var Z = { fit: true, z: 1 }, zl = el("span", { class: "tsub vpz" }), zb = function (t, lab, fn) { var b0 = el("button", { type: "button", class: "btn sm", "aria-label": lab, title: lab }, t); b0.addEventListener("click", fn); pbar.appendChild(b0); return b0; };
+    var zset = function () { pin.style.width = Z.fit ? "100%" : Math.round(Z.z * 100) + "%"; pbox.classList.toggle("fit", Z.fit); zl.textContent = Z.fit ? "" : Math.round(Z.z * 100) + "%"; };
+    zb("−", "Zoom out", function () { Z.fit = false; Z.z = Math.max(0.5, Z.z - 0.25); zset(); }); zb("+", "Zoom in", function () { Z.fit = false; Z.z = Math.min(3, Z.z + 0.25); zset(); }); zb("Fit to Page", "Fit to page", function () { Z.fit = true; Z.z = 1; zset(); });
+    pbar.appendChild(zl); pbar.appendChild(el("span", { class: "tsub", style: "margin-left:auto" }, "A5 landscape, as printed")); pv.appendChild(pbar); pv.appendChild(pbox); zset();
+    var SG = null, PV = { t: null, n: 0 };
+    var sigs = function () { if (SG) return Promise.resolve(SG); return Promise.all([sigLoad(prepOf(x)), sigLoad(meId())]).then(function (a) { SG = { prep: a[0] || "", acct: a[1] || "", appr: "" }; return SG; }, function () { SG = {}; return SG; }); };
+    var drawPv = function () {
+      var n = ++PV.n, v = vchAsAcct(x, D);
+      loadScript(JSPDF).then(function () { return sigs(); }).then(function (sg) { var J = window.jspdf && window.jspdf.jsPDF; if (!J) throw { kind: "lib" }; var doc = new J({ orientation: "landscape", unit: "mm", format: VCH_PAGE, compress: true }); pdfFonts(doc); drawVoucher(doc, v, sg); return doc.output("arraybuffer"); })
+        .then(function (buf) { return pdfLib().then(function (Lb) { return Lb.getDocument({ data: buf }).promise; }); }).then(function (pdf) { return pdf.getPage(1); })
+        .then(function (pg) { if (n !== PV.n) return; var vp = pg.getViewport({ scale: 2.4 }); cv.width = vp.width; cv.height = vp.height; return pg.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise; })
+        .catch(function () { if (n === PV.n && !pbox.querySelector(".vperr")) pbox.appendChild(el("div", { class: "hint vperr" }, "The preview couldn't be drawn. Check the connection.")); });
+    };
     /* Base Details */
-    var bd = sec(top, "Base Details"), g = el("div", { class: "vgrid" }); bd.appendChild(g);
+    var bd = sec(L, "Base Details"), g = el("div", { class: "vgrid" }); bd.appendChild(g);
     var ro = function (lab, val) { var w0 = el("div", { class: "f" }); w0.appendChild(el("label", null, lab)); w0.appendChild(el("div", { class: "field ro" }, val || "—")); g.appendChild(w0); };
     ro("Company", (S.companies[x.companyId] || {}).name || coLabel(x.companyId)); ro("Vendor", (x.payee || "") + (x.payeeIdNo ? " (" + idText(x.payeeIdNo, true) + ")" : ""));
     ro("Voucher No.", x.voucherNo || ""); ro("Voucher Date", fmtDate(x.voucherDate));
@@ -16677,60 +16726,51 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var due = el("div", { class: "field ro", id: "aoVDue" }), uw = el("div", { class: "f" }); uw.appendChild(el("label", null, "Due Date")); uw.appendChild(due); g.appendChild(uw);
     var setDue = function () { var n = dayCount(D.days); due.textContent = n == null ? "—" : fmtDate(addDays(x.voucherDate || todayYmd(), n)); }; dy.addEventListener("input", function () { D.days = dy.value; setDue(); }); setDue();
     ro("Supply of", x.supplyOf || ""); var P = x.tlyPpl || {}; ro("Prepared By", (pnm(P.prepName || x.preparedByName || "") || personName(prepOf(x))) + (P.divName ? " · " + P.divName : ""));
-    var nw = el("div", { class: "f wide" }), nl = el("label", null, "Narration"), nv = el("div", { class: "field ro", id: "aoVNarV", style: "height:auto;min-height:44px;white-space:normal;line-height:1.45" }, D.narration || "—");
-    var ne = el("button", { type: "button", class: "link-btn", style: "margin-left:10px;text-transform:none" }, "Edit"); ne.disabled = locked; ne.addEventListener("click", function () { var t = $("aoVNar"); if (t) { t.scrollIntoView({ block: "center" }); t.focus(); } }); nl.appendChild(ne);
-    nw.appendChild(nl); nw.appendChild(nv); g.appendChild(nw);
-    /* Voucher Line Items */
-    var vt = el("select", { class: "field", id: "aoType", "aria-label": "Type of voucher", style: "width:auto;min-width:200px" }); fillSelect(vt, [["", "Type of voucher"]].concat(VTYPES_V), D.vtype); vt.disabled = locked;
-    var li = sec(top, "Voucher Line Items", vt), gw = el("div", { class: "f", id: "aoGstTypeF", style: "max-width:300px;margin-bottom:10px" }), gtS = el("select", { class: "field", id: "aoGstType" }); fillSelect(gtS, RCM_TYPES, D.gstType); gtS.disabled = locked;
-    gw.appendChild(el("label", { for: "aoGstType" }, "GST Type (RCM)")); gw.appendChild(gtS); li.appendChild(gw);
-    var tbw = el("div", { class: "list scroll", id: "aoRcm" }); li.appendChild(tbw); li.appendChild(el("span", { class: "err", id: "aoLedE", hidden: "" })); li.appendChild(el("span", { class: "err", id: "aoRcmE", hidden: "" })); li.appendChild(el("span", { class: "err", id: "aoTypeE", hidden: "" }));
-    var drawL = function () {
-      tbw.textContent = ""; var on = rcmOk(D.vtype); gw.hidden = !D.vl.some(function (l) { return on && l.on; });
-      var tb = el("table", { class: "t vlitems" }), hr = el("tr"); ["#", "Description", "Ledger", "RCM", "ITC", "Amount"].forEach(function (h, k) { hr.appendChild(el("th", k === 5 ? { class: "r" } : k === 1 ? { class: "itd" } : null, h)); }); var th = el("thead"); th.appendChild(hr); tb.appendChild(th); var tbd = el("tbody"); tb.appendChild(tbd);
-      D.vl.forEach(function (l, i) {
-        var tr = el("tr"); tr.appendChild(el("td", { class: "num" }, String(i + 1))); tr.appendChild(el("td", { class: "itd" }, l.d || ""));
-        var lg = ledSelect(x.companyId, l.lg, { id: "aoVLg" + i, "aria-label": "Ledger, line " + (i + 1) }); lg.disabled = locked; lg.addEventListener("change", function () { l.lg = lg.value; refresh(); }); var ltd = el("td"); ltd.appendChild(lg); tr.appendChild(ltd);
-        var rtd0 = el("td"), rtd = el("div", { class: "vrcm" }); rtd0.appendChild(rtd);
-        if (on) { var ys = el("select", { class: "field", "aria-label": "RCM, line " + (i + 1) }); fillSelect(ys, [["no", "No"], ["yes", "Yes"]], l.on ? "yes" : "no"); ys.disabled = locked; rtd.appendChild(ys);
-          if (l.on) { var rs = el("select", { class: "field", "aria-label": "RCM GST %, line " + (i + 1) }); fillSelect(rs, RCM_RATES, l.rate); rs.disabled = locked; rs.addEventListener("change", function () { l.rate = rs.value; refresh(); }); rtd.appendChild(rs); rtd.appendChild(el("div", { class: "tsub" }, "GST " + amt2(round2(l.amt * Number(l.rate) / 100)))); }
-          ys.addEventListener("change", function () { l.on = ys.value === "yes"; if (l.on) l.itc = "elig"; drawL(); refresh(); }); }
-        else rtd.appendChild(el("span", { class: "tsub" }, "Not for a " + (D.vtype || "voucher")));
-        tr.appendChild(rtd0);
-        var itd = el("td"), is = el("select", { class: "field", "aria-label": "ITC, line " + (i + 1) }); fillSelect(is, [["elig", "Eligible"], ["inel", "Ineligible"]], l.itc); is.disabled = locked || (on && l.on); if (on && l.on) is.title = "RCM tax is taken as eligible input credit";
-        is.addEventListener("change", function () { l.itc = is.value; refresh(); }); itd.appendChild(is); tr.appendChild(itd);
-        tr.appendChild(el("td", { class: "r num" }, amt2(l.amt))); tbd.appendChild(tr);
-      });
-      var tf = el("tfoot"), fr = el("tr"); fr.appendChild(elc("td", { colspan: "5" }, el("b", null, "Total"))); fr.appendChild(elc("td", { class: "r num" }, el("b", null, amt2(round2(D.vl.reduce(function (s0, l) { return s0 + l.amt; }, 0)))))); tf.appendChild(fr); tb.appendChild(tf); tbw.appendChild(tb);
-    };
-    vt.addEventListener("change", function () { var was = D.vtype; D.vtype = vt.value; D.vl.forEach(function (l) { if (D.vtype === GTA_TYPE && was !== GTA_TYPE) l.on = true; if (!rcmOk(D.vtype)) l.on = false; if (D.vtype === "Cash Voucher") l.itc = "inel"; }); drawL(); refresh(); });
-    gtS.addEventListener("change", function () { D.gstType = gtS.value; refresh(); });
-    drawL();
-    /* Tally Line Items: TDS, the entries, the narration */
-    var tl = sec(W, "Tally Line Items"), tr0 = el("div", { class: "vgrid", style: "margin-bottom:12px" });
+    /* Tally Line Items (right): TDS, the entries, the narration */
+    var tl = sec(R, "Tally Line Items"), tr0 = el("div", { class: "vgrid", style: "margin-bottom:12px" });
     var ts = el("select", { class: "field", id: "aoSec" }); fillSelect(ts, [["", "No TDS"]].concat(tdsOptions(D.sec)), D.sec); ts.disabled = locked;
     var ti = inp("aoTds", D.tds, { inputmode: "decimal", class: "field num" }); ti.disabled = locked || !D.sec;
     var sf = el("div", { class: "f" }); sf.appendChild(el("label", { for: "aoSec" }, "TDS Section")); sf.appendChild(ts); sf.appendChild(el("span", { class: "hint", id: "aoSecH" })); sf.appendChild(el("span", { class: "err", id: "aoSecE", hidden: "" }));
-    var tf0 = el("div", { class: "f" }); tf0.appendChild(el("label", { for: "aoTds" }, "TDS (₹)")); tf0.appendChild(ti); tf0.appendChild(el("span", { class: "hint" }, "On " + amt2(D.base) + ", the voucher's amount (no GST)." )); tf0.appendChild(el("span", { class: "err", id: "aoTdsE", hidden: "" }));
+    var tf0 = el("div", { class: "f" }); tf0.appendChild(el("label", { for: "aoTds" }, "TDS (₹)")); tf0.appendChild(ti); tf0.appendChild(el("span", { class: "hint" }, "On " + amt2(D.base) + ", the voucher's amount (no GST).")); tf0.appendChild(el("span", { class: "err", id: "aoTdsE", hidden: "" }));
     tr0.appendChild(sf); tr0.appendChild(tf0); tl.appendChild(tr0);
-    ts.addEventListener("change", function () { D.sec = ts.value; if (!D.sec) D.tds = "0"; else { var r = tdsRateFor(x, D.sec); if (r && r.rate != null) D.tds = fmtInput(String(Math.round((Number(D.base) || 0) * r.rate / 100))); } ti.value = D.tds; ti.disabled = locked || !D.sec; aoTdsHint(); refresh(); });
-    ti.addEventListener("input", function () { D.tds = ti.value; refresh(); }); ti.addEventListener("blur", function () { if (num(ti.value) != null) ti.value = fmtInput(ti.value); });
+    ts.addEventListener("change", function () { D.sec = ts.value; if (!D.sec) D.tds = "0"; else { var r = tdsRateFor(x, D.sec); if (r && r.rate != null) D.tds = fmtInput(String(Math.round((Number(D.base) || 0) * r.rate / 100))); } ti.value = D.tds; ti.disabled = locked || !D.sec; aoTdsHint(); changed(); });
+    ti.addEventListener("input", function () { D.tds = ti.value; changed(); }); ti.addEventListener("blur", function () { if (num(ti.value) != null) ti.value = fmtInput(ti.value); });
     if (!D.sec && !String(D.tds || "").trim()) D.tds = "0";
     var tw = el("div", { id: "aoVchTally" }); tl.appendChild(tw);
-    var nf = el("div", { class: "f wide", style: "margin-top:14px" }), nlb = el("label", { for: "aoVNar" }, "Narration"), ta = el("textarea", { class: "field", id: "aoVNar", rows: "3", maxlength: String(NARR_MAX) }); ta.value = D.narration; ta.disabled = locked;
-    var rw = el("button", { type: "button", class: "link-btn", style: "margin-left:10px;text-transform:none" }, "Write Again"); rw.disabled = locked; rw.addEventListener("click", function () { D.narration = tlyVchNarr(Object.assign({}, x, { vtype: D.vtype }), x.voucherNo, x.voucherDate, D.vl); ta.value = D.narration; nv.textContent = D.narration; }); nlb.appendChild(rw);
-    var nc = el("span", { class: "hint" }); var cnt = function () { nc.textContent = ta.value.length + " of " + NARR_MAX + " characters."; };
-    ta.addEventListener("input", function () { D.narration = ta.value; nv.textContent = ta.value || "—"; cnt(); }); cnt();
+    var nf = el("div", { class: "f wide", style: "margin-top:14px" }), nlb = el("label", { for: "aoVNar" }, "Narration"), ta = el("textarea", { class: "field", id: "aoVNar", rows: "4", maxlength: String(NARR_MAX) }); ta.value = D.narration; ta.disabled = locked;
+    var regen = function () { return tlyVchNarr(Object.assign({}, x, { vtype: D.vtype }), x.voucherNo, x.voucherDate, D.vl); };
+    var rw = el("button", { type: "button", class: "link-btn", style: "margin-left:10px;text-transform:none" }, "Write Again"); rw.disabled = locked; rw.addEventListener("click", function () { D.narMan = false; D.narration = regen(); ta.value = D.narration; cnt(); changed(); }); nlb.appendChild(rw);
+    var nc = el("span", { class: "hint" }); var cnt = function () { nc.textContent = ta.value.length + " of " + NARR_MAX + " characters." + (D.narMan ? " Edited by hand: Write Again to follow the lines." : " Follows the lines as they change."); };
+    ta.addEventListener("input", function () { D.narration = ta.value; D.narMan = true; cnt(); changed(); }); cnt();
     nf.appendChild(nlb); nf.appendChild(ta); nf.appendChild(nc); nf.appendChild(el("span", { class: "err", id: "aoVNarE", hidden: "" })); tl.appendChild(nf);
-    function refresh() { tlyVchSync(D); tw.textContent = ""; var v = vchTally(x, D); tw.appendChild(el("div", { class: "lb", style: "margin-bottom:6px" }, "Purchase Voucher")); tw.appendChild(tallyTable(v.main));
-      if (v.jrnl) { tw.appendChild(el("div", { class: "lb", style: "margin:14px 0 6px" }, "Journal-GST (Reverse Charge)")); tw.appendChild(tallyTable(v.jrnl)); tw.appendChild(el("div", { class: "hint", style: "margin-top:6px" }, "The RCM GST is not paid to the payee: it is booked by Journal-GST (Input (RCM) against RCM Payable) and paid to the government.")); } }
-    f.appendChild(W); refresh(); aoTdsHint();
+    /* anything changed: the narration follows the lines (unless edited by hand), the entries and the preview are redrawn */
+    function changed(lines) {
+      if (lines && !D.narMan) { D.narration = regen(); if (ta.value !== D.narration) { ta.value = D.narration; cnt(); } }
+      tlyVchSync(D); tw.textContent = ""; var v = vchTally(x, D); tw.appendChild(el("div", { class: "lb", style: "margin-bottom:6px" }, "Purchase Voucher")); tw.appendChild(tallyTable(v.main));
+      if (v.jrnl) { tw.appendChild(el("div", { class: "lb", style: "margin:14px 0 6px" }, "Journal Entry - GST (Reverse Charge)")); tw.appendChild(tallyTable(v.jrnl)); tw.appendChild(el("div", { class: "hint", style: "margin-top:6px" }, "The RCM GST is not paid to the payee: it is booked by a Journal Entry - GST (Input (RCM) against RCM Payable) and paid to the government.")); }
+      clearTimeout(PV.t); PV.t = setTimeout(drawPv, 350);
+    }
+    f.appendChild(W); changed(); aoTdsHint();
+  }
+  /* the voucher as it would be once accounted with what is on the screen: for the preview */
+  function vchAsAcct(x, D) {
+    tlyVchSync(D); var rg = vchRcmOut(D), rts = {}; (D.vl || []).forEach(function (r) { if (r.on && rcmOk(D.vtype)) rts[r.rate] = 1; }); var tds = round2(num(D.tds) || 0);
+    return Object.assign({}, x, { vtype: D.vtype, narration: String(D.narration || "").replace(/\s+/g, " ").trim(), lines: (D.vl || []).map(function (l) { return { d: l.d, amt: l.amt, lg: l.lg }; }), ledgers: (D.lines || []).map(function (l) { return { id: l.id, amt: num(l.amt) || 0 }; }),
+      tds: tds, tdsSection: tds > 0 ? D.sec : "", gstApp: rg.tax > 0 ? "RCM" : "N/A", gstType: rg.tax > 0 ? D.gstType : null, gstRate: rg.tax > 0 && Object.keys(rts).length === 1 ? Number(Object.keys(rts)[0]) : null, gstLedgers: rg.gl, rcmAmt: rg.tax, taxable: Number(x.total) || 0, rcmLines: (D.vl || []).map(function (l) { return { on: !!l.on && rcmOk(D.vtype), rate: Number(l.rate), amt: l.amt }; }), acct: "approved", acctBy: meId() });
+  }
+  /* a bill's RCM lines: the Journal Entry - GST that books their tax (Dr Input (RCM), Cr RCM Payable), or null */
+  function rcmJournal(items, inter) {
+    var h = {}, tax = 0; effItems(items || []).forEach(function (x) { if (x.k === "ro" || !x.rcm || !(num(x.gst) > 0)) return; var t = round2((num(x.tx) || 0) * num(x.gst) / 100); tax = round2(tax + t); if (inter) h.igst = round2((h.igst || 0) + t); else { var c0 = Math.round(t * 50) / 100; h.cgst = round2((h.cgst || 0) + c0); h.sgst = round2((h.sgst || 0) + t - c0); } });
+    if (!(tax > 0)) return null; var rows = [], hs = Object.keys(h);
+    hs.forEach(function (k) { var l = rcmLed(k); rows.push({ dc: "Dr", led: l ? l.name : k.toUpperCase() + " Input (RCM)", amt: h[k], sub: "", noLed: !l }); });
+    hs.forEach(function (k) { var l = rcmPayLed(k); rows.push({ dc: "Cr", led: l ? l.name : k.toUpperCase() + " RCM Payable", amt: h[k], sub: "", noLed: !l }); });
+    return { rows: rows, dr: tax, cr: tax };
   }
   function rcmPayLed(h) { return ledAll().filter(function (l) { return l.tax === "gst" && l.active !== false && gstFlavour(l) === "pay" && gstHead(l) === h; })[0] || null; }
   function vchTally(x, D) {
     var nm = function (id) { return ((S.ledgers || {})[id] || {}).name || "Choose a ledger"; }, rows = [], rcm = vchRcmOut(D), byLg = {};
     (D.vl || []).forEach(function (r) { if (r.on && rcmOk(D.vtype) && r.lg) { var a0 = byLg[r.lg] = byLg[r.lg] || []; if (a0.indexOf(r.rate + "%") < 0) a0.push(r.rate + "%"); } });
-    (D.lines || []).forEach(function (l) { var a = num(l.amt); if (!l.id && a == null) return; rows.push({ dc: "Dr", led: nm(l.id), lid: l.id, amt: a || 0, sub: rcmOk(D.vtype) ? "RCM: " + (byLg[l.id] ? "Yes · " + byLg[l.id].join(", ") + ", by Journal-GST" : "No") : "", noLed: !l.id }); });
+    (D.lines || []).forEach(function (l) { var a = num(l.amt); if (!l.id && a == null) return; rows.push({ dc: "Dr", led: nm(l.id), lid: l.id, amt: a || 0, sub: rcmOk(D.vtype) ? "RCM: " + (byLg[l.id] ? "Yes · " + byLg[l.id].join(", ") + ", by Journal Entry - GST" : "No") : "", noLed: !l.id }); });
     var tds = num(D.tds) || 0; if (tds > 0) { var tt = taxAll("tds").filter(function (t) { return t.sec === D.sec; })[0]; rows.push({ dc: "Cr", led: tt ? tdsLedName(tt) : "TDS Payable u/s " + (D.sec || ""), amt: tds, sub: D.base > 0 ? pct(Math.round(tds / D.base * 10000) / 100) + " on " + amt2(D.base) : "" }); }
     var dr = round2(rows.reduce(function (s0, r) { return s0 + (r.dc === "Dr" ? r.amt : 0); }, 0)), cr = round2(rows.reduce(function (s0, r) { return s0 + (r.dc === "Cr" ? r.amt : 0); }, 0)), party = round2(dr - cr);
     rows.push({ dc: "Cr", led: x.payee || "The payee", amt: party, sub: "Bill-wise: New Ref " + (x.voucherNo || "") + "  " + amt2(party) + " Cr", party: true });
@@ -16751,6 +16791,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (AC.kind === "voucher" && !D.vtype) errs.push(["aoType", "Choose the type of voucher."]);
     if (AC.kind === "voucher" && tly()) { var rg0 = vchRcmOut(D); if (rg0.bad) errs.push(["aoRcm", rg0.bad]);
       if ((D.vl || []).some(function (l) { return !l.lg; })) errs.push(["aoLed", "Choose the ledger on every line."]);
+      if (D.vl && D.vtype === GTA_TYPE && !D.gtSet) errs.push(["aoType", "Choose Freight & Transport, Intrastate or Interstate."]);
+      if ((D.vl || []).some(function (l) { return !String(l.d || "").trim(); })) errs.push(["aoLed", "Describe every line."]);
       if (D.vl && dayCount(D.days) == null) errs.push(["aoVDays", "Enter the days, a whole number (0 is fine)."]);
       if (D.vl && !String(D.narration || "").trim()) errs.push(["aoVNar", "Write the narration."]); }
     else if (AC.kind === "voucher" && D.vtype && D.vtype !== "Cash Voucher" && D.gstApp === "RCM") { if (!D.gstRate) errs.push(["aoRate", "Choose the GST (RCM) percent."]); var rb = rcmLines(D, []); if (rb) errs.push(["aoRcm", rb]); }
@@ -16808,9 +16850,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     Object.assign(up, roundUp(x, D));
     if (AC.kind === "bill") { var gG = billGst(x) > 0; up.gstLedgers = gG ? gstLinesOut(x, D) : []; up.gstSupply = gG ? (D.gstInter ? "inter" : "intra") : null; up.gstTypes = gG ? D.gstTypes.slice() : null; }
     if (AC.kind === "voucher" && tly()) { var rg1 = vchRcmOut(D), on1 = rg1.tax > 0, rts = {}; D.rcmL.forEach(function (r) { if (r.on && rcmOk(D.vtype)) rts[r.rate] = 1; });
-      var dn = dayCount(D.days); Object.assign(up, { lines: D.vl.map(function (l) { return { d: l.d, amt: l.amt, lg: l.lg }; }), termDays: dn == null ? 0 : dn, dueDate: addDays(x.voucherDate || todayYmd(), dn == null ? 0 : dn), narration: String(D.narration || "").replace(/\s+/g, " ").trim() || x.narration || "" });
+      var dn = dayCount(D.days); Object.assign(up, { lines: D.vl.map(function (l) { return { d: sentenceFix(String(l.d || "").replace(/\s+/g, " ").trim()), amt: l.amt, lg: l.lg }; }), termDays: dn == null ? 0 : dn, dueDate: addDays(x.voucherDate || todayYmd(), dn == null ? 0 : dn), narration: String(D.narration || "").replace(/\s+/g, " ").trim() || x.narration || "" });
       Object.assign(up, { vtype: D.vtype, gstType: on1 ? D.gstType : null, gstLedgers: rg1.gl, rcmAmt: rg1.tax, gstApp: on1 ? "RCM" : "N/A", gstRate: on1 && Object.keys(rts).length === 1 ? Number(Object.keys(rts)[0]) : null, taxable: Number(x.total) || 0, payable: round2((Number(x.total) || 0) - tds),
-        rcmLines: D.rcmL.map(function (r) { var on = r.on && rcmOk(D.vtype); return { on: on, rate: Number(r.rate), amt: r.amt, tax: on ? round2(r.amt * Number(r.rate) / 100) : 0, itc: on ? "elig" : r.itc || "elig" }; }) }); }
+        rcmLines: D.rcmL.map(function (r) { var on = r.on && rcmOk(D.vtype); return { on: on, rate: Number(r.rate), amt: r.amt, tax: on ? round2(r.amt * Number(r.rate) / 100) : 0 }; }) }); }
     else if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher", rcm = oth && D.gstApp === "RCM", gl = []; if (rcm) rcmLines(D, gl);
       up.gstType = rcm ? D.gstType : null; up.gstLedgers = gl; up.rcmAmt = round2(gl.reduce(function (s0, g) { return s0 + g.amt; }, 0));
       up.vtype = D.vtype; up.gstApp = oth ? D.gstApp : "N/A"; up.gstRate = rcm ? Number(D.gstRate) : null; up.taxable = Number(x.total) || 0; up.payable = round2((Number(x.total) || 0) - tds); }
@@ -17707,7 +17749,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (taxT) {
       var tY = 120.12, tB = 2 * TH, cols = [4.5, 70.11, 98.16, 121.97, 146.05, 178.06, 205.85];
       /* the accountant's RCM amounts when saved; else worked out from the rate. Interstate shows IGST in place of CGST / SGST. */
-      var taxable = Number(v.taxable != null ? v.taxable : v.total) || 0, rate = rcm ? Number(v.gstRate) || 0 : 0, inter = rcm && v.gstType === "inter", gA = { cgst: 0, sgst: 0, igst: 0 }, gotL = false;
+      var rcmB = rcm ? (v.rcmLines || []).reduce(function (s0, r) { return s0 + (r.on ? Number(r.amt) || 0 : 0); }, 0) : 0; /* Tally (Demo): only the lines under RCM */
+      var taxable = rcmB > 0 ? round2(rcmB) : Number(v.taxable != null ? v.taxable : v.total) || 0, rate = rcm ? Number(v.gstRate) || 0 : 0, inter = rcm && v.gstType === "inter", gA = { cgst: 0, sgst: 0, igst: 0 }, gotL = false;
       (rcm ? v.gstLedgers || [] : []).forEach(function (g) { var l = (S.ledgers || {})[g.id]; if (l) { gA[gstHead(l)] += Number(g.amt) || 0; gotL = true; } });
       if (!gotL) { var t0 = Math.round(taxable * rate) / 100, h0 = Math.round(t0 * 50) / 100; if (inter) gA.igst = t0; else { gA.cgst = h0; gA.sgst = t0 - h0; } }
       var tax = gA.cgst + gA.sgst + gA.igst;

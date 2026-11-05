@@ -273,6 +273,7 @@ textarea.field{min-height:70px;resize:vertical;line-height:1.45}
 @media (max-width:640px){.apdrow{grid-template-columns:1fr 1fr}.apdn{grid-column:1/-1}.apdby{display:none}.apdfoot .tsub{margin-left:0;flex-basis:100%}}
 .avpick{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}.aph{font-size:calc(14px*var(--ts,1));text-transform:none;letter-spacing:0;margin:16px 0 8px;color:var(--ink)}.apstats{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:4px}
 .aptot table.t td{padding:7px 14px}.aptot tr.aptotal td{font-weight:700;border-top:1px solid var(--line)}.apitems td.apname{white-space:normal;min-width:180px}.apitems td,.apitems th{white-space:nowrap}.apnar{margin:0;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+html{overflow-y:scroll}
 #mastersBar.tlysub{margin:0;background:#fff;border-bottom:1px solid var(--line);padding:0 var(--gut);padding-left:calc(var(--gut) + max(0px, 100vw - 100%) - 14px)}
 .stabs{display:flex;gap:0;overflow-x:auto;scrollbar-width:none}.stabs::-webkit-scrollbar{display:none}
 .stabs button{all:unset;box-sizing:border-box;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;padding:13px 16px;position:relative;font-size:calc(13.5px*var(--ts,1));font-weight:600;color:var(--muted)}
@@ -2135,10 +2136,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     });
     subn.parentNode.style.display = cg && nSub > 1 ? "" : "none";
     var bar = $("mastersBar"), ms = curSet ? members(curSet) : []; bar.textContent = ""; bar.hidden = ms.length < 2;
+    /* Tally (Demo): the white sub-tab row is always there, so the header is the same height on every screen; a tab without
+       pages of its own shows its own name in it */
+    if (tly() && cg && ms.length < 2) { var cur0 = cg.tabs.filter(function (t) { return t[0] === S.tab; })[0]; if (cur0) { ms = [cur0]; bar.hidden = false; } }
     /* Tally (Demo): the sub-tabs are a band of their own under the dark tab bar, the width of the page */
     if (tly() && bar.parentNode && bar.parentNode.tagName === "MAIN") { var nb = $("navbar"); nb.parentNode.insertBefore(bar, nb.nextSibling); bar.classList.add("tlysub"); }
     if (curSet) { LAST_SET[curSet] = S.tab; if (curSet === "Masters") LAST_M = S.tab; }
-    if (ms.length > 1) { var sg = el("div", { class: tly() ? "stabs" : "seg", role: "tablist", "aria-label": curSet }); ms.forEach(function (t) { var b = el("button", { type: "button", role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false" }, t[1]), bd = tabBadge(t[0]); if (bd) b.appendChild(badgeEl(bd)); b.addEventListener("click", function () { if (S.tab !== t[0]) setTab(t[0]); }); sg.appendChild(b); }); bar.appendChild(sg); }
+    if (ms.length > 1 || (tly() && ms.length === 1)) { var sg = el("div", { class: tly() ? "stabs" : "seg", role: "tablist", "aria-label": curSet || ms[0][1] }); ms.forEach(function (t) { var b = el("button", { type: "button", role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false" }, t[1]), bd = tabBadge(t[0]); if (bd) b.appendChild(badgeEl(bd)); b.addEventListener("click", function () { if (S.tab !== t[0]) setTab(t[0]); }); sg.appendChild(b); }); bar.appendChild(sg); }
     slideTo(nav, nav.querySelector(".grp-on"), "G"); slideTo(subn, subn.querySelector('[aria-current="page"]'), "T");
     /* on a phone the open heading and tab are scrolled into sight */
     [[nav, nav.querySelector(".grp-on")], [subn, subn.querySelector('[aria-current="page"]')], [bar, bar.querySelector('[aria-selected="true"]')]].forEach(function (x) { var c = x[1] && x[1].parentNode; if (x[1] && c && c.scrollWidth > c.clientWidth + 2) c.scrollLeft = Math.max(0, x[1].offsetLeft - c.offsetLeft - 24); });

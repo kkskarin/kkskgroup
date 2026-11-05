@@ -45,6 +45,19 @@
   writes `tlyAp` on the voucher, ACR or duty (instalments with pay-by dates) and the marks Finance pays from (`approvedAt`,
   ACR `stage: payment` with `apprAmt`, cash `status: approved` with `approvedAmount`). Finance › Plan lists approved
   vouchers, instalments and duties with bills. AI Usage Credits counts Claude's use on vouchers and proformas per record.
+- **Tally (Demo) › Vouchers: Voucher Entry, Submitted Vouchers, All Vouchers** (as Bills). Voucher Entry lists the vouchers
+  still waiting to be accounted; Submitted Vouchers shows every voucher by company and the person who prepared it, with its
+  Voucher Checking Reports (`reports`, kind vcr, `tly: true`, numbered VCR/<short name>/<FY>/<serial>, one company and one
+  preparer): tick accounted vouchers and Make VCR, add ticked ones to an open VCR, Remove from VCR, Send for Approval. A voucher
+  sent on its own gets a report of its own (`direct`, numbered as the voucher). 3 or fewer accounted vouchers of a person for a
+  company may go on their own; with 4 or more their own Send is greyed and they go into a VCR. The voucher form has "Send for
+  approval as soon as accounting is done" (`autoAppr`): accounting it sends it on its own, and it can't go into a VCR. All
+  Vouchers is the flat list with company, prepared by, status and search filters. **Once a BCR or VCR is sent for approval
+  nothing in it can change** (no adding, removing or editing) until the approver returns it; **printing** a BCR, a VCR or a
+  voucher is offered only once it has been sent for approval (the Approval Recorder may record a physically signed copy).
+  Voucher accounting is laid out in sections (Voucher Details, Ledgers, Voucher Type & RCM, TDS, **Tally Line Items**): the
+  purchase voucher as Tally gets it (Dr each ledger with its RCM note, Cr TDS, Cr the payee bill-wise New Ref) and, when there
+  is RCM, the Journal-GST (Dr CGST / SGST / IGST Input (RCM), Cr the RCM Payable ledgers), redrawn as anything changes.
 - **Item descriptions (Tally (Demo)).** A line typed or spoken in Bill Entry is rewritten by Claude to the description rules,
   with words speech recognition got wrong put right from the company's line of business ("leather heights" → "Leather
   Hides"); ordinary words are never put in capitals.

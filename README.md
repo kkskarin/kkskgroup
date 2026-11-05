@@ -83,6 +83,16 @@
 - **Tally (Demo): proformas and imports only from their file.** Enter by Hand is gone; each is entered by uploading the
   proforma or import order (PDF or photo), which Claude reads into the form and which stays with it. One can't be saved
   without its file (a Live copy keeps its own). If Claude can't read just then, the form still opens with the file beside it.
+- **Tally (Demo) › Reports › Tally Downloads**, two pages, each one Tally XML file per company (TallyPrime and Tally.ERP 9,
+  "Import Data"), named `<short name> - dd-MMM-yy.xml` (slashes can't be in a file name). **Transactions** (Import ›
+  Transactions), for a period: purchase vouchers from accounted bills (the Tally Line Items: ledgers, GST, round off, TDS,
+  the vendor with a New Ref bill) and accounted vouchers, journal vouchers for GST on reverse charge (Dr Input (RCM), Cr RCM
+  Payable), and payment vouchers (Dr the party Agst Ref each bill, or Advance for a proforma instalment; Cr the bank account
+  paid from, or Cash), all in one file; sales, receipt and contra come once they are kept. A payment with no bank account
+  recorded is flagged (it goes to a ledger named Bank). **Masters** (Import › Masters, before the transactions): groups (each
+  Sub Group under its Primary Group), the company's ledgers (GST ledgers with their duty head; one per name, duplicates
+  flagged), vendors and voucher payees as Sundry Creditors (bill-wise on, address, GSTIN or Unregistered, PAN), and bank
+  accounts; customers as Sundry Debtors once sales are kept.
 - **One header everywhere.** The page always keeps room for its scrollbar (`html{overflow-y:scroll}`), so the header, tabs
   and sub-tabs never move sideways between short and long pages; in Tally (Demo) the white sub-tab row is always shown (a tab
   without pages of its own shows its own name there), so the header is the same height on every screen, accounting included.

@@ -1416,6 +1416,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     </div>
   </section>
 
+  <section id="secTdl" hidden>
+    <div class="head"><div class="grow"><h2 id="tdlTitle">Tally Downloads</h2><p class="sub" id="tdlSub"></p></div></div>
+    <div class="filters" id="tdlFilt"></div>
+    <div id="tdlBox"></div>
+  </section>
   <section id="secVchSub" hidden>
     <div class="head"><div class="grow"><h2>Submitted Vouchers</h2><p class="sub">Every voucher by company and the person who prepared it, with its Voucher Checking Reports and where it stands. 3 or fewer accounted vouchers of a person for a company can go for approval on their own; 4 or more go into a Voucher Checking Report. Make a VCR of ticked vouchers, add ticked ones to an open VCR, or remove one from it.</p></div></div>
     <div class="filters"><select class="field" id="vsCo" aria-label="Company"></select><input class="field" id="vsQ" type="search" placeholder="Voucher, VCR or paid to" autocomplete="off" aria-label="Search"></div>
@@ -1802,7 +1807,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var S = { staff: {}, salruns: {}, regions: {}, ledgers: {}, departments: {}, profiles: {}, actId: "", picked: false, loginUser: null, pinFails: {}, payplans: {}, admins: {}, closes: {}, audit: {}, vouchers: {}, cashadv: {}, balances: {}, advances: {}, txns: {}, plans: {}, bills: {}, vendors: {}, rates: {}, reports: {}, previews: {}, openBill: null, stmtId: null, sample: null, sLimits: null, downloads: null, db: null, user: null, me: null, tab: "Weekly", isAdmin: false, companies: {}, locations: {}, users: {}, requests: {}, myReq: null, myUser: null, memberState: "", userEditing: null, failed: false, loaded: false, editing: null, draftLogo: "", busy: false };
   var toastTimer = null;
   function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 5000); }
-  var VIEWS = ["secVchSub", "secVchAll", "secDuty", "secAiUse", "secBillSub", "secApView", "secApprT", "secBillAll", "secVStmt", "secVerify", "secHsn", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
+  var VIEWS = ["secTdl", "secVchSub", "secVchAll", "secDuty", "secAiUse", "secBillSub", "secApView", "secApprT", "secBillAll", "secVStmt", "secVerify", "secHsn", "secTpl", "secAllEnt", "secSalary", "secAdvReq", "secCashAppr", "secSol", "secAppr", "secNotes", "secPrefs", "secTxn", "secPayables", "secAdvSum", "secAcct", "secAcctOne", "secBooks", "secLedgers", "vLoading", "vUnavailable", "vRequest", "secSoon", "secList", "secEdit", "secStmt", "secUsers", "secRoles", "secUser", "secBills", "secVendors", "secVendor", "secChecks", "secCheckNew", "secCheckView", "secAdvList", "secAdv", "secMark", "secLedger", "secPlanPay", "secLock", "secVch", "secVchForm", "secCash", "secVcr", "secVcrNew", "secVcrView", "secVcrApprove", "secAudit", "secActivity", "secCheques", "secBanks", "secOthers", "secApr", "secArch"];
   /* ================= Settings › Personalise: appearance, colour, text size, density, password, profile picture =================
      Saved per login in prefs/<login id> (shared by Demo and Live) and kept in this browser so the page opens in the right look.
      PDFs and Excel files always keep the standard KKSK format. */
@@ -2044,7 +2049,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS],
     /* Tally (Demo): purchaser, accountant and financier, nothing else; masters to look up */
     tly: [{ h: "Purchase", tabs: [["Bills", "Bill Entry", 0, "Bills"], ["Bill Sub", "Submitted Bills", 0, "Bills"], ["Bill All", "All Bills", 0, "Bills"], ["Cash Voucher", "Voucher Entry", 0, "Vouchers"], ["Vch Sub", "Submitted Vouchers", 0, "Vouchers"], ["Vch All", "All Vouchers", 0, "Vouchers"], ["Plan Advance", "Proforma Entry", 0, "Proformas"], ["Advance Report", "Advance Checking", 0, "Proformas"], ["Imports", "Import Entry", 0, "Imports"], ["Imp Duty", "Duties & Customs", 0, "Imports"], ["Advance Report Imp", "Advance Checking", 0, "Imports"], ["Cash Advance", "Cash Advances"]] }, { h: "Sales", tabs: [["Sales T", "Sales Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Purchase"], ["Sales Acct", "Sales"], ["Verify", "Verification"]] }, { h: "Approvals", tabs: TLY_APK.reduce(function (o, k) { return o.concat([["Appr T" + k[0], "Pending Final Approval", 0, k[1]], ["Appr First" + k[0], "Pending Checker Approval", 0, k[1]]].concat(k[0] === " c" ? [] : [["Appr Post" + k[0], "Postponed Payments", 0, k[1]]]).concat([["Appr Done" + k[0], "Approval History", 0, k[1]]])); }, []) }, { h: "Finance", tabs: [["Mark Transaction", "Plan"], ["Pay Record", "Record"], ["Advance Requests", "Cash Advances"]] },
-      { h: "Reports", tabs: [["Transactions", "Transactions", 0, "Purchase"], ["Ledger Books", "Ledger Statements", 0, "Accounts"], ["Vendor Stmt", "Vendor Statement", 0, "Accounts"], ["Payables", "Payables", 0, "Finance"]].concat(MASTERS, [["HSN", "HSN / SAC", 0, "m"], ["Tally DL", "Tally Downloads"], ["AI Use", "AI Usage Credits"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
+      { h: "Reports", tabs: [["Transactions", "Transactions", 0, "Purchase"], ["Ledger Books", "Ledger Statements", 0, "Accounts"], ["Vendor Stmt", "Vendor Statement", 0, "Accounts"], ["Payables", "Payables", 0, "Finance"]].concat(MASTERS, [["HSN", "HSN / SAC", 0, "m"], ["Tally DL", "Transactions", 0, "Tally Downloads"], ["Tally DLM", "Masters", 0, "Tally Downloads"], ["AI Use", "AI Usage Credits"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
   };
   var NAV = NAV_BY_APP[APP] || NAV_BY_APP.mnt;
   var LAST_M = "", LAST_SET = {};
@@ -2207,6 +2212,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (t === "HSN") { renderHsn(); show("secHsn"); return; }
     if (t === "Vch T" || t === "Pro T" || t === "Imp T") { $("soonTitle").textContent = { "Vch T": "Vouchers", "Pro T": "Proformas", "Imp T": "Imports" }[t]; $("soonText").textContent = "Coming next: brought over from the KKSK Group app the Tally way, with the same statuses and Send for Approval as bills."; show("secSoon"); return; }
     if (t === "Sales T") { $("soonTitle").textContent = "Sales Entry"; $("soonText").textContent = "Sales invoices are entered here. Waiting for the details of how sales should work in Tally (Demo)."; show("secSoon"); return; }
+    if (t === "Tally DL" || t === "Tally DLM") { if (dataReady()) { TDL.k = t === "Tally DLM" ? "m" : "t"; renderTdl(); show("secTdl"); } else show("vLoading"); return; }
     if (t === "Sales Acct" || t === "Tally DL") { $("soonTitle").textContent = t === "Sales Acct" ? "Sales" : "Tally Downloads"; $("soonText").textContent = t === "Sales Acct" ? "Accounting for sales comes here. Nothing is set up for sales in Tally (Demo) yet." : "Files to import into Tally come here. Nothing is set up for downloads yet."; show("secSoon"); return; }
     if (t === "Verify") { if (dataReady()) { renderVerify(); show("secVerify"); } else show("vLoading"); return; }
     if (t === "Salary") { renderSalary(); show("secSalary"); return; }
@@ -7382,6 +7388,94 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function apVen(name) { var d = el("div"); d.appendChild(el("b", null, name || "")); return d; }
   function apInstLines(b) { var ins = []; tlyApList(b).forEach(function (a) { (a.inst || []).forEach(function (i) { ins.push(i); }); }); ins.sort(function (x, y) { return natCmp(x.on || "", y.on || ""); }); return ins.map(function (i) { return money(i.amt) + " by " + fmtDate(i.on); }); }
   function apInstText(b) { var ins = []; tlyApList(b).forEach(function (a) { (a.inst || []).forEach(function (i) { ins.push(i); }); }); ins.sort(function (x, y) { return natCmp(x.on || "", y.on || ""); }); return ins.map(function (i) { return money(i.amt) + " by " + fmtDate(i.on); }).join("; "); }
+  /* ---- Tally (Demo) › Reports › Tally Downloads: Tally XML ("Import Data", TallyPrime and Tally.ERP 9), one file per company.
+     Transactions: purchase (accounted bills and vouchers), journal (Journal Entry - GST for reverse charge) and payment vouchers
+     in one file, for a period; sales, receipt and contra follow once they are kept here. Masters: groups (each Sub Group under
+     its Primary Group), ledgers, vendors and voucher payees as Sundry Creditors, bank accounts; customers as Sundry Debtors
+     once sales are kept. Import the masters first: Tally refuses a voucher whose ledger it doesn't have. ---- */
+  var TDL = { k: "t", from: "", to: "" };
+  function tdlEsc(t) { return String(t == null ? "" : t).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c]; }); }
+  function tdlD(ymd) { return String(ymd || "").replace(/-/g, ""); }
+  function tdlAmt(n) { return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2); }
+  function tdlEnv(cid, report, body) { var c = S.companies[cid] || {}; return '<?xml version="1.0" encoding="UTF-8"?>\n<ENVELOPE>\n<HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER>\n<BODY><IMPORTDATA>\n<REQUESTDESC><REPORTNAME>' + report + '</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>' + tdlEsc(c.name || "") + '</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC>\n<REQUESTDATA>\n' + body.join("\n") + '\n</REQUESTDATA>\n</IMPORTDATA></BODY>\n</ENVELOPE>\n'; }
+  /* one voucher; rows [{led, dc: "Dr" / "Cr", amt, party, bill: {name, type}}]; in Tally a debit is a negative amount */
+  function tdlVch(type, o, rows) {
+    var x = ['<TALLYMESSAGE xmlns:UDF="TallyUDF"><VOUCHER VCHTYPE="' + tdlEsc(type) + '" ACTION="Create" OBJVIEW="Accounting Voucher View">', "<DATE>" + tdlD(o.date) + "</DATE>", "<EFFECTIVEDATE>" + tdlD(o.date) + "</EFFECTIVEDATE>", "<VOUCHERTYPENAME>" + tdlEsc(type) + "</VOUCHERTYPENAME>",
+      o.no ? "<VOUCHERNUMBER>" + tdlEsc(o.no) + "</VOUCHERNUMBER>" : "", o.ref ? "<REFERENCE>" + tdlEsc(o.ref) + "</REFERENCE>" + (o.refDate ? "<REFERENCEDATE>" + tdlD(o.refDate) + "</REFERENCEDATE>" : "") : "", o.party ? "<PARTYLEDGERNAME>" + tdlEsc(o.party) + "</PARTYLEDGERNAME>" : "",
+      "<NARRATION>" + tdlEsc(o.narr || "") + "</NARRATION>", "<PERSISTEDVIEW>Accounting Voucher View</PERSISTEDVIEW>"];
+    rows.forEach(function (r) { if (!(Number(r.amt) > 0.004)) return; var dr = r.dc === "Dr", a = dr ? "-" + tdlAmt(r.amt) : tdlAmt(r.amt);
+      x.push("<ALLLEDGERENTRIES.LIST><LEDGERNAME>" + tdlEsc(r.led) + "</LEDGERNAME><ISDEEMEDPOSITIVE>" + (dr ? "Yes" : "No") + "</ISDEEMEDPOSITIVE><ISPARTYLEDGER>" + (r.party ? "Yes" : "No") + "</ISPARTYLEDGER><AMOUNT>" + a + "</AMOUNT>"
+        + (r.bill ? "<BILLALLOCATIONS.LIST><NAME>" + tdlEsc(r.bill.name) + "</NAME><BILLTYPE>" + tdlEsc(r.bill.type || "New Ref") + "</BILLTYPE><AMOUNT>" + a + "</AMOUNT></BILLALLOCATIONS.LIST>" : "") + "</ALLLEDGERENTRIES.LIST>"); });
+    x.push("</VOUCHER></TALLYMESSAGE>"); return x.filter(Boolean).join("");
+  }
+  function tdlIn(ymd) { return ymdOk(ymd) && (!TDL.from || ymd >= TDL.from) && (!TDL.to || ymd <= TDL.to); }
+  /* every voucher of a company in the period, by kind */
+  function tdlTx(cid) {
+    var out = { purchase: [], journal: [], payment: [], sales: [], receipt: [], contra: [], noBank: 0 }, lname = function (id) { return ((S.ledgers || {})[id] || {}).name || ""; };
+    tlyBills(cid).forEach(function (b) { if (b.acct !== "approved" || !tdlIn(b.billDate)) return; var its = itemsIn(JSON.parse(JSON.stringify(b))), inter = billInter(b), party = vendorLabelOfBill(b);
+      var tv = tallyVoucher({ items: its, cid: cid, inter: inter, acct: true, tds: b.tds, tdsSec: b.tdsSection, tdsBase: tdsBaseOf(its), billNo: b.billNo, party: party });
+      out.purchase.push(tdlVch("Purchase", { date: b.billDate, ref: b.billNo, refDate: b.billDate, party: party, narr: b.narration }, tv.rows.map(function (r) { return { led: r.led, dc: r.dc, amt: r.amt, party: !!r.party, bill: r.party ? { name: b.billNo || "", type: "New Ref" } : null }; })));
+      var jr = rcmJournal(its, inter); if (jr) out.journal.push(tdlVch("Journal", { date: b.billDate, ref: b.billNo, narr: "Being GST payable on reverse charge on bill " + (b.billNo || "") + " of " + party + "." }, jr.rows)); });
+    vchList().forEach(function (v) { if (v.companyId !== cid || v.acct !== "approved" || v.status === "deleted" || !tdlIn(v.voucherDate)) return; var tds = Number(v.tds) || 0, rows = [];
+      (v.ledgers || []).forEach(function (l) { rows.push({ led: lname(l.id), dc: "Dr", amt: Number(l.amt) || 0 }); });
+      if (tds > 0) { var tt = taxAll("tds").filter(function (t) { return t.sec === v.tdsSection; })[0]; rows.push({ led: tt ? tdsLedName(tt) : "TDS Payable u/s " + (v.tdsSection || ""), dc: "Cr", amt: tds }); }
+      rows.push({ led: v.payee || "", dc: "Cr", amt: round2((Number(v.total) || 0) - tds), party: true, bill: { name: v.voucherNo || "", type: "New Ref" } });
+      out.purchase.push(tdlVch("Purchase", { date: v.voucherDate, no: v.voucherNo, ref: v.voucherNo, party: v.payee, narr: v.narration }, rows));
+      var gl = v.gstApp === "RCM" ? v.gstLedgers || [] : []; if (gl.length) { var jrows = []; gl.forEach(function (g) { var L = (S.ledgers || {})[g.id]; jrows.push({ led: L ? L.name : "Input (RCM)", dc: "Dr", amt: Number(g.amt) || 0 }); });
+        gl.forEach(function (g) { var L = (S.ledgers || {})[g.id], pl = L ? rcmPayLed(gstHead(L)) : null; jrows.push({ led: pl ? pl.name : (L ? gstHead(L).toUpperCase() : "GST") + " RCM Payable", dc: "Cr", amt: Number(g.amt) || 0 }); });
+        out.journal.push(tdlVch("Journal", { date: v.voucherDate, ref: v.voucherNo, narr: "Being GST payable on reverse charge on voucher " + (v.voucherNo || "") + " of " + (v.payee || "") + "." }, jrows)); } });
+    txList().forEach(function (t) { if (t.companyId !== cid || t.kind !== "payment" || t.status === "cancelled" || !tdlIn(t.date)) return;
+      var bk = t.bankAcctId && (S.banks || {})[t.bankAcctId]; if (!bk && t.mode !== "cash" && t.mode !== "advance") out.noBank++; var from = t.mode === "cash" || t.mode === "advance" ? "Cash" : bk ? bk.ledgerName || bk.name || bk.bank || "Bank" : "Bank";
+      var party = t.vendorId ? (S.vendors[t.vendorId] || {}).name || "" : t.payee || "", vv = t.voucherId && S.vouchers[t.voucherId], a = t.advanceId && S.advances[t.advanceId], bills = Object.keys(t.billAlloc || {});
+      var rows = [], ref = vv ? vv.voucherNo : a ? a.piNo : "";
+      if (bills.length) bills.forEach(function (id) { var b = S.bills[id]; rows.push({ led: party, dc: "Dr", amt: t.billAlloc[id], party: true, bill: { name: (b && b.billNo) || "", type: "Agst Ref" } }); });
+      else rows.push({ led: party, dc: "Dr", amt: t.amount, party: true, bill: vv ? { name: vv.voucherNo || "", type: "Agst Ref" } : a ? { name: (a.piNo || "") + (t.inst != null ? " / " + (Number(t.inst) + 1) : ""), type: "Advance" } : t.billId && S.bills[t.billId] ? { name: S.bills[t.billId].billNo || "", type: "Agst Ref" } : { name: "On Account", type: "On Account" } });
+      var dr = round2(rows.reduce(function (s0, r) { return s0 + (Number(r.amt) || 0); }, 0)); if (dr < Number(t.amount) - 0.005) rows.push({ led: party, dc: "Dr", amt: round2(Number(t.amount) - dr), party: true, bill: { name: "On Account", type: "On Account" } });
+      rows.push({ led: from, dc: "Cr", amt: t.amount });
+      out.payment.push(tdlVch("Payment", { date: t.date, ref: t.ref || ref, party: party, narr: "Being " + (t.mode === "cash" ? "cash" : t.mode === "cheque" ? "cheque" : "bank") + " payment to " + party + (ref ? " against " + ref : "") + (t.ref ? ", ref. " + t.ref : "") + "." }, rows)); });
+    return out;
+  }
+  /* the masters a company's vouchers need */
+  function tdlMasters(cid) {
+    var grp = {}, led = [], cred = {}, out = { groups: [], ledgers: [], creditors: [], debtors: [], banks: [] };
+    Object.keys(S.ledgers || {}).forEach(function (k) { var l = S.ledgers[k]; if (l.active === false || !(l.allCos || (l.companyIds || []).indexOf(cid) >= 0) || !l.name) return; var main = l.main || "", sub = l.sub || "";
+      if (sub && sub !== main) grp[sub] = main; led.push(l); });
+    Object.keys(grp).sort(natCmp).forEach(function (g) { out.groups.push('<TALLYMESSAGE xmlns:UDF="TallyUDF"><GROUP NAME="' + tdlEsc(g) + '" ACTION="Create"><NAME.LIST><NAME>' + tdlEsc(g) + '</NAME></NAME.LIST><PARENT>' + tdlEsc(grp[g]) + '</PARENT></GROUP></TALLYMESSAGE>'); });
+    var seenL = {}; out.dupes = [];
+    led.sort(function (a, b) { return natCmp(a.name, b.name); }).forEach(function (l) { var k0 = l.name.trim().toLowerCase(); if (seenL[k0]) { if (out.dupes.indexOf(l.name) < 0) out.dupes.push(l.name); return; } seenL[k0] = 1; out.ledgers.push('<TALLYMESSAGE xmlns:UDF="TallyUDF"><LEDGER NAME="' + tdlEsc(l.name) + '" ACTION="Create"><NAME.LIST><NAME>' + tdlEsc(l.name) + '</NAME></NAME.LIST><PARENT>' + tdlEsc(l.sub || l.main || "Indirect Expenses") + '</PARENT>' + (l.tax === "gst" ? "<TAXTYPE>GST</TAXTYPE><GSTDUTYHEAD>" + ({ cgst: "Central Tax", sgst: "State Tax", igst: "Integrated Tax" }[gstHead(l)] || "") + "</GSTDUTYHEAD>" : l.tax === "tds" ? "<TAXTYPE>TDS</TAXTYPE>" : "") + '</LEDGER></TALLYMESSAGE>'); });
+    var party = function (name, o) { if (!name || cred[name.toLowerCase()]) return; cred[name.toLowerCase()] = 1; var addr = String(o.address || "").split(/\n|,\s*(?=\S)/).map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 5);
+      out.creditors.push('<TALLYMESSAGE xmlns:UDF="TallyUDF"><LEDGER NAME="' + tdlEsc(name) + '" ACTION="Create"><NAME.LIST><NAME>' + tdlEsc(name) + '</NAME></NAME.LIST><PARENT>Sundry Creditors</PARENT><ISBILLWISEON>Yes</ISBILLWISEON>' + (addr.length ? "<ADDRESS.LIST>" + addr.map(function (a0) { return "<ADDRESS>" + tdlEsc(a0) + "</ADDRESS>"; }).join("") + "</ADDRESS.LIST>" : "")
+        + (o.country && !/india/i.test(o.country) ? "<COUNTRYNAME>" + tdlEsc(o.country) + "</COUNTRYNAME>" : "<COUNTRYNAME>India</COUNTRYNAME>") + (o.gstin ? "<GSTREGISTRATIONTYPE>Regular</GSTREGISTRATIONTYPE><PARTYGSTIN>" + tdlEsc(o.gstin) + "</PARTYGSTIN>" : "<GSTREGISTRATIONTYPE>Unregistered/Consumer</GSTREGISTRATIONTYPE>") + (o.pan ? "<INCOMETAXNUMBER>" + tdlEsc(o.pan) + "</INCOMETAXNUMBER>" : "") + '</LEDGER></TALLYMESSAGE>'); };
+    var vids = {}; tlyBills(cid).forEach(function (b) { if (b.vendorId) vids[b.vendorId] = 1; }); advList("pi").concat(advList("import")).forEach(function (a) { if (a.companyId === cid && a.vendorId) vids[a.vendorId] = 1; });
+    Object.keys(vids).forEach(function (vid) { var v = S.vendors[vid]; if (v) party(v.name, { address: v.address, gstin: v.gstin, pan: v.pan || (v.gstin ? panFromGstin(v.gstin) : ""), country: v.country }); });
+    vchList().forEach(function (v) { if (v.companyId !== cid || !v.payee || v.status === "deleted") return; party(v.payee, { address: v.payeeAddr || payeeAddrOf(v.payee), pan: idKind(v.payeeIdNo) === "pan" ? idNorm(v.payeeIdNo) : "" }); });
+    dutyList().forEach(function (d) { if (d.companyId === cid && !d.vendorId && d.partyName) party(d.partyName, {}); });
+    bankList(cid).forEach(function (b) { var nm = b.ledgerName || b.name || b.bank; if (!nm) return; out.banks.push('<TALLYMESSAGE xmlns:UDF="TallyUDF"><LEDGER NAME="' + tdlEsc(nm) + '" ACTION="Create"><NAME.LIST><NAME>' + tdlEsc(nm) + '</NAME></NAME.LIST><PARENT>Bank Accounts</PARENT>' + (b.accountNo ? "<BANKDETAILS>" + tdlEsc(b.accountNo) + "</BANKDETAILS>" : "") + (b.ifsc ? "<IFSCODE>" + tdlEsc(b.ifsc) + "</IFSCODE>" : "") + '</LEDGER></TALLYMESSAGE>'); });
+    return out;
+  }
+  function tdlFile(cid, tag) { var c = S.companies[cid] || {}; return (c.shortName || c.internalName || c.name || "Company") + (tag ? " - " + tag : "") + " - " + fmtDate(TDL.to || todayYmd()) + ".xml"; }
+  function tdlSave(name, xml, btn) {
+    var blob = new Blob([xml], { type: "application/xml" });
+    if (S.downloads) { btn.disabled = true; S.downloads.save({ filename: name, data: blob }).then(function () { toast(name + " downloaded."); }, function (e) { toast(explain(e)); }).then(function () { btn.disabled = false; }); return; }
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000); toast(name + " downloaded.");
+  }
+  function renderTdl() {
+    var t = todayYmd(); if (!TDL.from) { var y = Number(t.slice(0, 4)) - (Number(t.slice(5, 7)) >= 4 ? 0 : 1); TDL.from = y + "-04-01"; TDL.to = t; }
+    var tx = TDL.k === "t"; $("tdlTitle").textContent = tx ? "Tally Downloads: Transactions" : "Tally Downloads: Masters";
+    $("tdlSub").textContent = tx ? "One file per company, for Tally's Import › Transactions: purchase vouchers (accounted bills and vouchers), journal vouchers (GST on reverse charge) and payment vouchers together. Sales, receipt and contra vouchers join once they are kept here. Import the company's Masters file first." : "One file per company, for Tally's Import › Masters: groups (each Sub Group under its Primary Group), ledgers, vendors and voucher payees as Sundry Creditors, and bank accounts. Customers come as Sundry Debtors once sales are kept here. Import this before the Transactions file.";
+    var fb = $("tdlFilt"); fb.textContent = "";
+    if (tx) { [["from", "From"], ["to", "To"]].forEach(function (k) { var i = el("input", { class: "field", type: "date", "aria-label": k[1], value: TDL[k[0]] }); i.addEventListener("change", function () { TDL[k[0]] = i.value; renderTdl(); }); var w = el("label", { class: "tapf" }); w.appendChild(el("span", null, k[1])); w.appendChild(i); fb.appendChild(w); }); }
+    var box = $("tdlBox"); box.textContent = ""; var cos = sorted().filter(function (c) { return canSee(c.id); });
+    var card = el("div", { class: "card list scroll" }); box.appendChild(card);
+    var rows = cos.map(function (c) { return { c: c, d: tx ? tdlTx(c.id) : tdlMasters(c.id) }; });
+    var n = function (r, k) { return r.d[k].length; }, KEYS = tx ? ["purchase", "journal", "payment", "sales", "receipt", "contra"] : ["groups", "ledgers", "creditors", "debtors", "banks"];
+    var cols = [{ label: "Company", kind: "co", cell: function (r, td) { td.appendChild(el("b", null, r.c.internalName || r.c.name)); sub(td, (r.c.shortName || "") + " · " + tdlFile(r.c.id, tx ? "" : "Masters")); if (r.d.noBank) sub(td, plural(r.d.noBank, "payment") + " with no bank account recorded: they go to a ledger named Bank.", "color:var(--warn,#9a6700)"); if (r.d.dupes && r.d.dupes.length) sub(td, "Same name on more than one ledger (sent once; Tally needs unique names): " + r.d.dupes.join(", ") + ".", "color:var(--warn,#9a6700)"); } }];
+    (tx ? [["purchase", "Purchase"], ["journal", "Journal"], ["payment", "Payment"], ["sales", "Sales"], ["receipt", "Receipt"], ["contra", "Contra"]] : [["groups", "Groups"], ["ledgers", "Ledgers"], ["creditors", "Sundry Creditors"], ["debtors", "Sundry Debtors"], ["banks", "Bank Accounts"]])
+      .forEach(function (k) { cols.push({ label: k[1], cls: "r num", cell: function (r, td) { txt(td, String(n(r, k[0]))); } }); });
+    cols.push({ label: "", kind: "act", cls: "r", cell: function (r, td) { var tot = KEYS.reduce(function (s0, k) { return s0 + r.d[k].length; }, 0), b = el("button", { class: "btn sm primary", type: "button" }, "Download"); b.disabled = !tot; if (!tot) b.title = tx ? "Nothing in this period" : "Nothing to send";
+      b.addEventListener("click", function () { var d = r.d, body = tx ? d.purchase.concat(d.journal, d.payment, d.sales, d.receipt, d.contra) : d.groups.concat(d.ledgers, d.creditors, d.debtors, d.banks); tdlSave(tdlFile(r.c.id, tx ? "" : "Masters"), tdlEnv(r.c.id, tx ? "Vouchers" : "All Masters", body), b); }); td.appendChild(b); } });
+    sortTable(card, tx ? "tdlT" : "tdlM", cols, rows, { sortIndex: -1 });
+  }
   /* ---- Tally (Demo) › Imports › Duties & Customs ---- */
   var DUTY_KINDS = [["bcd", "Basic Customs Duty"], ["igst", "IGST on Import"], ["sws", "Social Welfare Surcharge"], ["cess", "Cess"], ["cha", "CHA / Clearing Charges"], ["freight", "Freight"], ["insurance", "Insurance"], ["port", "Port / Terminal Charges"], ["other", "Other"]];
   var DUTY_KINDS_O = DUTY_KINDS.reduce(function (o, k) { o[k[0]] = k[1]; return o; }, {});

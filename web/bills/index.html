@@ -16661,7 +16661,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       dl.appendChild(AC.fv.el); sp.appendChild(dl); sp.appendChild(dm); f.appendChild(sp); f = dm;
     } else if (isB) f.appendChild(el("div", { class: "flag", style: "margin-bottom:12px" }, x.source === "file" || x.fileName ? "This bill's file was not kept (it was added before files were kept)." : "This bill was typed in by hand, with no file attached."));
     var facts = isB ? [["Company", coLabel(x.companyId)], ["Bill date", fmtDate(x.billDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Taxable", bm2(x, x.fcTaxable != null ? x.fcTaxable : x.taxable)], ["GST", bm2(x, x.fcGst != null ? x.fcGst : x.gstAmt)]].concat(Number(x.roundOff) ? [["Round off", (Number(x.roundOff) < 0 ? "- " : "+ ") + bm2(x, Math.abs(Number(x.roundOff)))]] : []).concat([["Total", bm2(x, x.fcTotal != null ? x.fcTotal : x.total)]])
-      : [["Company", coLabel(x.companyId)], ["Voucher date", fmtDate(x.voucherDate)], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Total", bm2(null, x.total)], ["GST", x.gstApp === "RCM" ? "RCM " + (x.gstRate || 0) + "%" : "Not applicable"], ["Payment", x.settle ? "From cash advance" : "By Financier"]];
+      : [["Company", coLabel(x.companyId)], ["Voucher date", fmtDate(x.voucherDate)], ["Supply of", x.supplyOf || "Not given"], ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")], ["Total", bm2(null, x.total)], ["GST", x.gstApp === "RCM" ? "RCM " + (x.gstRate || 0) + "%" : "Not applicable"], ["Payment", x.settle ? "From cash advance" : "By Financier"]];
     if (!tly()) facts.push(["Approver", approverName(x) || "Not set"]);
     var fb = el("div", { class: "stats" }); facts.forEach(function (k) { var s = el("div", { class: "stat" }); s.appendChild(el("div", { class: "k" }, k[0])); s.appendChild(el("div", { class: "v" }, k[1] || "")); fb.appendChild(s); }); if (!(tly() && isB && AC.T)) f.appendChild(fb);
     var det = el("div", { class: "card", style: "padding:14px 18px;margin:12px 0" });
@@ -16671,7 +16671,6 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!(tly() && isB)) det.appendChild(np);
     if (isB) det.appendChild(el("div", { class: "hint" }, "Supply of: " + (label2(SUPPLY, x.supplyOf) || "not set") + (x.ex && x.ex.narrReview && x.ex.narrReview.length ? " · Narration to check: " + x.ex.narrReview.join("; ") : "")));
     if (vl) vl.forEach(function (ln, i) { det.appendChild(el("div", null, (i + 1) + ". " + ln.d)); });
-    if (!isB && x.supplyOf) det.appendChild(el("div", { class: "hint" }, "Supply of: " + x.supplyOf));
     if (isB) det.appendChild(el("div", { class: "hint mono", style: "word-break:break-all" }, x.einv && x.einv.irn ? "e-Invoice: " + einvText(x.einv) : "e-Invoice: no IRN recorded."));
     /* the items read from the bill, always shown, above the ledgers */
     var itCard = null;

@@ -63,11 +63,11 @@
   line an editable Description, Ledger, RCM No / Yes with 5% or 18% (Freight & Transport: Yes by default; Self Invoice: No,
   with GST Type shown once a line is Yes) and Amount; then **Voucher Preview**: the A5 print as it will come out (zoom − / +,
   Fit to Page), with the preparer's and the accountant's signatures, redrawn after every change (narration, type, lines,
-  tax box: only the RCM lines' value); then **Base Details** (Company, Vendor, Voucher No., Voucher Date, Payment in (days)
-  with the Due Date worked out, Supply of, Prepared By). Right: **Tally Line Items** with TDS, the purchase voucher, the
+  tax box: only the RCM lines' value); right Base Details then the Voucher Preview. **Base Details** (Company, Vendor, Voucher No., Voucher Date, Payment in (days), set only by the preparer on the voucher form (`termDays`, `dueDate`), read-only here
+  with the Due Date, Supply of, Prepared By). Laid out as: left Voucher Line Items then **Ledger Line Items** (TDS, the purchase voucher, the
   **Journal Entry - GST (Reverse Charge)** (Dr Input (RCM), Cr RCM Payable; also shown on a bill's Tally Line Items when it
   has RCM lines) and the narration, which follows the lines until it is edited by hand (Write Again follows them again).
-  Saved: `lines`, `rcmLines`, `termDays`, `dueDate`, `narration`. **HSN / SAC check in the background:** submitting a bill
+  Saved: `lines`, `rcmLines`, `narration`. **HSN / SAC check in the background:** submitting a bill
   starts Accounting's HSN / SAC check at once; its answers are kept on the bill (`hsnChk`) and reused when it is opened, so a
   line is checked by Claude only once (a failed check is not kept and is tried again another time, never in a loop).
 - **Item descriptions (Tally (Demo)).** A line typed or spoken in Bill Entry is rewritten by Claude to the description rules,

@@ -698,7 +698,7 @@ body.tly .bc-fv{height:calc(100vh - 24px)}
 /* Tally (Demo) takes the TARS Creations layout (cards, 6px corners) in the app's own fonts and colours */
 body.tly{line-height:1.5}body.tly .field{border-radius:6px;padding:.55rem .7rem;border-color:#cdbcad}body.tly .card{border-radius:6px}body.tly .btn{border-radius:6px}
 body.tly .t th{background:var(--brand-soft);color:var(--brand-dark);font-size:calc(13px*var(--ts,1));font-weight:600}body.tly .t td{border-bottom:1px solid var(--line)}
-.vacc2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start;margin:12px 0}@media (max-width:1100px){.vacc2{grid-template-columns:1fr}}.vacc2 .vcol{display:grid;gap:16px;min-width:0}.vcolr{position:sticky;top:12px}@media (max-width:1100px){.vcolr{position:static}}
+.vacc2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start;margin:12px 0}@media (max-width:1100px){.vacc2{grid-template-columns:1fr}}.vacc2 .vcol{display:grid;gap:16px;min-width:0}.vcolr{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}@media (max-width:1100px){.vcolr{position:static}}
 .vpbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.vpbox{max-height:620px;overflow:auto;border:1px solid var(--line);border-radius:6px;background:#e9ece9;padding:12px;display:flex;justify-content:center;align-items:flex-start}.vpbox.fit{max-height:none;overflow:hidden}.vpin{flex:none;max-width:none}.vpcv{display:block;width:100%;height:auto;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.18)}
 .vacc2 .tlysec>.vsechd{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;padding:7px 18px;min-height:46px;box-sizing:border-box;background:var(--brand-soft,var(--soft));border-bottom:1px solid var(--line);border-radius:0 6px 0 0}
 .vacc2 .vsechd h3{text-transform:none;letter-spacing:0;margin:0;font-family:var(--serif);font-size:calc(18px*var(--ts,1));font-weight:400;color:var(--brand-dark,var(--brand))}.vacc2 .vsechd select.field{padding-top:6px;padding-bottom:6px}.vacc2 .tlysec>.vsecb{padding:16px 20px 20px}
@@ -12566,7 +12566,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         vtype: v.vtype || "", supplyOf: v.supplyOf || "", payeeAddr: v.payeeAddr || "", payeeIdNo: v.payeeIdNo || "", payMode: v.payMode || (v.settle ? "cash" : ""), payModeSet: !!(v.payMode || v.settle), payeeEdit: false }
       : { companyId: cos.length === 1 ? cos[0].id : "", prepBy: "", forId: VH.presetFor || "", forNew: "", approverId: adm() ? "" : defaultApprover(), voucherNo: "", voucherDate: "", payee: "", payeeChoice: "", payeeNew: "", settle: "", lines: lines, vtype: "", supplyOf: "", payeeAddr: "", payeeIdNo: "", payMode: "", payeeEdit: false };
     VH.presetFor = "";
-    if (tly()) { VH.D.autoAppr = !!(v && v.autoAppr); VH.D.ppl = v && v.tlyPpl ? { prep: v.tlyPpl.prep, div: v.tlyPpl.div, a1: v.tlyPpl.a1, a2: v.tlyPpl.a2 } : tlyPplDef(); VH.D.copiedFrom = v ? v.copiedFrom || null : null; }
+    if (tly()) { VH.D.days = v && v.termDays != null ? String(v.termDays) : "0"; VH.D.autoAppr = !!(v && v.autoAppr); VH.D.ppl = v && v.tlyPpl ? { prep: v.tlyPpl.prep, div: v.tlyPpl.div, a1: v.tlyPpl.a1, a2: v.tlyPpl.a2 } : tlyPplDef(); VH.D.copiedFrom = v ? v.copiedFrom || null : null; }
     $("vfTitle").textContent = v ? "Voucher " + v.voucherNo : "New voucher";
     $("vfSub").textContent = v && v.acct === "back" && v.acctNote ? "Sent back by the accountant: " + v.acctNote : "Paid in full: by cash, or by the financier in cash or cheque. GST and TDS are entered by the accountant.";
     $("vfSave").textContent = v ? "Save changes" : "Submit voucher"; $("vfDelete").hidden = !v;
@@ -12613,6 +12613,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var nw = el("div", { class: "f wide" }); nw.appendChild(el("span", { class: "lb" }, "Narration")); nw.appendChild(el("div", { class: "field ro", id: "vfNarV", style: "min-height:44px;height:auto;line-height:1.45;white-space:normal" })); nw.appendChild(el("span", { class: "hint" }, "Written like a bill's, from the voucher type, Supply Of, Paid to and the lines; it changes whenever they do. The voucher number and date are filled in when it is saved.")); f.appendChild(nw);
     var md = el("select", { class: "field", id: "vfMode" }); fillSelect(md, [["", "Choose how it is paid"]].concat(VPAY_MODES), D.payMode || "");
     var mf = fld("Mode of Payment", md, "Set by itself: Cash while the day's cash to this person or shop from this company stays within \u20B9 10,000 (\u20B9 30,000 for freight and transport), Cheque above that. You can change it; cash can never go over \u20B9 10,000 a day (\u20B9 35,000 for freight and transport)."); mf.id = "vfModeF"; f.appendChild(mf);
+    if (tly()) { var pdw = fld("Payment in (days)", inp("vfDays", D.days != null ? D.days : "0", { inputmode: "numeric", class: "field num", maxlength: "3" }), "Days from the voucher date to pay it: 0 for at once. The due date follows from it."); f.appendChild(pdw); }
     if (tly()) { var aw = el("div", { class: "f wide" }), al = el("label", { class: "check" }), ac = el("input", { type: "checkbox", id: "vfAuto" }); ac.checked = !!D.autoAppr; ac.addEventListener("change", function () { D.autoAppr = ac.checked; }); al.appendChild(ac); al.appendChild(document.createTextNode(" Send for approval as soon as accounting is done (on its own, no Voucher Checking Report)"));
       aw.appendChild(el("span", { class: "lb" }, "After Accounting")); aw.appendChild(al); aw.appendChild(el("span", { class: "hint" }, "Leave it unticked to wait and send it under Submitted Vouchers, on its own or in a Voucher Checking Report (4 or more of a person for a company go in a report).")); f.appendChild(aw); }
     var sf = el("div", { class: "f wide", id: "vfSetF" }); sf.appendChild(el("span", { class: "lb", id: "vfSetL" }, "Is this an advance settlement?"));
@@ -12740,7 +12741,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function pyIdsText(c) { var i = pyIds(c); return [i.pan ? idText(i.pan, true) : "", i.aadhaar ? idText(i.aadhaar, true) : ""].filter(Boolean).join(", "); }
   function readVchForm() {
     var D = VH.D; if (!D || !$("vfCo")) return;
-    D.companyId = $("vfCo").value; D.X = extRead("vf", D.X || {}); if ($("vfPrep")) D.prepBy = $("vfPrep").value; if ($("vfFor")) { D.forId = $("vfFor").value; D.forNew = $("vfForNew").value; } if ($("vfAppr")) D.approverId = $("vfAppr").value;
+    D.companyId = $("vfCo").value; D.X = extRead("vf", D.X || {}); if ($("vfDays")) D.days = $("vfDays").value; if ($("vfPrep")) D.prepBy = $("vfPrep").value; if ($("vfFor")) { D.forId = $("vfFor").value; D.forNew = $("vfForNew").value; } if ($("vfAppr")) D.approverId = $("vfAppr").value;
     var pc0 = D.payeeChoice; D.payeeChoice = $("vfPayeeSel").value; D.payeeNew = $("vfPayee").value;
     if (D.payeeChoice !== pc0) { $("vfAddr").value = D.payeeChoice && D.payeeChoice !== "new" ? payeeAddrOf(D.payeeChoice) : ""; $("vfIdNo").value = D.payeeChoice && D.payeeChoice !== "new" ? payeeIdOf(D.payeeChoice) : ""; }
     if (D.payeeChoice !== pc0) { D.payeeEdit = false; D.addTo = null; }
@@ -12866,7 +12867,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     else if (!hasRole("vouchers", D.companyId)) E("vfCo", "You don't handle vouchers for this company.");
     if (vMaker()) { if (!D.forId) E("vfFor", "Choose who the voucher is for."); else if (D.forId === "new" && !String(D.forNew || "").trim()) E("vfForNew", "Type the name."); else if (!vForIsPerson(D.forId) && D.settle === "yes") E("vfSet", "Only someone with a login has a cash advance; the financier pays this one."); }
     if (adm() && D.companyId) { if (!D.prepBy) E("vfPrep", "Choose who made the voucher."); else if (!userHas(S.users[D.prepBy], "vouchers", D.companyId)) E("vfPrep", "That person doesn't hold vouchers for this company any more. Choose again."); }
-    if (tly()) tlyPplErrs(D, "vfP").forEach(function (e) { E(e[0], e[1]); }); else if (!D.approverId) E("vfAppr", "Choose who approves this voucher.");
+    if (tly()) { tlyPplErrs(D, "vfP").forEach(function (e) { E(e[0], e[1]); }); if (dayCount(D.days) == null) E("vfDays", "Enter the days, a whole number (0 for at once)."); } else if (!D.approverId) E("vfAppr", "Choose who approves this voucher.");
     if (!D.vtype) E("vfType", "Choose the type of voucher.");
     if (!D.payeeChoice) E("vfPayeeSel", "Choose who was paid, or choose New person or shop.");
     else if (D.payeeChoice === "new" && !D.payeeNew.trim()) E("vfPayee", "Type the name of the person or shop paid.");
@@ -12948,7 +12949,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var t = pre + out + "."; return t.length > NARR_MAX ? t.slice(0, NARR_MAX - 1).replace(/\s+\S*$/, "") + "." : t;
   }
   /* Tally (Demo): a voucher's own fields that the accountant worked from */
-  function vchSame(o, d) { var k = function (v) { return JSON.stringify([v.companyId, v.payee, v.total, v.vtype, v.supplyOf || "", (v.lines || []).map(function (x) { return [x.d, x.amt, x.lg]; }), v.payMode || ""]); }; return k(o) === k(d); }
+  function vchSame(o, d) { var k = function (v) { return JSON.stringify([v.companyId, v.payee, v.total, v.vtype, v.supplyOf || "", v.termDays || 0, (v.lines || []).map(function (x) { return [x.d, x.amt, x.lg]; }), v.payMode || ""]); }; return k(o) === k(d); }
   /* Tally (Demo) narration: Being purchase of goods / services / goods and services vide Voucher No. … dated … from the payee (GTA) towards the details. */
   function tlyVchNarr(D, no, day, lines) {
     var sup = String(D.supplyOf || ""), what = /^goods/i.test(sup) ? "goods" : /^comp/i.test(sup) ? "goods and services" : "services";
@@ -12984,7 +12985,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }
     doc.payable = round2(doc.total - doc.tds);
     if (tly()) {
-      var tp = tlyPplDoc(D.ppl); Object.assign(doc, { autoAppr: !!D.autoAppr, tlyPpl: tp, approverId: tp.a2, approver1Id: tp.a1 || "", preparedBy: tp.prep, preparedByName: tp.prepName, copiedFrom: D.copiedFrom || null });
+      var tp = tlyPplDoc(D.ppl), dn0 = dayCount(D.days) || 0; Object.assign(doc, { termDays: dn0, dueDate: addDays(D.voucherDate, dn0), autoAppr: !!D.autoAppr, tlyPpl: tp, approverId: tp.a2, approver1Id: tp.a1 || "", preparedBy: tp.prep, preparedByName: tp.prepName, copiedFrom: D.copiedFrom || null });
       /* sent again after the approver returned it: unchanged, it stays accounted; changed, it is accounted again */
       if (old && old.acct === "approved" && vchSame(old, doc)) { ["acct", "acctNote"].forEach(function (k) { delete doc[k]; }); doc.tds = old.tds || 0; doc.payable = old.payable != null ? old.payable : round2(doc.total - (old.tds || 0)); doc.gstApp = old.gstApp || "N/A"; doc.gstRate = old.gstRate == null ? null : old.gstRate; }
       if (old && old.apprRej) Object.assign(doc, { apprRej: null, apprRejOld: old.apprRej });
@@ -16703,7 +16704,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     gtS.addEventListener("change", function () { D.gstType = gtS.value; D.gtSet = true; changed(); });
     drawL();
     /* the print, as it will come out (A5), redrawn as anything changes */
-    var pv = sec(L, "Voucher Preview"), pbar = el("div", { class: "vpbar" }), pbox = el("div", { class: "vpbox" }), pin = el("div", { class: "vpin" }), cv = el("canvas", { class: "vpcv", "aria-label": "Preview of the voucher print" }); pin.appendChild(cv); pbox.appendChild(pin);
+    var bd = sec(R, "Base Details"), g = el("div", { class: "vgrid" }); bd.appendChild(g);
+    var pv = sec(R, "Voucher Preview"), pbar = el("div", { class: "vpbar" }), pbox = el("div", { class: "vpbox" }), pin = el("div", { class: "vpin" }), cv = el("canvas", { class: "vpcv", "aria-label": "Preview of the voucher print" }); pin.appendChild(cv); pbox.appendChild(pin);
     var Z = { fit: true, z: 1 }, zl = el("span", { class: "tsub vpz" }), zb = function (t, lab, fn) { var b0 = el("button", { type: "button", class: "btn sm", "aria-label": lab, title: lab }, t); b0.addEventListener("click", fn); pbar.appendChild(b0); return b0; };
     var zset = function () { pin.style.width = Z.fit ? "100%" : Math.round(Z.z * 100) + "%"; pbox.classList.toggle("fit", Z.fit); zl.textContent = Z.fit ? "" : Math.round(Z.z * 100) + "%"; };
     zb("−", "Zoom out", function () { Z.fit = false; Z.z = Math.max(0.5, Z.z - 0.25); zset(); }); zb("+", "Zoom in", function () { Z.fit = false; Z.z = Math.min(3, Z.z + 0.25); zset(); }); zb("Fit to Page", "Fit to page", function () { Z.fit = true; Z.z = 1; zset(); });
@@ -16718,16 +16720,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         .catch(function () { if (n === PV.n && !pbox.querySelector(".vperr")) pbox.appendChild(el("div", { class: "hint vperr" }, "The preview couldn't be drawn. Check the connection.")); });
     };
     /* Base Details */
-    var bd = sec(L, "Base Details"), g = el("div", { class: "vgrid" }); bd.appendChild(g);
     var ro = function (lab, val) { var w0 = el("div", { class: "f" }); w0.appendChild(el("label", null, lab)); w0.appendChild(el("div", { class: "field ro" }, val || "—")); g.appendChild(w0); };
     ro("Company", (S.companies[x.companyId] || {}).name || coLabel(x.companyId)); ro("Vendor", (x.payee || "") + (x.payeeIdNo ? " (" + idText(x.payeeIdNo, true) + ")" : ""));
     ro("Voucher No.", x.voucherNo || ""); ro("Voucher Date", fmtDate(x.voucherDate));
-    var dy = inp("aoVDays", D.days, { inputmode: "numeric", class: "field num" }); dy.disabled = locked; var dw = el("div", { class: "f" }); dw.appendChild(el("label", { for: "aoVDays" }, "Payment in (days)")); dw.appendChild(dy); dw.appendChild(el("span", { class: "err", id: "aoVDaysE", hidden: "" })); g.appendChild(dw);
+    ro("Payment in (days)", x.termDays != null ? String(x.termDays) : "0");
     var due = el("div", { class: "field ro", id: "aoVDue" }), uw = el("div", { class: "f" }); uw.appendChild(el("label", null, "Due Date")); uw.appendChild(due); g.appendChild(uw);
-    var setDue = function () { var n = dayCount(D.days); due.textContent = n == null ? "—" : fmtDate(addDays(x.voucherDate || todayYmd(), n)); }; dy.addEventListener("input", function () { D.days = dy.value; setDue(); }); setDue();
+    due.textContent = fmtDate(x.dueDate || addDays(x.voucherDate || todayYmd(), Number(x.termDays) || 0));
     ro("Supply of", x.supplyOf || ""); var P = x.tlyPpl || {}; ro("Prepared By", (pnm(P.prepName || x.preparedByName || "") || personName(prepOf(x))) + (P.divName ? " · " + P.divName : ""));
     /* Tally Line Items (right): TDS, the entries, the narration */
-    var tl = sec(R, "Tally Line Items"), tr0 = el("div", { class: "vgrid", style: "margin-bottom:12px" });
+    var tl = sec(L, "Ledger Line Items"), tr0 = el("div", { class: "vgrid", style: "margin-bottom:12px" });
     var ts = el("select", { class: "field", id: "aoSec" }); fillSelect(ts, [["", "No TDS"]].concat(tdsOptions(D.sec)), D.sec); ts.disabled = locked;
     var ti = inp("aoTds", D.tds, { inputmode: "decimal", class: "field num" }); ti.disabled = locked || !D.sec;
     var sf = el("div", { class: "f" }); sf.appendChild(el("label", { for: "aoSec" }, "TDS Section")); sf.appendChild(ts); sf.appendChild(el("span", { class: "hint", id: "aoSecH" })); sf.appendChild(el("span", { class: "err", id: "aoSecE", hidden: "" }));
@@ -16793,7 +16794,6 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if ((D.vl || []).some(function (l) { return !l.lg; })) errs.push(["aoLed", "Choose the ledger on every line."]);
       if (D.vl && D.vtype === GTA_TYPE && !D.gtSet) errs.push(["aoType", "Choose Freight & Transport, Intrastate or Interstate."]);
       if ((D.vl || []).some(function (l) { return !String(l.d || "").trim(); })) errs.push(["aoLed", "Describe every line."]);
-      if (D.vl && dayCount(D.days) == null) errs.push(["aoVDays", "Enter the days, a whole number (0 is fine)."]);
       if (D.vl && !String(D.narration || "").trim()) errs.push(["aoVNar", "Write the narration."]); }
     else if (AC.kind === "voucher" && D.vtype && D.vtype !== "Cash Voucher" && D.gstApp === "RCM") { if (!D.gstRate) errs.push(["aoRate", "Choose the GST (RCM) percent."]); var rb = rcmLines(D, []); if (rb) errs.push(["aoRcm", rb]); }
     return errs;
@@ -16850,7 +16850,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     Object.assign(up, roundUp(x, D));
     if (AC.kind === "bill") { var gG = billGst(x) > 0; up.gstLedgers = gG ? gstLinesOut(x, D) : []; up.gstSupply = gG ? (D.gstInter ? "inter" : "intra") : null; up.gstTypes = gG ? D.gstTypes.slice() : null; }
     if (AC.kind === "voucher" && tly()) { var rg1 = vchRcmOut(D), on1 = rg1.tax > 0, rts = {}; D.rcmL.forEach(function (r) { if (r.on && rcmOk(D.vtype)) rts[r.rate] = 1; });
-      var dn = dayCount(D.days); Object.assign(up, { lines: D.vl.map(function (l) { return { d: sentenceFix(String(l.d || "").replace(/\s+/g, " ").trim()), amt: l.amt, lg: l.lg }; }), termDays: dn == null ? 0 : dn, dueDate: addDays(x.voucherDate || todayYmd(), dn == null ? 0 : dn), narration: String(D.narration || "").replace(/\s+/g, " ").trim() || x.narration || "" });
+      Object.assign(up, { lines: D.vl.map(function (l) { return { d: sentenceFix(String(l.d || "").replace(/\s+/g, " ").trim()), amt: l.amt, lg: l.lg }; }), narration: String(D.narration || "").replace(/\s+/g, " ").trim() || x.narration || "" });
       Object.assign(up, { vtype: D.vtype, gstType: on1 ? D.gstType : null, gstLedgers: rg1.gl, rcmAmt: rg1.tax, gstApp: on1 ? "RCM" : "N/A", gstRate: on1 && Object.keys(rts).length === 1 ? Number(Object.keys(rts)[0]) : null, taxable: Number(x.total) || 0, payable: round2((Number(x.total) || 0) - tds),
         rcmLines: D.rcmL.map(function (r) { var on = r.on && rcmOk(D.vtype); return { on: on, rate: Number(r.rate), amt: r.amt, tax: on ? round2(r.amt * Number(r.rate) / 100) : 0 }; }) }); }
     else if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher", rcm = oth && D.gstApp === "RCM", gl = []; if (rcm) rcmLines(D, gl);

@@ -699,7 +699,7 @@ body.tly .bc-fv{height:calc(100vh - 24px)}
 /* Tally (Demo) takes the TARS Creations layout (cards, 6px corners) in the app's own fonts and colours */
 body.tly{line-height:1.5}body.tly .field{border-radius:6px;padding:.55rem .7rem;border-color:#cdbcad}body.tly .card{border-radius:6px}body.tly .btn{border-radius:6px}
 body.tly .t th{background:var(--brand-soft);color:var(--brand-dark);font-size:calc(13px*var(--ts,1));font-weight:600}body.tly .t td{border-bottom:1px solid var(--line)}
-.vacc2{margin:12px 0}body.tly .ao-split.vacc2{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}@media (max-width:980px){body.tly .ao-split.vacc2{grid-template-columns:1fr}}.vacc2 .vcol{display:grid;gap:16px;min-width:0;align-content:start}.ao-doc.vdoc{height:auto;max-height:calc(100vh - 24px);overflow:auto}@media (max-width:980px){.ao-doc.vdoc{height:auto}}
+.vacc2{margin:12px 0}.form>.vform{grid-column:1/-1;margin:0}.vform .vsecb.form{padding:16px 20px 20px}body.tly #secVchForm .bc-body.noprev{display:block;padding:0}body.tly #secVchForm>.card{background:none;border:0;box-shadow:none;padding:0}body.tly #secVchForm #vfBody{display:block;padding:0}body.tly .ao-split.vacc2{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}@media (max-width:980px){body.tly .ao-split.vacc2{grid-template-columns:1fr}}.vacc2 .vcol{display:grid;gap:16px;min-width:0;align-content:start}.ao-doc.vdoc{height:auto;max-height:calc(100vh - 24px);overflow:auto}@media (max-width:980px){.ao-doc.vdoc{height:auto}}
 .vpbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.vpbox{max-height:620px;overflow:auto;border:1px solid var(--line);border-radius:6px;background:#e9ece9;padding:12px;display:flex;justify-content:center;align-items:flex-start}.vpbox.fit{max-height:none;overflow:hidden}.vpin{flex:none;max-width:none}.vpcv{display:block;width:100%;height:auto;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.18)}
 .vacc2 .tlysec>.vsechd{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;padding:7px 18px;min-height:46px;box-sizing:border-box;background:var(--brand-soft,var(--soft));border-bottom:1px solid var(--line);border-radius:0 6px 0 0}
 .vacc2 .vsechd h3{text-transform:none;letter-spacing:0;margin:0;font-family:var(--serif);font-size:calc(18px*var(--ts,1));font-weight:400;color:var(--brand-dark,var(--brand))}.vacc2 .vsechd select.field{padding-top:6px;padding-bottom:6px}.vacc2 .tlysec>.vsecb{padding:16px 20px 20px}
@@ -710,6 +710,7 @@ body.tly .t th{background:var(--brand-soft);color:var(--brand-dark);font-size:ca
 .tlysecs,.tlysecs>.tlysec{min-width:0}.ao-tly .form{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}.ao-tly .field.ro{overflow-wrap:anywhere;min-width:0}
 @media (max-width:1500px) and (min-width:981px){body.tly .ao-split{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}}
 .ao-tly .itcard{overflow-x:auto}
+.scanmodal-bg{display:flex;align-items:center;justify-content:center;padding:24px}.scanmodal{width:min(1000px,96vw);max-height:90vh;overflow:hidden;margin:0;padding:0;display:block}.scanmodal .bc-body{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);min-height:min(520px,80vh);margin:0;align-items:stretch}.scanpv{background:#5f6b66;display:flex;align-items:flex-start;justify-content:center;height:100%;max-height:none;overflow:hidden;padding:16px;box-sizing:border-box}.scanmodal .scanpv{position:relative!important;top:auto!important;height:auto!important;min-height:0!important;max-height:none!important;align-self:stretch!important;border-radius:0!important}.scanimg{display:block;max-width:100%;height:auto;background:#fff}@media (max-width:760px){.scanmodal .bc-body{grid-template-columns:1fr}.scanpv{max-height:40vh}}
 .scanwrap{position:relative;overflow:hidden}.scanbar{position:absolute;left:0;right:0;height:90px;top:-90px;background:linear-gradient(180deg,transparent,rgba(201,149,77,.35) 70%,rgba(201,149,77,.9) 96%,transparent);box-shadow:0 2px 14px rgba(201,149,77,.55);animation:scanmove 2.2s cubic-bezier(.45,0,.55,1) infinite;pointer-events:none;z-index:5}
 @keyframes scanmove{0%{top:-90px}100%{top:100%}}.scaninfo{padding:40px 32px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}.scaninfo h3{text-transform:none;letter-spacing:0;font-family:var(--serif);font-size:calc(22px*var(--ts,1));margin:0}
 .scanspin{width:34px;height:34px;border-radius:50%;border:3px solid var(--brand-soft,#f1e6dc);border-top-color:var(--brand,#5b3a26);animation:scanspin 1s linear infinite}@keyframes scanspin{to{transform:rotate(360deg)}}
@@ -6846,6 +6847,20 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       });
     }).catch(function (e) { toast("Claude couldn't read the copied bill again: " + ((e && e.code === "sampling_disabled" && e.message) || (e && (e.code || e.kind || e.message)) || "error") + ". Its copied details are kept."); return false; });
   }
+  /* An upload being read by Claude: the file itself (its first page) under the scanning bar, beside what is being done; closed
+     when the reading is over. Used for proformas, imports and voucher documents. */
+  function scanOverlay(file, o) {
+    o = o || {}; var bg = el("div", { class: "modal-bg scanmodal-bg" }), card = el("article", { class: "card bcard tlyscan scanmodal", role: "dialog", "aria-modal": "true", "aria-busy": "true", "aria-label": o.title || "Claude is reading the file" }), body = el("div", { class: "bc-body" });
+    var pv = el("div", { class: "bc-prev scanwrap scanpv" }), info = el("div", { class: "scaninfo" }); pv.appendChild(el("div", { class: "scanbar", "aria-hidden": "true" })); body.appendChild(pv);
+    info.appendChild(el("div", { class: "scanspin", "aria-hidden": "true" })); info.appendChild(el("h3", null, o.title || "Reading " + (file.name || "the file") + "…")); info.appendChild(el("p", { class: "sub" }, o.text || "Claude is reading the file. The form opens when it is done."));
+    var steps = el("ul", { class: "scansteps" }); (o.steps || ["Reading the pages", "Finding the details", "Filling in the form"]).forEach(function (t, i) { steps.appendChild(el("li", { style: "animation-delay:" + (i * 1.6) + "s" }, t)); }); info.appendChild(steps);
+    body.appendChild(info); card.appendChild(body); bg.appendChild(card); document.body.appendChild(bg);
+    var t = fileType(file) || "", put = function (node) { pv.insertBefore(node, pv.firstChild); };
+    if (/^image\//.test(t)) { var rd = new FileReader(); rd.onload = function () { put(el("img", { src: rd.result, alt: "", class: "scanimg" })); }; rd.readAsDataURL(file); }
+    else if (/pdf/.test(t)) file.arrayBuffer().then(function (buf) { return pdfLib().then(function (L) { return L.getDocument({ data: buf }).promise; }); }).then(function (pdf) { return pdf.getPage(1); })
+      .then(function (pg) { var vp = pg.getViewport({ scale: 1.6 }), cv = el("canvas", { class: "scanimg" }); cv.width = vp.width; cv.height = vp.height; put(cv); return pg.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise; }).catch(function () {});
+    return { close: function () { if (bg.parentNode) bg.remove(); } };
+  }
   function scanCard(b, o) {
     o = o || {};
     var card = el("article", { class: "card bcard tlyscan", "aria-busy": "true", "aria-label": o.label || "Claude is reading the bill" }), body = el("div", { class: "bc-body" });
@@ -10041,6 +10056,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!file) return;
     if (!S.sample || B.aiOff) { toast("Files can't be read here. Enter it by hand."); return; }
     var kind = ADV.kind; ADV.log = "Reading " + (file.name || "the file") + "…"; renderAdvList(); $("alUpload").disabled = true;
+    var sc = scanOverlay(file, { title: "Reading " + (kind === "import" ? "the import order" : "the proforma") + "…", text: "Claude is reading " + (file.name || "the file") + ": the vendor, number and date, the amount and currency, the payment terms and instalments, and what is being bought. The form opens when it is done.", steps: ["Reading the pages", "Finding the vendor and the number", "Working out the instalments", "Writing what is being bought"] });
     prepFile(file).then(function (p) {
       return S.sample.json(advPrompt(p, kind), { images: p.images.length ? p.images : undefined, modelTier: p.scanned ? "default" : "quick" }).then(function (res) { return { p: p, res: res }; }, function (e) {
         var c = e && e.code;
@@ -10052,8 +10068,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       });
     }).then(function (x) {
       if (!x.res || typeof x.res !== "object") throw { kind: "blank", prev: x.p.previews };
-      ADV.log = ""; ADV.kind = kind; newAdv(draftFromAdvResult(x.res, kind), x.p.previews, file.name || "the file", file);
+      sc.close(); ADV.log = ""; ADV.kind = kind; newAdv(draftFromAdvResult(x.res, kind), x.p.previews, file.name || "the file", file);
     }).catch(function (e) {
+      sc.close();
       e = e || {}; ADV.log = (REJECT[e.kind] || REJECT.failed).replace("this bill", "it").replace("Enter this bill by hand", "Enter it by hand");
       if (ADV.kind === kind && !$("secAdvList").hidden) renderAdvList();
       if (e.prev) { ADV.kind = kind; newAdv(null, e.prev, file.name || "the file", file); }
@@ -12632,6 +12649,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     });
     sf.appendChild(rg); sf.appendChild(el("div", { class: "vbox", id: "vfBal", hidden: "" }));
     var se = el("span", { class: "err", id: "vfSetE" }); se.hidden = true; sf.appendChild(se); f.appendChild(sf);
+    if (tly()) tlyVchFormLayout(f);
     updVchForm();
   }
   function vchLinesLock(need) {
@@ -12665,6 +12683,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     readVchForm(); D.docKey = D.docKey || newId("vd"); var lb = btn.textContent; btn.disabled = true; btn.textContent = "Reading…";
     var path = (S.mode === "demo" ? "demo" : "live") + "/vouchers/" + D.docKey + "/" + Date.now().toString(36) + "-" + fileSafeName(f.name);
     var keep = window.bvFiles ? window.bvFiles.put(path, f, t).then(function () { D.file = { path: path, name: str(f.name || "Document", 160), type: t, size: f.size || 0, at: Date.now(), by: meId() }; ln.textContent = "Kept: " + D.file.name; }, function () { ln.textContent = "The document couldn't be kept."; }) : Promise.resolve();
+    var sc = S.sample ? scanOverlay(f, { title: "Reading the voucher's document…", text: "Claude is reading " + (f.name || "the document") + ": who was paid, what for, and the amounts. The voucher form fills in when it is done.", steps: ["Reading the document", "Finding who was paid", "Writing the details and amounts"] }) : null;
     var read = !S.sample ? Promise.resolve() : prepFile(f).then(function (p) {
       return S.sample.json(["This file supports a voucher of an Indian company (a receipt, slip, handwritten note or photo). One voucher is for one expense only.",
         "- single_expense: true if the file is about one expense (one receipt, slip or payment to one person or shop); false if it holds several separate receipts, bills or expenses.",
@@ -12686,8 +12705,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       }
       var ls = ((r && r.lines) || []).filter(function (x) { return x && String(x.description || "").trim(); }).slice(0, MAX_LED.voucher); if (!ls.length) { if (S.sample) toast("Nothing could be read from it. Type the details."); return; }
       ls.forEach(function (x, i) { var L = D.lines[i] || (D.lines[i] = { d: "", amt: "", lg: "", touched: false }); L.d = sentenceFix(str(x.description, 160)); if (!String(L.amt || "").trim() && num(x.amount) != null) L.amt = fmtInput(num(x.amount)); });
-      drawVchLines(); updVchForm(); toast("Details written from the document. Check them.");
+      drawVchLines(); updVchForm(); if (VH.prevAgain) VH.prevAgain(); toast("Details written from the document. Check them.");
     }, function () { toast("The document couldn't be read. Type the details."); });
+    read.then(function () { if (sc) sc.close(); }, function () { if (sc) sc.close(); });
     Promise.all([keep, read]).then(function () { btn.disabled = false; btn.textContent = D.file ? "Replace Document" : lb; });
   }
   /* People and shops paid by voucher, with their address: payees/<key>. Picking a saved one fills the address back in. */
@@ -12917,7 +12937,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("vfPayeeBox").hidden = !boxOn; $("vfPayeeNameF").hidden = !isNew;
     $("vfPayeeTtl").textContent = isNew ? "New person or shop. The name, Aadhaar / PAN and address are offered next time." : D.payeeEdit ? "Change " + D.payee + "'s details. Saved for next time." : D.payee + ": fill in what is missing. Saved for next time.";
     var sm = $("vfPayeeSum"); sm.textContent = ""; sm.hidden = !(saved && !boxOn);
-    if (!sm.hidden) { var sr = el("div", { class: "row", style: "display:flex;gap:12px;align-items:center;flex-wrap:wrap" }); sr.appendChild(el("span", { class: "hint", style: "margin:0" }, [idText(kId, true), kAd].filter(Boolean).join(" \u00b7 "))); var ch = el("button", { type: "button", class: "link-btn" }, "Change"); ch.addEventListener("click", function () { readVchForm(); D.payeeEdit = true; updVchForm(); var x = $("vfIdNo"); if (x) x.focus(); }); sr.appendChild(ch); sm.appendChild(sr); }
+    if (!sm.hidden) { var sr = el("div", { class: "row", style: "display:flex;gap:12px;align-items:center;flex-wrap:wrap" }); sr.appendChild(el("span", { class: "hint", style: "margin:0" }, [idText(kId, true), kAd].filter(Boolean).join(" \u00b7 "))); if (tly()) { var mo = el("button", { type: "button", class: "link-btn" }, VH.more ? "Hide Details" : "More Details"), md = el("div", { class: "vbox", style: "margin-top:8px" }); md.hidden = !VH.more;
+        md.appendChild(elc("div", null, el("b", null, (idKind(kId) === "pan" ? "PAN: " : idKind(kId) === "aadhaar" ? "Aadhaar: " : "PAN / Aadhaar: ") + (idText(kId, false) || "Not recorded").replace(/^(PAN|Aadhaar) /, "")))); md.appendChild(el("div", { style: "margin-top:4px;white-space:pre-line" }, "Address: " + (kAd || "Not recorded")));
+        md.appendChild(el("div", { class: "hint", style: "margin-top:6px" }, "Saved with " + D.payee + ": not changed from a voucher."));
+        mo.addEventListener("click", function () { VH.more = !VH.more; updVchForm(); }); sr.appendChild(mo); sm.appendChild(sr); sm.appendChild(md); }
+      else { var ch = el("button", { type: "button", class: "link-btn" }, "Change"); ch.addEventListener("click", function () { readVchForm(); D.payeeEdit = true; updVchForm(); var x = $("vfIdNo"); if (x) x.focus(); }); sr.appendChild(ch); sm.appendChild(sr); } }
     drawPayeeDup();
     var hk = [String(D.payee || "").trim(), D.companyId || "", VH.id || "", vchDay(), D.payMode || "", D.vtype || "", vchTotal(D)].join("|"); if (VH.histFor !== hk) { VH.histFor = hk; drawPayeeHist(); }
     var t = vchTotal(D); $("vfTotV").textContent = t == null ? "" : money(t);
@@ -12956,6 +12980,53 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var parts = lines.map(function (x) { return String(x.d || "").trim().replace(/[.\s]+$/, ""); }).filter(Boolean), out = "";
     for (var i = 0; i < parts.length; i++) { var cand = out ? out + "; " + parts[i] : parts[i], rest = parts.length - i - 1; if ((pre + cand + (rest ? "; and " + rest + " other item" + (rest > 1 ? "s" : "") : "") + ".").length > NARR_MAX && out) { out += "; and " + (parts.length - i) + " other item" + (parts.length - i > 1 ? "s" : ""); break; } out = cand; }
     var t = pre + out + "."; return t.length > NARR_MAX ? t.slice(0, NARR_MAX - 1).replace(/\s+\S*$/, "") + "." : t;
+  }
+  /* Tally (Demo) › Make a Voucher, laid out as accounting: the print as it will come out on the left (it stays in view, redrawn
+     as the form is filled in), and on the right Base Details, People, Voucher Line Items and After Accounting. The fields keep
+     their ids and handlers; they are only moved into the sections. */
+  function tlyVchFormLayout(f) {
+    var D = VH.D, W = el("div", { class: "ao-split vacc2 vform" }), L = el("div", { class: "ao-doc vdoc vcol" }), R = el("div", { class: "ao-main vcol" }); W.appendChild(L); W.appendChild(R);
+    var sec = function (host, h, plain) { var s0 = el("section", { class: "tlysec" }), hd = el("div", { class: "vsechd" }); hd.appendChild(el("h3", null, h)); s0.appendChild(hd); var body = el("div", { class: (plain ? "" : "form ") + "vsecb" }); s0.appendChild(body); host.appendChild(s0); return body; };
+    var fOf = function (id) { var e = $(id); return e ? (e.classList && e.classList.contains("f") ? e : e.closest(".f")) : null; };
+    var pv = vchPreviewBox(sec(L, "Voucher Preview", true));
+    var bd = sec(R, "Base Details"), pp = sec(R, "People"), li = sec(R, "Voucher Line Items"), af = sec(R, "Payment & After Accounting");
+    var put = function (host, nodes) { nodes.forEach(function (n) { if (n && n.parentNode !== host) host.appendChild(n); }); };
+    var due = el("div", { class: "f" }), dv = el("div", { class: "field ro", id: "vfDue" }); due.appendChild(el("label", null, "Due Date")); due.appendChild(dv);
+    put(bd, [fOf("vfCo"), fOf("vfType"), fOf("vfPayeeSel"), $("vfPayeeSum"), $("vfPayeeBox"), $("vfHist"), fOf("vfSupplyF"), fOf("vfDays"), due]);
+    put(pp, [f.querySelector(".tlyppl")]);
+    put(li, [fOf("vfLines"), fOf("vfDocBtn"), fOf("vfTotV"), fOf("vfNarV")]);
+    put(af, [fOf("vfModeF"), $("vfSetF"), fOf("vfAuto")]);
+    Array.prototype.slice.call(f.children).forEach(function (n) { if (n !== W && n.classList && n.classList.contains("f")) bd.appendChild(n); }); /* anything else (e.g. cost centre) */
+    f.appendChild(W);
+    var setDue = function () { var n = dayCount(D.days), o = VH.id && S.vouchers[VH.id], day = o && o.voucherDate ? o.voucherDate : todayYmd(); dv.textContent = n == null ? "—" : fmtDate(addDays(day, n)); };
+    var t0 = null, again = function () { setDue(); clearTimeout(t0); t0 = setTimeout(function () { pv.draw(vchFormAsV(), (D.ppl || {}).prep || meId()); }, 400); };
+    W.addEventListener("input", again); W.addEventListener("change", again); W.addEventListener("click", function (e) { if (e.target && e.target.closest && e.target.closest(".lcpop, .lcombo, button")) again(); });
+    VH.prevAgain = again; again();
+  }
+  /* the voucher being made, as the print would show it now */
+  function vchFormAsV() {
+    var D = VH.D, o = VH.id && S.vouchers[VH.id], day = o && o.voucherDate ? o.voucherDate : todayYmd(), no = o && o.voucherNo ? o.voucherNo : D.companyId ? nextVoucherNo(D.companyId, day).no : "Number on saving";
+    var lines = D.lines.map(function (x) { return { d: sentenceFix(String(x.d || "").trim()), amt: num(x.amt) || 0, lg: x.lg }; }).filter(function (x) { return x.d || x.amt; });
+    var pid = String(D.payeeIdNo || (D.payeeChoice && D.payeeChoice !== "new" ? payeeIdOf(D.payeeChoice) : "") || "");
+    return { companyId: D.companyId, voucherNo: no, voucherDate: day, payee: String(D.payee || "").trim(), payeeIdNo: pid, lines: lines, ledgers: lines.filter(function (x) { return x.lg; }).map(function (x) { return { id: x.lg, amt: x.amt }; }), total: vchTotal(D) || 0, taxable: vchTotal(D) || 0, tds: 0,
+      vtype: D.vtype || "Cash Voucher", supplyOf: D.supplyOf || "", payMode: D.payMode || "", gstApp: "N/A", narration: lines.length ? tlyVchNarr(D, no, day, lines) : "" };
+  }
+  /* the A5 print preview with zoom and Fit to Page; draw(v, preparer, accountant) redraws it */
+  function vchPreviewBox(host) {
+    var pbar = el("div", { class: "vpbar" }), pbox = el("div", { class: "vpbox fit" }), pin = el("div", { class: "vpin" }), cv = el("canvas", { class: "vpcv", "aria-label": "Preview of the voucher print" }); pin.appendChild(cv); pbox.appendChild(pin);
+    var Z = { fit: true, z: 1 }, zl = el("span", { class: "tsub vpz" }), zb = function (t, lab, fn) { var b0 = el("button", { type: "button", class: "btn sm", "aria-label": lab, title: lab }, t); b0.addEventListener("click", fn); pbar.appendChild(b0); };
+    var zset = function () { pin.style.width = Z.fit ? "100%" : Math.round(Z.z * 100) + "%"; pbox.classList.toggle("fit", Z.fit); zl.textContent = Z.fit ? "" : Math.round(Z.z * 100) + "%"; };
+    zb("−", "Zoom out", function () { Z.fit = false; Z.z = Math.max(0.5, Z.z - 0.25); zset(); }); zb("+", "Zoom in", function () { Z.fit = false; Z.z = Math.min(3, Z.z + 0.25); zset(); }); zb("Fit to Page", "Fit to page", function () { Z.fit = true; Z.z = 1; zset(); });
+    pbar.appendChild(zl); pbar.appendChild(el("span", { class: "tsub", style: "margin-left:auto" }, "A5 landscape, as printed")); host.appendChild(pbar); host.appendChild(pbox); zset();
+    var SG = {}, n0 = 0;
+    var sig = function (id) { if (!id) return Promise.resolve(""); if (SG[id] != null) return Promise.resolve(SG[id]); return sigLoad(id).then(function (p) { SG[id] = p || ""; return SG[id]; }, function () { SG[id] = ""; return ""; }); };
+    return { draw: function (v, prep, acct) {
+      var n = ++n0;
+      loadScript(JSPDF).then(function () { return Promise.all([sig(prep), sig(acct)]); }).then(function (sg) { var J = window.jspdf && window.jspdf.jsPDF; if (!J) throw { kind: "lib" }; var doc = new J({ orientation: "landscape", unit: "mm", format: VCH_PAGE, compress: true }); pdfFonts(doc); drawVoucher(doc, v, { prep: sg[0], acct: sg[1], appr: "" }); return doc.output("arraybuffer"); })
+        .then(function (buf) { return pdfLib().then(function (Lb) { return Lb.getDocument({ data: buf }).promise; }); }).then(function (pdf) { return pdf.getPage(1); })
+        .then(function (pg) { if (n !== n0) return; var vp = pg.getViewport({ scale: 2.4 }); cv.width = vp.width; cv.height = vp.height; return pg.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise; })
+        .catch(function () { if (n === n0 && !pbox.querySelector(".vperr")) pbox.appendChild(el("div", { class: "hint vperr" }, "The preview couldn't be drawn. Check the connection.")); });
+    } };
   }
   /* Tally (Demo): a voucher's own fields that the accountant worked from */
   function vchSame(o, d) { var k = function (v) { return JSON.stringify([v.companyId, v.payee, v.total, v.vtype, v.supplyOf || "", v.termDays || 0, (v.lines || []).map(function (x) { return [x.d, x.amt, x.lg]; }), v.payMode || ""]); }; return k(o) === k(d); }
@@ -19356,7 +19427,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (e.target && e.target.id === "vfMode" && VH.D) VH.D.payModeSet = true;
       readVchForm();
       if (e.target && e.target.id === "vfPayeeSel" && e.target.value === "new") setTimeout(function () { $("vfPayee").focus(); }, 0);
-      if (e.target && e.target.id === "vfCo" && S.isAdmin) { var ps = $("vfPrep"), np = prepSelect("vfPrep", "vouchers", VH.D.companyId, VH.D.prepBy); ps.parentNode.replaceChild(np, ps); VH.D.prepBy = np.value; }
+      if (e.target && e.target.id === "vfCo" && adm() && $("vfPrep")) { var ps = $("vfPrep"), np = prepSelect("vfPrep", "vouchers", VH.D.companyId, VH.D.prepBy); ps.parentNode.replaceChild(np, ps); VH.D.prepBy = np.value; }
       if (e.target && e.target.id === "vfCo") { ccSync("vfCc", VH.D.companyId, VH.D.X || {}); VH.D.X = extRead("vf", VH.D.X || {}); }
       if (e.target && e.target.id === "vfCo" && $("vfFor")) { var fo0 = $("vfFor"), keep = fo0.value; fillSelect(fo0, vForOpts(VH.D.companyId), keep); VH.D.forId = fo0.value; }
       if ($("vfForNewF")) $("vfForNewF").hidden = VH.D.forId !== "new";

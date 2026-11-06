@@ -7439,26 +7439,19 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function apVen(name) { var d = el("div"); d.appendChild(el("b", null, name || "")); return d; }
   function apInstLines(b) { var ins = []; tlyApList(b).forEach(function (a) { (a.inst || []).forEach(function (i) { ins.push(i); }); }); ins.sort(function (x, y) { return natCmp(x.on || "", y.on || ""); }); return ins.map(function (i) { return money(i.amt) + " by " + fmtDate(i.on); }); }
   function apInstText(b) { var ins = []; tlyApList(b).forEach(function (a) { (a.inst || []).forEach(function (i) { ins.push(i); }); }); ins.sort(function (x, y) { return natCmp(x.on || "", y.on || ""); }); return ins.map(function (i) { return money(i.amt) + " by " + fmtDate(i.on); }).join("; "); }
-  /* ---- Tally (Demo) › Reports › Tally Downloads: Tally XML ("Import Data", TallyPrime and Tally.ERP 9), one file per company.
-     Transactions: purchase (accounted bills and vouchers), journal (Journal Entry - GST for reverse charge) and payment vouchers
-     in one file, for a period; sales, receipt and contra follow once they are kept here. Masters: groups (each Sub Group under
-     its Primary Group), ledgers, vendors and voucher payees as Sundry Creditors, bank accounts; customers as Sundry Debtors
-     once sales are kept. Import the masters first: Tally refuses a voucher whose ledger it doesn't have. ---- */
+  /* ---- Tally (Demo) › Reports › Tally Downloads: Excel files laid out as TallyPrime's own sample import files (Import ›
+     Masters / Transactions › Excel, TallyPrime 4.0 or later), one per company. Transactions: one sheet "Accounting Voucher",
+     a row per ledger line; the voucher's date, type, number, reference and narration only on its first row. Purchase
+     (accounted bills and vouchers), journal (Journal Entry - GST for reverse charge) and payment vouchers together; sales,
+     receipt and contra follow once they are kept here. Masters: sheets "Group" (each Sub Group under its Primary Group) and
+     "Ledger" (ledgers, vendors and voucher payees as Sundry Creditors with address, state, PAN and GSTIN, bank accounts;
+     customers as Sundry Debtors once sales are kept). Import the masters first: Tally refuses a voucher whose ledger it
+     doesn't have. Column headings are exactly Tally's. ---- */
   var TDL = { k: "t", from: "", to: "" };
-  function tdlEsc(t) { return String(t == null ? "" : t).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c]; }); }
-  function tdlD(ymd) { return String(ymd || "").replace(/-/g, ""); }
-  function tdlAmt(n) { return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2); }
-  function tdlEnv(cid, report, body) { var c = S.companies[cid] || {}; return '<?xml version="1.0" encoding="UTF-8"?>\n<ENVELOPE>\n<HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER>\n<BODY><IMPORTDATA>\n<REQUESTDESC><REPORTNAME>' + report + '</REPORTNAME><STATICVARIABLES><SVCURRENTCOMPANY>' + tdlEsc(c.name || "") + '</SVCURRENTCOMPANY></STATICVARIABLES></REQUESTDESC>\n<REQUESTDATA>\n' + body.join("\n") + '\n</REQUESTDATA>\n</IMPORTDATA></BODY>\n</ENVELOPE>\n'; }
-  /* one voucher; rows [{led, dc: "Dr" / "Cr", amt, party, bill: {name, type}}]; in Tally a debit is a negative amount */
-  function tdlVch(type, o, rows) {
-    var x = ['<TALLYMESSAGE xmlns:UDF="TallyUDF"><VOUCHER VCHTYPE="' + tdlEsc(type) + '" ACTION="Create" OBJVIEW="Accounting Voucher View">', "<DATE>" + tdlD(o.date) + "</DATE>", "<EFFECTIVEDATE>" + tdlD(o.date) + "</EFFECTIVEDATE>", "<VOUCHERTYPENAME>" + tdlEsc(type) + "</VOUCHERTYPENAME>",
-      o.no ? "<VOUCHERNUMBER>" + tdlEsc(o.no) + "</VOUCHERNUMBER>" : "", o.ref ? "<REFERENCE>" + tdlEsc(o.ref) + "</REFERENCE>" + (o.refDate ? "<REFERENCEDATE>" + tdlD(o.refDate) + "</REFERENCEDATE>" : "") : "", o.party ? "<PARTYLEDGERNAME>" + tdlEsc(o.party) + "</PARTYLEDGERNAME>" : "",
-      "<NARRATION>" + tdlEsc(o.narr || "") + "</NARRATION>", "<PERSISTEDVIEW>Accounting Voucher View</PERSISTEDVIEW>"];
-    rows.forEach(function (r) { if (!(Number(r.amt) > 0.004)) return; var dr = r.dc === "Dr", a = dr ? "-" + tdlAmt(r.amt) : tdlAmt(r.amt);
-      x.push("<ALLLEDGERENTRIES.LIST><LEDGERNAME>" + tdlEsc(r.led) + "</LEDGERNAME><ISDEEMEDPOSITIVE>" + (dr ? "Yes" : "No") + "</ISDEEMEDPOSITIVE><ISPARTYLEDGER>" + (r.party ? "Yes" : "No") + "</ISPARTYLEDGER><AMOUNT>" + a + "</AMOUNT>"
-        + (r.bill ? "<BILLALLOCATIONS.LIST><NAME>" + tdlEsc(r.bill.name) + "</NAME><BILLTYPE>" + tdlEsc(r.bill.type || "New Ref") + "</BILLTYPE><AMOUNT>" + a + "</AMOUNT></BILLALLOCATIONS.LIST>" : "") + "</ALLLEDGERENTRIES.LIST>"); });
-    x.push("</VOUCHER></TALLYMESSAGE>"); return x.filter(Boolean).join("");
-  }
+  var GST_STATES = { "01": "Jammu and Kashmir", "02": "Himachal Pradesh", "03": "Punjab", "04": "Chandigarh", "05": "Uttarakhand", "06": "Haryana", "07": "Delhi", "08": "Rajasthan", "09": "Uttar Pradesh", "10": "Bihar", "11": "Sikkim", "12": "Arunachal Pradesh", "13": "Nagaland", "14": "Manipur", "15": "Mizoram", "16": "Tripura", "17": "Meghalaya", "18": "Assam", "19": "West Bengal", "20": "Jharkhand", "21": "Odisha", "22": "Chhattisgarh", "23": "Madhya Pradesh", "24": "Gujarat", "26": "Dadra and Nagar Haveli and Daman and Diu", "27": "Maharashtra", "29": "Karnataka", "30": "Goa", "31": "Lakshadweep", "32": "Kerala", "33": "Tamil Nadu", "34": "Puducherry", "35": "Andaman and Nicobar Islands", "36": "Telangana", "37": "Andhra Pradesh", "38": "Ladakh" };
+  function tdlAmt(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+  /* one voucher; rows [{led, dc: "Dr" / "Cr", amt, party, bill: {name, type}}] */
+  function tdlVch(type, o, rows) { return { type: type, date: o.date, no: o.no || "", ref: o.ref || "", refDate: o.ref ? o.refDate || "" : "", narr: o.narr || "", rows: rows.filter(function (r) { return Number(r.amt) > 0.004; }) }; }
   function tdlIn(ymd) { return ymdOk(ymd) && (!TDL.from || ymd >= TDL.from) && (!TDL.to || ymd <= TDL.to); }
   /* every voucher of a company in the period, by kind */
   function tdlTx(cid) {
@@ -7488,32 +7481,58 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   /* the masters a company's vouchers need */
   function tdlMasters(cid) {
-    var grp = {}, led = [], cred = {}, out = { groups: [], ledgers: [], creditors: [], debtors: [], banks: [] };
+    var grp = {}, led = [], cred = {}, out = { groups: [], ledgers: [], creditors: [], debtors: [], banks: [], dupes: [] };
     Object.keys(S.ledgers || {}).forEach(function (k) { var l = S.ledgers[k]; if (l.active === false || !(l.allCos || (l.companyIds || []).indexOf(cid) >= 0) || !l.name) return; var main = l.main || "", sub = l.sub || "";
       if (sub && sub !== main) grp[sub] = main; led.push(l); });
-    Object.keys(grp).sort(natCmp).forEach(function (g) { out.groups.push('<TALLYMESSAGE xmlns:UDF="TallyUDF"><GROUP NAME="' + tdlEsc(g) + '" ACTION="Create"><NAME.LIST><NAME>' + tdlEsc(g) + '</NAME></NAME.LIST><PARENT>' + tdlEsc(grp[g]) + '</PARENT></GROUP></TALLYMESSAGE>'); });
-    var seenL = {}; out.dupes = [];
-    led.sort(function (a, b) { return natCmp(a.name, b.name); }).forEach(function (l) { var k0 = l.name.trim().toLowerCase(); if (seenL[k0]) { if (out.dupes.indexOf(l.name) < 0) out.dupes.push(l.name); return; } seenL[k0] = 1; out.ledgers.push('<TALLYMESSAGE xmlns:UDF="TallyUDF"><LEDGER NAME="' + tdlEsc(l.name) + '" ACTION="Create"><NAME.LIST><NAME>' + tdlEsc(l.name) + '</NAME></NAME.LIST><PARENT>' + tdlEsc(l.sub || l.main || "Indirect Expenses") + '</PARENT>' + (l.tax === "gst" ? "<TAXTYPE>GST</TAXTYPE><GSTDUTYHEAD>" + ({ cgst: "Central Tax", sgst: "State Tax", igst: "Integrated Tax" }[gstHead(l)] || "") + "</GSTDUTYHEAD>" : l.tax === "tds" ? "<TAXTYPE>TDS</TAXTYPE>" : "") + '</LEDGER></TALLYMESSAGE>'); });
-    var party = function (name, o) { if (!name || cred[name.toLowerCase()]) return; cred[name.toLowerCase()] = 1; var addr = String(o.address || "").split(/\n|,\s*(?=\S)/).map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 5);
-      out.creditors.push('<TALLYMESSAGE xmlns:UDF="TallyUDF"><LEDGER NAME="' + tdlEsc(name) + '" ACTION="Create"><NAME.LIST><NAME>' + tdlEsc(name) + '</NAME></NAME.LIST><PARENT>Sundry Creditors</PARENT><ISBILLWISEON>Yes</ISBILLWISEON>' + (addr.length ? "<ADDRESS.LIST>" + addr.map(function (a0) { return "<ADDRESS>" + tdlEsc(a0) + "</ADDRESS>"; }).join("") + "</ADDRESS.LIST>" : "")
-        + (o.country && !/india/i.test(o.country) ? "<COUNTRYNAME>" + tdlEsc(o.country) + "</COUNTRYNAME>" : "<COUNTRYNAME>India</COUNTRYNAME>") + (o.gstin ? "<GSTREGISTRATIONTYPE>Regular</GSTREGISTRATIONTYPE><PARTYGSTIN>" + tdlEsc(o.gstin) + "</PARTYGSTIN>" : "<GSTREGISTRATIONTYPE>Unregistered/Consumer</GSTREGISTRATIONTYPE>") + (o.pan ? "<INCOMETAXNUMBER>" + tdlEsc(o.pan) + "</INCOMETAXNUMBER>" : "") + '</LEDGER></TALLYMESSAGE>'); };
+    Object.keys(grp).sort(natCmp).forEach(function (g) { out.groups.push({ name: g, parent: grp[g] }); });
+    var seenL = {};
+    led.sort(function (a, b) { return natCmp(a.name, b.name); }).forEach(function (l) { var k0 = l.name.trim().toLowerCase(); if (seenL[k0]) { if (out.dupes.indexOf(l.name) < 0) out.dupes.push(l.name); return; } seenL[k0] = 1; out.ledgers.push({ name: l.name, group: l.sub || l.main || "" }); });
+    var party = function (name, o) { if (!name || cred[name.toLowerCase()] || seenL[name.trim().toLowerCase()]) return; cred[name.toLowerCase()] = 1; var g = normId(o.gstin || ""), foreign = o.country && !/india/i.test(o.country);
+      out.creditors.push({ name: name, group: "Sundry Creditors", billwise: "Yes", mailing: name, address: String(o.address || "").split(/\n/).map(function (x) { return x.trim(); }).filter(Boolean).join("\n"),
+        state: foreign ? "" : GST_STATES[g.slice(0, 2)] || "", country: foreign ? o.country : "India", pincode: (String(o.address || "").match(/\b\d{6}\b/) || [""])[0], pan: o.pan || "", regType: g.length === 15 ? "Regular" : "Unregistered/Consumer", gstin: g.length === 15 ? g : "" }); };
     var vids = {}; tlyBills(cid).forEach(function (b) { if (b.vendorId) vids[b.vendorId] = 1; }); advList("pi").concat(advList("import")).forEach(function (a) { if (a.companyId === cid && a.vendorId) vids[a.vendorId] = 1; });
     Object.keys(vids).forEach(function (vid) { var v = S.vendors[vid]; if (v) party(v.name, { address: v.address, gstin: v.gstin, pan: v.pan || (v.gstin ? panFromGstin(v.gstin) : ""), country: v.country }); });
     vchList().forEach(function (v) { if (v.companyId !== cid || !v.payee || v.status === "deleted") return; party(v.payee, { address: v.payeeAddr || payeeAddrOf(v.payee), pan: idKind(v.payeeIdNo) === "pan" ? idNorm(v.payeeIdNo) : "" }); });
     dutyList().forEach(function (d) { if (d.companyId === cid && !d.vendorId && d.partyName) party(d.partyName, {}); });
-    bankList(cid).forEach(function (b) { var nm = b.ledgerName || b.name || b.bank; if (!nm) return; out.banks.push('<TALLYMESSAGE xmlns:UDF="TallyUDF"><LEDGER NAME="' + tdlEsc(nm) + '" ACTION="Create"><NAME.LIST><NAME>' + tdlEsc(nm) + '</NAME></NAME.LIST><PARENT>Bank Accounts</PARENT>' + (b.accountNo ? "<BANKDETAILS>" + tdlEsc(b.accountNo) + "</BANKDETAILS>" : "") + (b.ifsc ? "<IFSCODE>" + tdlEsc(b.ifsc) + "</IFSCODE>" : "") + '</LEDGER></TALLYMESSAGE>'); });
+    bankList(cid).forEach(function (b) { var nm = b.ledgerName || b.name || b.bank; if (!nm || seenL[nm.trim().toLowerCase()]) return; seenL[nm.trim().toLowerCase()] = 1; out.banks.push({ name: nm, group: "Bank Accounts", acNo: b.accountNo || "", ifsc: b.ifsc || "", bank: b.bank || "", branch: b.branch || "", holder: (S.companies[cid] || {}).name || "" }); });
     return out;
   }
-  function tdlFile(cid, tag) { var c = S.companies[cid] || {}; return (c.shortName || c.internalName || c.name || "Company") + (tag ? " - " + tag : "") + " - " + fmtDate(TDL.to || todayYmd()) + ".xml"; }
-  function tdlSave(name, xml, btn) {
-    var blob = new Blob([xml], { type: "application/xml" });
-    if (S.downloads) { btn.disabled = true; S.downloads.save({ filename: name, data: blob }).then(function () { toast(name + " downloaded."); }, function (e) { toast(explain(e)); }).then(function () { btn.disabled = false; }); return; }
-    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000); toast(name + " downloaded.");
+  /* the workbooks, with Tally's column headings */
+  var TDL_VCOLS = ["Voucher Date", "Voucher Type Name", "Voucher Number", "Reference No.", "Reference Date", "Voucher Narration", "Ledger Name", "Ledger Amount", "Ledger Amount Dr/Cr", "Bill Type of Ref", "Bill Name", "Bill Amount", "Bill Amount - Dr/Cr", "Change Mode "];
+  var TDL_LCOLS = ["Name", "Group Name", "Ledger - Opening Balance", "Ledger Opening Balance - Dr/Cr", "Maintain balances bill-by-bill", "Mailing Name", "Address", "State", "Country", "Pincode", "PAN/IT No.", "GST Registration Type", "GST Registration - GSTIN/UIN", "Bank Account Details - A/c Holder's Name", "Bank Account Details - A/c No.", "Bank Account Details - IFS Code", "Bank Account Details - Bank Name", "Bank Account Details - Branch"];
+  function tdlXDate(ymd) { var p = String(ymd || "").split("-"); return p.length === 3 ? { t: "n", v: Math.round((Date.UTC(+p[0], +p[1] - 1, +p[2]) - Date.UTC(1899, 11, 30)) / 864e5), z: "dd-mm-yyyy" } : { t: "s", v: "" }; }
+  function tdlBook(XLSX, cid, tx, d) {
+    var wb = XLSX.utils.book_new(), head = { font: { bold: true } };
+    var sheet = function (cols, rows, widths) { var ws = {}, put = function (r, c, cell) { if (cell == null || cell === "") return; ws[XLSX.utils.encode_cell({ r: r, c: c })] = typeof cell === "object" ? cell : typeof cell === "number" ? { t: "n", v: cell, z: "0.00" } : { t: "s", v: String(cell) }; };
+      cols.forEach(function (h, c) { put(0, c, { t: "s", v: h, s: head }); }); rows.forEach(function (r, i) { r.forEach(function (v, c) { put(i + 1, c, v); }); });
+      ws["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(rows.length, 1), c: cols.length - 1 } }); ws["!cols"] = widths.map(function (w) { return { wch: w }; }); return ws; };
+    if (tx) {
+      var rows = [];
+      d.purchase.concat(d.journal, d.payment, d.sales, d.receipt, d.contra).forEach(function (v) { v.rows.forEach(function (r, i) { var first = i === 0, a = tdlAmt(r.amt);
+        rows.push([first ? tdlXDate(v.date) : "", first ? v.type : "", first ? v.no : "", first ? v.ref : "", first && v.refDate ? tdlXDate(v.refDate) : "", first ? v.narr : "", r.led, a, r.dc, r.bill ? r.bill.type || "New Ref" : "", r.bill ? r.bill.name : "", r.bill ? a : "", r.bill ? r.dc : "", first ? "As Voucher" : ""]); }); });
+      XLSX.utils.book_append_sheet(wb, sheet(TDL_VCOLS, rows, [12, 12, 18, 18, 12, 60, 34, 14, 8, 12, 20, 14, 8, 12]), "Accounting Voucher");
+    } else {
+      XLSX.utils.book_append_sheet(wb, sheet(["Name", "Parent Group Name"], d.groups.map(function (g) { return [g.name, g.parent]; }), [34, 30]), "Group");
+      var lr = d.ledgers.map(function (l) { return [l.name, l.group]; });
+      d.creditors.concat(d.debtors).forEach(function (c) { lr.push([c.name, c.group, "", "", c.billwise, c.mailing, c.address, c.state, c.country, c.pincode, c.pan, c.regType, c.gstin]); });
+      d.banks.forEach(function (b) { lr.push([b.name, b.group, "", "", "", "", "", "", "", "", "", "", "", b.holder, b.acNo, b.ifsc, b.bank, b.branch]); });
+      XLSX.utils.book_append_sheet(wb, sheet(TDL_LCOLS, lr, [34, 22, 12, 8, 10, 30, 40, 16, 10, 10, 12, 18, 18, 26, 20, 14, 22, 18]), "Ledger");
+    }
+    return wb;
+  }
+  function tdlFile(cid, tag) { var c = S.companies[cid] || {}; return (c.shortName || c.internalName || c.name || "Company") + (tag ? " - " + tag : "") + " - " + fmtDate(TDL.to || todayYmd()) + ".xlsx"; }
+  function tdlSave(cid, tx, d, btn) {
+    var name = tdlFile(cid, tx ? "" : "Masters"); btn.disabled = true;
+    loadScript(XLSX_URL).then(function () { var XLSX = window.XLSX; if (!XLSX) throw { kind: "lib" };
+      var blob = new Blob([XLSX.write(tdlBook(XLSX, cid, tx, d), { bookType: "xlsx", type: "array" })], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      if (S.downloads) return S.downloads.save({ filename: name, data: blob });
+      var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }).then(function () { toast(name + " downloaded."); }, function (e) { if (!(e && e.code === "declined")) toast(e && e.kind === "lib" ? "The Excel maker didn't load. Check the connection and try again." : explain(e)); }).then(function () { btn.disabled = false; });
   }
   function renderTdl() {
     var t = todayYmd(); if (!TDL.from) { var y = Number(t.slice(0, 4)) - (Number(t.slice(5, 7)) >= 4 ? 0 : 1); TDL.from = y + "-04-01"; TDL.to = t; }
     var tx = TDL.k === "t"; $("tdlTitle").textContent = tx ? "Tally Downloads: Transactions" : "Tally Downloads: Masters";
-    $("tdlSub").textContent = tx ? "One file per company, for Tally's Import › Transactions: purchase vouchers (accounted bills and vouchers), journal vouchers (GST on reverse charge) and payment vouchers together. Sales, receipt and contra vouchers join once they are kept here. Import the company's Masters file first." : "One file per company, for Tally's Import › Masters: groups (each Sub Group under its Primary Group), ledgers, vendors and voucher payees as Sundry Creditors, and bank accounts. Customers come as Sundry Debtors once sales are kept here. Import this before the Transactions file.";
+    $("tdlSub").textContent = tx ? "One Excel file per company, in TallyPrime's sample layout, for Import › Transactions › Excel (TallyPrime 4.0 or later): purchase vouchers (accounted bills and vouchers), journal vouchers (GST on reverse charge) and payment vouchers together. Sales, receipt and contra vouchers join once they are kept here. Import the company's Masters file first." : "One Excel file per company, in TallyPrime's sample layout, for Import › Masters › Excel (TallyPrime 4.0 or later): groups (each Sub Group under its Primary Group), ledgers, vendors and voucher payees as Sundry Creditors, and bank accounts. Customers come as Sundry Debtors once sales are kept here. Import this before the Transactions file.";
     var fb = $("tdlFilt"); fb.textContent = "";
     if (tx) { [["from", "From"], ["to", "To"]].forEach(function (k) { var i = el("input", { class: "field", type: "date", "aria-label": k[1], value: TDL[k[0]] }); i.addEventListener("change", function () { TDL[k[0]] = i.value; renderTdl(); }); var w = el("label", { class: "tapf" }); w.appendChild(el("span", null, k[1])); w.appendChild(i); fb.appendChild(w); }); }
     var box = $("tdlBox"); box.textContent = ""; var cos = sorted().filter(function (c) { return canSee(c.id); });
@@ -7524,7 +7543,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     (tx ? [["purchase", "Purchase"], ["journal", "Journal"], ["payment", "Payment"], ["sales", "Sales"], ["receipt", "Receipt"], ["contra", "Contra"]] : [["groups", "Groups"], ["ledgers", "Ledgers"], ["creditors", "Sundry Creditors"], ["debtors", "Sundry Debtors"], ["banks", "Bank Accounts"]])
       .forEach(function (k) { cols.push({ label: k[1], cls: "r num", cell: function (r, td) { txt(td, String(n(r, k[0]))); } }); });
     cols.push({ label: "", kind: "act", cls: "r", cell: function (r, td) { var tot = KEYS.reduce(function (s0, k) { return s0 + r.d[k].length; }, 0), b = el("button", { class: "btn sm primary", type: "button" }, "Download"); b.disabled = !tot; if (!tot) b.title = tx ? "Nothing in this period" : "Nothing to send";
-      b.addEventListener("click", function () { var d = r.d, body = tx ? d.purchase.concat(d.journal, d.payment, d.sales, d.receipt, d.contra) : d.groups.concat(d.ledgers, d.creditors, d.debtors, d.banks); tdlSave(tdlFile(r.c.id, tx ? "" : "Masters"), tdlEnv(r.c.id, tx ? "Vouchers" : "All Masters", body), b); }); td.appendChild(b); } });
+      b.addEventListener("click", function () { tdlSave(r.c.id, tx, r.d, b); }); td.appendChild(b); } });
     sortTable(card, tx ? "tdlT" : "tdlM", cols, rows, { sortIndex: -1 });
   }
   /* ---- Tally (Demo) › Imports › Duties & Customs ---- */

@@ -83,16 +83,16 @@
 - **Tally (Demo): proformas and imports only from their file.** Enter by Hand is gone; each is entered by uploading the
   proforma or import order (PDF or photo), which Claude reads into the form and which stays with it. One can't be saved
   without its file (a Live copy keeps its own). If Claude can't read just then, the form still opens with the file beside it.
-- **Tally (Demo) › Reports › Tally Downloads**, two pages, each one Tally XML file per company (TallyPrime and Tally.ERP 9,
-  "Import Data"), named `<short name> - dd-MMM-yy.xml` (slashes can't be in a file name). **Transactions** (Import ›
-  Transactions), for a period: purchase vouchers from accounted bills (the Tally Line Items: ledgers, GST, round off, TDS,
-  the vendor with a New Ref bill) and accounted vouchers, journal vouchers for GST on reverse charge (Dr Input (RCM), Cr RCM
-  Payable), and payment vouchers (Dr the party Agst Ref each bill, or Advance for a proforma instalment; Cr the bank account
-  paid from, or Cash), all in one file; sales, receipt and contra come once they are kept. A payment with no bank account
-  recorded is flagged (it goes to a ledger named Bank). **Masters** (Import › Masters, before the transactions): groups (each
-  Sub Group under its Primary Group), the company's ledgers (GST ledgers with their duty head; one per name, duplicates
-  flagged), vendors and voucher payees as Sundry Creditors (bill-wise on, address, GSTIN or Unregistered, PAN), and bank
-  accounts; customers as Sundry Debtors once sales are kept.
+- **Tally (Demo) › Reports › Tally Downloads** gives Excel files (no XML), one per company, laid out as TallyPrime's own
+  sample import files (Import › Masters / Transactions › Excel, TallyPrime 4.0 or later), with Tally's column headings.
+  **Transactions** ("INTL - dd-MMM-yy.xlsx"): one sheet "Accounting Voucher", a row per ledger line (Ledger Name, Ledger
+  Amount, Dr/Cr, and Bill Type of Ref / Bill Name / Bill Amount on the party's line); the voucher's date, type, number,
+  reference and narration only on its first row, Change Mode "As Voucher". Purchase (accounted bills and vouchers),
+  journal (Journal Entry - GST on reverse charge) and payment vouchers for the chosen period; sales, receipt and contra
+  join once they are kept here. **Masters** ("INTL - Masters - …xlsx"): sheet "Group" (each Sub Group under its Primary
+  Group) and sheet "Ledger" (ledgers; vendors and voucher payees under Sundry Creditors, bill-by-bill, with mailing name,
+  address, state from the GSTIN, pincode, PAN, GST registration type and GSTIN; bank accounts with their account
+  details). Import the Masters file first.
 - **Text wraps instead of overlapping.** Buttons, column headers, labels, tags, card titles and headings wrap onto more lines
   when they don't fit, and a single word too long for its space is hyphenated at the end of the line (the page is marked
   `lang="en"` so the browser can; desktop Chrome and Edge hyphenate, a browser without a hyphenation dictionary breaks the word

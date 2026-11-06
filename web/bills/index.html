@@ -10996,7 +10996,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         { label: "Payable", cls: "r num", sort: function (g) { return g.items.reduce(function (s0, it) { return s0 + it.amt; }, 0); }, desc: true, cell: function (g, td) { txt(td, curMoney(g.cur, round2(g.items.reduce(function (s0, it) { return s0 + it.amt; }, 0)))); } },
         { label: "Pay Now", cls: "r", cell: function (g, td) {
             if (g.items.length === 1) { td.appendChild(amtBox(g.items[0], g)); return; }
-            var t = el("input", { class: "field num", inputmode: "decimal", style: "max-width:130px", "aria-label": "Amount to pay now to " + g.name }); t.value = fmtInput(String(plSelTotal(g)));
+            var t = el("input", { class: "field num", inputmode: "decimal", style: "max-width:130px", "aria-label": "Amount to pay now to " + g.name }), anySel = g.items.some(function (it) { return MK.pl.sel[it.key]; });
+            /* like a single bill: the whole payable, greyed out, until the vendor (or any of its bills) is ticked; then what is ticked */
+            t.value = fmtInput(String(anySel ? plSelTotal(g) : round2(g.items.reduce(function (s0, it) { return s0 + it.amt; }, 0)))); t.disabled = !anySel;
             function go() { var n0 = num(t.value); if (n0 == null || n0 < 0) { t.value = fmtInput(String(plSelTotal(g))); return; } var cap = plSpread(g, n0); if (cap != null) toast("Up to the payable amount, " + curMoney(g.cur, cap) + "."); renderMark(); }
             t.addEventListener("change", go); t.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); t.blur(); } });
             td.appendChild(t); sub(td, "Opening balance, then earliest due first"); } },

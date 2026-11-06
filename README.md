@@ -158,6 +158,9 @@
   Paid, Due Date) and **All Bills** (Prepared By, Vendor, Bill Details with the BCR number in front, e.g. "BCR/TCPL/26-27/002 -
   GST839", Company (short name), Total Payable, Total Paid, Due Date, Submitted) are grouped by status in status order, oldest bill or voucher
   date first, filtered by All Companies, Prepared By and Vendor (plus a number search); each status is its own card with the same column widths, on the page's background.
+- **Bank Accounts and Cheque Templates in Tally (Demo)** (Reports › Masters), read from Live like the other masters; a
+  change made here (e.g. a new cheque book's numbers) stays in Tally (Demo). The "past the last cheque number" warning
+  names where to enter the new cheque book's numbers.
 - **Supply Of on every voucher (all apps).** Supply Of is asked and required on every voucher, Cash Vouchers included; the
   accountant sees it next to the type in voucher accounting and can change it (required); the printed Cash Voucher has its
   Supply Of box, as the other types do.

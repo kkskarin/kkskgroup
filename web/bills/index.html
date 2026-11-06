@@ -7980,20 +7980,21 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     fa.appendChild(el("span", { class: "grow" })); fa.appendChild(back); if (neg) fa.appendChild(neg);
   }
   /* Purchase › Bills › All Entries */
-  var BA = { co: "", ven: "", st: "", q: "" };
+  var BA = { co: "", ven: "", prep: "", q: "" };
   function renderBillAll() {
     var f = $("baFilt"), box = $("baBox"); if (!f) return;
     if (!f.firstChild) {
-      var cs = el("select", { class: "field", id: "baCo", "aria-label": "Company" }), vs = el("select", { class: "field", id: "baVen", "aria-label": "Vendor" }), ss = el("select", { class: "field", id: "baSt", "aria-label": "Status" }), q = el("input", { class: "field", id: "baQ", type: "search", placeholder: "Bill or BCR number", autocomplete: "off" });
-      cs.addEventListener("change", function () { BA.co = cs.value; BA.ven = ""; renderBillAll(); }); vs.addEventListener("change", function () { BA.ven = vs.value; renderBillAll(); }); ss.addEventListener("change", function () { BA.st = ss.value; renderBillAll(); }); q.addEventListener("input", function () { BA.q = q.value.trim().toLowerCase(); renderBillAll(); });
-      [cs, vs, ss, q].forEach(function (n) { f.appendChild(n); });
+      var cs = el("select", { class: "field", id: "baCo", "aria-label": "Company" }), vs = el("select", { class: "field", id: "baVen", "aria-label": "Vendor" }), ss = el("select", { class: "field", id: "baPrep", "aria-label": "Prepared By" }), q = el("input", { class: "field", id: "baQ", type: "search", placeholder: "Bill or BCR number", autocomplete: "off" });
+      cs.addEventListener("change", function () { BA.co = cs.value; BA.ven = ""; renderBillAll(); }); vs.addEventListener("change", function () { BA.ven = vs.value; renderBillAll(); }); ss.addEventListener("change", function () { BA.prep = ss.value; renderBillAll(); }); q.addEventListener("input", function () { BA.q = q.value.trim().toLowerCase(); renderBillAll(); });
+      [cs, ss, vs, q].forEach(function (n) { f.appendChild(n); });
     }
     var bills = tlyBills(""), cos = sorted().filter(function (c) { return bills.some(function (b) { return b.companyId === c.id; }); });
-    fillSelect($("baCo"), [["", "All companies"]].concat(cos.map(function (c) { return [c.id, c.internalName || c.name]; })), BA.co);
+    fillSelect($("baCo"), [["", "All Companies"]].concat(cos.map(function (c) { return [c.id, coLabel(c.id)]; })), BA.co);
+    var bprep = function (b) { var P = b.tlyPpl || {}; return P.prep || prepOf(b) || ""; }, bpn = {}; bills.forEach(function (b) { var k = bprep(b); if (k) bpn[k] = pnm((b.tlyPpl || {}).prepName || "") || personName(k) || "Unknown"; });
+    fillSelect($("baPrep"), [["", "Prepared By"]].concat(Object.keys(bpn).sort(function (a, b) { return natCmp(bpn[a], bpn[b]); }).map(function (k) { return [k, bpn[k]]; })), BA.prep || "");
     var vids = {}; bills.forEach(function (b) { if (!BA.co || b.companyId === BA.co) vids[b.vendorId] = 1; });
-    fillSelect($("baVen"), [["", "All vendors"]].concat(Object.keys(vids).sort(function (a, b) { return natCmp(S.vendors[a].name, S.vendors[b].name); }).map(function (k) { return [k, S.vendors[k].name]; })), BA.ven);
-    fillSelect($("baSt"), [["", "Every status"]].concat(TLY_ST_ORDER.map(function (k) { return [k, TLY_ST[k]]; })), BA.st);
-    var rows = bills.filter(function (b) { return (!BA.co || b.companyId === BA.co) && (!BA.ven || b.vendorId === BA.ven) && (!BA.st || tlyStatus(b) === BA.st) && (!BA.q || ((b.billNo || "") + " " + ((tlyBcrOf(b) || {}).no || "")).toLowerCase().indexOf(BA.q) >= 0); });
+    fillSelect($("baVen"), [["", "Vendor"]].concat(Object.keys(vids).sort(function (a, b) { return natCmp(S.vendors[a].name, S.vendors[b].name); }).map(function (k) { return [k, S.vendors[k].name]; })), BA.ven);
+    var rows = bills.filter(function (b) { return (!BA.co || b.companyId === BA.co) && (!BA.ven || b.vendorId === BA.ven) && (!BA.prep || bprep(b) === BA.prep) && (!BA.q || ((b.billNo || "") + " " + ((tlyBcrOf(b) || {}).no || "")).toLowerCase().indexOf(BA.q) >= 0); });
     box.textContent = "";
     if (!rows.length) { box.classList.remove("card", "list", "scroll"); box.appendChild(el("div", { class: "card empty" }, "No bills match.")); return; }
     tlyGroupByStatus(box, "baT", [
@@ -12744,16 +12745,17 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function renderVchAll() {
     var f = $("vaFilt"), box = $("vaBox"); if (!f) return;
     if (!f.firstChild) {
-      var cs = el("select", { class: "field", id: "vaCo", "aria-label": "Company" }), ps = el("select", { class: "field", id: "vaPrep", "aria-label": "Prepared By" }), ss = el("select", { class: "field", id: "vaSt", "aria-label": "Status" }), q = el("input", { class: "field", id: "vaQ", type: "search", placeholder: "Voucher, VCR or paid to", autocomplete: "off" });
-      cs.addEventListener("change", function () { VA.co = cs.value; renderVchAll(); }); ps.addEventListener("change", function () { VA.prep = ps.value; renderVchAll(); }); ss.addEventListener("change", function () { VA.st = ss.value; renderVchAll(); }); q.addEventListener("input", function () { VA.q = q.value.trim().toLowerCase(); renderVchAll(); });
+      var cs = el("select", { class: "field", id: "vaCo", "aria-label": "Company" }), ps = el("select", { class: "field", id: "vaPrep", "aria-label": "Prepared By" }), ss = el("select", { class: "field", id: "vaVen", "aria-label": "Vendor" }), q = el("input", { class: "field", id: "vaQ", type: "search", placeholder: "Voucher or VCR number", autocomplete: "off" });
+      cs.addEventListener("change", function () { VA.co = cs.value; renderVchAll(); }); ps.addEventListener("change", function () { VA.prep = ps.value; renderVchAll(); }); ss.addEventListener("change", function () { VA.ven = ss.value; renderVchAll(); }); q.addEventListener("input", function () { VA.q = q.value.trim().toLowerCase(); renderVchAll(); });
       [cs, ps, ss, q].forEach(function (n) { f.appendChild(n); });
     }
     var vs = tlyVchs(""), cos = sorted().filter(function (c) { return vs.some(function (v) { return v.companyId === c.id; }); }), pp = {};
     vs.forEach(function (v) { pp[vchPrepId(v)] = vchPrepName(v); });
-    fillSelect($("vaCo"), [["", "All companies"]].concat(cos.map(function (c) { return [c.id, c.internalName || c.name]; })), VA.co);
-    fillSelect($("vaPrep"), [["", "Anyone"]].concat(Object.keys(pp).sort(function (a, b) { return natCmp(pp[a], pp[b]); }).map(function (k) { return [k, pp[k]]; })), VA.prep);
-    fillSelect($("vaSt"), [["", "Every status"]].concat(TLY_ST_ORDER.map(function (k) { return [k, TLY_ST[k]]; })), VA.st);
-    var rows = vs.filter(function (v) { var r = vcrOf(v.id); return (!VA.co || v.companyId === VA.co) && (!VA.prep || vchPrepId(v) === VA.prep) && (!VA.st || vchTlySt(v) === VA.st) && (!VA.q || ((v.voucherNo || "") + " " + (v.payee || "") + " " + (r ? r.no : "")).toLowerCase().indexOf(VA.q) >= 0); });
+    fillSelect($("vaCo"), [["", "All Companies"]].concat(cos.map(function (c) { return [c.id, coLabel(c.id)]; })), VA.co);
+    fillSelect($("vaPrep"), [["", "Prepared By"]].concat(Object.keys(pp).sort(function (a, b) { return natCmp(pp[a], pp[b]); }).map(function (k) { return [k, pp[k]]; })), VA.prep);
+    var vn = {}; vs.forEach(function (v) { if ((!VA.co || v.companyId === VA.co) && v.payee) vn[v.payee] = 1; });
+    fillSelect($("vaVen"), [["", "Vendor"]].concat(Object.keys(vn).sort(natCmp).map(function (k) { return [k, k]; })), VA.ven || "");
+    var rows = vs.filter(function (v) { var r = vcrOf(v.id); return (!VA.co || v.companyId === VA.co) && (!VA.prep || vchPrepId(v) === VA.prep) && (!VA.ven || v.payee === VA.ven) && (!VA.q || ((v.voucherNo || "") + " " + (v.payee || "") + " " + (r ? r.no : "")).toLowerCase().indexOf(VA.q) >= 0); });
     box.textContent = ""; if (!rows.length) { box.classList.remove("card", "list", "scroll"); box.appendChild(el("div", { class: "card empty" }, "No vouchers match.")); return; }
     var vdue = function (v) { return v.dueDate || (v.voucherDate && v.termDays != null ? addDays(v.voucherDate, Number(v.termDays) || 0) : ""); };
     tlyGroupByStatus(box, "vaT", [

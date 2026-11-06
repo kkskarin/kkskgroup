@@ -132,7 +132,9 @@
   Journal Voucher", each Journal Voucher line "2.5% on 10,000.00" (IGST at the full rate). The Journal Voucher's narration is written from the figures and follows them until edited by hand (Write Again
   restores it), is required, is saved on the bill or voucher (`rcmNarr`, `rcmNarrMan`) and goes into Tally Downloads:
   "Being GST payable under reverse charge mechanism (RCM) on Bill No. GTA-9 dated 24-10-2026 of Sri Murugan Transports,
-  on taxable value Rs. 10,000.00 at 5%: CGST Rs. 250.00, SGST Rs. 250.00." (Voucher No. … for a voucher).
+  on taxable value Rs. 10,000.00 at 5%: CGST Rs. 250.00, SGST Rs. 250.00." (Voucher No. … for a voucher). When only part of the bill is under reverse charge it gives the bill's taxable value, then
+  each part with its ledger and rate: "… of Sri Murugan Transports (taxable value Rs. 10,000.00), of which Rs. 1,000.00
+  (Lorry Freight) is under RCM at 5%: CGST Rs. 25.00, SGST Rs. 25.00." (ledger names dropped first if over 255 characters).
 - **Voucher accounting shows Supply of.** The summary at the top of a voucher's accounting includes Supply of (or "Not
   given").
 - **Item descriptions (Tally (Demo)).** A line typed or spoken in Bill Entry is rewritten by Claude to the description rules,

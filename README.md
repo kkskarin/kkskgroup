@@ -155,9 +155,11 @@
   heading, the tab and the page, next to the green count of drafts and bills to check.
 - **Submitted Vouchers** columns: Prepared By, Vendor, Voucher Details, Total Payable, Due Date, Submitted, Status, with a
   Prepared By filter before the search. **All Vouchers** (Company, Prepared By, Vendor, Voucher Details, Total Payable, Total
-  Paid, Due Date) and **All Bills** (Company, Vendor, Bill Details with the BCR number in front, e.g. "BCR/TCPL/26-27/002 -
-  GST839", Total Payable, Total Paid, Due Date, Submitted) are grouped by status in status order, oldest bill or voucher
-  date first.
+  Paid, Due Date) and **All Bills** (Prepared By, Vendor, Bill Details with the BCR number in front, e.g. "BCR/TCPL/26-27/002 -
+  GST839", Company (short name), Total Payable, Total Paid, Due Date, Submitted) are grouped by status in status order, oldest bill or voucher
+  date first; each status is its own card with the same column widths, on the page's background.
+- **Cash Voucher print shows Supply Of (Tally (Demo)).** Supply Of is on every Tally voucher, so the printed Cash Voucher has
+  its Supply Of box too, as the other voucher types do.
 - **Postponed payments: a reminder date.** When an approval leaves an amount postponed, the approver chooses the date to be
   reminded (`postRemind`, required, after today). Postponed Payments shows it (Remind On) and the row turns yellow, with a
   count on the tab, only from that date.

@@ -957,6 +957,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
    and a single word too long for its space is hyphenated (Appr- / oved). The page is marked English so the browser can. */
   .rq::after{content:" *";color:#c62828;font-weight:700}
   a.navlink{display:contents;color:inherit;text-decoration:none}
+  /* All Bills / All Vouchers: the same column widths in every status table, so they line up */
+  #baBox table,#vaBox table{table-layout:fixed;width:100%}
+  #baBox th:nth-child(1){width:12%}#baBox th:nth-child(2){width:20%}#baBox th:nth-child(3){width:22%}#baBox th:nth-child(4){width:7%}#baBox th:nth-child(5),#baBox th:nth-child(6),#baBox th:nth-child(7),#baBox th:nth-child(8){width:9.75%}
+  #vaBox th:nth-child(1){width:7%}#vaBox th:nth-child(2){width:13%}#vaBox th:nth-child(3){width:20%}#vaBox th:nth-child(4){width:24%}#vaBox th:nth-child(5),#vaBox th:nth-child(6),#vaBox th:nth-child(7){width:12%}
   tr.remdue>td{background:#fff4c2!important}
   /* Tally (Demo): in every footer and pop-up, the negative action (red) on the far left, the positive ones on the right,
      the main one (green) last */
@@ -7991,11 +7995,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     fillSelect($("baSt"), [["", "Every status"]].concat(TLY_ST_ORDER.map(function (k) { return [k, TLY_ST[k]]; })), BA.st);
     var rows = bills.filter(function (b) { return (!BA.co || b.companyId === BA.co) && (!BA.ven || b.vendorId === BA.ven) && (!BA.st || tlyStatus(b) === BA.st) && (!BA.q || ((b.billNo || "") + " " + ((tlyBcrOf(b) || {}).no || "")).toLowerCase().indexOf(BA.q) >= 0); });
     box.textContent = "";
-    if (!rows.length) { box.appendChild(el("div", { class: "empty" }, "No bills match.")); return; }
+    if (!rows.length) { box.classList.remove("card", "list", "scroll"); box.appendChild(el("div", { class: "card empty" }, "No bills match.")); return; }
     tlyGroupByStatus(box, "baT", [
-      { label: "Company", cell: function (b, td) { txt(td, (S.companies[b.companyId] || {}).internalName || coLabel(b.companyId)); } },
+      { label: "Prepared By", cell: function (b, td) { var P = b.tlyPpl || {}; txt(td, pnm(P.prepName || "") || personName(P.prep || prepOf(b)) || ""); } },
       { label: "Vendor", kind: "co", cell: function (b, td) { td.appendChild(el("b", null, vendorLabelOfBill(b))); } },
       { label: "Bill Details", cell: function (b, td) { var r = tlyBcrOf(b); td.appendChild(el("b", { class: "mono" }, (r ? r.no + " - " : "") + (b.billNo || ""))); sub(td, fmtDate(b.billDate)); } },
+      { label: "Company", cell: function (b, td) { txt(td, coLabel(b.companyId)); } },
       { label: "Total Payable", cls: "r num", cell: function (b, td) { txt(td, money(Number(b.total) || 0)); } },
       { label: "Total Paid", cls: "r num", cell: function (b, td) { var pd = tlyPaidAmt(b); txt(td, pd > 0.004 ? money(pd) : "\u2014"); } },
       { label: "Due Date", cell: function (b, td) { txt(td, ymdOk(b.dueDate) ? fmtDate(b.dueDate) : ""); } },
@@ -12749,10 +12754,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     fillSelect($("vaPrep"), [["", "Anyone"]].concat(Object.keys(pp).sort(function (a, b) { return natCmp(pp[a], pp[b]); }).map(function (k) { return [k, pp[k]]; })), VA.prep);
     fillSelect($("vaSt"), [["", "Every status"]].concat(TLY_ST_ORDER.map(function (k) { return [k, TLY_ST[k]]; })), VA.st);
     var rows = vs.filter(function (v) { var r = vcrOf(v.id); return (!VA.co || v.companyId === VA.co) && (!VA.prep || vchPrepId(v) === VA.prep) && (!VA.st || vchTlySt(v) === VA.st) && (!VA.q || ((v.voucherNo || "") + " " + (v.payee || "") + " " + (r ? r.no : "")).toLowerCase().indexOf(VA.q) >= 0); });
-    box.textContent = ""; if (!rows.length) { box.appendChild(el("div", { class: "empty" }, "No vouchers match.")); return; }
+    box.textContent = ""; if (!rows.length) { box.classList.remove("card", "list", "scroll"); box.appendChild(el("div", { class: "card empty" }, "No vouchers match.")); return; }
     var vdue = function (v) { return v.dueDate || (v.voucherDate && v.termDays != null ? addDays(v.voucherDate, Number(v.termDays) || 0) : ""); };
     tlyGroupByStatus(box, "vaT", [
-      { label: "Company", cell: function (v, td) { txt(td, (S.companies[v.companyId] || {}).internalName || coLabel(v.companyId)); } },
+      { label: "Company", cell: function (v, td) { txt(td, coLabel(v.companyId)); } },
       { label: "Prepared By", cell: function (v, td) { txt(td, vchPrepName(v)); } },
       { label: "Vendor", kind: "co", cell: function (v, td) { td.appendChild(el("b", null, v.payee || "")); } },
       { label: "Voucher Details", cell: function (v, td) { var r = vchInVcr(v); td.appendChild(el("b", { class: "mono" }, (r ? r.no + " - " : "") + (v.voucherNo || ""))); sub(td, fmtDate(v.voucherDate) + (v.vtype ? " · " + v.vtype : "")); } },
@@ -12764,6 +12769,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* Tally (Demo) › All Bills / All Vouchers: a table per status, in the order of the statuses, each oldest (bill or voucher
      date) first */
   function tlyGroupByStatus(box, key, cols, rows, stOf, dateOf) {
+    box.classList.remove("card", "list", "scroll"); /* each status has its own card; the box itself is only a holder */
     TLY_ST_ORDER.forEach(function (st) {
       var rs = rows.filter(function (x) { return stOf(x) === st; }).sort(function (a, b) { return natCmp(dateOf(a), dateOf(b)) || coCmpId(a.companyId, b.companyId); }); if (!rs.length) return;
       var h = el("h3", { style: "margin:18px 0 8px" }, TLY_ST[st] || st); h.appendChild(el("span", { class: "qcount" }, " (" + rs.length + ")")); box.appendChild(h);
@@ -18071,7 +18077,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
        Without the tax box the voucher fills the page with the same margin all round, the description area taking the extra height.
        sig: signatures as images, { prep, acct, appr }, printed in the Prepared by, Accounted by and Approved by boxes. */
     var c = S.companies[v.companyId] || {}, type = v.vtype || "Cash Voucher", rcm = v.gstApp === "RCM";
-    var taxT = type === "Freight & Transport" || (type === "Self Invoice" && rcm), P = !taxT, wide = type === "Cash Voucher";
+    var taxT = type === "Freight & Transport" || (type === "Self Invoice" && rcm), P = !taxT, wide = type === "Cash Voucher" && !tly(); /* Tally (Demo): Supply Of is on every voucher, so a Cash Voucher prints it too */
     var INK = [15, 23, 42], HEAD = [30, 41, 59], BODY = [51, 65, 85], MUTE = [100, 116, 139], SUB = [71, 85, 105], FILL = [241, 245, 249];
     var PT = 25.4 / 72, TH = 0.265, FR = 0.79, X0 = 3.97, XI = 4.76, XR = 205.85, PH = doc.internal.pageSize.getHeight();
     function F(font, st, size, col) { doc.setFont(font, st); doc.setFontSize(size); doc.setTextColor(col[0], col[1], col[2]); }

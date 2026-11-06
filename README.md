@@ -135,6 +135,16 @@
   on taxable value Rs. 10,000.00 at 5%: CGST Rs. 250.00, SGST Rs. 250.00." (Voucher No. … for a voucher). When only part of the bill is under reverse charge it gives the bill's taxable value, then
   each part with its ledger and rate: "… of Sri Murugan Transports (taxable value Rs. 10,000.00), of which Rs. 1,000.00
   (Lorry Freight) is under RCM at 5%: CGST Rs. 25.00, SGST Rs. 25.00." (ledger names dropped first if over 255 characters).
+- **Supply Of: required on every Tally (Demo) voucher, editable by the accountant.** In Tally (Demo), Supply Of (Goods,
+  Services or Composite) is required on every voucher, Cash Vouchers included (the division apps still clear and grey it
+  out for a Cash Voucher). Accounting has it as a choice in Base Details for bills (`aoBSup`) and vouchers (`aoVSup`),
+  required, saved with the accounting.
+- **Journal Voucher narration wording.** "Being GST payable under the Reverse Charge Mechanism (RCM) against Voucher No.
+  INTL-VOU001/11/26-27 dated 05-11-2026, issued to M. Arun, on a taxable value of ₹2,100.00 @ 5% (CGST ₹52.50 + SGST
+  ₹52.50)." A bill reads "against Bill No. … issued by <vendor>"; part of a bill under RCM reads "on a taxable value of
+  ₹1,000.00 @ 5% (Lorry Freight) out of the total taxable value of ₹10,000.00 (…)"; several rates are joined with "and";
+  IGST shows alone. Ledger names go first if it would pass 255 characters. A bill's Journal Voucher narration is now
+  saved when it is accounted (it was saved only on Postpone).
 - **Voucher accounting shows Supply of.** The summary at the top of a voucher's accounting includes Supply of (or "Not
   given").
 - **Item descriptions (Tally (Demo)).** A line typed or spoken in Bill Entry is rewritten by Claude to the description rules,

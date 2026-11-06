@@ -2012,7 +2012,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     "vfCo", "vfType", "vfPayeeSel", "vfPayee", "vfIdNo", "vfSupply", "vfDays", "vfPPrep", "vfPDiv", "vfPA2", "vfLines", "vfMode", "vfSet",
     "adCo", "adVen", "adVName", "adVAddr", "adVType", "adVTerm", "adNo", "adDate", "adTotal", "adPPrep", "adPDiv", "adPA2",
     "duImp", "duKind", "duVen", "duParty", "duAmt", "duDue", "duPPrep", "duPDiv", "duPA2",
-    "caCo", "caAmt", "caPur", "caPPrep", "caPDiv", "caPA2", "aoVNar", "aoTlyNar", "aoVJNar", "aoTlyJNar", "aoType", "bcNar", "adNar"];
+    "caCo", "caAmt", "caPur", "caPPrep", "caPDiv", "caPA2", "aoVNar", "aoTlyNar", "aoVJNar", "aoTlyJNar", "aoVSup", "aoBSup", "aoType", "bcNar", "adNar"];
   function tlyReqMark() {
     TLY_REQ.forEach(function (id) { var c = document.getElementById(id); if (!c) return; var f = c.closest(".f"); if (!f) return;
       var lb = f.querySelector(":scope > label, :scope > .lb"); if (lb) lb.classList.toggle("rq", !c.disabled || c.id === "aoVNar" || c.id === "aoTlyNar" || c.id === "aoVJNar" || c.id === "aoTlyJNar"); });
@@ -13089,7 +13089,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     else if (dst.sims.length && D.dupAns !== "new") E("vfPayee", "Say whether this is " + dst.sims.map(function (x) { return x.name; }).join(" or ") + ", or a different person or shop.");
     if (D.payeeChoice && !idKind(D.payeeIdNo)) E("vfIdNo", D.payeeIdNo ? "That isn't a valid Aadhaar (12 digits) or PAN (like ABCDE1234F)." : "Enter their Aadhaar or PAN number.");
     if (D.payeeChoice && other && !String(D.payeeAddr || "").trim()) E("vfAddr", "Enter the address of the person or shop.");
-    if ((other || (tly() && D.vtype !== "Cash Voucher")) && !D.supplyOf.trim()) E("vfSupply", "Choose Goods, Services or Composite.");
+    if ((other || tly()) && !D.supplyOf.trim()) E("vfSupply", "Choose Goods, Services or Composite.");
     var bad = "";
     D.lines.forEach(function (x, i) { if (bad) return; var n = num(x.amt); if (!String(x.d).trim()) bad = "Describe line " + (i + 1) + "."; else if (riskMsg(x.d, $("vfLd" + i))) bad = "Line " + (i + 1) + ": " + riskMsg(x.d, $("vfLd" + i)); else if (narrPayCheck(x.d)) bad = "Line " + (i + 1) + ": " + narrPayCheck(x.d); else if (n == null || n <= 0) bad = "Enter the amount on line " + (i + 1) + ", more than zero."; });
     if (bad) E("vfLines", bad);
@@ -13113,8 +13113,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("vfPayeeBox").hidden = D.payeeChoice !== "new";
     var po = $("vfPayeeSel").options[1]; if (po) po.textContent = D.payeeNew.trim() ? "New person or shop: " + D.payeeNew.trim() : "New person or shop";
     var other = D.vtype && D.vtype !== "Cash Voucher";
-    var cashV = D.vtype === "Cash Voucher", sp0 = $("vfSupply"), sf0 = $("vfSupplyF"); sf0.hidden = false;
-    /* a Cash Voucher has no Supply Of: the field is cleared and greyed out */
+    var cashV = D.vtype === "Cash Voucher" && !tly(), sp0 = $("vfSupply"), sf0 = $("vfSupplyF"); sf0.hidden = false;
+    /* a Cash Voucher has no Supply Of in the division apps (cleared and greyed out); Tally (Demo) asks it on every voucher */
     sp0.disabled = cashV; if (cashV && (sp0.value || D.supplyOf)) { sp0.value = ""; D.supplyOf = ""; }
     var sh0 = $("vfSupplyH"); if (sh0) sh0.textContent = cashV ? "Not needed for a Cash Voucher." : "Goods, Services, or Composite (goods and services together).";
     if (typeof tlyReqMark === "function" && tly()) tlyReqMark();
@@ -13133,7 +13133,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var hk = [String(D.payee || "").trim(), D.companyId || "", VH.id || "", vchDay(), D.payMode || "", D.vtype || "", vchTotal(D)].join("|"); if (VH.histFor !== hk) { VH.histFor = hk; drawPayeeHist(); }
     var t = vchTotal(D); $("vfTotV").textContent = t == null ? "" : money(t);
     /* Details and ledger open only once the company, Paid to, the voucher type and (except a Cash Voucher) Supply Of are chosen */
-    var need = []; if (!D.companyId) need.push("the company"); if (!String(D.payee || "").trim()) need.push("Paid to"); if (!D.vtype) need.push("the voucher type"); if ((other || (tly() && D.vtype !== "Cash Voucher")) && !D.supplyOf) need.push("Supply Of");
+    var need = []; if (!D.companyId) need.push("the company"); if (!String(D.payee || "").trim()) need.push("Paid to"); if (!D.vtype) need.push("the voucher type"); if ((other || tly()) && !D.supplyOf) need.push("Supply Of");
     vchLinesLock(need);
     var old0 = VH.id && S.vouchers[VH.id], nl = D.lines.map(function (x) { return { d: sentenceFix(String(x.d || "").trim()), lg: x.lg }; });
     $("vfNarV").textContent = need.length || !nl.some(function (x) { return x.d; }) ? "" : (tly() ? tlyVchNarr : vchNarr)(D, old0 && old0.voucherNo ? old0.voucherNo : "[No.]", old0 && old0.voucherDate ? old0.voucherDate : todayYmd(), nl);
@@ -13242,7 +13242,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var vn = !old || old.companyId !== D.companyId || !old.voucherNo ? nextVoucherNo(D.companyId, D.voucherDate) : { no: old.voucherNo, seq: old.voucherSeq || null, fy: old.voucherFy || fyOf(D.voucherDate) };
     var doc = Object.assign({ companyId: D.companyId, voucherNo: vn.no, voucherSeq: vn.seq, voucherFy: vn.fy, voucherDate: D.voucherDate, payee: D.payee.trim(), total: total, tds: tds, lines: lines, file: D.file || null,
       narration: (tly() ? tlyVchNarr : vchNarr)(D, vn.no, D.voucherDate, lines), payMode: D.payMode, vtype: D.vtype, gstApp: old && other ? old.gstApp || "N/A" : "N/A", gstRate: old && other && old.gstApp === "RCM" ? old.gstRate : null, taxable: total,
-      supplyOf: other || (tly() && D.vtype !== "Cash Voucher") ? D.supplyOf.trim() : "", payeeAddr: other ? D.payeeAddr.trim() : "", payeeIdNo: idNorm(D.payeeIdNo), payeeIdKind: idKind(D.payeeIdNo), ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
+      supplyOf: other || tly() ? D.supplyOf.trim() : "", payeeAddr: other ? D.payeeAddr.trim() : "", payeeIdNo: idNorm(D.payeeIdNo), payeeIdKind: idKind(D.payeeIdNo), ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
       settle: D.settle === "yes", acct: "pending", acctNote: "", updatedAt: now, updatedBy: meId(),
       cashCheck: D.payMode === "cash" ? (function () { var bf = cashToday(D.companyId, D.payee.trim(), D.voucherDate, VH.id); return cashRec({ day: D.voucherDate, before: bf, total: round2(bf + total), limit: cashLimit(D.vtype) }); })() : null }, prepFields(D.prepBy), approverFields(D.approverId), extDoc(D.companyId, D.X));
     var newName = null;
@@ -16710,7 +16710,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (kind === "voucher" && tly()) AC.D.rcmL = vchLinesOf(x).map(function (ln, i) { var o = (x.rcmLines || [])[i]; return { on: o ? !!o.on : x.vtype === GTA_TYPE, rate: o && o.rate ? String(o.rate) : "5", amt: Number(ln.amt) || 0, d: ln.d || "" }; });
     if (kind === "bill") { AC.D.gstInter = billInter(x); gstFromSaved(x, AC.D); }
     /* Tally (Demo): the accountant works on the bill's line items (RCM, ITC, ledgers), TDS and narration */
-    AC.T = tly() && kind === "bill" ? { day: x.billDate || "", items: itemsIn(JSON.parse(JSON.stringify(x))), tds: x.tds != null ? fmtInput(x.tds) : x.entryTds || "", tdsSec: x.tdsSection || x.entryTdsSection || "", narration: x.narration || "", rcmNarr: x.rcmNarr || "", rcmNarrMan: !!x.rcmNarrMan, companyId: x.companyId, vendorChoice: x.vendorId || "" } : null;
+    AC.T = tly() && kind === "bill" ? { day: x.billDate || "", items: itemsIn(JSON.parse(JSON.stringify(x))), tds: x.tds != null ? fmtInput(x.tds) : x.entryTds || "", tdsSec: x.tdsSection || x.entryTdsSection || "", narration: x.narration || "", supplyOf: x.supplyOf || "", rcmNarr: x.rcmNarr || "", rcmNarrMan: !!x.rcmNarrMan, companyId: x.companyId, vendorChoice: x.vendorId || "" } : null;
     if (AC.T && !(AC.ready || {})[id]) { acctAnalyse(x); show("secAcctOne"); return; }
     renderAcctOne(); show("secAcctOne");
   }
@@ -16770,7 +16770,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       [["Company", (S.companies[x.companyId] || {}).name || coLabel(x.companyId)], ["Vendor", vendorLabelOfBill(x) + (vg ? " (" + vg + ")" : "")], ["Bill Number", x.billNo || ""], ["Bill Date", fmtDate(bdY)],
         ["Payment Terms (days)", tdays == null ? "" : String(tdays)], ["Due Date", bdY && tdays != null ? fmtDate(addDays(bdY, tdays)) : ""], ["Supply of", label2(SUPPLY, x.supplyOf) || "Not set"],
         ["Prepared by", (pnm(x.preparedByName) || userLabel(prepOf(x))) + (personDept(prepOf(x)) ? ", " + personDept(prepOf(x)) : "")]].forEach(function (k) {
-        var ff = el("div", { class: "f" }); ff.appendChild(el("span", { class: "lb" }, k[0])); ff.appendChild(el("div", { class: "field ro" }, k[1] || "\u2014")); g0.appendChild(ff); });
+        var ff = el("div", { class: "f" }); ff.appendChild(el("span", { class: "lb" }, k[0]));
+        /* the accountant can correct Supply of */
+        if (k[0] === "Supply of") { var bs = el("select", { class: "field", id: "aoBSup", "aria-label": "Supply of" }); fillSelect(bs, [["", "Choose"]].concat(SUPPLY), AC.T.supplyOf || ""); bs.disabled = locked; bs.addEventListener("change", function () { AC.T.supplyOf = bs.value; AC.dirty = true; }); ff.appendChild(bs); ff.appendChild(el("span", { class: "err", id: "aoBSupE", hidden: "" })); }
+        else ff.appendChild(el("div", { class: "field ro" }, k[1] || "\u2014")); g0.appendChild(ff); });
       var ei = el("div", { class: "f wide" }); ei.appendChild(el("span", { class: "lb" }, "e-Invoice")); ei.appendChild(el("div", { class: "field ro mono", style: "word-break:break-all" }, x.einv && x.einv.irn ? einvText(x.einv) : "No IRN recorded")); g0.appendChild(ei);
       if (x.acctNote) g0.appendChild(el("div", { class: "flag w f wide" }, "Accountant's note: " + x.acctNote));
       var s1 = el("section", { class: "tlysec" }); s1.appendChild(el("h3", null, "Bills Line Items")); s1.appendChild(el("div", { id: "aoItemsWrap" })); itCard.appendChild(s1);
@@ -16928,7 +16931,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function tlyVchInit(x, D) {
     if (D.vl) return; var vt = x.vtype || "";
     D.vl = vchLinesOf(x).map(function (ln, i) { var o = (x.rcmLines || [])[i]; return { d: ln.d || "", amt: Number(ln.amt) || 0, lg: ln.lg || ((D.lines || [])[0] || {}).id || "", on: o ? !!o.on : vt === GTA_TYPE, rate: o && o.rate ? String(o.rate) : "5" }; });
-    D.rcmL = D.vl; D.days = x.termDays != null ? String(x.termDays) : "0"; D.narration = x.narration || ""; D.rcmNarr = x.rcmNarr || ""; D.rcmNarrMan = !!x.rcmNarrMan;
+    D.rcmL = D.vl; D.days = x.termDays != null ? String(x.termDays) : "0"; D.narration = x.narration || ""; D.supplyOf = x.supplyOf || ""; D.rcmNarr = x.rcmNarr || ""; D.rcmNarrMan = !!x.rcmNarrMan;
   }
   /* the ledger lines Tally gets: each line's ledger, added up */
   function tlyVchSync(D) { if (!D.vl) return; var m = {}, o = []; D.vl.forEach(function (l) { var k = l.lg || ""; if (m[k] == null) { m[k] = 0; o.push(k); } m[k] = round2(m[k] + l.amt); }); D.lines = o.map(function (k) { return { id: k, amt: fmtInput(m[k]) }; }); }
@@ -16965,7 +16968,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var tf = el("tfoot"), fr = el("tr"); fr.appendChild(elc("td", { colspan: "4" }, el("b", null, "Total"))); fr.appendChild(elc("td", { class: "r num" }, el("b", null, amt2(round2(D.vl.reduce(function (s0, l) { return s0 + l.amt; }, 0)))))); tf.appendChild(fr); tb.appendChild(tf); tbw.appendChild(tb);
     };
     vt.addEventListener("change", function () { var p = vt.value.split("|"), was = D.vtype; D.vtype = p[0]; if (p[1]) { D.gstType = p[1]; D.gtSet = true; } else if (D.vtype !== GTA_TYPE) D.gtSet = D.vtype === "Self Invoice" ? D.gtSet : false;
-      D.vl.forEach(function (l) { if (D.vtype === GTA_TYPE && was !== GTA_TYPE) l.on = true; if (!rcmOk(D.vtype)) l.on = false; }); drawL(); changed(true); });
+      D.vl.forEach(function (l) { if (D.vtype === GTA_TYPE && was !== GTA_TYPE) l.on = true; if (!rcmOk(D.vtype)) l.on = false; }); if (D.vsSet) D.vsSet(); drawL(); changed(true); });
     gtS.addEventListener("change", function () { D.gstType = gtS.value; D.gtSet = true; changed(); });
     drawL();
     /* the print, as it will come out (A5), redrawn as anything changes */
@@ -16991,7 +16994,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     ro("Payment in (days)", x.termDays != null ? String(x.termDays) : "0");
     var due = el("div", { class: "field ro", id: "aoVDue" }), uw = el("div", { class: "f" }); uw.appendChild(el("label", null, "Due Date")); uw.appendChild(due); g.appendChild(uw);
     due.textContent = fmtDate(x.dueDate || addDays(x.voucherDate || todayYmd(), Number(x.termDays) || 0));
-    ro("Supply of", x.supplyOf || ""); var P = x.tlyPpl || {}; ro("Prepared By", (pnm(P.prepName || x.preparedByName || "") || personName(prepOf(x))) + (P.divName ? " · " + P.divName : ""));
+    /* the accountant can correct Supply Of; required on every voucher */
+    var vsW = el("div", { class: "f" }), vs = el("select", { class: "field", id: "aoVSup", "aria-label": "Supply Of" }), vsSet = function () { vs.disabled = locked; vs.value = D.supplyOf || ""; };
+    var sopts0 = [["", "Choose"]].concat(SUPPLY_OF.map(function (k) { return [k, k]; })); if (D.supplyOf && SUPPLY_OF.indexOf(D.supplyOf) < 0) sopts0.push([D.supplyOf, D.supplyOf]); fillSelect(vs, sopts0, D.supplyOf || "");
+    var vsH = el("span", { class: "hint" }); vsW.appendChild(el("label", { for: "aoVSup" }, "Supply Of")); vsW.appendChild(vs); vsW.appendChild(vsH); vsW.appendChild(el("span", { class: "err", id: "aoVSupE", hidden: "" })); g.appendChild(vsW); vsSet(); D.vsSet = vsSet;
+    vs.addEventListener("change", function () { D.supplyOf = vs.value; changed(true); });
+    var P = x.tlyPpl || {}; ro("Prepared By", (pnm(P.prepName || x.preparedByName || "") || personName(prepOf(x))) + (P.divName ? " · " + P.divName : ""));
     /* Tally Line Items (right): TDS, the entries, the narration */
     var tl = sec(R, "Tally Line Items"), tr0 = el("div", { class: "vgrid", style: "margin-bottom:12px" });
     var ts = el("select", { class: "field", id: "aoSec" }); fillSelect(ts, [["", "No TDS"]].concat(tdsOptions(D.sec)), D.sec); ts.disabled = locked;
@@ -17004,7 +17012,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!D.sec && !String(D.tds || "").trim()) D.tds = "0";
     var tw = el("div", { id: "aoVchTally" });
     var nf = el("div", { class: "f wide", style: "margin-top:14px" }), nlb = el("label", { for: "aoVNar" }, "Narration"), ta = el("textarea", { class: "field", id: "aoVNar", rows: "4", maxlength: String(NARR_MAX) }); ta.value = D.narration; ta.disabled = locked;
-    var regen = function () { return tlyVchNarr(Object.assign({}, x, { vtype: D.vtype }), x.voucherNo, x.voucherDate, D.vl); };
+    var regen = function () { return tlyVchNarr(Object.assign({}, x, { vtype: D.vtype, supplyOf: D.supplyOf }), x.voucherNo, x.voucherDate, D.vl); };
     var rw = el("button", { type: "button", class: "link-btn", style: "margin-left:10px;text-transform:none" }, "Write Again"); rw.disabled = locked; rw.addEventListener("click", function () { D.narMan = false; D.narration = regen(); ta.value = D.narration; cnt(); changed(); }); nlb.appendChild(rw);
     var nc = el("span", { class: "hint" }); var cnt = function () { nc.textContent = ta.value.length + " of " + NARR_MAX + " characters." + (D.narMan ? " Edited by hand: Write Again to follow the lines." : " Follows the lines as they change."); };
     ta.addEventListener("input", function () { D.narration = ta.value; D.narMan = true; cnt(); changed(); }); cnt();
@@ -17043,21 +17051,25 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* the voucher as it would be once accounted with what is on the screen: for the preview */
   function vchAsAcct(x, D) {
     tlyVchSync(D); var rg = vchRcmOut(D), rts = {}; (D.vl || []).forEach(function (r) { if (r.on && rcmOk(D.vtype)) rts[r.rate] = 1; }); var tds = round2(num(D.tds) || 0);
-    return Object.assign({}, x, { vtype: D.vtype, narration: String(D.narration || "").replace(/\s+/g, " ").trim(), lines: (D.vl || []).map(function (l) { return { d: l.d, amt: l.amt, lg: l.lg }; }), ledgers: (D.lines || []).map(function (l) { return { id: l.id, amt: num(l.amt) || 0 }; }),
+    return Object.assign({}, x, { vtype: D.vtype, supplyOf: D.supplyOf != null ? D.supplyOf : x.supplyOf, narration: String(D.narration || "").replace(/\s+/g, " ").trim(), lines: (D.vl || []).map(function (l) { return { d: l.d, amt: l.amt, lg: l.lg }; }), ledgers: (D.lines || []).map(function (l) { return { id: l.id, amt: num(l.amt) || 0 }; }),
       tds: tds, tdsSection: tds > 0 ? D.sec : "", gstApp: rg.tax > 0 ? "RCM" : "N/A", gstType: rg.tax > 0 ? D.gstType : null, gstRate: rg.tax > 0 && Object.keys(rts).length === 1 ? Number(Object.keys(rts)[0]) : null, gstLedgers: rg.gl, rcmAmt: rg.tax, taxable: Number(x.total) || 0, rcmLines: (D.vl || []).map(function (l) { return { on: !!l.on && rcmOk(D.vtype), rate: Number(l.rate), amt: l.amt }; }), acct: "approved", acctBy: meId() });
   }
   /* a bill's RCM lines: the Journal Entry - GST that books their tax (Dr Input (RCM), Cr Output (RCM)), or null */
   /* The Journal Voucher's narration for reverse charge: which bill or voucher, its date and party, the taxable value, the
      rate and each tax; up to 255 characters. o: {kind: "Bill" / "Voucher", no, date, party, base, rates [5, 18], h {cgst, sgst, igst}} */
   function rcmNarrText(o) {
-    var d = ymdOk(o.date) ? o.date.split("-").reverse().join("-") : "", rs = (o.rates || []).filter(function (r, i, a) { return r > 0 && a.indexOf(r) === i; }).sort(function (a, b) { return a - b; });
-    var tx = ["cgst", "sgst", "igst"].filter(function (k) { return Number((o.h || {})[k]) > 0; }).map(function (k) { return k.toUpperCase() + " Rs. " + amt2(o.h[k]); });
-    var head = "Being GST payable under reverse charge mechanism (RCM) on " + (o.kind || "Bill") + " No. " + (o.no || "-") + (d ? " dated " + d : "") + " of " + (o.party || "the supplier"), tail = (tx.length ? ": " + tx.join(", ") : "") + ".";
-    var parts = (o.parts || []).filter(function (p0) { return Number(p0.amt) > 0; }), part = Number(o.total) > 0 && Number(o.base) > 0 && Number(o.base) < Number(o.total) - 0.005 && parts.length;
-    /* only part of the bill is under reverse charge: the bill's taxable value, then each part (its ledger, its rate) */
-    var mk = function (withLed) { if (!part) return head + (Number(o.base) > 0 ? ", on taxable value Rs. " + amt2(o.base) + (rs.length ? " at " + rs.map(function (r) { return r + "%"; }).join(" / ") : "") : "") + tail;
-      var ps = parts.map(function (p0) { return "Rs. " + amt2(p0.amt) + (withLed && p0.led ? " (" + p0.led + ")" : "") + (parts.length > 1 ? " at " + p0.rate + "%" : ""); });
-      return head + " (taxable value Rs. " + amt2(o.total) + "), of which " + ps.join(" and ") + " is under RCM" + (parts.length > 1 ? "" : " at " + parts[0].rate + "%") + tail; };
+    var d = ymdOk(o.date) ? o.date.split("-").reverse().join("-") : "", R = "\u20B9";
+    var tx = ["cgst", "sgst", "igst"].filter(function (k) { return Number((o.h || {})[k]) > 0; }).map(function (k) { return k.toUpperCase() + " " + R + amt2(o.h[k]); });
+    var head = "Being GST payable under the Reverse Charge Mechanism (RCM) against " + (o.kind || "Bill") + " No. " + (o.no || "-") + (d ? " dated " + d : "") + ", issued " + (o.kind === "Voucher" ? "to " : "by ") + (o.party || (o.kind === "Voucher" ? "the payee" : "the supplier"));
+    var tail = (tx.length ? " (" + tx.join(" + ") + ")" : "") + ".";
+    var parts = (o.parts || []).filter(function (p0) { return Number(p0.amt) > 0; });
+    if (!parts.length && Number(o.base) > 0) parts = (o.rates || []).length === 1 ? [{ rate: o.rates[0], amt: o.base }] : [{ rate: null, amt: o.base }];
+    var part = Number(o.total) > 0 && Number(o.base) > 0 && Number(o.base) < Number(o.total) - 0.005;
+    var mk = function (withLed) {
+      /* the whole bill under RCM: by rate only; part of it: each part with its ledger, then the bill's whole taxable value */
+      var ps = part ? parts : rcmParts(parts.map(function (p0) { return { led: "", rate: p0.rate, amt: p0.amt }; }));
+      var tv = ps.map(function (p0) { return R + amt2(p0.amt) + (p0.rate != null ? " @ " + p0.rate + "%" : "") + (part && withLed && p0.led ? " (" + p0.led + ")" : ""); }).join(" and ");
+      return head + (tv ? ", on a taxable value of " + tv + (part ? " out of the total taxable value of " + R + amt2(o.total) : "") : "") + tail; };
     var t = mk(true); if (t.length > NARR_MAX) t = mk(false);
     return t.length > NARR_MAX ? t.slice(0, NARR_MAX - 1).replace(/[ ,]+\S*$/, "") + "." : t;
   }
@@ -17107,8 +17119,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (D.vl && D.vtype === GTA_TYPE && !D.gtSet) errs.push(["aoType", "Choose Freight & Transport, Intrastate or Interstate."]);
       if ((D.vl || []).some(function (l) { return !String(l.d || "").trim(); })) errs.push(["aoLed", "Describe every line."]);
       if (D.vl && !String(D.narration || "").trim()) errs.push(["aoVNar", "Write the narration."]);
+      if (D.vl && !D.supplyOf) errs.push(["aoVSup", "Choose Goods, Services or Composite."]);
       if (D.vl && vchRcmOut(D).tax > 0 && !String(D.rcmNarr || "").trim()) errs.push(["aoVJNar", "Write the Journal Voucher's narration."]); }
     if (AC.kind === "bill" && tly() && AC.T && !String(AC.T.narration || "").trim()) errs.push(["aoTlyNar", "Write the narration."]);
+    if (AC.kind === "bill" && tly() && AC.T && !AC.T.supplyOf) errs.push(["aoBSup", "Choose whether the bill is for goods, services or both."]);
     if (AC.kind === "bill" && tly() && AC.T && rcmJournal(AC.T.items, billInter(x)) && !String(AC.T.rcmNarr || "").trim()) errs.push(["aoTlyJNar", "Write the Journal Voucher's narration."]);
     else if (AC.kind === "voucher" && D.vtype && D.vtype !== "Cash Voucher" && D.gstApp === "RCM") { if (!D.gstRate) errs.push(["aoRate", "Choose the GST (RCM) percent."]); var rb = rcmLines(D, []); if (rb) errs.push(["aoRcm", rb]); }
     return errs;
@@ -17146,13 +17160,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var tv = tallyVoucher({ items: T.items, cid: x.companyId, inter: inter, acct: true, tds: T.tds, tdsSec: T.tdsSec, tdsBase: tdsBaseOf(T.items), billNo: x.billNo, party: vendorLabelOfBill(x) });
     if (tv.rows.some(function (r) { return r.noLed; })) errs.push("A GST ledger is missing: add it in Masters › Ledgers › GST.");
     var nar = String(T.narration || "").replace(/\s+/g, " ").trim(); if (!nar) errs.push("Write the narration."); else if (nar.length > NARR_MAX) errs.push("The narration is longer than " + NARR_MAX + " characters.");
+    var jrA = rcmJournal(T.items, inter), jnar = jrA ? String(T.rcmNarr || "").replace(/\s+/g, " ").trim() : ""; if (jrA && !jnar) errs.push("Write the Journal Voucher's narration."); else if (jnar.length > NARR_MAX) errs.push("The Journal Voucher's narration is longer than " + NARR_MAX + " characters.");
+    if (!T.supplyOf) errs.push("Choose Supply of: goods, services or both.");
     var eb = $("aoTlyErr"); if (eb) { eb.textContent = ""; if (errs.length) { var fl = el("div", { class: "flag e", style: "display:block;margin-top:10px" }); fl.appendChild(el("b", null, "Before accounting:")); var ul = el("ul", { style: "margin:6px 0 0;padding-left:20px" }); errs.forEach(function (e) { ul.appendChild(el("li", null, e)); }); fl.appendChild(ul); eb.appendChild(fl); fl.scrollIntoView({ block: "center" }); } }
     if (errs.length) return;
     var per = {}, order = []; effItems(T.items).forEach(function (r) { if (r.k === "ro" || !r.lg) return; if (per[r.lg] == null) { per[r.lg] = 0; order.push(r.lg); } per[r.lg] = round2(per[r.lg] + (num(r.tx) || 0)); });
     var gl = tv.rows.filter(function (r) { return r.gst && r.lid; }).map(function (r) { return { id: r.lid, amt: r.amt }; }), gt = {}; gl.forEach(function (g) { gt[gstFlavour((S.ledgers || {})[g.id])] = 1; });
     var td = round2(tds || 0), base = tdsBaseOf(T.items), inr = (x.currency || "INR") === "INR";
     var up = Object.assign({ acct: "approved", acctNote: "", items: itemsOut(T.items), ledgers: order.map(function (k) { return { id: k, amt: per[k] }; }), taxable: t.taxable, gstAmt: t.gst, roundOff: t.ro || null, total: t.total,
-      gstLedgers: gl, gstSupply: gl.length ? (inter ? "inter" : "intra") : null, gstTypes: gl.length ? Object.keys(gt) : null, tds: td, tdsSection: td > 0 ? T.tdsSec : "", narration: nar, hsnDev: hsnDeviations(acctCtx()) }, x.autoAppr && !x.apprReq && !tlyBcrOf(x) ? { apprReq: { at: Date.now(), by: x.submittedBy || x.ownerId || "", byName: pnm(x.preparedByName || ""), auto: true } } : {}, inr ? { fcTaxable: t.taxable, fcGst: t.gst, fcTotal: t.total } : {}, tdsBaseRate(td, base), acctWho());
+      gstLedgers: gl, gstSupply: gl.length ? (inter ? "inter" : "intra") : null, gstTypes: gl.length ? Object.keys(gt) : null, tds: td, tdsSection: td > 0 ? T.tdsSec : "", narration: nar, supplyOf: T.supplyOf, rcmNarr: jnar, rcmNarrMan: !!(jrA && T.rcmNarrMan), hsnDev: hsnDeviations(acctCtx()) }, x.autoAppr && !x.apprReq && !tlyBcrOf(x) ? { apprReq: { at: Date.now(), by: x.submittedBy || x.ownerId || "", byName: pnm(x.preparedByName || ""), auto: true } } : {}, inr ? { fcTaxable: t.taxable, fcGst: t.gst, fcTotal: t.total } : {}, tdsBaseRate(td, base), acctWho());
     var was = x.acct === "approved"; AC.busy = true; btn.disabled = true;
     retry(function () { return S.db.doc("bills/" + x.id).update(up); }).then(function () { Object.assign(x, up); invalidate(); hsnLearnFrom(T.items); toast("Bill " + x.billNo + (was ? " updated." : tly() ? (up.apprReq ? " accounted and sent for approval." : " accounted. It can be sent for approval.") : " accounted. It can be paid in Payment Entry.")); backToAcct(); renderNav(); }, function (e) { toast(explain(e)); }).then(function () { AC.busy = false; btn.disabled = false; });
   }
@@ -17166,7 +17182,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (AC.kind === "bill") { var gG = billGst(x) > 0; up.gstLedgers = gG ? gstLinesOut(x, D) : []; up.gstSupply = gG ? (D.gstInter ? "inter" : "intra") : null; up.gstTypes = gG ? D.gstTypes.slice() : null; }
     if (AC.kind === "voucher" && tly()) { var rg1 = vchRcmOut(D), on1 = rg1.tax > 0, rts = {}; D.rcmL.forEach(function (r) { if (r.on && rcmOk(D.vtype)) rts[r.rate] = 1; });
       Object.assign(up, { lines: D.vl.map(function (l) { return { d: sentenceFix(String(l.d || "").replace(/\s+/g, " ").trim()), amt: l.amt, lg: l.lg }; }), narration: String(D.narration || "").replace(/\s+/g, " ").trim() || x.narration || "" });
-      Object.assign(up, { rcmNarr: on1 ? String(D.rcmNarr || "").replace(/\s+/g, " ").trim().slice(0, NARR_MAX) : "", rcmNarrMan: !!(on1 && D.rcmNarrMan), vtype: D.vtype, gstType: on1 ? D.gstType : null, gstLedgers: rg1.gl, rcmAmt: rg1.tax, gstApp: on1 ? "RCM" : "N/A", gstRate: on1 && Object.keys(rts).length === 1 ? Number(Object.keys(rts)[0]) : null, taxable: Number(x.total) || 0, payable: round2((Number(x.total) || 0) - tds),
+      Object.assign(up, { supplyOf: D.supplyOf || "", rcmNarr: on1 ? String(D.rcmNarr || "").replace(/\s+/g, " ").trim().slice(0, NARR_MAX) : "", rcmNarrMan: !!(on1 && D.rcmNarrMan), vtype: D.vtype, gstType: on1 ? D.gstType : null, gstLedgers: rg1.gl, rcmAmt: rg1.tax, gstApp: on1 ? "RCM" : "N/A", gstRate: on1 && Object.keys(rts).length === 1 ? Number(Object.keys(rts)[0]) : null, taxable: Number(x.total) || 0, payable: round2((Number(x.total) || 0) - tds),
         rcmLines: D.rcmL.map(function (r) { var on = r.on && rcmOk(D.vtype); return { on: on, rate: Number(r.rate), amt: r.amt, tax: on ? round2(r.amt * Number(r.rate) / 100) : 0 }; }) }); }
     else if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher", rcm = oth && D.gstApp === "RCM", gl = []; if (rcm) rcmLines(D, gl);
       up.gstType = rcm ? D.gstType : null; up.gstLedgers = gl; up.rcmAmt = round2(gl.reduce(function (s0, g) { return s0 + g.amt; }, 0));
@@ -17186,7 +17202,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       return (tp || Promise.resolve()).then(function () {
         var up = Object.assign({ acct: "held", acctNote: sentenceFix($("aoHoldWhy").value.trim()), ledgers: ledLinesOut(AC.kind === "bill" ? nonRo(D.lines) : D.lines) }, acctWho(), roundUp(x, D)); var t = num(D.tds); if (t != null) up.tds = round2(t); if (D.sec) up.tdsSection = D.sec; if (AC.kind === "voucher" && D.vtype) { up.vtype = D.vtype; up.gstApp = D.vtype !== "Cash Voucher" ? D.gstApp : "N/A"; if (up.gstApp === "RCM") { var gl0 = []; if (!rcmLines(D, gl0)) { up.gstType = D.gstType; up.gstRate = Number(D.gstRate); up.gstLedgers = gl0; } } }
         if (AC.kind === "bill" && billGst(x) > 0 && !gstCheck(x, D)) { up.gstLedgers = gstLinesOut(x, D); up.gstSupply = D.gstInter ? "inter" : "intra"; up.gstTypes = D.gstTypes.slice(); }
-        if (tly() && AC.kind === "bill" && AC.T) { var jr9 = rcmJournal(AC.T.items, billInter(x)); up.rcmNarr = jr9 ? String(AC.T.rcmNarr || "").replace(/\s+/g, " ").trim().slice(0, NARR_MAX) : ""; up.rcmNarrMan = !!(jr9 && AC.T.rcmNarrMan); delete up.gstLedgers; up.items = itemsOut(AC.T.items); up.entryTds = String(AC.T.tds || ""); up.entryTdsSection = AC.T.tdsSec || ""; if (String(AC.T.narration || "").trim()) up.narration = String(AC.T.narration).trim().slice(0, NARR_MAX); }
+        if (tly() && AC.kind === "bill" && AC.T) { if (AC.T.supplyOf) up.supplyOf = AC.T.supplyOf; var jr9 = rcmJournal(AC.T.items, billInter(x)); up.rcmNarr = jr9 ? String(AC.T.rcmNarr || "").replace(/\s+/g, " ").trim().slice(0, NARR_MAX) : ""; up.rcmNarrMan = !!(jr9 && AC.T.rcmNarrMan); delete up.gstLedgers; up.items = itemsOut(AC.T.items); up.entryTds = String(AC.T.tds || ""); up.entryTdsSection = AC.T.tdsSec || ""; if (String(AC.T.narration || "").trim()) up.narration = String(AC.T.narration).trim().slice(0, NARR_MAX); }
         return retry(function () { return S.db.doc((AC.kind === "bill" ? "bills/" : "vouchers/") + x.id).update(up); }).then(function () { Object.assign(x, up); toast("Postponed."); backToAcct(); renderNav(); return true; }, function (e) { toast(explain(e)); return false; });
       });
     });

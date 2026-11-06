@@ -158,8 +158,10 @@
   Paid, Due Date) and **All Bills** (Prepared By, Vendor, Bill Details with the BCR number in front, e.g. "BCR/TCPL/26-27/002 -
   GST839", Company (short name), Total Payable, Total Paid, Due Date, Submitted) are grouped by status in status order, oldest bill or voucher
   date first, filtered by All Companies, Prepared By and Vendor (plus a number search); each status is its own card with the same column widths, on the page's background.
-- **Cash Voucher print shows Supply Of (Tally (Demo)).** Supply Of is on every Tally voucher, so the printed Cash Voucher has
-  its Supply Of box too, as the other voucher types do.
+- **Supply Of on every voucher (all apps).** Supply Of is asked and required on every voucher, Cash Vouchers included; the
+  accountant sees it next to the type in voucher accounting and can change it (required); the printed Cash Voucher has its
+  Supply Of box, as the other types do.
+- **Pay-by dates in approvals** can't be before today, typed or picked.
 - **Approving a checking report (Tally (Demo)).** A BCR or VCR opens on the report itself (**Checking Report**: the
   report as printed, scaled to fit, beside its bills with payable / approved / postponed); **Bill Wise** (Voucher Wise)
   shows its bills one at a time for reading only, with **Go Back to Checking Report** in place of Approve and Return.

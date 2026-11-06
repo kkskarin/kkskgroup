@@ -7396,6 +7396,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         var ins = R.ins.map(function (x) { return { amt: round2(num(x.amt) || 0), on: x.on }; });
         if (ins.some(function (x) { return !(x.amt > 0); })) bad = bad || recNo(R.b) + ": every instalment needs an amount (or remove it).";
         if (ins.some(function (x) { return !ymdOk(x.on); })) bad = bad || recNo(R.b) + ": every instalment needs a pay-by date.";
+        else if (ins.some(function (x) { return x.on < todayYmd(); })) bad = bad || recNo(R.b) + ": a payment can't be planned for a date before today.";
         var t = round2(ins.reduce(function (s0, x) { return s0 + x.amt; }, 0)); if (t > R.max + 0.005) bad = bad || recNo(R.b) + ": at most " + money(R.max) + " can be approved.";
         if (R.max - t > 0.005 && !(ymdOk(R.remind) && R.remind > todayYmd())) bad = bad || recNo(R.b) + ": choose the date to be reminded about the postponed amount (after today).";
         out.push({ b: R.b, ins: ins.sort(function (x, y) { return natCmp(x.on, y.on); }), amt: t, remind: R.max - t > 0.005 ? R.remind : "" });
@@ -7467,6 +7468,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var bad = "", ins = D.ins.map(function (x) { return { amt: round2(num(x.amt) || 0), on: x.on }; });
       if (ins.some(function (x) { return !(x.amt > 0); })) bad = "Every instalment needs an amount (or remove it).";
       else if (ins.some(function (x) { return !ymdOk(x.on); })) bad = "Every instalment needs a pay-by date.";
+      else if (ins.some(function (x) { return x.on < todayYmd(); })) bad = "A payment can't be planned for a date before today.";
       var t = insTotal(), cap = round2(B.reduce(function (s0, x) { return s0 + (x.tick ? x.max : 0); }, 0)); if (!bad && t > cap + 0.005) bad = "At most " + money(cap) + " can be paid on the ticked " + nm0 + "s.";
       if (!bad && tmax - t > 0.005 && !(ymdOk(D.remind) && D.remind > todayYmd())) bad = "Choose the date to be reminded about the postponed amount (after today).";
       if (bad) { toast(bad); return false; }
@@ -13300,7 +13302,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     else if (dst.sims.length && D.dupAns !== "new") E("vfPayee", "Say whether this is " + dst.sims.map(function (x) { return x.name; }).join(" or ") + ", or a different person or shop.");
     if (D.payeeChoice && !idKind(D.payeeIdNo)) E("vfIdNo", D.payeeIdNo ? "That isn't a valid Aadhaar (12 digits) or PAN (like ABCDE1234F)." : "Enter their Aadhaar or PAN number.");
     if (D.payeeChoice && other && !String(D.payeeAddr || "").trim()) E("vfAddr", "Enter the address of the person or shop.");
-    if ((other || tly()) && !D.supplyOf.trim()) E("vfSupply", "Choose Goods, Services or Composite.");
+    if (D.vtype && !D.supplyOf.trim()) E("vfSupply", "Choose Goods, Services or Composite.");
     var bad = "";
     D.lines.forEach(function (x, i) { if (bad) return; var n = num(x.amt); if (!String(x.d).trim()) bad = "Describe line " + (i + 1) + "."; else if (riskMsg(x.d, $("vfLd" + i))) bad = "Line " + (i + 1) + ": " + riskMsg(x.d, $("vfLd" + i)); else if (narrPayCheck(x.d)) bad = "Line " + (i + 1) + ": " + narrPayCheck(x.d); else if (n == null || n <= 0) bad = "Enter the amount on line " + (i + 1) + ", more than zero."; });
     if (bad) E("vfLines", bad);
@@ -13324,8 +13326,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("vfPayeeBox").hidden = D.payeeChoice !== "new";
     var po = $("vfPayeeSel").options[1]; if (po) po.textContent = D.payeeNew.trim() ? "New person or shop: " + D.payeeNew.trim() : "New person or shop";
     var other = D.vtype && D.vtype !== "Cash Voucher";
-    var cashV = D.vtype === "Cash Voucher" && !tly(), sp0 = $("vfSupply"), sf0 = $("vfSupplyF"); sf0.hidden = false;
-    /* a Cash Voucher has no Supply Of in the division apps (cleared and greyed out); Tally (Demo) asks it on every voucher */
+    var cashV = false, sp0 = $("vfSupply"), sf0 = $("vfSupplyF"); sf0.hidden = false;
+    /* Supply Of is asked on every voucher, Cash Vouchers included */
     sp0.disabled = cashV; if (cashV && (sp0.value || D.supplyOf)) { sp0.value = ""; D.supplyOf = ""; }
     var sh0 = $("vfSupplyH"); if (sh0) sh0.textContent = cashV ? "Not needed for a Cash Voucher." : "Goods, Services, or Composite (goods and services together).";
     if (typeof tlyReqMark === "function" && tly()) tlyReqMark();
@@ -13344,7 +13346,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var hk = [String(D.payee || "").trim(), D.companyId || "", VH.id || "", vchDay(), D.payMode || "", D.vtype || "", vchTotal(D)].join("|"); if (VH.histFor !== hk) { VH.histFor = hk; drawPayeeHist(); }
     var t = vchTotal(D); $("vfTotV").textContent = t == null ? "" : money(t);
     /* Details and ledger open only once the company, Paid to, the voucher type and (except a Cash Voucher) Supply Of are chosen */
-    var need = []; if (!D.companyId) need.push("the company"); if (!String(D.payee || "").trim()) need.push("Paid to"); if (!D.vtype) need.push("the voucher type"); if ((other || tly()) && !D.supplyOf) need.push("Supply Of");
+    var need = []; if (!D.companyId) need.push("the company"); if (!String(D.payee || "").trim()) need.push("Paid to"); if (!D.vtype) need.push("the voucher type"); if (D.vtype && !D.supplyOf) need.push("Supply Of");
     vchLinesLock(need);
     var old0 = VH.id && S.vouchers[VH.id], nl = D.lines.map(function (x) { return { d: sentenceFix(String(x.d || "").trim()), lg: x.lg }; });
     $("vfNarV").textContent = need.length || !nl.some(function (x) { return x.d; }) ? "" : (tly() ? tlyVchNarr : vchNarr)(D, old0 && old0.voucherNo ? old0.voucherNo : "[No.]", old0 && old0.voucherDate ? old0.voucherDate : todayYmd(), nl);
@@ -13453,7 +13455,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var vn = !old || old.companyId !== D.companyId || !old.voucherNo ? nextVoucherNo(D.companyId, D.voucherDate) : { no: old.voucherNo, seq: old.voucherSeq || null, fy: old.voucherFy || fyOf(D.voucherDate) };
     var doc = Object.assign({ companyId: D.companyId, voucherNo: vn.no, voucherSeq: vn.seq, voucherFy: vn.fy, voucherDate: D.voucherDate, payee: D.payee.trim(), total: total, tds: tds, lines: lines, file: D.file || null,
       narration: (tly() ? tlyVchNarr : vchNarr)(D, vn.no, D.voucherDate, lines), payMode: D.payMode, vtype: D.vtype, gstApp: old && other ? old.gstApp || "N/A" : "N/A", gstRate: old && other && old.gstApp === "RCM" ? old.gstRate : null, taxable: total,
-      supplyOf: other || tly() ? D.supplyOf.trim() : "", payeeAddr: other ? D.payeeAddr.trim() : "", payeeIdNo: idNorm(D.payeeIdNo), payeeIdKind: idKind(D.payeeIdNo), ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
+      supplyOf: D.supplyOf.trim(), payeeAddr: other ? D.payeeAddr.trim() : "", payeeIdNo: idNorm(D.payeeIdNo), payeeIdKind: idKind(D.payeeIdNo), ledgers: lorder.map(function (k) { return { id: k, amt: lmap[k] }; }),
       settle: D.settle === "yes", acct: "pending", acctNote: "", status: "", updatedAt: now, updatedBy: meId(),
       cashCheck: D.payMode === "cash" ? (function () { var bf = cashToday(D.companyId, D.payee.trim(), D.voucherDate, VH.id); return cashRec({ day: D.voucherDate, before: bf, total: round2(bf + total), limit: cashLimit(D.vtype) }); })() : null }, prepFields(D.prepBy), approverFields(D.approverId), extDoc(D.companyId, D.X));
     var newName = null;
@@ -16937,7 +16939,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var lines = ledLinesIn(x.ledgers).concat(kind === "bill" && (x.currency || "INR") === "INR" ? roLineIn(x.companyId, x.roundOff) : []);
     if (!lines.length) { if (kind === "bill") lines = suggestBill(x, x.companyId, x.vendorId, Number(base)); else { var sv = suggestVch(x.companyId, x.payee, x.narration); if (sv) lines = [{ id: sv, amt: fmtInput(base) }]; } }
     var tdsE = tly() && x.tds == null && num(x.entryTds) != null;
-    AC.D = { lines: lines, tds: x.tds == null ? (tdsE ? fmtInput(x.entryTds) : "") : fmtInput(x.tds), sec: x.tdsSection || (tdsE ? x.entryTdsSection || "" : ""), vtype: x.vtype || "", gstApp: x.gstApp || "N/A", gstRate: x.gstRate != null && RCM_RATES.some(function (r) { return r[0] === String(x.gstRate); }) ? String(x.gstRate) : "5", gstType: x.gstType || "intra", rcmA: {}, base: Number(base) || 0 };
+    AC.D = { lines: lines, tds: x.tds == null ? (tdsE ? fmtInput(x.entryTds) : "") : fmtInput(x.tds), sec: x.tdsSection || (tdsE ? x.entryTdsSection || "" : ""), vtype: x.vtype || "", supplyOf: x.supplyOf || "", gstApp: x.gstApp || "N/A", gstRate: x.gstRate != null && RCM_RATES.some(function (r) { return r[0] === String(x.gstRate); }) ? String(x.gstRate) : "5", gstType: x.gstType || "intra", rcmA: {}, base: Number(base) || 0 };
     if (kind === "voucher") { if ((x.gstLedgers || []).length) x.gstLedgers.forEach(function (g) { var l = (S.ledgers || {})[g.id]; if (l) AC.D.rcmA[gstHead(l)] = fmtInput(g.amt); }); else rcmFill(AC.D); }
     if (kind === "voucher" && tly()) AC.D.rcmL = vchLinesOf(x).map(function (ln, i) { var o = (x.rcmLines || [])[i]; return { on: o ? !!o.on : x.vtype === GTA_TYPE, rate: o && o.rate ? String(o.rate) : "5", amt: Number(ln.amt) || 0, d: ln.d || "" }; });
     if (kind === "bill") { AC.D.gstInter = billInter(x); gstFromSaved(x, AC.D); }
@@ -17051,6 +17053,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }
     if (!isB && !tly()) {
       var vt = el("select", { class: "field", id: "aoType" }); fillSelect(vt, [["", "Choose the type"]].concat(VTYPES_V), D.vtype); vt.disabled = locked; form.appendChild(fld("Type of voucher", vt));
+      /* Supply Of: the preparer's choice, which the accountant can correct */
+      var so0 = el("select", { class: "field", id: "aoVSupL" }), sop0 = [["", "Choose"]].concat(SUPPLY_OF.map(function (k) { return [k, k]; })); if (D.supplyOf && SUPPLY_OF.indexOf(D.supplyOf) < 0) sop0.push([D.supplyOf, D.supplyOf]); fillSelect(so0, sop0, D.supplyOf || ""); so0.disabled = locked;
+      so0.addEventListener("change", function () { D.supplyOf = so0.value; }); form.appendChild(fld("Supply Of", so0, "Goods, Services, or Composite (goods and services together)."));
       var gs = el("select", { class: "field", id: "aoGst" }); fillSelect(gs, [["N/A", "Not applicable"], ["RCM", "RCM (reverse charge)"]], D.gstApp); gs.disabled = locked; var gf = fld("GST applicable", gs, "Only for Self Invoice and Freight & Transport."); form.appendChild(gf);
       /* RCM: the accountant picks the GST type and rate; the tax on the voucher's amount fills in (editable) and goes to the
          CGST / SGST / IGST Input (RCM) ledgers. */
@@ -17351,6 +17356,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (AC.kind === "bill") { var ge = gstCheck(x, D); if (ge) errs.push(["aoGstLed", ge]);
       if (billGst(x) > 0 && gstIsComp(vGst(S.vendors[x.vendorId]))) errs.push(["aoGstLed", "The vendor is a composition dealer (GST portal), so its GST can't be claimed or accounted. Send the bill back for a bill of supply without GST."]); }
     if (AC.kind === "voucher" && !D.vtype) errs.push(["aoType", "Choose the type of voucher."]);
+    if (AC.kind === "voucher" && !tly() && !D.supplyOf) errs.push(["aoVSupL", "Choose Goods, Services or Composite."]);
     if (AC.kind === "voucher" && tly()) { var rg0 = vchRcmOut(D); if (rg0.bad) errs.push(["aoRcm", rg0.bad]);
       if ((D.vl || []).some(function (l) { return !l.lg; })) errs.push(["aoLed", "Choose the ledger on every line."]);
       if (D.vl && D.vtype === GTA_TYPE && !D.gtSet) errs.push(["aoType", "Choose Freight & Transport, Intrastate or Interstate."]);
@@ -17421,7 +17427,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       Object.assign(up, { lines: D.vl.map(function (l) { return { d: sentenceFix(String(l.d || "").replace(/\s+/g, " ").trim()), amt: l.amt, lg: l.lg }; }), narration: String(D.narration || "").replace(/\s+/g, " ").trim() || x.narration || "" });
       Object.assign(up, { supplyOf: D.supplyOf || "", rcmNarr: on1 ? String(D.rcmNarr || "").replace(/\s+/g, " ").trim().slice(0, NARR_MAX) : "", rcmNarrMan: !!(on1 && D.rcmNarrMan), vtype: D.vtype, gstType: on1 ? D.gstType : null, gstLedgers: rg1.gl, rcmAmt: rg1.tax, gstApp: on1 ? "RCM" : "N/A", gstRate: on1 && Object.keys(rts).length === 1 ? Number(Object.keys(rts)[0]) : null, taxable: Number(x.total) || 0, payable: round2((Number(x.total) || 0) - tds),
         rcmLines: D.rcmL.map(function (r) { var on = r.on && rcmOk(D.vtype); return { on: on, rate: Number(r.rate), amt: r.amt, tax: on ? round2(r.amt * Number(r.rate) / 100) : 0 }; }) }); }
-    else if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher", rcm = oth && D.gstApp === "RCM", gl = []; if (rcm) rcmLines(D, gl);
+    else if (AC.kind === "voucher") { var oth = D.vtype !== "Cash Voucher", rcm = oth && D.gstApp === "RCM", gl = []; if (rcm) rcmLines(D, gl); if (D.supplyOf) up.supplyOf = D.supplyOf;
       up.gstType = rcm ? D.gstType : null; up.gstLedgers = gl; up.rcmAmt = round2(gl.reduce(function (s0, g) { return s0 + g.amt; }, 0));
       up.vtype = D.vtype; up.gstApp = oth ? D.gstApp : "N/A"; up.gstRate = rcm ? Number(D.gstRate) : null; up.taxable = Number(x.total) || 0; up.payable = round2((Number(x.total) || 0) - tds); }
     var col = AC.kind === "bill" ? "bills" : "vouchers", was = x.acct === "approved";
@@ -18205,7 +18211,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
        Without the tax box the voucher fills the page with the same margin all round, the description area taking the extra height.
        sig: signatures as images, { prep, acct, appr }, printed in the Prepared by, Accounted by and Approved by boxes. */
     var c = S.companies[v.companyId] || {}, type = v.vtype || "Cash Voucher", rcm = v.gstApp === "RCM";
-    var taxT = type === "Freight & Transport" || (type === "Self Invoice" && rcm), P = !taxT, wide = type === "Cash Voucher" && !tly(); /* Tally (Demo): Supply Of is on every voucher, so a Cash Voucher prints it too */
+    var taxT = type === "Freight & Transport" || (type === "Self Invoice" && rcm), P = !taxT, wide = false; /* Supply Of is on every voucher, so a Cash Voucher prints it too */
     var INK = [15, 23, 42], HEAD = [30, 41, 59], BODY = [51, 65, 85], MUTE = [100, 116, 139], SUB = [71, 85, 105], FILL = [241, 245, 249];
     var PT = 25.4 / 72, TH = 0.265, FR = 0.79, X0 = 3.97, XI = 4.76, XR = 205.85, PH = doc.internal.pageSize.getHeight();
     function F(font, st, size, col) { doc.setFont(font, st); doc.setFontSize(size); doc.setTextColor(col[0], col[1], col[2]); }

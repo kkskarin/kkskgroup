@@ -124,6 +124,14 @@
   the narration read afresh, the HSN / SAC check made again); what was typed in the entry is replaced.
 - **Narration required (Tally (Demo)).** A bill (Purchase Entry and Accounting), proforma or import can't be saved without
   its narration (red *); vouchers and duties write theirs from the lines.
+- **Tally Line Items as two vouchers, narration first (Tally (Demo) accounting, bills and vouchers).** Under Tally Line
+  Items: **Purchase Voucher**, its narration, then its lines (the vendor's line first); then, when any line is under
+  reverse charge, **Journal Voucher**, its own narration, then its lines (Dr CGST / SGST / IGST Input (RCM), Cr CGST /
+  SGST / IGST **Output (RCM)**, the names in Tally; the old "RCM … Payable" ledgers are no longer used or sent in Masters).
+  The Journal Voucher's narration is written from the figures and follows them until edited by hand (Write Again
+  restores it), is required, is saved on the bill or voucher (`rcmNarr`, `rcmNarrMan`) and goes into Tally Downloads:
+  "Being GST payable under reverse charge mechanism (RCM) on Bill No. GTA-9 dated 24-10-2026 of Sri Murugan Transports,
+  on taxable value Rs. 10,000.00 at 5%: CGST Rs. 250.00, SGST Rs. 250.00." (Voucher No. … for a voucher).
 - **Voucher accounting shows Supply of.** The summary at the top of a voucher's accounting includes Supply of (or "Not
   given").
 - **Item descriptions (Tally (Demo)).** A line typed or spoken in Bill Entry is rewritten by Claude to the description rules,

@@ -160,6 +160,16 @@
   date first, filtered by All Companies, Prepared By and Vendor (plus a number search); each status is its own card with the same column widths, on the page's background.
 - **Cash Voucher print shows Supply Of (Tally (Demo)).** Supply Of is on every Tally voucher, so the printed Cash Voucher has
   its Supply Of box too, as the other voucher types do.
+- **Approving a checking report (Tally (Demo)).** A BCR or VCR opens on the report itself (**Checking Report**: the
+  report as printed, scaled to fit, beside its bills with payable / approved / postponed); **Bill Wise** (Voucher Wise)
+  shows its bills one at a time for reading only, with **Go Back to Checking Report** in place of Approve and Return.
+  Approve opens a wide pop-up for the whole report: tick the bills, enter what is paid now in one or more instalments
+  (each with its pay-by date), spread over the ticked bills oldest bill first; a bill's own Pay Now can be typed and the
+  instalments follow (the last one moves). Each bill shows its share of each instalment and what stays postponed, which
+  needs a date to be reminded. A single bill's pop-up is wider too.
+- **No future document dates.** Bill, voucher, proforma / import, Bill of Entry, e-invoice Ack, payment, receipt,
+  withdrawal and invoice dates can't be after today: later days are greyed out in the calendars and refused if typed.
+- **Personalise** has the Password card again (change password, sign out), and its cards flow in columns with no gaps.
 - **Postponed payments: a reminder date.** When an approval leaves an amount postponed, the approver chooses the date to be
   reminded (`postRemind`, required, after today). Postponed Payments shows it (Remind On) and the row turns yellow, with a
   count on the tab, only from that date.

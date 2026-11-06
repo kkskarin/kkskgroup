@@ -957,6 +957,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
    and a single word too long for its space is hyphenated (Appr- / oved). The page is marked English so the browser can. */
   .rq::after{content:" *";color:#c62828;font-weight:700}
   a.navlink{display:contents;color:inherit;text-decoration:none}
+  /* Personalise: the cards flow in columns, each under the one above, with no gaps */
+  #prefBody.pgrid{display:block;column-width:340px;column-gap:16px}#prefBody .pcol{display:contents}#prefBody .pcard{break-inside:avoid;margin:0 0 16px;display:block;width:100%;box-sizing:border-box}
+  .aprepdoc{position:sticky;top:12px;align-self:start}.aprepwrap{overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#fff}.aprep{width:860px;border:0;transform-origin:0 0;display:block;background:#fff}
+  .apmode{margin-right:12px}.avpick{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .modal.xwide{max-width:min(1040px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto}
+  .aprtab td,.aprtab th{vertical-align:middle}.aprtab input.field{max-width:150px}.aprtab tr.off td{opacity:.55}
   /* All Bills / All Vouchers: the same column widths in every status table, so they line up */
   #baBox table,#vaBox table{table-layout:fixed;width:100%}
   #baBox th:nth-child(1){width:12%}#baBox th:nth-child(2){width:20%}#baBox th:nth-child(3){width:22%}#baBox th:nth-child(4){width:7%}#baBox th:nth-child(5),#baBox th:nth-child(6),#baBox th:nth-child(7),#baBox th:nth-child(8){width:9.75%}
@@ -1974,8 +1980,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (S.prefDraft) { var dc = el("button", { type: "button", class: "btn" }, "Discard Changes"); dc.addEventListener("click", function () { dropPrefDraft(true); }); sa.appendChild(dc); }
     sa.appendChild(el("span", { class: "tsub", style: "align-self:center" }, S.prefDraft ? "Unsaved changes. Save to keep them on every device; leaving this page without saving goes back to your last saved look." : "Everything here is saved."));
     c4.appendChild(sa); c2.appendChild(c4);
-    /* password: in the menu at the top right */
-    if (false) {
+    /* password: here too (and still in the menu at the top right) */
+    if (window.bvAccount && window.bvAccount.changeMyPassword) {
       var c3 = el("div", { class: "card pcard" }); c3.appendChild(el("h3", null, "Password"));
       var f = el("div", { class: "form", style: "padding:0" });
       f.appendChild(fld("New Password", inp("pwNew", "", { type: "password", autocomplete: "new-password", maxlength: "72" }), "At least 8 characters."));
@@ -5262,6 +5268,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (irn && !/^[0-9a-fA-F]{64}$/.test(irn)) E("bcIrn", "An IRN is 64 characters, digits and the letters a to f. Check it against the bill.");
     if (String(ei.ackNo || "").trim() && !/^\d{6,20}$/.test(String(ei.ackNo).replace(/\s+/g, ""))) E("bcAck", "The Ack No is digits only.");
     if (String(ei.ackDate || "").trim() && !parseDate(ei.ackDate)) E("bcAckD", "Enter the date like 12-Sep-26.");
+    else if (parseDate(ei.ackDate) && parseDate(ei.ackDate) > todayYmd()) E("bcAckD", "The Ack Date can't be after today.");
     if ((String(ei.ackNo || "").trim() || String(ei.ackDate || "").trim()) && !irn) E("bcIrn", "Enter the IRN too, from the same e-invoice block.");
     if (v) { gstAlerts(v, bd, ga || 0, { irn: irn }).forEach(function (w) { warns.push(w); }); gstRefresh(v, function () { if (B.D && $("bcFlags")) updateDynamic(); }, true); }
     var oa = openAdvsFor(D, b);
@@ -7167,7 +7174,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var job = kind === "bcr" ? bcrSave(x.id, Object.assign({}, x, { apprReq: who, apprRej: null })) : retry(function () { return S.db.doc("bills/" + x.id).update({ apprReq: who, apprRej: null }); }).then(function () { S.bills[x.id].apprReq = who; S.bills[x.id].apprRej = null; invalidate(); });
     job.then(function () { toast((kind === "bcr" ? x.no : "Bill " + (x.billNo || "")) + " sent for approval."); renderTlyDone(); }, function (e) { toast(explain(e)); });
   }
-  function bcrPrint(r) {
+  function bcrPrint(r, into) {
     var c = S.companies[r.cid] || {}, v = S.vendors[r.vid] || {}, bs = (r.billIds || []).map(function (id) { return S.bills[id]; }).filter(Boolean).sort(function (a, b) { return natCmp(a.billDate, b.billDate) || natCmp(a.billNo, b.billNo); });
     var esc = function (t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]; }); };
     var tot = { tx: 0, g: 0, t: 0 }; bs.forEach(function (b) { tot.tx += Number(b.taxable) || 0; tot.g += Number(b.gstAmt) || 0; tot.t += Number(b.total) || 0; });
@@ -7179,11 +7186,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     /* signatures: who prepared the BCR, who accounted its bills, the approvers named on them, who approved it */
     var b0 = bs[0] || {}, P = b0.tlyPpl || {}, acc = bs.filter(function (b) { return b.acctBy; }).map(function (b) { return [b.acctBy, b.acctByName]; })[0] || ["", ""], ok = r.apprOk || null;
     var who = [["Prepared By", r.by, r.byName || personName(r.by)], ["Accounted By", acc[0], pnm(acc[1] || "") || personName(acc[0])], ["Checker", P.a1, P.a1Name || personName(P.a1)], ["Final Approver", P.a2, P.a2Name || personName(P.a2)], ["Approved By", ok ? ok.by : "", ok ? ok.byName : ""]];
-    var w = window.open("", "_blank"); if (!w) { toast("Allow pop-ups to print the report."); return; }
+    var w = into ? null : window.open("", "_blank"); if (!into && !w) { toast("Allow pop-ups to print the report."); return; }
     Promise.all(who.map(function (x) { return x[1] && x[2] ? sigLoad(x[1]).then(function (p) { return p || ""; }, function () { return ""; }) : Promise.resolve(""); })).then(function (pngs) {
       var sg = "<div class=sigs>" + who.map(function (x, i) { return "<div class=sg><div class=si>" + (pngs[i] ? "<img src=\"" + pngs[i] + "\" alt=\"\">" : "") + "</div><b>" + esc(x[2] || "") + "</b><div>" + esc(x[0]) + "</div></div>"; }).join("") + "</div>";
       var h = html.replace("@@SIGS@@", sg).replace("</style>", ".sigs{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:40px}.sg{text-align:center;font-size:12px}.si{height:50px;border-bottom:1px solid #333;margin-bottom:4px;display:flex;align-items:flex-end;justify-content:center}.si img{max-height:48px;max-width:100%}</style>");
-      w.document.open(); w.document.write(h); w.document.close();
+      if (into) { into(h.replace("<script>onload=function(){print()}<\/script>", "")); return; } w.document.open(); w.document.write(h); w.document.close();
     });
   }
   /* Purchase › Bills › Bill Entry: Bills Submitted, a table per company (in the Masters order, by internal name), vendor by vendor */
@@ -7396,12 +7403,82 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (bad) { toast(bad); return false; }
       return done(out, note.value.trim().slice(0, 300));
     });
+    lastModal("xwide");
+  }
+  function lastModal(cls) { var mm = document.querySelectorAll(".modal-bg .modal"); if (mm.length) mm[mm.length - 1].classList.add(cls); }
+  /* Approving a checking report (BCR / VCR) as a whole: the bills to include are ticked; the amount to pay now is entered for
+     the report in one or more instalments (each with its pay-by date) and spread over the ticked bills, oldest bill first; or
+     a bill's own amount is typed, and the report's instalments follow it. What is not paid now is postponed, with a date to be
+     reminded. The result is the same as approving each bill: [{b, ins: [{amt, on}], amt, remind}]. */
+  function apDecideReport(bills, title, done) {
+    var nm0 = rkOf(bills[0]) === "vch" ? "voucher" : "bill", body = el("div", { class: "mform apdec" });
+    var B = bills.slice().sort(function (a, b) { return natCmp(recDate(a), recDate(b)) || natCmp(recNo(a), recNo(b)); }).map(function (b) { var max = round2(Math.max(0, tlyPayable(b) - tlyApAmt(b))); return { b: b, max: max, tick: max > 0.004, pay: max }; });
+    var tmax = round2(B.reduce(function (s0, x) { return s0 + x.max; }, 0)), due0 = (function () { var d = B.map(function (x) { return recDue(x.b); }).filter(function (d1) { return ymdOk(d1) && d1 >= todayYmd(); }).sort()[0]; return d || todayYmd(); })();
+    var D = { ins: [{ amt: fmtInput(tmax), on: due0 }], remind: addDays(todayYmd(), 7) };
+    body.appendChild(el("p", { class: "sub", style: "margin:0 0 6px" }, "Tick the " + nm0 + "s to approve and enter what is to be paid now, for the whole report, in one or more instalments; it is spread over the ticked " + nm0 + "s, oldest first. A " + nm0 + "'s own amount can be changed too: the instalments follow. Whatever is not paid now is postponed."));
+    /* the report's instalments */
+    var ic = el("div", { class: "apdcard" }), ih = el("div", { class: "apdhd" }); ih.appendChild(el("b", null, "Pay Now, for the Report")); var imax = el("span", { class: "apdmax" }, "To decide: " + money(tmax)); ih.appendChild(imax); ic.appendChild(ih);
+    var il = el("div", { class: "apdlist" }), ift = el("div", { class: "apdfoot" }), left = el("span", { class: "tsub" }); ic.appendChild(il); ic.appendChild(ift); body.appendChild(ic);
+    var tw = el("div", { class: "card list scroll", style: "margin-top:12px" }), tb = el("table", { class: "t aprtab" }), th = el("thead"), hr = el("tr");
+    [["", ""], [nm0 === "bill" ? "Bill" : "Voucher", ""], ["Due", ""], ["To Decide", "r"], ["Pay Now", "r"], ["Postponed", "r"], ["Instalments", ""]].forEach(function (h) { hr.appendChild(el("th", h[1] ? { class: h[1] } : null, h[0])); }); th.appendChild(hr); tb.appendChild(th);
+    var tbd = el("tbody"); tb.appendChild(tbd); tw.appendChild(tb); body.appendChild(tw);
+    var rw = el("div", { class: "apdrow", style: "margin-top:10px" }), ri = el("input", { class: "field", type: "date", "aria-label": "Remind on", value: D.remind, min: addDays(todayYmd(), 1) }); ri.addEventListener("change", function () { D.remind = ri.value; });
+    rw.appendChild(el("span", { class: "apdby", style: "min-width:auto" }, "Remind me about the postponed amount on")); rw.appendChild(ri); body.appendChild(rw);
+    var note = el("textarea", { class: "field", rows: "2", maxlength: "300", placeholder: "Optional note for Finance" }); body.appendChild(fld("Note", note));
+    function insTotal() { return round2(D.ins.reduce(function (s0, x) { return s0 + (num(x.amt) || 0); }, 0)); }
+    /* the instalments' total over the ticked bills, oldest first */
+    function spread() { var t = insTotal(); B.forEach(function (x) { if (!x.tick) { x.pay = 0; return; } var a = round2(Math.min(x.max, Math.max(0, t))); x.pay = a; t = round2(t - a); }); }
+    /* the bills' amounts changed: the instalments are made to add up to them (the last one moves) */
+    function follow() { var want = round2(B.reduce(function (s0, x) { return s0 + (x.tick ? x.pay : 0); }, 0)), diff = round2(want - insTotal());
+      if (!D.ins.length) { if (want > 0) D.ins = [{ amt: fmtInput(want), on: due0 }]; return; }
+      var last = D.ins[D.ins.length - 1], nv = round2((num(last.amt) || 0) + diff); if (nv > 0.004) last.amt = fmtInput(nv); else if (want > 0) D.ins = [{ amt: fmtInput(want), on: D.ins[0].on }]; else D.ins = []; }
+    /* each bill's share of each instalment: the instalments in order paying the bills in order */
+    function perBill() { var q = D.ins.map(function (x) { return { amt: num(x.amt) || 0, on: x.on }; }), k = 0; B.forEach(function (x) { x.ins = []; var need = x.tick ? x.pay : 0;
+      while (need > 0.004 && k < q.length) { var take = round2(Math.min(need, q[k].amt)); if (take > 0.004) x.ins.push({ amt: take, on: q[k].on }); need = round2(need - take); q[k].amt = round2(q[k].amt - take); if (q[k].amt <= 0.004) k++; } }); }
+    function drawIns() {
+      il.textContent = "";
+      D.ins.forEach(function (x, k) { var r0 = el("div", { class: "apdrow" }), a = el("input", { class: "field num", type: "text", inputmode: "decimal", "aria-label": "Report instalment " + (k + 1) + " amount", value: x.amt }), d = el("input", { class: "field", type: "date", "aria-label": "Report instalment " + (k + 1) + " pay by", value: x.on, min: todayYmd() });
+        a.addEventListener("change", function () { x.amt = a.value; spread(); redraw(); }); d.addEventListener("change", function () { x.on = d.value; redraw(); });
+        var rm = el("button", { type: "button", class: "btn sm" }, "Remove"); rm.addEventListener("click", function () { D.ins.splice(k, 1); spread(); redraw(); });
+        r0.appendChild(el("span", { class: "apdn" }, (k + 1) + ".")); r0.appendChild(a); r0.appendChild(el("span", { class: "apdby" }, "pay by")); r0.appendChild(d); r0.appendChild(rm); il.appendChild(r0); });
+      if (!D.ins.length) il.appendChild(el("div", { class: "tsub", style: "padding:6px 0" }, "Nothing to pay now: the whole report is postponed."));
+    }
+    function drawBills() {
+      perBill(); tbd.textContent = "";
+      B.forEach(function (x) { var tr = el("tr", x.tick ? null : { class: "off" }), ck = el("input", { type: "checkbox", "aria-label": "Include " + recNo(x.b) }); ck.checked = x.tick; ck.disabled = !(x.max > 0.004);
+        ck.addEventListener("change", function () { x.tick = ck.checked; if (!x.tick) x.pay = 0; follow(); spread(); redraw(); });
+        var pi = el("input", { class: "field num", type: "text", inputmode: "decimal", "aria-label": "Pay now for " + recNo(x.b), value: fmtInput(x.tick ? x.pay : 0) }); pi.disabled = !x.tick;
+        pi.addEventListener("change", function () { var v = num(pi.value); x.pay = round2(Math.min(x.max, Math.max(0, v || 0))); follow(); redraw(); });
+        var d0 = el("td"); d0.appendChild(el("b", { class: "mono" }, recNo(x.b))); d0.appendChild(el("div", { class: "tsub" }, fmtDate(recDate(x.b)) + (nm0 === "voucher" ? " · " + (x.b.payee || "") : "")));
+        var pp = round2(x.max - (x.tick ? x.pay : 0));
+        [elc("td", null, ck), d0, el("td", null, ymdOk(recDue(x.b)) ? fmtDate(recDue(x.b)) : ""), el("td", { class: "r num" }, money(x.max)), elc("td", { class: "r" }, pi), el("td", { class: "r num" }, pp > 0.004 ? money(pp) : "\u2014"), elc("td", null, el("span", { class: "tsub" }, (x.ins || []).map(function (q0) { return money(q0.amt) + " by " + fmtDate(q0.on); }).join("; ")))].forEach(function (td) { tr.appendChild(td); });
+        tbd.appendChild(tr); });
+      var t = insTotal(), p = round2(tmax - t); left.textContent = "Pay now " + money(t) + (p > 0.005 ? " · postponed " + money(p) : p < -0.005 ? " · " + money(-p) + " more than can be approved" : " · nothing postponed"); left.className = "tsub" + (p < -0.005 ? " bad" : "");
+      rw.hidden = !(p > 0.005);
+    }
+    function redraw() { drawIns(); drawBills(); }
+    var add = el("button", { type: "button", class: "link-btn" }, "+ Add Instalment"); add.addEventListener("click", function () { var t = insTotal(), cap = round2(B.reduce(function (s0, x) { return s0 + (x.tick ? x.max : 0); }, 0)); D.ins.push({ amt: fmtInput(Math.max(0, round2(cap - t))), on: due0 }); spread(); redraw(); });
+    var full = el("button", { type: "button", class: "link-btn" }, "Pay All in Full"); full.addEventListener("click", function () { B.forEach(function (x) { x.tick = x.max > 0.004; }); D.ins = [{ amt: fmtInput(tmax), on: due0 }]; spread(); redraw(); });
+    var none = el("button", { type: "button", class: "link-btn" }, "Postpone All"); none.addEventListener("click", function () { D.ins = []; spread(); redraw(); });
+    ift.appendChild(add); ift.appendChild(full); ift.appendChild(none); ift.appendChild(left);
+    spread(); redraw();
+    popForm(title, "", body, "Approve", function () {
+      var bad = "", ins = D.ins.map(function (x) { return { amt: round2(num(x.amt) || 0), on: x.on }; });
+      if (ins.some(function (x) { return !(x.amt > 0); })) bad = "Every instalment needs an amount (or remove it).";
+      else if (ins.some(function (x) { return !ymdOk(x.on); })) bad = "Every instalment needs a pay-by date.";
+      var t = insTotal(), cap = round2(B.reduce(function (s0, x) { return s0 + (x.tick ? x.max : 0); }, 0)); if (!bad && t > cap + 0.005) bad = "At most " + money(cap) + " can be paid on the ticked " + nm0 + "s.";
+      if (!bad && tmax - t > 0.005 && !(ymdOk(D.remind) && D.remind > todayYmd())) bad = "Choose the date to be reminded about the postponed amount (after today).";
+      if (bad) { toast(bad); return false; }
+      perBill();
+      return done(B.map(function (x) { var a = x.tick ? round2(x.pay) : 0; return { b: x.b, ins: (x.ins || []).slice().sort(function (p0, q0) { return natCmp(p0.on, q0.on); }), amt: a, remind: x.max - a > 0.005 ? D.remind : "" }; }), note.value.trim().slice(0, 300));
+    });
+    lastModal("xwide");
   }
   function apApprove(it) {
     if (!apMay(it)) return; var bs = apBillsOf(it), nr = bs.filter(function (b) { var k = rkOf(b); return (k === "bill" || k === "vch") && b.acct !== "approved"; });
     if (nr.length) { toast(plural(nr.length, rkOf(nr[0]) === "vch" ? "voucher" : "bill") + " in it are no longer accounted: " + nr.map(recNo).join(", ") + "."); return; }
     if (it.kind === "cash") { apCashApprove(it); return; }
-    apDecide(bs, "Approve " + apName(it), function (out, note) {
+    (bs.length > 1 && apHasReport(it) ? apDecideReport : apDecide)(bs, "Approve " + apName(it), function (out, note) {
       var who = apWho();
       return Promise.all(out.filter(function (o) { return o.amt > 0; }).map(function (o) { return apBillSave(o.b, { tlyAp: tlyApList(o.b).concat([Object.assign({ id: newId("ap"), amt: o.amt, inst: o.ins, via: it.kind === "bcr" ? it.x.no : "", note: note }, who)]) }); }))
         .then(function () { return Promise.all(out.map(function (o) { return o.remind || o.b.postRemind ? apBillSave(o.b, { postRemind: o.remind || null }) : null; })); })
@@ -7648,7 +7725,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     popForm(old ? "Change " + dutyLabel(old) : "Add Duty / Charge", "", body, old ? "Save and Send for Approval" : "Send for Approval", function () {
       errClear(body); var ok = true, E = function (id, m) { errOn(id, m); ok = false; }, a = S.advances[im.value], n = num(am.value);
       if (!a) E("duImp", "Choose the import."); if (!kd.value) E("duKind", "Choose what it is."); if (!vs.value) E("duVen", "Choose who it is paid to."); else if (vs.value === "other" && !pn.value.trim()) E("duParty", "Type the name.");
-      if (n == null || n <= 0) E("duAmt", "Enter the amount."); if (!ymdOk(dd.value)) E("duDue", "Choose the date to pay by."); tlyPplErrs(D, "duP").forEach(function (e) { E(e[0], e[1]); });
+      if (n == null || n <= 0) E("duAmt", "Enter the amount."); if (!ymdOk(dd.value)) E("duDue", "Choose the date to pay by."); if (ymdOk(($("duBoeD") || {}).value) && $("duBoeD").value > todayYmd()) E("duBoeD", "The Bill of Entry date can't be after today."); tlyPplErrs(D, "duP").forEach(function (e) { E(e[0], e[1]); });
       if (!ok) return false;
       var now = Date.now(), id = old ? old.id : newId("du"), doc = { advanceId: a.id, companyId: a.companyId, dutyKind: kd.value, boeNo: bn.value.trim().toUpperCase(), boeDate: bd.value || "", vendorId: vs.value !== "other" ? vs.value : "", partyName: vs.value === "other" ? smartCase(pn.value.trim()) : "", amount: round2(n), dueDate: dd.value, note: sentenceFix(nt.value.trim()), tlyPpl: tlyPplDoc(D.ppl), updatedAt: now, updatedBy: meId() };
       doc.narration = dutyNarr(doc);
@@ -7862,14 +7939,60 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     w.appendChild(card); return w;
   }
   /* ---- View: the bill beside its breakup (no GST rate, ITC, RCM or HSN: what the approver needs) ---- */
-  function apView(ids, no, it, post) { AP.view = { ids: ids, i: 0, no: no || "", back: S.tab, it: it || null, post: post || null }; renderApView(); show("secApView"); }
+  function apView(ids, no, it, post) { AP.view = { ids: ids, i: 0, no: no || "", back: S.tab, it: it || null, post: post || null, mode: apHasReport(it) && !post ? "report" : "bill" }; renderApView(); show("secApView"); }
+  /* A Bill / Voucher Checking Report opens on the report itself (Checking Report); Bill Wise shows its bills one by one, for
+     reading only: the approval is given on the report. */
+  function apHasReport(it) { return !!it && (it.kind === "bcr" || (it.kind === "vcr" && !it.x.direct)); }
+  function apModeBar(V) {
+    var pk = $("avPick"); if (!apHasReport(V.it)) return;
+    var sg = el("div", { class: "seg apmode", role: "tablist", "aria-label": "View" }); pk.hidden = false; pk.insertBefore(sg, pk.firstChild);
+    [["report", "Checking Report"], ["bill", V.it.kind === "bcr" ? "Bill Wise" : "Voucher Wise"]].forEach(function (m) { var b = el("button", { type: "button", role: "tab", "aria-selected": V.mode === m[0] ? "true" : "false", class: V.mode === m[0] ? "on" : "" }, m[1]); b.addEventListener("click", function () { if (V.mode !== m[0]) { V.mode = m[0]; renderApView(); } }); sg.appendChild(b); });
+  }
+  /* Bill Wise: no approving or returning there, only the way back to the report */
+  function apBillWiseActs(V) {
+    if (!apHasReport(V.it) || V.mode !== "bill") return; var fa = $("avActs");
+    Array.prototype.slice.call(fa.querySelectorAll("button")).forEach(function (b) { if (/^(Approve|Return)/.test(b.textContent.trim())) b.parentNode.removeChild(b); });
+    var gb = el("button", { class: "btn primary", type: "button" }, "Go Back to Checking Report"); gb.addEventListener("click", function () { V.mode = "report"; renderApView(); }); fa.appendChild(gb);
+  }
+  function renderApReport() {
+    var V = AP.view, it = V.it, r = it.x, isB = it.kind === "bcr", recs = apBillsOf(it).slice().sort(function (a, b) { return natCmp(recDate(a), recDate(b)) || natCmp(recNo(a), recNo(b)); }), sx = apState(it);
+    var party = isB ? ((S.vendors[r.vid] || {}).name || recParty(it)) : (pnm(r.preparedBy || "") || "");
+    $("avTitle").textContent = (isB ? "Bill Checking Report " : "Voucher Checking Report ") + (r.no || "") + (party ? ", " + party : "");
+    $("avSub").textContent = coLabel(r.cid || (r.companyIds || [])[0]) + " · " + plural(recs.length, isB ? "bill" : "voucher") + " · " + ({ wait: "Pending Final Approval", first: "Pending Checker Approval", ok: "Approved", ret: "Returned" }[sx] || "");
+    var pk = $("avPick"); pk.textContent = ""; apModeBar(V);
+    var f = $("avBody"); f.textContent = "";
+    var sp = el("div", { class: "ao-split" }), dl = el("div", { class: "ao-doc aprepdoc" }), main = el("div", { class: "ao-main" }); sp.appendChild(dl); sp.appendChild(main); f.appendChild(sp);
+    /* the report as printed: an A4-wide page scaled to fit the pane */
+    var wrap = el("div", { class: "aprepwrap" }), ifr = el("iframe", { class: "aprep", title: (isB ? "Bill" : "Voucher") + " Checking Report " + (r.no || "") }); wrap.appendChild(ifr); dl.appendChild(wrap);
+    var fit = function () { if (!wrap.isConnected) return; var sc = Math.min(1, (wrap.clientWidth || 600) / 860), h = Math.max(480, window.innerHeight - 240); ifr.style.transform = "scale(" + sc + ")"; ifr.style.height = Math.round(h / sc) + "px"; wrap.style.height = h + "px"; };
+    setTimeout(fit, 0); if (!AP.fitOn) { AP.fitOn = true; window.addEventListener("resize", function () { var w0 = document.querySelector(".aprepwrap"); if (w0 && w0._fit) w0._fit(); }); } wrap._fit = fit;
+    (isB ? bcrPrint : vcrPrint)(r, function (h) { ifr.srcdoc = h; });
+    var tp = apSum(recs, tlyPayable), ta = apSum(recs, tlyApAmt), tpo = apSum(recs, tlyPostAmt);
+    var st = el("div", { class: "stats apstats" }); [[isB ? "Bills" : "Vouchers", String(recs.length)], ["Total Payable", money(tp)], ["Approved", tlyDecided(recs[0] || {}) || ta > 0 ? money(ta) : "\u2014"], ["Postponed", tpo > 0.5 ? money(tpo) : "\u2014"]].forEach(function (k) { var s0 = el("div", { class: "stat" }); s0.appendChild(el("div", { class: "k" }, k[0])); s0.appendChild(el("div", { class: "v" }, k[1])); st.appendChild(s0); });
+    main.appendChild(st);
+    if (isB && recs[0]) main.appendChild(tlyWhoBlock(recs[0], it));
+    var tc = el("div", { class: "card list scroll" }), tb = el("table", { class: "t apitems" }), th = el("thead"), hr = el("tr");
+    [["#", "r"], [isB ? "Bill" : "Voucher", ""], ["Due", ""], ["Payable", "r"], ["Approved", "r"], ["Postponed", "r"], ["", "r"]].forEach(function (h) { hr.appendChild(el("th", h[1] ? { class: h[1] } : null, h[0])); }); th.appendChild(hr); tb.appendChild(th);
+    var bd = el("tbody"); tb.appendChild(bd);
+    recs.forEach(function (b, n) { var tr = el("tr"), d0 = el("td"); d0.appendChild(el("b", { class: "mono" }, recNo(b))); d0.appendChild(el("div", { class: "tsub" }, fmtDate(recDate(b)) + (isB ? "" : " · " + (b.payee || ""))));
+      var vw = el("button", { type: "button", class: "link-btn" }, "View"); vw.addEventListener("click", function () { V.mode = "bill"; V.i = Math.max(0, V.ids.indexOf(b.id)); renderApView(); });
+      [el("td", { class: "r" }, String(n + 1)), d0, el("td", null, ymdOk(recDue(b)) ? fmtDate(recDue(b)) : ""), el("td", { class: "r num" }, money(tlyPayable(b))), el("td", { class: "r num" }, tlyApAmt(b) > 0.004 ? money(tlyApAmt(b)) : "\u2014"), el("td", { class: "r num" }, tlyPostAmt(b) > 0.5 ? money(tlyPostAmt(b)) : "\u2014"), elc("td", { class: "r" }, vw)].forEach(function (td) { tr.appendChild(td); }); bd.appendChild(tr); });
+    tc.appendChild(tb); main.appendChild(el("h3", { class: "aph" }, isB ? "Bills in the Report" : "Vouchers in the Report")); main.appendChild(tc);
+    if (r.apprRej && sx === "ret") main.appendChild(el("div", { class: "flag e", style: "margin-top:12px" }, "Returned: " + (r.apprRej.reason || "") + (r.apprRej.byName ? " (" + r.apprRej.byName + ")" : "")));
+    var fa = $("avActs"); fa.textContent = ""; var back = el("button", { class: "btn", type: "button" }, "Cancel"); back.title = "Back to Approvals without doing anything"; back.addEventListener("click", function () { AP.view = null; renderApprT(); show("secApprT"); });
+    var neg = null;
+    if (sx === "first" && apMay(it)) { var q1 = el("button", { class: "btn primary", type: "button" }, "Approve and Pass On"); neg = el("button", { class: "btn danger", type: "button" }, "Return"); q1.addEventListener("click", function () { apPass1(it); }); neg.addEventListener("click", function () { apReturn(it); }); fa.appendChild(q1); }
+    if (sx === "wait" && apMay(it)) { var ok = el("button", { class: "btn primary", type: "button" }, "Approve " + (r.no || "")); neg = el("button", { class: "btn danger", type: "button" }, "Return"); ok.addEventListener("click", function () { apApprove(it); }); neg.addEventListener("click", function () { apReturn(it); }); fa.appendChild(ok); }
+    if (S.downloads || true) { var pr = el("button", { class: "btn", type: "button" }, "Print Report"); pr.addEventListener("click", function () { (isB ? bcrPrint : vcrPrint)(r); }); fa.appendChild(pr); }
+    fa.appendChild(el("span", { class: "grow" })); fa.appendChild(back); if (neg) fa.appendChild(neg);
+  }
   function apQty(it) {
     var d = String(it.d || ""), m = /\s+-\s+([\d.,]+)\s*([A-Za-z.]+)?\s*$/.exec(d), q = it.qty != null && it.qty !== "" ? num(it.qty) : m ? num(m[1].replace(/,/g, "")) : null, u = it.unit || (m && m[2]) || "";
     var amt = num(it.tx), rt = it.rate != null && it.rate !== "" ? num(it.rate) : q && amt != null ? round2(amt / q) : null;
     return { name: m && it.qty == null ? d.slice(0, m.index) : d, q: q, u: u, rate: rt, amt: amt };
   }
   function renderApView() {
-    var V = AP.view; if (!V) return; if (V.it && V.it.kind !== "bill" && V.it.kind !== "bcr") { renderApViewX(); return; } var b = S.bills[V.ids[V.i]]; if (!b) { show("secApprT"); return; }
+    var V = AP.view; if (!V) return; if (V.mode === "report" && apHasReport(V.it)) { renderApReport(); return; } if (V.it && V.it.kind !== "bill" && V.it.kind !== "bcr") { renderApViewX(); return; } var b = S.bills[V.ids[V.i]]; if (!b) { show("secApprT"); return; }
     var v = S.vendors[b.vendorId] || {};
     $("avTitle").textContent = "Bill " + (b.billNo || "") + ", " + (v.name || vendorLabelOfBill(b)); $("avSub").textContent = (V.no ? V.no + " · " : "") + coLabel(b.companyId) + " · " + TLY_ST[tlyStatus(b)];
     var pk = $("avPick"); pk.textContent = ""; pk.hidden = V.ids.length < 2;
@@ -7933,6 +8056,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (aiMay(V)) { var ai = el("button", { class: "btn aibtn", type: "button", title: "Claude compares each line's rate with prices found online" }, b.aiCheck ? "AI Check Again" : "AI Check"); ai.disabled = AP.aiBusy === b.id; ai.addEventListener("click", function () { aiCheck(b); }); fa.appendChild(ai); }
     if (V.post && apPostMay(V.post) && tlyPostAmt(V.post) > 0.5) { var pa = el("button", { class: "btn primary", type: "button" }, "Approve Payment"); pa.addEventListener("click", function () { apPostApprove(V.post); }); fa.appendChild(pa); }
     fa.appendChild(el("span", { class: "grow" })); fa.appendChild(back); if (neg) fa.appendChild(neg);
+    apModeBar(V); apBillWiseActs(V);
   }
   /* the View of a voucher (or its report), an instalment's ACR, an import duty or a cash advance */
   function renderApViewX() {
@@ -7978,6 +8102,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (sx === "wait" && apMay(it)) { var ok = el("button", { class: "btn primary", type: "button" }, "Approve" + (it.kind === "vcr" ? " " + it.x.no : "")), rt = el("button", { class: "btn danger", type: "button" }, "Return"); ok.addEventListener("click", function () { apApprove(it); }); rt.addEventListener("click", function () { apReturn(it); }); fa.appendChild(ok); neg = rt; }
     if (V.post && apPostMay(V.post) && tlyPostAmt(V.post) > 0.5) { var pa = el("button", { class: "btn primary", type: "button" }, "Approve Payment"); pa.addEventListener("click", function () { apPostApprove(V.post); }); fa.appendChild(pa); }
     fa.appendChild(el("span", { class: "grow" })); fa.appendChild(back); if (neg) fa.appendChild(neg);
+    apModeBar(V); apBillWiseActs(V);
   }
   /* Purchase › Bills › All Entries */
   var BA = { co: "", ven: "", prep: "", q: "" };
@@ -12666,19 +12791,19 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     vcrSaveR(id, vcrDoc(cid, vchPrepId(v), [v], { no: v.voucherNo || "Voucher", direct: true, fy: v.voucherFy || fyOf(todayYmd()), createdAt: now, createdBy: meId(), generatedAt: now, generatedBy: meId(), apprReq: who }))
       .then(function () { toast("Voucher " + (v.voucherNo || "") + " sent for approval."); renderVchSub(); renderNav(); }, function (e) { toast(explain(e)); });
   }
-  function vcrPrint(r) {
+  function vcrPrint(r, into) {
     var c = S.companies[(r.companyIds || [])[0]] || {}, vs = vcrVouchers(r).sort(vcrSort), esc = function (t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]; }); };
     var tot = 0; vs.forEach(function (v) { tot += vPayable(v); });
     var rows = vs.map(function (v, i) { return "<tr><td>" + (i + 1) + "</td><td>" + esc(v.voucherNo) + "</td><td>" + esc(fmtDate(v.voucherDate)) + "</td><td>" + esc(v.payee) + "</td><td>" + esc(v.narration || "") + "</td><td class=r><b>" + amt2(vPayable(v)) + "</b></td></tr>"; }).join("");
     var v0 = vs[0] || {}, P = v0.tlyPpl || {}, acc = vs.filter(function (v) { return v.acctBy; }).map(function (v) { return [v.acctBy, v.acctByName]; })[0] || ["", ""], ok = r.apprOk || null;
     var who = [["Prepared By", P.prep || r.preparedById, P.prepName || r.preparedBy], ["Accounted By", acc[0], pnm(acc[1] || "") || personName(acc[0])], ["Checker", P.a1, P.a1Name || personName(P.a1)], ["Final Approver", P.a2, P.a2Name || personName(P.a2)], ["Approved By", ok ? ok.by : "", ok ? ok.byName : ""]];
-    var w = window.open("", "_blank"); if (!w) { toast("Allow pop-ups to print the report."); return; }
+    var w = into ? null : window.open("", "_blank"); if (!into && !w) { toast("Allow pop-ups to print the report."); return; }
     Promise.all(who.map(function (x) { return x[1] && x[2] ? sigLoad(x[1]).then(function (p) { return p || ""; }, function () { return ""; }) : Promise.resolve(""); })).then(function (pngs) {
       var sg = "<div class=sigs>" + who.map(function (x, i) { return "<div class=sg><div class=si>" + (pngs[i] ? "<img src=\"" + pngs[i] + "\" alt=\"\">" : "") + "</div><b>" + esc(x[2] || "") + "</b><div>" + esc(x[0]) + "</div></div>"; }).join("") + "</div>";
-      w.document.open(); w.document.write("<!doctype html><html><head><meta charset=utf-8><title>" + esc(r.no) + "</title><style>body{font:13px/1.45 system-ui,sans-serif;margin:28px;color:#111}h1{font-size:20px;margin:0 0 2px}p{margin:2px 0}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #999;padding:6px 8px;text-align:left;vertical-align:top}th{background:#eee}.r{text-align:right}.sigs{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:40px}.sg{text-align:center;font-size:12px}.si{height:50px;border-bottom:1px solid #333;margin-bottom:4px;display:flex;align-items:flex-end;justify-content:center}.si img{max-height:48px;max-width:100%}</style></head><body>"
+      var out = ("<!doctype html><html><head><meta charset=utf-8><title>" + esc(r.no) + "</title><style>body{font:13px/1.45 system-ui,sans-serif;margin:28px;color:#111}h1{font-size:20px;margin:0 0 2px}p{margin:2px 0}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #999;padding:6px 8px;text-align:left;vertical-align:top}th{background:#eee}.r{text-align:right}.sigs{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:40px}.sg{text-align:center;font-size:12px}.si{height:50px;border-bottom:1px solid #333;margin-bottom:4px;display:flex;align-items:flex-end;justify-content:center}.si img{max-height:48px;max-width:100%}</style></head><body>"
         + "<h1>" + (r.direct ? "Voucher " : "Voucher Checking Report ") + esc(r.no) + "</h1><p><b>" + esc(c.name || "") + "</b></p><p>Prepared by " + esc(P.prepName || r.preparedBy || "") + " on " + esc(fmtDay(r.createdAt)) + "</p>"
         + "<table><thead><tr><th>#</th><th>Voucher No</th><th>Date</th><th>Paid To</th><th>Narration</th><th class=r>Payable</th></tr></thead><tbody>" + rows + "</tbody><tfoot><tr><th colspan=5>Total (" + vs.length + " vouchers)</th><th class=r>" + amt2(tot) + "</th></tr></tfoot></table>" + sg + "<script>onload=function(){print()}<\/script></body></html>");
-      w.document.close();
+      if (into) { into(out.replace(/<script>[^<]*print\(\)[^<]*<\/script>/, "")); return; } w.document.open(); w.document.write(out); w.document.close();
     });
   }
   function renderVchSub() {
@@ -15615,7 +15740,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function hsnRateReview(file, meta, ents, failed) {
     var half = /^(CGST|SGST|UTGST)$/i.test(meta.tax || "") || /central tax|union territory tax|state tax/i.test(meta.number || "");
     var body = el("div", { class: "mform" }), g = el("div", { class: "form" });
-    var nt = inp("hrNo", meta.number || "", { maxlength: "80" }), isd = inp("hrIss", ymdOk(meta.issued) ? meta.issued : "", { type: "date" }), frm = inp("hrFrom", ymdOk(meta.from) ? meta.from : "", { type: "date" });
+    var nt = inp("hrNo", meta.number || "", { maxlength: "80" }), isd = inp("hrIss", ymdOk(meta.issued) ? meta.issued : "", { type: "date", max: todayYmd() }), frm = inp("hrFrom", ymdOk(meta.from) ? meta.from : "", { type: "date" });
     var tx = el("select", { class: "field", id: "hrTax" }); fillSelect(tx, [["half", "Central Tax / UT Tax (Rate): the rate printed is half the GST; doubled"], ["full", "Integrated Tax (Rate): the rate printed is the full GST"]], half ? "half" : "full");
     g.appendChild(fld("Notification", nt)); g.appendChild(fld("Issued on", isd)); g.appendChild(fld("In force from", frm, "Rates apply to bills dated on or after this.")); g.appendChild(fld("The rates printed are", tx)); body.appendChild(g);
     if (failed) body.appendChild(el("p", { class: "flag warn" }, plural(failed, "part") + " of the document couldn't be read: entries in it are missing here. Upload it again to retry."));
@@ -18697,7 +18822,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!co || !c || !cn) { toast("Set up the company and the consumer in Masters first."); return; }
     if (c.blocks || !c.ready) { toast("Clear the checks marked Blocks first."); return; }
     var body = el("div", { class: "mform" }), d0 = todayYmd(), nx = nextInvNo(cid, d0);
-    body.appendChild(fld("Invoice date", inp("siDate", d0, { type: "date" })));
+    body.appendChild(fld("Invoice date", inp("siDate", d0, { type: "date", max: todayYmd() })));
     var nb = inp("siNo", nx.no, { maxlength: "40", class: "field mono", autocomplete: "off" }), touched = false; nb.addEventListener("input", function () { touched = true; });
     body.appendChild(fld("Invoice number", nb, "Next in " + (co.shortName || co.name) + "'s series for the year (" + invPrefix(cid) + "-NNN-YY/YY). You can change it; a number already used can't be given again."));
     body.appendChild(fld("Payment due in (days)", inp("siDays", String(cn.creditDays != null ? cn.creditDays : 30), { inputmode: "numeric", class: "field num" })));
@@ -18734,7 +18859,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     body.appendChild(pv);
     popForm("Issue bill of supply", c.name + " · " + monthLabel(month), body, "Issue and download PDF", function () {
       errClear(body); var dt = $("siDate").value, days = Math.round(n0($("siDays").value));
-      if (!ymdOk(dt)) { errOn("siDate", "Choose the invoice date."); return false; }
+      if (!ymdOk(dt)) { errOn("siDate", "Choose the invoice date."); return false; } if (dt > todayYmd()) { errOn("siDate", "The invoice date can't be after today."); return false; }
       if (invFor(cid, month, key)) { toast("An invoice is already issued for this consumer and month."); return false; }
       var n = nextInvNo(cid, dt), typed = $("siNo").value.trim().replace(/\s+/g, "");
       if (!typed) { errOn("siNo", "Type the invoice number."); return false; }
@@ -18920,7 +19045,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   function receiptForm(iv) {
     var r0 = invReceived(iv), body = el("div", { class: "mform" });
-    body.appendChild(fld("Date received", inp("srDate", todayYmd(), { type: "date" })));
+    body.appendChild(fld("Date received", inp("srDate", todayYmd(), { type: "date", max: todayYmd() })));
     body.appendChild(fld("Amount received (₹)", inp("srAmt", fmtInput(String(Math.max(0, r0.bal))), { inputmode: "decimal", class: "field num" }), "Balance due " + rs(r0.bal) + "."));
     body.appendChild(fld("TDS deducted under 194Q (₹)", inp("srTds", "", { inputmode: "decimal", class: "field num" }), "Leave blank if none. It counts towards the invoice, and is claimed through Form 26AS."));
     body.appendChild(fld("Bank", inp("srBank", "", { maxlength: "60" })));
@@ -18928,7 +19053,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     body.appendChild(fld("Note", inp("srNote", "", { maxlength: "160" })));
     popForm("Record receipt", iv.no + " · " + iv.consSnap.name + " · net " + rs(iv.net), body, "Save", function () {
       errClear(body); var d = $("srDate").value, a = num($("srAmt").value), t = num($("srTds").value) || 0;
-      if (!ymdOk(d)) { errOn("srDate", "Choose the date."); return false; }
+      if (!ymdOk(d)) { errOn("srDate", "Choose the date."); return false; } if (d > todayYmd()) { errOn("srDate", "The date can't be after today."); return false; }
       if (a == null || a < 0 || (a === 0 && !t)) { errOn("srAmt", "Enter the amount received."); return false; }
       var id = newId("sr"), doc = { invoiceId: iv.id, companyId: iv.companyId, consumer: iv.consumer, date: d, amount: round2(a), tds: round2(t), bank: $("srBank").value.trim(), utr: $("srUtr").value.trim(), note: $("srNote").value.trim(), at: Date.now(), by: meId() };
       return retry(function () { return S.db.doc("solar_receipts/" + id).set(doc); }).then(function () { SOL.rcpt[id] = Object.assign({ id: id }, doc); var b = invReceived(iv).bal; toast("Receipt saved." + (b < -0.5 ? " That is " + rs(-b) + " more than the invoice." : b > 0.5 ? " " + rs(b) + " is still due." : "")); solRender(); return true; }, function (e) { toast(explain(e)); return false; });

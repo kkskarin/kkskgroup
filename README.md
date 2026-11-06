@@ -128,7 +128,8 @@
   Items: **Purchase Voucher**, its narration, then its lines (the vendor's line first); then, when any line is under
   reverse charge, **Journal Voucher**, its own narration, then its lines (Dr CGST / SGST / IGST Input (RCM), Cr CGST /
   SGST / IGST **Output (RCM)**, the names in Tally; the old "RCM … Payable" ledgers are no longer used or sent in Masters).
-  The Journal Voucher's narration is written from the figures and follows them until edited by hand (Write Again
+  Each RCM line shows the value the tax is worked on: the expense line "RCM: Yes · GST 5% on 10,000.00 = 500.00, by the
+  Journal Voucher", each Journal Voucher line "2.5% on 10,000.00" (IGST at the full rate). The Journal Voucher's narration is written from the figures and follows them until edited by hand (Write Again
   restores it), is required, is saved on the bill or voucher (`rcmNarr`, `rcmNarrMan`) and goes into Tally Downloads:
   "Being GST payable under reverse charge mechanism (RCM) on Bill No. GTA-9 dated 24-10-2026 of Sri Murugan Transports,
   on taxable value Rs. 10,000.00 at 5%: CGST Rs. 250.00, SGST Rs. 250.00." (Voucher No. … for a voucher).

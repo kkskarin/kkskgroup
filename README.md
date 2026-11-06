@@ -170,6 +170,7 @@
 - **No future document dates.** Bill, voucher, proforma / import, Bill of Entry, e-invoice Ack, payment, receipt,
   withdrawal and invoice dates can't be after today: later days are greyed out in the calendars and refused if typed.
 - **Personalise** has the Password card again (change password, sign out), and its cards flow in columns with no gaps.
+  The three-line menu reads All Apps · Personalise (opens Personalise) · Sign Out; Password is no longer in the menu.
 - **Postponed payments: a reminder date.** When an approval leaves an amount postponed, the approver chooses the date to be
   reminded (`postRemind`, required, after today). Postponed Payments shows it (Remind On) and the row turns yellow, with a
   count on the tab, only from that date.

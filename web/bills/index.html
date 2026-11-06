@@ -988,8 +988,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       <div class="hmrow" id="hmMode"><span class="hml">Data</span><div class="modesw" id="modeSw" role="group" aria-label="Data" hidden></div></div>
       <button class="hmi" id="hmApps" type="button" role="menuitem" aria-expanded="false" aria-controls="hmAppsList"><span>All Apps</span><span class="count info" id="hmAppsCt" hidden></span><span class="chev" aria-hidden="true">&#9662;</span></button>
       <div class="hmapps" id="hmAppsList" hidden></div>
-      <button class="hmi" id="hmSet" type="button" role="menuitem"><span>Settings</span></button>
-      <button class="hmi" id="hmPw" type="button" role="menuitem"><span>Password</span></button>
+      <button class="hmi" id="hmSet" type="button" role="menuitem"><span>Personalise</span></button>
+      <button class="hmi" id="hmPw" type="button" role="menuitem" hidden><span>Password</span></button>
       <button class="hmi out" id="hmOut" type="button" role="menuitem"><span>Sign Out</span></button>
     </div></div>
 </div></header>
@@ -3379,7 +3379,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var p = $("hdrPanel"); if (!p.hidden) { hmClose(); return; }
     closeMeMenu(); var old = document.querySelector(".vamenu"); if (old) old.remove();
     p.hidden = false; $("hdrMenu").setAttribute("aria-expanded", "true"); $("hmAppsList").hidden = true; $("hmApps").setAttribute("aria-expanded", "false");
-    $("hmPw").hidden = !window.bvAccount || !!S._adm; $("hmSet").hidden = !settingsGroup();
+    $("hmPw").hidden = true; /* the password is changed in Personalise */ $("hmSet").hidden = !settingsGroup();
     setTimeout(function () { document.addEventListener("click", hmOutside, true); document.addEventListener("keydown", hmKey, true); }, 0);
     var f = p.querySelector(".hmi:not([hidden])"); if (f) f.focus();
   }
@@ -3394,7 +3394,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     row("../", "KKSK Group home", null, false);
     t.appendChild(tb); box.appendChild(t);
   }
-  function hmSettings() { var g = settingsGroup(); hmClose(); if (!g) return; var last = LAST_IN[g.h]; setTab(last && groupOf(last) === g ? last : g.tabs[0][0]); }
+  /* the menu's Personalise opens Personalise (the other Settings pages are tabs beside it) */
+  function hmSettings() { var g = settingsGroup(); hmClose(); if (!g) return; var pz = g.tabs.filter(function (t) { return t[0] === "Personalise"; })[0]; setTab(pz ? "Personalise" : g.tabs[0][0]); }
   function hmPassword() {
     hmClose(); if (!window.bvAccount) return;
     var body = el("div", { class: "mform" });

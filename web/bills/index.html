@@ -7451,20 +7451,21 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var GST_STATES = { "01": "Jammu and Kashmir", "02": "Himachal Pradesh", "03": "Punjab", "04": "Chandigarh", "05": "Uttarakhand", "06": "Haryana", "07": "Delhi", "08": "Rajasthan", "09": "Uttar Pradesh", "10": "Bihar", "11": "Sikkim", "12": "Arunachal Pradesh", "13": "Nagaland", "14": "Manipur", "15": "Mizoram", "16": "Tripura", "17": "Meghalaya", "18": "Assam", "19": "West Bengal", "20": "Jharkhand", "21": "Odisha", "22": "Chhattisgarh", "23": "Madhya Pradesh", "24": "Gujarat", "26": "Dadra and Nagar Haveli and Daman and Diu", "27": "Maharashtra", "29": "Karnataka", "30": "Goa", "31": "Lakshadweep", "32": "Kerala", "33": "Tamil Nadu", "34": "Puducherry", "35": "Andaman and Nicobar Islands", "36": "Telangana", "37": "Andhra Pradesh", "38": "Ladakh" };
   function tdlAmt(n) { return Math.round((Number(n) || 0) * 100) / 100; }
   /* one voucher; rows [{led, dc: "Dr" / "Cr", amt, party, bill: {name, type}}] */
-  function tdlVch(type, o, rows) { return { type: type, date: o.date, no: o.no || "", ref: o.ref || "", refDate: o.ref ? o.refDate || "" : "", narr: o.narr || "", rows: rows.filter(function (r) { return Number(r.amt) > 0.004; }) }; }
+  function tdlVch(type, o, rows) { var rs = rows.filter(function (r) { return Number(r.amt) > 0.004; }); /* the vendor / customer line first, then the rest */
+    return { type: type, date: o.date, no: o.no || "", ref: o.ref || "", refDate: o.ref ? o.refDate || o.date || "" : "", narr: o.narr || "", rows: rs.filter(function (r) { return r.party; }).concat(rs.filter(function (r) { return !r.party; })) }; }
   function tdlIn(ymd) { return ymdOk(ymd) && (!TDL.from || ymd >= TDL.from) && (!TDL.to || ymd <= TDL.to); }
   /* every voucher of a company in the period, by kind */
   function tdlTx(cid) {
     var out = { purchase: [], journal: [], payment: [], sales: [], receipt: [], contra: [], noBank: 0 }, lname = function (id) { return ((S.ledgers || {})[id] || {}).name || ""; };
     tlyBills(cid).forEach(function (b) { if (b.acct !== "approved" || !tdlIn(b.billDate)) return; var its = itemsIn(JSON.parse(JSON.stringify(b))), inter = billInter(b), party = vendorLabelOfBill(b);
       var tv = tallyVoucher({ items: its, cid: cid, inter: inter, acct: true, tds: b.tds, tdsSec: b.tdsSection, tdsBase: tdsBaseOf(its), billNo: b.billNo, party: party });
-      out.purchase.push(tdlVch("Purchase", { date: b.billDate, ref: b.billNo, refDate: b.billDate, party: party, narr: b.narration }, tv.rows.map(function (r) { return { led: r.led, dc: r.dc, amt: r.amt, party: !!r.party, bill: r.party ? { name: b.billNo || "", type: "New Ref" } : null }; })));
+      out.purchase.push(tdlVch("Purchase", { date: b.billDate, ref: b.billNo, refDate: b.billDate, party: party, narr: b.narration }, tv.rows.map(function (r) { return { led: r.led, dc: r.dc, amt: r.amt, party: !!r.party, bill: r.party ? { name: b.billNo || "", type: "New Ref", due: b.dueDate || (b.termDays != null ? addDays(b.billDate, Number(b.termDays) || 0) : "") } : null }; })));
       var jr = rcmJournal(its, inter); if (jr) out.journal.push(tdlVch("Journal", { date: b.billDate, ref: b.billNo, narr: "Being GST payable on reverse charge on bill " + (b.billNo || "") + " of " + party + "." }, jr.rows)); });
     vchList().forEach(function (v) { if (v.companyId !== cid || v.acct !== "approved" || v.status === "deleted" || !tdlIn(v.voucherDate)) return; var tds = Number(v.tds) || 0, rows = [];
       (v.ledgers || []).forEach(function (l) { rows.push({ led: lname(l.id), dc: "Dr", amt: Number(l.amt) || 0 }); });
       if (tds > 0) { var tt = taxAll("tds").filter(function (t) { return t.sec === v.tdsSection; })[0]; rows.push({ led: tt ? tdsLedName(tt) : "TDS Payable u/s " + (v.tdsSection || ""), dc: "Cr", amt: tds }); }
-      rows.push({ led: v.payee || "", dc: "Cr", amt: round2((Number(v.total) || 0) - tds), party: true, bill: { name: v.voucherNo || "", type: "New Ref" } });
-      out.purchase.push(tdlVch("Purchase", { date: v.voucherDate, no: v.voucherNo, ref: v.voucherNo, party: v.payee, narr: v.narration }, rows));
+      rows.push({ led: v.payee || "", dc: "Cr", amt: round2((Number(v.total) || 0) - tds), party: true, bill: { name: v.voucherNo || "", type: "New Ref", due: v.dueDate || "" } });
+      out.purchase.push(tdlVch("Purchase", { date: v.voucherDate, no: v.voucherNo, ref: v.voucherNo, refDate: v.voucherDate, party: v.payee, narr: v.narration }, rows));
       var gl = v.gstApp === "RCM" ? v.gstLedgers || [] : []; if (gl.length) { var jrows = []; gl.forEach(function (g) { var L = (S.ledgers || {})[g.id]; jrows.push({ led: L ? L.name : "Input (RCM)", dc: "Dr", amt: Number(g.amt) || 0 }); });
         gl.forEach(function (g) { var L = (S.ledgers || {})[g.id], pl = L ? rcmPayLed(gstHead(L)) : null; jrows.push({ led: pl ? pl.name : (L ? gstHead(L).toUpperCase() : "GST") + " RCM Payable", dc: "Cr", amt: Number(g.amt) || 0 }); });
         out.journal.push(tdlVch("Journal", { date: v.voucherDate, ref: v.voucherNo, narr: "Being GST payable on reverse charge on voucher " + (v.voucherNo || "") + " of " + (v.payee || "") + "." }, jrows)); } });
@@ -7492,13 +7493,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         state: foreign ? "" : GST_STATES[g.slice(0, 2)] || "", country: foreign ? o.country : "India", pincode: (String(o.address || "").match(/\b\d{6}\b/) || [""])[0], pan: o.pan || "", regType: g.length === 15 ? "Regular" : "Unregistered/Consumer", gstin: g.length === 15 ? g : "" }); };
     var vids = {}; tlyBills(cid).forEach(function (b) { if (b.vendorId) vids[b.vendorId] = 1; }); advList("pi").concat(advList("import")).forEach(function (a) { if (a.companyId === cid && a.vendorId) vids[a.vendorId] = 1; });
     Object.keys(vids).forEach(function (vid) { var v = S.vendors[vid]; if (v) party(v.name, { address: v.address, gstin: v.gstin, pan: v.pan || (v.gstin ? panFromGstin(v.gstin) : ""), country: v.country }); });
+    /* every active vendor of the Vendors master, not only those with bills here */
+    visibleVendors().forEach(function (v) { if (v.active === false || !v.name) return; party(v.name, { address: v.address, gstin: v.gstin, pan: v.pan || (v.gstin ? panFromGstin(v.gstin) : ""), country: v.country }); });
     vchList().forEach(function (v) { if (v.companyId !== cid || !v.payee || v.status === "deleted") return; party(v.payee, { address: v.payeeAddr || payeeAddrOf(v.payee), pan: idKind(v.payeeIdNo) === "pan" ? idNorm(v.payeeIdNo) : "" }); });
     dutyList().forEach(function (d) { if (d.companyId === cid && !d.vendorId && d.partyName) party(d.partyName, {}); });
     bankList(cid).forEach(function (b) { var nm = b.ledgerName || b.name || b.bank; if (!nm || seenL[nm.trim().toLowerCase()]) return; seenL[nm.trim().toLowerCase()] = 1; out.banks.push({ name: nm, group: "Bank Accounts", acNo: b.accountNo || "", ifsc: b.ifsc || "", bank: b.bank || "", branch: b.branch || "", holder: (S.companies[cid] || {}).name || "" }); });
     return out;
   }
   /* the workbooks, with Tally's column headings */
-  var TDL_VCOLS = ["Voucher Date", "Voucher Type Name", "Voucher Number", "Reference No.", "Reference Date", "Voucher Narration", "Ledger Name", "Ledger Amount", "Ledger Amount Dr/Cr", "Bill Type of Ref", "Bill Name", "Bill Amount", "Bill Amount - Dr/Cr", "Change Mode "];
+  var TDL_VCOLS = ["Voucher Date", "Voucher Type Name", "Voucher Number", "Reference No.", "Reference Date", "Voucher Narration", "Ledger Name", "Ledger Amount", "Ledger Amount Dr/Cr", "Bill Type of Ref", "Bill Name", "Bill Amount", "Bill Amount - Dr/Cr", "Bill Due Dt or Credit Days", "Change Mode "];
   var TDL_LCOLS = ["Name", "Group Name", "Ledger - Opening Balance", "Ledger Opening Balance - Dr/Cr", "Maintain balances bill-by-bill", "Mailing Name", "Address", "State", "Country", "Pincode", "PAN/IT No.", "GST Registration Type", "GST Registration - GSTIN/UIN", "Bank Account Details - A/c Holder's Name", "Bank Account Details - A/c No.", "Bank Account Details - IFS Code", "Bank Account Details - Bank Name", "Bank Account Details - Branch"];
   function tdlXDate(ymd) { var p = String(ymd || "").split("-"); return p.length === 3 ? { t: "n", v: Math.round((Date.UTC(+p[0], +p[1] - 1, +p[2]) - Date.UTC(1899, 11, 30)) / 864e5), z: "dd-mm-yyyy" } : { t: "s", v: "" }; }
   function tdlBook(XLSX, cid, tx, d) {
@@ -7509,8 +7512,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (tx) {
       var rows = [];
       d.purchase.concat(d.journal, d.payment, d.sales, d.receipt, d.contra).forEach(function (v) { v.rows.forEach(function (r, i) { var first = i === 0, a = tdlAmt(r.amt);
-        rows.push([first ? tdlXDate(v.date) : "", first ? v.type : "", first ? v.no : "", first ? v.ref : "", first && v.refDate ? tdlXDate(v.refDate) : "", first ? v.narr : "", r.led, a, r.dc, r.bill ? r.bill.type || "New Ref" : "", r.bill ? r.bill.name : "", r.bill ? a : "", r.bill ? r.dc : "", first ? "As Voucher" : ""]); }); });
-      XLSX.utils.book_append_sheet(wb, sheet(TDL_VCOLS, rows, [12, 12, 18, 18, 12, 60, 34, 14, 8, 12, 20, 14, 8, 12]), "Accounting Voucher");
+        rows.push([first ? tdlXDate(v.date) : "", first ? v.type : "", first ? v.no : "", first ? v.ref : "", first && v.refDate ? tdlXDate(v.refDate) : "", first ? v.narr : "", r.led, a, r.dc, r.bill ? r.bill.type || "New Ref" : "", r.bill ? r.bill.name : "", r.bill ? a : "", r.bill ? r.dc : "", r.bill && ymdOk(r.bill.due) ? tdlXDate(r.bill.due) : "", first ? "As Voucher" : ""]); }); });
+      XLSX.utils.book_append_sheet(wb, sheet(TDL_VCOLS, rows, [12, 12, 18, 18, 12, 60, 34, 14, 8, 12, 20, 14, 8, 14, 12]), "Accounting Voucher");
     } else {
       XLSX.utils.book_append_sheet(wb, sheet(["Name", "Parent Group Name"], d.groups.map(function (g) { return [g.name, g.parent]; }), [34, 30]), "Group");
       var lr = d.ledgers.map(function (l) { return [l.name, l.group]; });

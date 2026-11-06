@@ -86,11 +86,13 @@
 - **Tally (Demo) › Reports › Tally Downloads** gives Excel files (no XML), one per company, laid out as TallyPrime's own
   sample import files (Import › Masters / Transactions › Excel, TallyPrime 4.0 or later), with Tally's column headings.
   **Transactions** ("INTL - dd-MMM-yy.xlsx"): one sheet "Accounting Voucher", a row per ledger line (Ledger Name, Ledger
-  Amount, Dr/Cr, and Bill Type of Ref / Bill Name / Bill Amount on the party's line); the voucher's date, type, number,
-  reference and narration only on its first row, Change Mode "As Voucher". Purchase (accounted bills and vouchers),
+  Amount, Dr/Cr, and Bill Type of Ref / Bill Name / Bill Amount on the party's line); the vendor's / customer's line first, then the
+  other lines; the voucher's date, type, number, reference and narration only on its first row, Change Mode "As
+  Voucher". A bill's purchase voucher is dated the bill date, with Reference No. / Date the supplier's bill number and
+  date, and its vendor line carries the bill's due date (Bill Due Dt or Credit Days). Purchase (accounted bills and vouchers),
   journal (Journal Entry - GST on reverse charge) and payment vouchers for the chosen period; sales, receipt and contra
   join once they are kept here. **Masters** ("INTL - Masters - …xlsx"): sheet "Group" (each Sub Group under its Primary
-  Group) and sheet "Ledger" (ledgers; vendors and voucher payees under Sundry Creditors, bill-by-bill, with mailing name,
+  Group) and sheet "Ledger" (ledgers; every active vendor of the Vendors master and the voucher payees under Sundry Creditors, bill-by-bill, with mailing name,
   address, state from the GSTIN, pincode, PAN, GST registration type and GSTIN; bank accounts with their account
   details). Import the Masters file first.
 - **Text wraps instead of overlapping.** Buttons, column headers, labels, tags, card titles and headings wrap onto more lines

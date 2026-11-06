@@ -145,6 +145,24 @@
   ₹1,000.00 @ 5% (Lorry Freight) out of the total taxable value of ₹10,000.00 (…)"; several rates are joined with "and";
   IGST shows alone. Ledger names go first if it would pass 255 characters. A bill's Journal Voucher narration is now
   saved when it is accounted (it was saved only on Postpone).
+- **Entry and accounting buttons (Tally (Demo)).** Every footer and pop-up has the negative action (red) on the far left
+  and the positive ones on the right, the main one (green) last: Bill Entry and the voucher form read Discard · Save as
+  Draft · Submit; accounting reads Send Back · Postpone · Verify with Chief Accountant · Account. Cancel Entry is gone
+  (Save as Draft keeps the work; Back at the top leaves). **Vouchers can be saved as drafts** (`status: "draft"`, no number
+  until submitted, never with the accountant); Voucher Entry lists Drafts, Sent Back Vouchers, then Waiting to Account.
+  To Check counts only the bill open there.
+- **Sent-back counts in red (Tally (Demo)).** Bills and vouchers sent back by the accountant show a red number on the
+  heading, the tab and the page, next to the green count of drafts and bills to check.
+- **Submitted Vouchers** columns: Prepared By, Vendor, Voucher Details, Total Payable, Due Date, Submitted, Status, with a
+  Prepared By filter before the search. **All Vouchers** (Company, Prepared By, Vendor, Voucher Details, Total Payable, Total
+  Paid, Due Date) and **All Bills** (Company, Vendor, Bill Details with the BCR number in front, e.g. "BCR/TCPL/26-27/002 -
+  GST839", Total Payable, Total Paid, Due Date, Submitted) are grouped by status in status order, oldest bill or voucher
+  date first.
+- **Postponed payments: a reminder date.** When an approval leaves an amount postponed, the approver chooses the date to be
+  reminded (`postRemind`, required, after today). Postponed Payments shows it (Remind On) and the row turns yellow, with a
+  count on the tab, only from that date.
+- **Open any heading, tab or page in a new tab.** Each is also a link to its own address (`#tab=…`): right-click › Open link
+  in new tab, or Ctrl / Cmd / middle click; the page opens on the tab its address names.
 - **Sent Back sections (Tally (Demo)).** Bill Entry lists **Sent Back Bills** in a section of its own after Drafts (the
   bills the accountant sent back, each with the note; Resume opens it); Voucher Entry lists **Sent Back Vouchers** above
   Waiting to Account, tagged Sent Back with who sent it and why. Once corrected and submitted they go to Waiting to Account.

@@ -6972,13 +6972,18 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var nx = $("bNext"); nx.textContent = "";
     var rest = q.filter(function (b) { return !open || b.id !== open.id; });
     if (tly()) {
-      var dr = myPostponed(); $("bPostWrap").hidden = true;
+      /* Drafts, then the bills the accountant sent back (each with the accountant's note), in a section of their own */
+      var pp0 = myPostponed(), dr = pp0.filter(function (b) { return b.acct !== "back"; }), sb = pp0.filter(function (b) { return b.acct === "back"; }); $("bPostWrap").hidden = true;
       var dh = el("h3", null, "Drafts"); if (rest.length + dr.length) dh.appendChild(el("span", { class: "qcount" }, " (" + (rest.length + dr.length) + ")")); nx.appendChild(dh);
-      if (!rest.length && !dr.length) { nx.appendChild(el("div", { class: "card empty" }, "No drafts. A bill saved as a draft, or uploaded and not yet checked, waits here.")); renderDone(); return; }
-      var dc = el("div", { class: "card" });
-      if (rest.length) { dc.appendChild(el("div", { class: "drsub" }, "Uploaded, waiting to be checked (each opens when the bill above is submitted or saved as a draft)")); rest.forEach(function (b) { dc.appendChild(billRow(b, "queue")); }); }
-      if (dr.length) { dc.appendChild(el("div", { class: "drsub" }, "Saved as drafts")); dr.forEach(function (b) { dc.appendChild(billRow(b, "post")); }); }
-      nx.appendChild(dc); renderDone(); return;
+      if (!rest.length && !dr.length) nx.appendChild(el("div", { class: "card empty" }, "No drafts. A bill saved as a draft, or uploaded and not yet checked, waits here."));
+      else { var dc = el("div", { class: "card" });
+        if (rest.length) { dc.appendChild(el("div", { class: "drsub" }, "Uploaded, waiting to be checked (each opens when the bill above is submitted or saved as a draft)")); rest.forEach(function (b) { dc.appendChild(billRow(b, "queue")); }); }
+        if (dr.length) { dc.appendChild(el("div", { class: "drsub" }, "Saved as drafts")); dr.forEach(function (b) { dc.appendChild(billRow(b, "post")); }); }
+        nx.appendChild(dc); }
+      var sh = el("h3", { style: "margin-top:18px" }, "Sent Back Bills"); if (sb.length) sh.appendChild(el("span", { class: "qcount" }, " (" + sb.length + ")")); nx.appendChild(sh);
+      if (!sb.length) nx.appendChild(el("div", { class: "card empty" }, "Nothing sent back. A bill the accountant sends back for correction waits here with the reason; once corrected and submitted it goes to Waiting to Account."));
+      else { var sc = el("div", { class: "card" }); sb.forEach(function (b) { sc.appendChild(billRow(b, "post")); }); nx.appendChild(sc); }
+      renderDone(); return;
     }
     if (rest.length) {
       nx.appendChild(el("p", { class: "sub qnote" }, "Next in line. Each one opens when the bill above is submitted or postponed."));
@@ -12735,16 +12740,20 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (q && ((v.voucherNo || "") + " " + (v.payee || "") + " " + (v.narration || "") + " " + (pnm(v.preparedByName))).toLowerCase().indexOf(q) < 0) return false;
       return true;
     }).sort(function (a, b) { return natCmp(b.voucherDate, a.voucherDate) || (b.createdAt || 0) - (a.createdAt || 0); });
+    /* Tally (Demo): vouchers the accountant sent back get a section of their own above Waiting to Account */
+    var back = tly() ? rows.filter(function (v) { return v.acct === "back" || !!v.sentBack; }) : [];
+    if (tly()) rows = rows.filter(function (v) { return back.indexOf(v) < 0; });
+    var bw = $("vhBackWrap"); if (!bw) { bw = el("div", { id: "vhBackWrap" }); var h0 = $("vhNT").parentNode; h0.parentNode.insertBefore(bw, h0); }
+    bw.hidden = !tly(); bw.textContent = "";
     $("vhN").textContent = rows.length ? "(" + rows.length + ")" : "";
     var box = $("vhList");
-    if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, q || cid ? "No vouchers match." : "No vouchers yet." + (canDo("vouchers") ? " Use New voucher to add one." : ""))); return; }
-    sortTable(box, "vhList", [
+    var VCOLS = [
       { label: "Voucher", kind: "co", cell: function (v, td) { td.appendChild(el("b", { class: "mono" }, v.voucherNo)); sub(td, fmtDate(v.voucherDate)); } },
       { label: "Company", cell: function (v, td) { td.appendChild(el("b", null, coLabel(v.companyId))); } },
       { label: "Paid to", cls: "desc", cell: function (v, td) { td.appendChild(el("b", null, v.payee || "")); sub(td, v.narration || ""); } },
       { label: "Payable", cls: "r num", cell: function (v, td) { td.appendChild(el("b", null, money(vPayable(v)))); } },
       { label: "Payment", cell: function (v, td) { td.appendChild(el("span", { class: "tag stg " + (v.settle ? "s-printed" : "s-generated") }, v.settle ? "Cash advance" : "By Financier")); if (!isMine(v.preparedByName)) sub(td, String(pnm(v.preparedByName)).split(" - ")[0]); } },
-      { label: "Status", cell: function (v, td) { if (tly()) { var k = vchTlySt(v), rr = vcrOf(v.id); td.appendChild(tlyStTag(k, Object.assign({}, v, { apprRej: rr && rr.apprRej }))); if (rr) sub(td, "In " + rr.no + (rr.direct ? "" : " (Voucher Checking Report)")); else if (k === "acct") sub(td, "Send it for approval under Submitted Vouchers"); else if (v.acct === "back" && v.acctNote) sub(td, v.acctNote, "color:var(--bad)"); return; } var st = vchStatus(v); td.appendChild(el("span", { class: "tag stg " + st.cls }, st.r ? st.r.no : st.text)); if (st.r) sub(td, v.approvedAt ? "Approved" : STAGE[stageOf(st.r)]); if (st.back) sub(td, "From " + (v.sentBack.fromNo || "a report") + " by " + (v.sentBack.byName || "the admin") + ". Change it, or send it again as it is."); if (st.acct && v.acct === "back" && v.acctNote) sub(td, v.acctNote + " Edit it and save to send it again.", "color:var(--bad)"); } },
+      { label: "Status", cell: function (v, td) { if (tly() && v.acct === "back") { td.appendChild(el("span", { class: "tag stg s-tds" }, "Sent Back")); sub(td, (v.acctByName ? "By " + pnm(v.acctByName) + (v.acctNote ? ": " : "") : "") + (v.acctNote || ""), "color:var(--bad)"); return; } if (tly()) { var k = vchTlySt(v), rr = vcrOf(v.id); td.appendChild(tlyStTag(k, Object.assign({}, v, { apprRej: rr && rr.apprRej }))); if (rr) sub(td, "In " + rr.no + (rr.direct ? "" : " (Voucher Checking Report)")); else if (k === "acct") sub(td, "Send it for approval under Submitted Vouchers"); else if (v.acct === "back" && v.acctNote) sub(td, v.acctNote, "color:var(--bad)"); return; } var st = vchStatus(v); td.appendChild(el("span", { class: "tag stg " + st.cls }, st.r ? st.r.no : st.text)); if (st.r) sub(td, v.approvedAt ? "Approved" : STAGE[stageOf(st.r)]); if (st.back) sub(td, "From " + (v.sentBack.fromNo || "a report") + " by " + (v.sentBack.byName || "the admin") + ". Change it, or send it again as it is."); if (st.acct && v.acct === "back" && v.acctNote) sub(td, v.acctNote + " Edit it and save to send it again.", "color:var(--bad)"); } },
       { label: "", kind: "act", cls: "r", cell: function (v, td) {
           if (vchEditable(v)) {
             var w = el("div", { class: "acts" }), e = el("button", { class: "btn sm" }, "Edit"), d = el("button", { class: "btn sm danger" }, "Delete");
@@ -12755,7 +12764,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
             w.appendChild(e); w.appendChild(d); if (S.downloads && acctOk(v) && (!tly() || vchSent(v))) { var pr0 = el("button", { class: "btn sm" }, "Print"); pr0.addEventListener("click", function () { printVoucher(v.id, pr0); }); w.appendChild(pr0); } td.appendChild(w);
           } else { if (S.downloads && acctOk(v) && (!tly() || vchSent(v))) { var pr1 = el("button", { class: "btn sm" }, "Print"); pr1.addEventListener("click", function () { printVoucher(v.id, pr1); }); td.appendChild(pr1); } var vr = vcrOf(v.id); if (tly()) { if (vr && !vr.apprOk) sub(td, "With the approver in " + vr.no + "."); return; } sub(td, vr ? (stageOf(vr) === "generated" ? "In " + vr.no + ". Cancel that report to change it." : adm() ? "In " + vr.no + ". Reverse it to generated and cancel it to change this voucher." : "In " + vr.no + ". Only the admin can change it now.") : (prepOf(v) === meId() || v.createdBy === meId()) ? "Locked after " + REV_DAYS + " days. Only the admin can change it." : "Only the person who prepared it or the admin can change it"); }
         } }
-    ], rows, { sortIndex: -1, rowClass: function (v) { return v.sentBack ? "sentback" : ""; }, limit: VH.limit, more: function (m, n) { var mb = el("button", { class: "btn" }, "Show " + Math.min(100, n) + " more of " + n); mb.addEventListener("click", function () { VH.limit += 100; renderVch(); }); m.appendChild(mb); } });
+    ];
+    if (tly()) { var bh = el("h3", { style: "margin-top:4px" }, "Sent Back Vouchers"); if (back.length) bh.appendChild(el("span", null, " (" + back.length + ")")); bw.appendChild(bh);
+      var bb = el("div", { class: "card list scroll", style: "margin-bottom:18px" }); bw.appendChild(bb);
+      if (!back.length) bb.appendChild(el("div", { class: "empty" }, "Nothing sent back. A voucher the accountant sends back for correction waits here with the reason; once corrected it goes to Waiting to Account."));
+      else sortTable(bb, "vhBack", VCOLS, back, { sortIndex: -1, rowClass: function () { return "sentback"; } }); }
+    if (!rows.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, q || cid ? "No vouchers match." : (tly() ? "No vouchers waiting to be accounted." : "No vouchers yet.") + (canDo("vouchers") ? " Use New voucher to add one." : ""))); return; }
+    sortTable(box, "vhList", VCOLS, rows, { sortIndex: -1, rowClass: function (v) { return v.sentBack ? "sentback" : ""; }, limit: VH.limit, more: function (m, n) { var mb = el("button", { class: "btn" }, "Show " + Math.min(100, n) + " more of " + n); mb.addEventListener("click", function () { VH.limit += 100; renderVch(); }); m.appendChild(mb); } });
   }
   function payeeOpts(D) {
     var nm = (D.payeeNew || "").trim(), o = [["", "Choose who was paid"], ["new", nm ? "New person or shop: " + nm : "New person or shop"]];

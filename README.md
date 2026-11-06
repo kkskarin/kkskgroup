@@ -145,6 +145,9 @@
   ₹1,000.00 @ 5% (Lorry Freight) out of the total taxable value of ₹10,000.00 (…)"; several rates are joined with "and";
   IGST shows alone. Ledger names go first if it would pass 255 characters. A bill's Journal Voucher narration is now
   saved when it is accounted (it was saved only on Postpone).
+- **Sent Back sections (Tally (Demo)).** Bill Entry lists **Sent Back Bills** in a section of its own after Drafts (the
+  bills the accountant sent back, each with the note; Resume opens it); Voucher Entry lists **Sent Back Vouchers** above
+  Waiting to Account, tagged Sent Back with who sent it and why. Once corrected and submitted they go to Waiting to Account.
 - **Voucher accounting shows Supply of.** The summary at the top of a voucher's accounting includes Supply of (or "Not
   given").
 - **Item descriptions (Tally (Demo)).** A line typed or spoken in Bill Entry is rewritten by Claude to the description rules,

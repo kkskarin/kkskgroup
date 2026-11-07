@@ -4229,7 +4229,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }
     function choose() { var t = el("input", { type: "file", accept: acc, multiple: "", hidden: "" }); document.body.appendChild(t); t.addEventListener("change", function () { var fs = Array.prototype.slice.call(t.files || []); t.remove(); finish(fs, false); }); t.click(); }
     if (!touch) { choose(); return; }
-    var shots = [];
+    var shots = [], camErr = "";
     function snap() { var t = el("input", { type: "file", accept: "image/*", capture: "environment", hidden: "" }); document.body.appendChild(t); t.addEventListener("change", function () { var f = t.files && t.files[0]; t.remove(); if (f) shots.push(f); sheet(); }); t.click(); }
     function sheet() {
       var bg = el("div", { class: "modal-bg docpick-bg" }), m = el("div", { class: "modal docpick", role: "dialog", "aria-modal": "true", "aria-label": "Add a document" }), close = function () { bg.remove(); };
@@ -4237,13 +4237,17 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (n) { var row = el("div", { class: "docpick-th" }); shots.forEach(function (f, i) { var w = el("span", { class: "docpick-t" }), im = el("img", { alt: "Photo " + (i + 1) }), x = el("button", { type: "button", class: "docpick-x", "aria-label": "Remove photo " + (i + 1) }, "×"); im.src = URL.createObjectURL(f); x.addEventListener("click", function () { shots.splice(i, 1); close(); sheet(); }); w.appendChild(im); w.appendChild(x); row.appendChild(w); }); m.appendChild(row); }
       var ft = el("div", { class: "docpick-acts" }), b = function (t, cls, fn) { var x = el("button", { type: "button", class: "btn" + (cls ? " " + cls : "") }, t); x.addEventListener("click", function () { close(); fn(); }); ft.appendChild(x); };
       if (n) { b("Done", "primary", function () { finish(shots, true); }); b("Take Another Photo", "", snap); b("Cancel", "", function () {}); }
-      else { b("Take Photo(s)", "primary", function () { camScan(function (fs) { if (fs === null) { snap(); return; } if (fs.length) { shots = shots.concat(fs); finish(shots, true); } }); }); b("Choose File(s)", "", choose); b("Cancel", "", function () {}); }
+      else {
+        if (camErr) m.appendChild(el("p", { class: "hint", style: "margin:8px 0 0" }, "The camera couldn't be opened inside the app (" + camErr + "). Take Photo(s) uses the phone's camera, one page at a time."));
+        b("Take Photo(s)", "primary", camErr ? snap : function () { camScan(function (fs) { if (fs && fs.err) { camErr = fs.err; sheet(); return; } if (fs && fs.length) { shots = shots.concat(fs); finish(shots, true); } }); });
+        b("Choose File(s)", "", choose); b("Cancel", "", function () {});
+      }
       m.appendChild(ft); bg.addEventListener("click", function (e) { if (e.target === bg) close(); }); bg.appendChild(m); document.body.appendChild(bg);
     }
     sheet();
   }
   /* The in-app scanner: the camera stays open, a tap takes a page, the pages line up below, Done hands them over.
-     fn(files) with the pages, fn([]) on Cancel, fn(null) when the camera can't be used here (the caller falls back to the phone's camera). */
+     fn(files) with the pages, fn([]) on Cancel, fn({err}) when the camera can't be started here (the caller offers the phone's camera instead). */
   function camScan(fn) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { fn(null); return; }
     var bg = el("div", { class: "cam-bg", role: "dialog", "aria-modal": "true", "aria-label": "Take photos" }), vid = el("video", { playsinline: "", autoplay: "", muted: "" }), stream = null, track = null, pages = [], busy = false;
@@ -4262,10 +4266,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     cancel.addEventListener("click", function () { stop(); fn([]); }); done.addEventListener("click", function () { var out = pages.slice(); stop(); fn(out); });
     torch.addEventListener("click", function () { if (!track) return; var on = torch.getAttribute("aria-pressed") !== "true"; track.applyConstraints({ advanced: [{ torch: on }] }).then(function () { torch.setAttribute("aria-pressed", on ? "true" : "false"); }, function () {}); });
     bar.appendChild(cancel); bar.appendChild(shut); bar.appendChild(done); bg.appendChild(vid); bg.appendChild(torch); bg.appendChild(cnt); bg.appendChild(strip); bg.appendChild(bar); document.body.appendChild(bg); document.addEventListener("keydown", onKey, true);
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 4096 }, height: { ideal: 3072 } }, audio: false }).then(function (st) {
-      stream = st; track = st.getVideoTracks()[0] || null; vid.srcObject = st; var pl = vid.play(); if (pl && pl.catch) pl.catch(function () {});
-      try { var cap = track && track.getCapabilities ? track.getCapabilities() : {}; if (cap && cap.torch) torch.hidden = false; } catch (e) {}
-    }, function () { bg.remove(); document.removeEventListener("keydown", onKey, true); fn(null); });
+    vid.muted = true; vid.playsInline = true; vid.autoplay = true;
+    var tries = [{ video: { facingMode: { ideal: "environment" }, width: { ideal: 2560 }, height: { ideal: 1920 } }, audio: false }, { video: { facingMode: "environment" }, audio: false }, { video: true, audio: false }], lastErr = null;
+    (function attempt(i) {
+      if (i >= tries.length) { bg.remove(); document.removeEventListener("keydown", onKey, true); fn({ err: lastErr ? String(lastErr.name || "") + (lastErr.message ? ": " + lastErr.message : "") : "no camera" }); return; }
+      navigator.mediaDevices.getUserMedia(tries[i]).then(function (st) {
+        stream = st; track = st.getVideoTracks()[0] || null; vid.srcObject = st; var pl = vid.play(); if (pl && pl.catch) pl.catch(function () {});
+        try { var cap = track && track.getCapabilities ? track.getCapabilities() : {}; if (cap && cap.torch) torch.hidden = false; } catch (e) {}
+      }, function (e) { lastErr = e; if (e && (e.name === "NotAllowedError" || e.name === "SecurityError")) attempt(tries.length); else attempt(i + 1); });
+    })(0);
   }
   /* a small choice box: [label, fn, primary] buttons */
   function popChoice(title, body, opts) {

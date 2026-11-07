@@ -461,6 +461,7 @@
   /* Apply a known new state of one document everywhere it is watched. */
   function applyLocal(path, data) {
     var coll = parentOf(path);
+    if (COLLS[coll]) COLLS[coll].ver = (COLLS[coll].ver || 0) + 1;
     if (COLLS[coll] && COLLS[coll].loaded) {
       if (data == null) delete COLLS[coll].docs[path]; else COLLS[coll].docs[path] = data;
       emitColl(coll);
@@ -469,8 +470,9 @@
   }
 
   function loadColl(coll, attempt) {
-    var c = COLLS[coll];
+    var c = COLLS[coll], v0 = c.ver || 0;
     return fetchCollection(coll).then(function (rows) {
+      if ((c.ver || 0) !== v0) return loadColl(coll); /* something was written while this read ran: read again rather than show the older rows */
       var m = {}; rows.forEach(function (r) { m[r.path] = r.data; });
       c.docs = m; c.loaded = true; emitColl(coll);
     }, function (e) {

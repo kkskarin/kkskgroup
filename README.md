@@ -822,3 +822,27 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   the rest with its totals redone, or is cancelled when none are left. The bill keeps `apprBack` {at, by, byName, note, report, acctBy,
   acctByName, acctAt, seen}: the accountant who had accounted it sees it in Accounts › Accounting under **Sent Back by the Approver**
   (counted in their to-do) until they press Got it. Statuses read "Sent back by the approver".
+- **Audit fixes (7 Nov 2026).** Screens that drew into a hidden section because two elements shared an id (the VCR approval list
+  `vapBox`, the Approvals filter bar and subtitle `apFilt`/`apSub` vs Tally's `apFiltT`/`apSubT`, the Vendor Statement `vstBox`/`vstCo`);
+  the company form's nature-of-business error now clears; the signature pad has one ink (KKSK blue); Show Activity's state is `ACT`
+  (it shared `AC` with Accounting). Cash limit: Plan for Payment's Record Cash leaves out the vouchers being paid (they were counted
+  twice) and applies the transporter limit; editing a recorded payment checks the limit with its party; a payment edited to another
+  bill or amount drops its old allocation. Reports › Transactions › Payments finds a payment's bills from its allocation
+  (`txBillIds`), so preparers see payments on their own bills and the Approver filter works. An RCM line from an unregistered vendor
+  is no longer flagged for its rate (the rate is what the company pays by Journal Voucher). BCR numbers count every division's reports
+  (each app still sees only its own). The BCR PDF shows "Less TDS". A new cheque book's first number is the next cheque when Last Used
+  is behind it. Consumers' "Rate now" finds generator-specific rates; two Renewable dates were UTC; an invoice with any receipt (even
+  TDS-only) can't be cancelled; the cost-centre note matches the figures. Approve while a report is still saving says "Please wait" and
+  keeps the form; a part-approved ACR shows the approved amount; an approved report stops saying "With the checker". Tally voucher
+  Postpone keeps the per-line ledgers, RCM, GST type, narration and Supply Of; the printed voucher with mixed RCM rates shows no rate
+  in its headings. Deleting a bill that was a proforma's / import's final bill reopens it (`taxBillGone`, shown in red on the list).
+  **Usage credits:** when Claude can't read (usage limit, or switched off) uploads wait in the log as "Lacking Usage Credits" (`B.held`)
+  with a Try Again button on the notice; nothing opens blank; the next upload tries again. A multi-bill PDF read part-way says which
+  bills were made and which pages weren't read; a bill read but not saved keeps its file (Enter by hand); a file over 25 MB says so; a
+  PDF over 30 pages is refused with a message. **Backups:** a collection that can't be read stops the backup (nothing is cleared);
+  backups now include cheques, notes, payees, staff, salary runs, bank accounts and names, cheque templates, taxes, HSN records, roles,
+  regions, duties, BCRs, AI usage (masters are kept by Backup & Flush); Flush & Reset removes notes on folded bills (they were applied
+  twice) and cheques whose payments were all folded. Roles: a company removed from a role or a user is written as `null` (the database
+  merges objects key by key, so it was never removed and admin pages re-wrote users every minute). `supabase-runtime.js`: a collection
+  read that overlaps a write is re-read, so a just-saved change never flashes back. Migration 20261107120000: database write rules —
+  users/* only admins (plus a shared login's own profiles), roledefs/* admins, tly__* Super Admin and Chief Accountant, audit/* append-only.

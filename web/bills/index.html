@@ -2807,7 +2807,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var r = S.requests[uid] || {};
       job = retry(function () { return S.db.doc("users/" + uid).set(Object.assign({ name: name, locationId: loc, deptId: dept, companyIds: cos, roles: roles, active: true, requestedAt: r.at || now, approvedAt: now, updatedAt: now, by: by }, extra)); })
         .then(function () { return retry(function () { return S.db.doc("requests/" + uid).update({ status: "approved", decidedAt: now }); }); });
-    } else job = retry(function () { return S.db.doc("users/" + uid).update(Object.assign({ name: name, locationId: loc, companyIds: cos, roles: roles, updatedAt: now, by: by }, extra)); })
+    } else job = retry(function () { return S.db.doc("users/" + uid).update(Object.assign({ name: name, locationId: loc, companyIds: cos, roles: rolesPatch((S.users[uid] || {}).roles, roles), updatedAt: now, by: by }, extra)); })
       .then(function () { if (obs) return retry(function () { return S.balances[uid] ? S.db.doc("balances/" + uid).update({ openings: obs, updatedAt: now, updatedBy: by }) : Object.keys(obs).length ? S.db.doc("balances/" + uid).set({ openings: obs, name: name, updatedAt: now, updatedBy: by }) : null; }); });
     if (pw && mode === "edit") job = job.then(function () { return window.bvAccount.setPassword(uid, pw).catch(function (e) { throw { code: "pw", message: (e && e.message) || "The password couldn't be set." }; }); });
     return job.then(function () { toast(mode === "login" ? name + " can now sign in with " + mail + " and the password you set." : pw && mode === "edit" ? "User saved, with the new password." : acc ? name + " is saved as a profile on " + userLabel(acc) + "'s login." : mode === "new" ? name + " is added. Choose them as Prepared by when entering their bills." : mode === "approve" ? name + " now has access." + (link ? " Everything entered for them is now under their login." : "") : "User saved."); backToUsers(); }, function (e) { if (e && e.quiet) return; if (e && e.code === "pw") { $("uEPw").textContent = e.message; $("uEPw").hidden = false; return; } toast(explain(e)); });
@@ -2847,7 +2847,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return { apps: Object.assign({}, e.apps, { pp: (u && u.apps && u.apps.pp) || null }), reCompanies: e.reCompanies, jobRoles: e.jobRoles, apprOf: e.apprOf, companyIds: e.companyIds, roles: e.roles, roleUntil: ends[0] || null };
   }
   function stableJson(v) { if (Array.isArray(v)) return "[" + v.map(stableJson).join(",") + "]"; if (v && typeof v === "object") return "{" + Object.keys(v).sort().filter(function (k) { return v[k] !== undefined; }).map(function (k) { return JSON.stringify(k) + ":" + stableJson(v[k]); }).join(",") + "}"; return JSON.stringify(v == null ? null : v); }
-  function roleDiff(u) { var p = rolePatch(u), out = {}; Object.keys(p).forEach(function (k) { var a = p[k], b = u[k] == null ? null : u[k]; if (k === "companyIds") { a = (a || []).slice().sort(); b = (b || []).slice().sort(); } if (stableJson(a) !== stableJson(b)) out[k] = p[k]; }); return out; }
+  function roleDiff(u) { var p = rolePatch(u), out = {}; Object.keys(p).forEach(function (k) { var a = p[k], b = u[k] == null ? null : u[k]; if (k === "companyIds") { a = (a || []).slice().sort(); b = (b || []).slice().sort(); } if (k === "roles") b = rolesClean(b); if (stableJson(a) !== stableJson(b)) out[k] = k === "roles" ? rolesPatch(u.roles, p.roles) : p[k]; }); return out; }
+  /* the database merges objects key by key, so a company dropped from roles must be written as null to go */
+  function rolesClean(r) { if (!r || typeof r !== "object") return r == null ? null : r; var o = {}; Object.keys(r).forEach(function (c) { if (r[c] != null) o[c] = r[c]; }); return o; }
+  function rolesPatch(oldR, newR) { var o = Object.assign({}, newR || {}); Object.keys(oldR || {}).forEach(function (c) { if (oldR[c] != null && !(c in o)) o[c] = null; }); return o; }
   /* The person's own page: a temporary role that ended stops at once, even before an admin's page updates the record. */
   function withRoles(u) { if (!u || !usesRoles(u) || !S.roleDefsOk) return u; return Object.assign({}, u, rolePatch(u)); }
   /* Admins' pages keep every record in step with its roles. */
@@ -4154,7 +4157,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!window.bvFiles) return w;
     var inp0 = el("input", { type: "file", accept: "application/pdf,image/jpeg,image/png,image/webp", hidden: "" }), btn = el("button", { type: "button", class: "link-btn" }, "Attach the bill file");
     btn.addEventListener("click", function () { docPick(inp0); });
-    inp0.addEventListener("change", function () { var f = inp0.files && inp0.files[0]; if (!f) return; if (!fileType(f)) { toast("Attach a PDF, JPG, PNG or WebP file."); return; } btn.disabled = true; btn.textContent = "Attaching"; keepFile(b.id, f).then(function (m) { if (!m) { btn.disabled = false; btn.textContent = "Attach the bill file"; } }); });
+    inp0.addEventListener("change", function () { var f = inp0.files && inp0.files[0]; if (!f) return; if (!fileType(f)) { toast("Attach a PDF, JPG, PNG or WebP file."); return; } if (f.size > 25 * 1024 * 1024) { toast(REJECT.big); return; } btn.disabled = true; btn.textContent = "Attaching"; keepFile(b.id, f).then(function (m) { if (!m) { btn.disabled = false; btn.textContent = "Attach the bill file"; } }); });
     w.appendChild(btn); w.appendChild(inp0); return w;
   }
 
@@ -4550,10 +4553,28 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     off: "Reading with Claude isn't set up on the server yet, so this file wasn't read.",
     busy: "Claude didn't answer. Upload this file again."
   };
-  var B = { log: [], pending: [], running: 0, aiOff: "", D: null, cardId: null, saveTimer: null, dirty: false, savePromise: null, busy: false, tried: false, armDiscard: false, vSig: "", cSig: "", doneLimit: 100 };
+  var B = { log: [], pending: [], running: 0, aiOff: "", held: [], D: null, cardId: null, saveTimer: null, dirty: false, savePromise: null, busy: false, tried: false, armDiscard: false, vSig: "", cSig: "", doneLimit: 100 };
   /* any number of bills in one go: they are read two at a time, the rest wait their turn */
+  /* Claude can't read now (no usage credits, or switched off): the file waits here, unread, until Try Again or the next upload */
+  function holdItem(it) {
+    if (it.prep) { (it.prep.previews || []).forEach(function (u) { URL.revokeObjectURL(u); }); it.prep = null; }
+    it.file = it.orig; it.state = "hold"; it.msg = "Lacking Usage Credits: waiting to be read"; it.manual = false;
+    if (B.held.indexOf(it) < 0) B.held.push(it); renderLog(); renderNoAi(); return Promise.resolve();
+  }
+  function retryAi() { B.aiOff = ""; var h = B.held; B.held = []; h.forEach(function (it) { it.state = "wait"; it.msg = "Waiting"; B.pending.push(it); }); renderNoAi(); renderLog(); pump(); }
+  function renderNoAi() {
+    var w = $("bNoAi"); if (!w) return; w.hidden = !B.aiOff; if (!B.aiOff) return; w.textContent = "";
+    w.appendChild(el("b", null, "Lacking Usage Credits. ")); w.appendChild(el("span", null, B.aiOff === "limit" ? "Claude's usage limit was reached, so bills can't be read right now. " : "Claude isn't available right now, so bills can't be read. ")); w.appendChild(el("span", null, B.held.length ? plural(B.held.length, "file") + " wait here until it can. " : "Nothing opens until it can. "));
+    var b = el("button", { type: "button", class: "btn sm", style: "margin-left:8px" }, "Try Again"); b.addEventListener("click", retryAi); w.appendChild(b);
+  }
+  /* several bills in one file, read part-way: what was made stays; the pages not read are named */
+  function partialStop(it, e) {
+    it.state = "bad"; it.file = null; it.orig = null; it.manual = false;
+    it.msg = "Read " + plural(it.made, "bill") + " of " + it.groupsN + " from this file, then " + (e.kind === "off" || e.kind === "limit" ? "ran out of usage credits" : "stopped (" + (REJECT[e.kind] || explain(e.e || e)) + ")") + ". Page" + ((it.unread || []).length === 1 ? " " : "s ") + (it.unread || []).join(", ") + " weren't read: upload those pages again.";
+  }
   function startUpload(files) {
     files = Array.prototype.slice.call(files || []); if (!files.length) return;
+    if (B.aiOff) retryAi(); /* a new upload tries Claude again; if it still can't, the files wait */
     if (B.log.length && !B.pending.length && !B.running) B.log = [];
     var link = takeLink();
     files.forEach(function (f) { var it = { name: f.name || "File", file: f, orig: f, state: "wait", msg: "Waiting", link: link, _rk: newId("rd") }; B.log.push(it); B.pending.push(it); });
@@ -4672,9 +4693,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var groups = groupPages(sorted), done = [], dups = 0, okN = 0;
       it.msg = "Found " + plural(groups.length, "bill") + " in " + n + " pages. Reading each"; renderLog();
       var c3 = Promise.resolve();
+      it.groupsN = groups.length; it.made = 0;
       groups.forEach(function (g, gi) {
         c3 = c3.then(function () {
-          it.msg = "Reading bill " + (gi + 1) + " of " + groups.length; renderLog();
+          it.msg = "Reading bill " + (gi + 1) + " of " + groups.length; renderLog(); it.unread = [].concat.apply([], groups.slice(gi).map(function (x) { return x.pages; }));
           var cap = scanned ? Math.max(1, Math.floor(maxImgs / 3)) : 4, rd = g.read.length > cap ? g.read.slice(0, cap - 1).concat(g.read.slice(-1)) : g.read.slice(), canv = [];
           var c4 = Promise.resolve();
           rd.forEach(function (pn) { c4 = c4.then(function () { return pdf.getPage(pn).then(function (pg) { return renderPdfCanvas(pg, 3000); }).then(function (cv) { canv.push(cv); }); }); });
@@ -4692,7 +4714,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
               S.previews[id] = g.pages.map(function (pn) { return prevs[pn - 1]; }).filter(Boolean); storePreviews(id, S.previews[id]);
               if (findDuplicate(draftFrom(S.bills[id]), S.bills[id])) dups++;
               if (!nothingRead(d)) okN++;
-              done.push((d.billNo || "bill " + (gi + 1)) + " (page" + (g.pages.length > 1 ? "s " : " ") + g.pages.join(", ") + ")");
+              done.push((d.billNo || "bill " + (gi + 1)) + " (page" + (g.pages.length > 1 ? "s " : " ") + g.pages.join(", ") + ")"); it.made = done.length;
               onData();
               return splitPdfFile(it, groups.length > 1 ? g.pages : [], d.billNo || "bill " + (gi + 1)).then(function (f) { return keepFile(id, f || it.orig); });
             });
@@ -4754,15 +4776,19 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     it.state = "run"; it.msg = "Reading"; renderLog();
     /* Tally (Demo): a photo is cropped to the paper and flattened first; that is what is read and kept */
     if (tly() && it.file && !it.flat && !isPdf(it.file) && /^image\//.test(it.file.type || "")) { it.flat = true; it.msg = "Straightening"; renderLog(); return flattenPhoto(it.file).then(function (f) { if (f) { it.file = f; it.orig = f; } return readOne(it); }); }
-    if (!S.sample || B.aiOff) return addFromFile(it);
+    if (!S.sample) return addFromFile(it);
+    if (B.aiOff) return holdItem(it);
     if (it.file && isPdf(it.file) && it.file.size <= 25 * 1024 * 1024) {
       return openPdf(it.file).then(function (pdf) {
         if (pdf.numPages < 2) { try { pdf.destroy(); } catch (e) {} return readSingle(it); }
+        if (pdf.numPages > MULTI_MAX_PAGES) { var np = pdf.numPages; try { pdf.destroy(); } catch (e) {} throw { kind: "pages", n: np }; }
         return readMulti(it, pdf);
       }).catch(function (e) {
         e = e || {};
-        if (it.orig && { off: 1, limit: 1, noimg: 1, failed: 1, blank: 1, busy: 1, open: 1, lib: 1 }[e.kind]) return addFromFile(it);
-        it.state = "bad"; it.file = null; it.msg = e.kind === "save" ? "Read, but not saved: " + explain(e.e) : REJECT[e.kind] || REJECT.failed; it.orig = null;
+        if (it.made) { partialStop(it, e); return; }
+        if (it.orig && (e.kind === "off" || e.kind === "limit")) return holdItem(it);
+        if (it.orig && { noimg: 1, failed: 1, blank: 1, busy: 1, open: 1, lib: 1 }[e.kind]) return addFromFile(it);
+        it.state = "bad"; it.file = null; it.msg = e.kind === "pages" ? "This file has " + e.n + " pages; up to " + MULTI_MAX_PAGES + " can be read at once. Split it and upload the parts." : e.kind === "save" ? "Read, but not saved: " + explain(e.e) : REJECT[e.kind] || REJECT.failed; it.orig = null;
       });
     }
     return readSingle(it);
@@ -4807,11 +4833,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       }, function (e) { throw { kind: "save", e: e }; });
     }).catch(function (e) {
       e = e || {};
-      if (it.orig && { off: 1, limit: 1, noimg: 1, failed: 1, blank: 1, busy: 1, open: 1, lib: 1 }[e.kind]) return addFromFile(it);
+      if (it.orig && (e.kind === "off" || e.kind === "limit")) return holdItem(it);
+      if (it.orig && { noimg: 1, failed: 1, blank: 1, busy: 1, open: 1, lib: 1 }[e.kind]) return addFromFile(it);
       it.state = "bad"; it.file = null;
       it.msg = e.kind === "multi" ? "This file holds " + e.n + " bills. Put each bill in its own file and upload them again."
         : e.kind === "save" ? "Read, but not saved: " + explain(e.e) : REJECT[e.kind] || REJECT.failed;
-      it.manual = !!e.manual || e.kind === "noimg" || e.kind === "open";
+      it.manual = !!e.manual || e.kind === "noimg" || e.kind === "open" || e.kind === "save";
+      if (e.kind === "save") it.msg += " Press Enter by hand to keep the file with a blank bill, or upload it again.";
       if (!it.manual && it.prep) { it.prep.previews.forEach(function (u) { URL.revokeObjectURL(u); }); it.prep = null; }
       if (!it.manual) it.orig = null;
     });
@@ -5041,7 +5069,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return apprCos(r).some(function (cid) { return canStep("appr", cid); });
   }
   function l1Text(r) {
-    if (r.l1 === "wait") return "With the checker: " + l1Names(r);
+    if (r.l1 === "wait" && stageOf(r) !== "payment") return "With the checker: " + l1Names(r);
     if (r.l1 === "passed") return "Checked by " + pnm(r.l1ByName) + ", passed on" + (r.l1At ? " " + fmtDay(r.l1At) : "");
     if (r.l1 === "final") return "Approved by the checker " + pnm(r.l1ByName);
     return "";
@@ -6047,7 +6075,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     /* is it legally right? (checked in Tally (Demo)) */
     var CHG_RX = /cartage|freight|transport|delivery|packing|forwarding|loading|unloading|handling|courier|carriage|lorry|hamali/i;
     if (led && led.tax) bad("led", "A GST or tax ledger can't be a bill line: the GST is worked out from each line's rate.");
-    if (c.reg === false && num(it.gst) > 0) bad("gst", "An unregistered vendor can't charge GST: ask for a corrected bill (if the service is under reverse charge, set RCM instead).");
+    if (c.reg === false && num(it.gst) > 0 && !it.rcm) bad("gst", "An unregistered vendor can't charge GST: ask for a corrected bill (if the service is under reverse charge, set RCM instead).");
     if (c.reg !== false && g0 && !it.rcm && !fits && !rol && (it.k === "charge" || CHG_RX.test(it.d || "")) && its.some(function (x) { return x !== it && x.k === "item" && num(x.gst) > 0; }))
       bad("gst", "Charged by the supplier on its own goods invoice, this is part of the value of the goods (CGST Act s.15(2)(c)): it takes the goods' GST rate. Ask for a corrected invoice, or verify with the Chief Accountant.");
     if (c.reg === false && CHG_RX.test(it.d || "")) { r.warn.push("If the transporter is a goods transport agency (issues a consignment note), GST at 5% is payable by us under reverse charge (13/2017-CT(R)); a truck owner's own transport is exempt."); }
@@ -6631,7 +6659,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (!B.armDiscard) { B.armDiscard = true; $("bcDiscard").textContent = "Click again to discard"; setTimeout(function () { if ($("bcDiscard") && B.cardId === b.id) { B.armDiscard = false; $("bcDiscard").textContent = "Discard"; } }, 4000); return; }
     B.busy = true; setCardBusy(true); clearTimeout(B.saveTimer); B.dirty = false;
     (B.savePromise || Promise.resolve()).then(function () { return retry(function () { return S.db.doc("bills/" + b.id).delete(); }); })
-      .then(function () { dropFile(S.bills[b.id] || b); delete S.bills[b.id]; invalidate(); dropPreviews(b.id); toast("Bill discarded."); closeCard(b.id); }, function (e) { toast(explain(e)); setCardBusy(false); })
+      .then(function () { dropFile(S.bills[b.id] || b); delete S.bills[b.id]; invalidate(); dropPreviews(b.id); toast("Bill discarded."); advUnlinkBill(b); closeCard(b.id); }, function (e) { toast(explain(e)); setCardBusy(false); })
       .then(function () { B.busy = false; });
   }
   function resumeBill(id) {
@@ -6644,6 +6672,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       }, function (e) { toast(explain(e)); }).then(function () { B.busy = false; });
   }
   /* A submitted bill can be deleted until it goes into a checking report. Its record is removed completely. */
+  /* a deleted bill that was a proforma's or import's final tax bill: the advance is open again, and says so until a bill is attached */
+  function advUnlinkBill(b) {
+    if (!b) return; Object.keys(S.advances || {}).forEach(function (k) { var a = S.advances[k]; if (!a || a.taxBillId !== b.id) return;
+      var up = { taxBillId: null, taxBillGone: { no: b.billNo || "", at: Date.now(), by: meId(), byName: pnm(preparedByText()) }, updatedAt: Date.now(), updatedBy: meId() };
+      retry(function () { return S.db.doc("advances/" + k).update(up); }).then(function () { Object.assign(a, up); invalidate(); toast("Bill " + (b.billNo || "") + " was the final bill of " + (a.piNo || (a.kind === "import" ? "an import" : "a proforma")) + ": it is open again until its final bill is attached."); }, function () {}); });
+  }
   function deleteSubmitted(id, btn) {
     var b = S.bills[id]; if (!b || B.busy) return;
     if (tly() && !tlyCanEdit(b)) { toast("Accounting has started on bill " + (b.billNo || "") + ", so it can't be deleted."); return; }
@@ -6653,7 +6687,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     adminGate(b.submittedAt, "bill", function () {
     B.busy = true; btn.disabled = true;
     retry(function () { return S.db.doc("bills/" + id).delete(); })
-      .then(function () { dropFile(b); delete S.bills[id]; invalidate(); dropPreviews(id); toast("Bill " + (b.billNo || "") + " deleted."); renderBills(); renderNav(); }, function (e) { toast(explain(e)); btn.disabled = false; })
+      .then(function () { dropFile(b); delete S.bills[id]; invalidate(); dropPreviews(id); toast("Bill " + (b.billNo || "") + " deleted."); advUnlinkBill(b); renderBills(); renderNav(); }, function (e) { toast(explain(e)); btn.disabled = false; })
       .then(function () { B.busy = false; });
     });
   }
@@ -6961,7 +6995,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function renderBills() {
     if (!$("secBills")) return;
     pickOpen();
-    $("bNoAi").hidden = true; $("bUpload").disabled = false; $("bCopyLive").hidden = !tly(); if (tly()) { $("secBills").querySelector("h2").textContent = "Bill Entry"; tlyMoveDone(); }
+    renderNoAi(); $("bUpload").disabled = false; $("bCopyLive").hidden = !tly(); if (tly()) { $("secBills").querySelector("h2").textContent = "Bill Entry"; tlyMoveDone(); }
     renderLog();
     var q = myQueue(), open = S.openBill && S.bills[S.openBill];
     $("bQCount").textContent = q.length ? "(" + q.length + ")" : "";
@@ -8485,6 +8519,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var tdsN = Number(r.tds) || 0;
     var roT = round2(bills.reduce(function (s0, b) { return s0 + (Number(b.roundOff) || 0); }, 0));
     var rows = [["Taxable amount", CM(T.tx)], ["GST", CM(T.g)]].concat(roT ? [["Round off", (roT < 0 ? "- " : "") + CM(Math.abs(roT))]] : []).concat([["Total amount", CM(r.total)]]);
+    var tdsB = round2(bills.reduce(function (s0, b) { return s0 + (billInfo(b).tds || 0); }, 0)) || (r.billTds ? 0 : tdsN);
+    if (tdsB > 0) rows.push(["Less TDS", "(" + CM(tdsB) + ")"]);
     if (adv) rows.push(["Less advance already paid", "(" + CM(adv) + ")"]);
     rows.push(["Total payable", CM(payableOf(r))]);
     P.mark(P.net(y2 + 4, rows));
@@ -9098,9 +9134,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     } else {
       /* Numbers run through the financial year (April to March) for each company and restart at 01 the next year.
          A cancelled report is deleted, so the next report takes the lowest free number. */
-      var day = ymdOfMs(now), fy = fyOf(day), used = {}, seq = 1;
-      Object.keys(S.reports).forEach(function (k) {
-        var r = S.reports[k]; if (r.companyId !== CK.cid || String(r.no || "").indexOf("-BCR") < 0) return;
+      var day = ymdOfMs(now), fy = fyOf(day), used = {}, seq = 1, allR = (S.raw && S.raw.reports) || S.reports;
+      Object.keys(allR).forEach(function (k) {
+        var r = allR[k]; if (r.companyId !== CK.cid || String(r.no || "").indexOf("-BCR") < 0) return;
         if ((r.fy || fyOf(r.checkDate || ymdOfMs(r.createdAt || now))) === fy && r.seq) used[r.seq] = 1;
       });
       while (used[seq]) seq++;
@@ -9341,7 +9377,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function reportApproverId(r) { return r.approverId || reportApprover(r); }
   function apprKind(r) { return r.kind === "vcr" ? (r.direct ? "Vouchers (no checking report)" : "Voucher Checking Report") : r.kind === "inst" ? "Advance Checking Report" : "Bill Checking Report"; }
   function apprWho(r) { if (r.kind === "vcr") return pnm(r.preparedBy); return (S.vendors[r.vendorId] || {}).name || ""; }
-  function apprAmount(r) { return r.kind === "vcr" ? money(r.payable != null ? r.payable : r.total) : repMoney(r, r.kind === "inst" ? r.total : payableOf(r)); }
+  function apprAmount(r) { return r.kind === "vcr" ? money(r.payable != null ? r.payable : r.total) : repMoney(r, payableOf(r)); }
   function apprWaiting() {
     return Object.keys(S.reports).map(function (k) { return S.reports[k]; }).filter(function (r) { var s = stageOf(r); return (s === "generated" || s === "printed") && apprMine(r) && (!APV.div || divOf(r) === APV.div); })
       .sort(function (a, b) { return (a.generatedAt || a.createdAt || 0) - (b.generatedAt || b.createdAt || 0); });
@@ -9611,7 +9647,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     });
   }
   function setStage(r, stage, extra, note) {
-    if (CK.busy) return;
+    if (CK.busy) { toast("Please wait: the report is still being saved."); return Promise.resolve(false); }
     var doc = Object.assign({}, r); delete doc.id;
     Object.assign(doc, extra || {}, { stage: stage, log: (r.log || []).concat([logEntry(stage, note)]) });
     if (doc.tds == null) { doc.tds = null; doc.payable = null; }
@@ -9884,6 +9920,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       { label: "Status", sort: function (a) { return a.status; }, cell: function (a, td) {
           var cl = a.status === "closed"; td.appendChild(el("span", { class: "chip " + (cl ? "off" : "on") }, cl ? "Closed" : "Open"));
           if (!cl && a.kind === "import" && ["igst", "duty", "transport", "other"].some(function (k) { return a[k] == null || a[k] === ""; })) sub(td, "IGST, customs or other costs still to enter");
+          if (!a.taxBillId && a.taxBillGone && a.status !== "closed") sub(td, "Final bill " + (a.taxBillGone.no || "") + " was deleted " + fmtDay(a.taxBillGone.at) + ": open again until its final bill is attached", "color:var(--bad);font-weight:600");
           if (a.taxBillId && S.bills[a.taxBillId]) sub(td, "Final bill " + S.bills[a.taxBillId].billNo + (cl ? "" : adm() ? ", ready to close" : ", with the admin to close"));
           else if (!cl && (a.installments || []).length && (a.installments || []).every(function (it, i) { return instState(a, i) === "paid"; })) sub(td, "All paid. Waiting for the final bill", "color:var(--warn);font-weight:600"); } },
       { label: "", kind: "act", cls: "r", cell: function (a, td) { var b = el("button", { class: "btn sm" }, "Open"); b.addEventListener("click", function () { openAdv(a.id); }); td.appendChild(b); } }
@@ -10833,7 +10870,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     return total > payable + 0.004 ? payable : null;
   }
   function plSelTotal(gr) { return round2(gr.items.reduce(function (s0, it) { return s0 + (MK.pl.sel[it.key] ? plAmt(it) : 0); }, 0)); }
-  function plCashOk(gr) { var it0 = gr.items[0] || {}, amt = plSelTotal(gr) || round2(gr.items.reduce(function (s0, it) { return s0 + it.amt; }, 0)); return cashAllowed({ cid: gr.cid, vid: gr.vid, payee: gr.name, name: gr.name, v: it0.row && it0.row.v || null }, amt); }
+  function plCashOk(gr) { var it0 = gr.items[0] || {}, amt = plSelTotal(gr) || round2(gr.items.reduce(function (s0, it) { return s0 + it.amt; }, 0)); return cashAllowed({ cid: gr.cid, vid: gr.vid, payee: gr.name, name: gr.name, voucherIds: gr.items.map(function (it) { return it.row && it.row.v ? it.row.v.id : ""; }).filter(Boolean), v: gr.items.length === 1 && it0.row && it0.row.v || null }, amt); }
   function plMode(gr) { var m = MK.pl.mode[gr.key] || (gr.cur !== "INR" ? "neft" : "cheque"); return m === "cash" && !plCashOk(gr) ? "cheque" : m; }
   function plBank(cid) { var b = MK.pl.bank[cid] && (S.banks || {})[MK.pl.bank[cid]]; return b || bankDefault(cid); }
   function plBook(cid) { var b = plBank(cid), id = MK.pl.book[cid], t = id && (S.chqtpl || {})[id]; return t && t.active !== false ? t : b ? chqBookDefault(b.id) : null; }
@@ -10926,7 +10963,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var intro = mode === "cheque" ? "One cheque per payee, crossed A/c Payee, numbered from each cheque book. Change a number and the ones after it follow. One PDF per company holds its cheques, an A4 page each; print at 100% (actual size) with no scaling or borders." : mode === "neft" ? "Each takes the cheque number given with the NEFT / RTGS request. The payments are recorded now; the bank's form is printed from Paid." : "Recorded as paid in cash today. Cash to one payee from one company stays within ₹10,000 a day (₹35,000 for a transporter), counting cash vouchers, bills paid from a cash advance and cash payments.";
     popForm(title, intro, body, mode === "cheque" ? "Print and Record" : "Record", function () {
       var d = mode === "cheque" ? todayYmd() : parseDate($("plDate").value); if (!d) { errOn("plDate", "Choose the date."); return false; }
-      if (mode === "cash") { var bad = ""; lines.forEach(function (l) { var vids = l.g.items.filter(function (it) { return MK.pl.sel[it.key]; }).map(function (it) { return it.v ? it.v.id : it.voucherId || ""; }), x = { type: l.g.vid ? "vendor" : "vch", vid: l.g.vid, payee: l.g.name, voucherIds: vids.indexOf("") < 0 ? vids : [] }; bad = bad || payCheck(x, l.amt, d, "cash", ""); }); if (bad) { toast(bad); return false; } }
+      if (mode === "cash") { var bad = ""; lines.forEach(function (l) { var vids = l.g.items.filter(function (it) { return MK.pl.sel[it.key]; }).map(function (it) { var v0 = it.row && it.row.v; return v0 ? v0.id : ""; }).filter(Boolean), x = { type: l.g.vid ? "vendor" : "vch", cid: l.g.cid, vid: l.g.vid, payee: l.g.name, voucherIds: vids, v: !l.g.vid && vids.length === 1 && l.g.items[0].row ? l.g.items[0].row.v : null }; bad = bad || payCheck(x, l.amt, d, "cash", ""); }); if (bad) { toast(bad); return false; } }
       var test = mode === "cheque" && $("plTest") && $("plTest").checked;
       return planRecord(lines, mode, d).then(function (made) {
         if (!made) return false;
@@ -11070,6 +11107,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (doc.kind === "payment" && (doc.mode === "cash" || doc.mode === "advance")) doc.cashCheck = cashRec(payCash(Object.assign({ cid: doc.companyId, vid: doc.vendorId || "", payee: doc.payee || (x && x.payee) || "", voucherId: doc.voucherId || "" }, x && x.voucherIds ? { voucherIds: x.voucherIds } : {}), doc.amount, doc.date, id));
     else doc.cashCheck = null;
     if (!old && x && x.type === "vendor" && x.items && doc.kind === "payment" && !doc.billId) { var al = mkAlloc(x, doc.amount); if (al) doc.billAlloc = al; }
+    if (old && old.billAlloc && (doc.billId !== (old.billId || null) || Math.abs((Number(doc.amount) || 0) - (Number(old.amount) || 0)) > 0.004)) doc.billAlloc = null; /* re-allocated by the ledger */
     id = id || newId("t");
     MK.busy = true;
     var job = retry(function () { return old ? S.db.doc("transactions/" + id).update(doc) : S.db.doc("transactions/" + id).set(doc); });
@@ -11084,7 +11122,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* The pop-up for a payment or discount: new (x given) or an existing one (t given). */
   function txForm(x, t, amountTyped, kindDefault) {
     var isVcr = t ? !!(t.vcrId || t.voucherId) : x.type === "vcr" || x.type === "vch", cur = t ? t.currency || "INR" : x.cur, isInst = isVcr || (t ? !!t.advanceId : x.type === "inst"), cid = t ? t.companyId : x.cid, vid = t ? t.vendorId : x.vid, v = isVcr ? { name: t ? t.payee : x.name } : S.vendors[vid] || {};
-    var px = x || (t ? { type: t.voucherId ? "vch" : isVcr ? "vcr" : isInst ? "inst" : "vendor", cur: cur, payee: t.payee, payeeId: t.payeeId, voucherId: t.voucherId || "" } : null);
+    var px = x || (t ? { type: t.voucherId ? "vch" : isVcr ? "vcr" : isInst ? "inst" : "vendor", cur: cur, cid: t.companyId || "", vid: t.vendorId || "", payee: t.payee || (t.vendorId && S.vendors[t.vendorId] ? S.vendors[t.vendorId].name : ""), payeeId: t.payeeId, voucherId: t.voucherId || "" } : null);
     var body = el("div", { class: "mform" });
     var ty = el("select", { class: "field", id: "txKind" }); fillSelect(ty, isInst ? [["payment", "Payment"]] : [["payment", "Payment"], ["discount", "Discount received"]], t ? t.kind : kindDefault || "payment");
     body.appendChild(fld("Type", ty, isVcr ? "Pays back the cash in this Voucher Checking Report." : isInst ? "Instalments are paid in full or in part; discounts go against the vendor's bills." : ""));
@@ -11339,7 +11377,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var m = myPeople(); if (m[t.by] || m[t.createdBy]) return true;
     var a = t.advanceId && S.advances[t.advanceId], vv = t.voucherId && S.vouchers[t.voucherId];
     if (a) return ownWork(a); if (vv) return ownWork(vv);
-    return allocLines(t).length > 0 && (t.billIds || []).some(function (id) { return S.bills[id] && ownWork(S.bills[id]); });
+    return txBillIds(t).some(function (id) { return S.bills[id] && ownWork(S.bills[id]); });
+  }
+  /* the bills a payment went against: an explicit allocation, a chosen bill, or the ledger's own allocation */
+  function txBillIds(t) {
+    var ids = {}; Object.keys(t.billAlloc || {}).forEach(function (id) { ids[id] = 1; }); if (t.billId) ids[t.billId] = 1;
+    ((lidx()._alloc || {})[t.id] || []).forEach(function (a) { if (a.billId) ids[a.billId] = 1; });
+    return Object.keys(ids);
   }
   function txRows(side) {
     if (side === "expenses") return txRows("bills").concat(txRows("advances")).concat(txRows("vouchers"));
@@ -11601,7 +11645,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var a = t.advanceId && S.advances[t.advanceId]; if (a) return a.approverId || "";
     var v = t.voucherId && S.vouchers[t.voucherId]; if (v) return v.approverId || "";
     var r = t.vcrId && S.reports[t.vcrId]; if (r) { var v0 = (r.voucherIds || []).map(function (id) { return S.vouchers[id]; }).filter(Boolean)[0]; return v0 ? v0.approverId || "" : ""; }
-    var ids = (t.billIds || []).concat(t.billId ? [t.billId] : []); for (var i = 0; i < ids.length; i++) if (S.bills[ids[i]] && S.bills[ids[i]].approverId) return S.bills[ids[i]].approverId;
+    var ids = txBillIds(t); for (var i = 0; i < ids.length; i++) if (S.bills[ids[i]] && S.bills[ids[i]].approverId) return S.bills[ids[i]].approverId;
     return "";
   }
   /* A Transactions row, as the filters see it. */
@@ -14725,13 +14769,13 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* A backup is one Excel file: readable sheets to look at, and raw_ sheets that hold every record exactly (as JSON, split across
      cells when long) so Restore can put the app back as it was. Bill images are not included. Each backup downloads to this device
      and, through the viewer's Google Drive connector, a copy is saved to their Drive. */
-  var BK_COLS = ["companies", "locations", "departments", "ledgers", "users", "requests", "admins", "vendors", "bills", "rates", "reports", "advances", "transactions", "plans", "payplans", "vouchers", "cashadv", "balances", "audit", "closes"];
+  var BK_COLS = ["companies", "locations", "departments", "ledgers", "users", "requests", "admins", "roledefs", "regions", "vendors", "payees", "vpeople", "staff", "bankacct", "banknames", "chqtpl", "tpls", "taxes", "hsndocs", "hsnlearn", "hsnoff", "hsnok", "hsnrates", "bills", "bcrs", "rates", "reports", "advances", "duties", "transactions", "cheques", "notes", "salruns", "plans", "payplans", "vouchers", "cashadv", "balances", "audit", "aiuse", "closes"];
   var BK = { busy: false, msg: "", last: null };
   function bkSay(m) { BK.msg = m; var p = $("bkProg"); if (p) p.textContent = m; }
   function bkFetchAll() {
     var out = {};
     return BK_COLS.reduce(function (p, c) {
-      return p.then(function () { bkSay("Reading " + c + "…"); return S.rawDb.collection(c).get().then(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data() || {}; }); out[c] = m; }, function () { out[c] = {}; }); });
+      return p.then(function () { bkSay("Reading " + c + "…"); return S.rawDb.collection(c).get().then(function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = d.data() || {}; }); out[c] = m; }, function (e) { throw { kind: "read", coll: c, e: e }; }); });
     }, Promise.resolve()).then(function () { return out; });
   }
   function bkBook(XLSX, data) {
@@ -14782,7 +14826,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     });
   }
   function bkDriveText(d) { return d === "drive" ? " A copy is in your Google Drive." : d === "nomcp" ? " Google Drive isn't connected here, so only the download was made." : " The Google Drive copy failed (" + String(d).split(":")[1] + "); the download is fine."; }
-  function bkErr(e) { var k = e && (e.code || e.kind); return k === "declined" ? "Download cancelled, so nothing else was done." : k === "lib" ? "The Excel maker didn't load. Check the connection and try again." : k === "nodl" ? "Downloads aren't available here." : "The backup couldn't be made (" + (k || "error") + "). Nothing was changed."; }
+  function bkErr(e) { var k = e && (e.code || e.kind); return k === "read" ? "Stopped: " + (e.coll || "a collection") + " couldn't be read (" + explain(e.e) + "), so nothing was written or cleared. Check the connection and try again." : k === "declined" ? "Download cancelled, so nothing else was done." : k === "lib" ? "The Excel maker didn't load. Check the connection and try again." : k === "nodl" ? "Downloads aren't available here." : "The backup couldn't be made (" + (k || "error") + "). Nothing was changed."; }
   function bkRun(list, fn, label) {
     var i = 0, n = list.length;
     return new Promise(function (res, rej) {
@@ -14803,7 +14847,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       .then(function () { BK.busy = false; renderBackup(); });
   }
   /* Backup & Flush: backs up, then clears every record except companies, locations, users, access requests and admins. */
-  var BK_KEEP = { companies: 1, locations: 1, departments: 1, ledgers: 1, users: 1, requests: 1, admins: 1 };
+  var BK_KEEP = { companies: 1, locations: 1, departments: 1, ledgers: 1, users: 1, requests: 1, admins: 1, roledefs: 1, regions: 1, payees: 1, vpeople: 1, staff: 1, bankacct: 1, banknames: 1, chqtpl: 1, tpls: 1, taxes: 1, hsndocs: 1, hsnlearn: 1, hsnoff: 1, hsnok: 1, hsnrates: 1 };
   function backupFlush(btn) {
     if (BK.busy || !S.isSuper) return;
     if (!bkArm(btn, "Click again: back up, then clear everything")) return;
@@ -14832,6 +14876,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var m = vOpen[r.vid] || (vOpen[r.vid] = JSON.parse(JSON.stringify(S.vendors[r.vid].openings || {})));
       m[r.cid] = { balance: bal, overdue: od, setAt: now, setBy: meId(), carriedFrom: "reset " + fmtDate(t) };
       fold.forEach(function (b) { D("bills/" + b.id); gone[b.id] = 1; count.bills++; });
+      Object.keys(S.notes || {}).forEach(function (k) { var nt = S.notes[k]; if (nt.vendorId === r.vid && (!r.cid || nt.companyId === r.cid) && (!nt.billId || gone[nt.billId])) { D("notes/" + k); count.notes = (count.notes || 0) + 1; } }); /* already inside the new opening */
       r.txs.forEach(function (x) { if (x.virtual) { if (gone[x.billId]) addP(x.advUid, x.companyId, -x.amount); return; } D("transactions/" + x.id); count.transactions++; });
     });
     Object.keys(S.advances).forEach(function (k) {
@@ -14863,6 +14908,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     });
     var pOpen = {};
     Object.keys(pDelta).forEach(function (uid) { var base = JSON.parse(JSON.stringify(((S.balances[uid] || {}).openings) || {})); Object.keys(pDelta[uid]).forEach(function (cid) { base[cid] = round2((openingOf(uid, cid) || 0) + pDelta[uid][cid]); }); pOpen[uid] = base; });
+    var delSet = {}; del.forEach(function (x) { delSet[x] = 1; });
+    Object.keys(S.cheques || {}).forEach(function (k) { var ch = S.cheques[k], ids = ch.txIds || []; if (ids.length && ids.every(function (id) { return delSet["transactions/" + id]; })) D("cheques/" + k); });
     payPlans().forEach(function (pl) {
       if (pl.status !== "locked" || planDone(pl)) { D("payplans/" + pl.id); return; }
       var items = (pl.items || []).map(function (it) {
@@ -15357,7 +15404,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var old = Object.keys(S.chqtpl || {}).map(function (k) { return S.chqtpl[k]; }).filter(function (t) { return t.bankAcctId === b.id && (t.first || t.end || t.last); })[0];
     return old || b;
   }
-  function chqNext(b) { var x = chqNums(b), last = Number(x.last), first = Number(x.first); return last > 0 ? last + 1 : first > 0 ? first : 1; }
+  function chqNext(b) { var x = chqNums(b), last = Number(x.last), first = Number(x.first); return last > 0 && (!(first > 0) || last >= first) ? last + 1 : first > 0 ? first : 1; }
   function chqLeft(b, next) { var end = Number(chqNums(b).end); return end > 0 ? end - (next != null ? next : chqNext(b)) + 1 : null; }
   function chqNoText(n, b) { var x = chqNums(b), w = String(x.end || x.first || "").length || 6; return String(n).padStart(Math.max(6, w), "0"); }
   function chqLeftText(b, next) { var lf = chqLeft(b, next); return lf == null ? "" : lf <= 0 ? "Past the last cheque number: enter the new cheque book's numbers in Masters › Bank Accounts" : lf + (lf === 1 ? " leaf" : " leaves") + " left" + (lf <= CHQ_WARN ? ": enter the next cheque book's numbers in Masters › Bank Accounts" : ""); }
@@ -17270,7 +17317,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     popForm("Postpone", "It stays with you, under Postponed, until you approve or send it back. What you have chosen so far is kept.", body, "Postpone", function () {
       var tp = tidyPending("aoHoldWhy");
       return (tp || Promise.resolve()).then(function () {
-        var up = Object.assign({ acct: "held", acctNote: sentenceFix($("aoHoldWhy").value.trim()), ledgers: ledLinesOut(AC.kind === "bill" ? nonRo(D.lines) : D.lines) }, acctWho(), roundUp(x, D)); var t = num(D.tds); if (t != null) up.tds = round2(t); if (D.sec) up.tdsSection = D.sec; if (AC.kind === "voucher" && D.vtype) { up.vtype = D.vtype; up.gstApp = D.vtype !== "Cash Voucher" ? D.gstApp : "N/A"; if (up.gstApp === "RCM") { var gl0 = []; if (!rcmLines(D, gl0)) { up.gstType = D.gstType; up.gstRate = Number(D.gstRate); up.gstLedgers = gl0; } } }
+        var up = Object.assign({ acct: "held", acctNote: sentenceFix($("aoHoldWhy").value.trim()), ledgers: ledLinesOut(AC.kind === "bill" ? nonRo(D.lines) : D.lines) }, acctWho(), roundUp(x, D)); var t = num(D.tds); if (t != null) up.tds = round2(t); if (D.sec) up.tdsSection = D.sec; if (AC.kind === "voucher" && D.vtype) { up.vtype = D.vtype; up.gstApp = D.vtype !== "Cash Voucher" ? D.gstApp : "N/A"; if (up.gstApp === "RCM") { var gl0 = []; if (!rcmLines(D, gl0)) { up.gstType = D.gstType; up.gstRate = Number(D.gstRate); up.gstLedgers = gl0; } }
+          if (tly() && D.vl) { up.lines = D.vl.map(function (l) { return { d: String(l.d || "").replace(/\s+/g, " ").trim(), amt: l.amt, lg: l.lg }; }); up.rcmLines = D.vl.map(function (r) { var on = !!(r.on && rcmOk(D.vtype)); return { on: on, rate: Number(r.rate), amt: r.amt, tax: on ? round2(r.amt * Number(r.rate) / 100) : 0 }; }); up.narration = String(D.narration || "").replace(/\s+/g, " ").trim() || x.narration || ""; up.rcmNarr = String(D.rcmNarr || "").replace(/\s+/g, " ").trim().slice(0, NARR_MAX); up.rcmNarrMan = !!D.rcmNarrMan; if (D.gstType) up.gstType = D.gstType; if (D.supplyOf) up.supplyOf = D.supplyOf; } }
         if (AC.kind === "bill" && billGst(x) > 0 && !gstCheck(x, D)) { up.gstLedgers = gstLinesOut(x, D); up.gstSupply = D.gstInter ? "inter" : "intra"; up.gstTypes = D.gstTypes.slice(); }
         if (tly() && AC.kind === "bill" && AC.T) { var jr9 = rcmJournal(AC.T.items, billInter(x)); up.rcmNarr = jr9 ? String(AC.T.rcmNarr || "").replace(/\s+/g, " ").trim().slice(0, NARR_MAX) : ""; up.rcmNarrMan = !!(jr9 && AC.T.rcmNarrMan); delete up.gstLedgers; up.items = itemsOut(AC.T.items); up.entryTds = String(AC.T.tds || ""); up.entryTdsSection = AC.T.tdsSec || ""; if (String(AC.T.narration || "").trim()) up.narration = String(AC.T.narration).trim().slice(0, NARR_MAX); }
         return retry(function () { return S.db.doc((AC.kind === "bill" ? "bills/" : "vouchers/") + x.id).update(up); }).then(function () { Object.assign(x, up); toast("Postponed."); backToAcct(); renderNav(); return true; }, function (e) { toast(explain(e)); return false; });
@@ -18157,7 +18205,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       (rcm ? v.gstLedgers || [] : []).forEach(function (g) { var l = (S.ledgers || {})[g.id]; if (l) { gA[gstHead(l)] += Number(g.amt) || 0; gotL = true; } });
       if (!gotL) { var t0 = Math.round(taxable * rate) / 100, h0 = Math.round(t0 * 50) / 100; if (inter) gA.igst = t0; else { gA.cgst = h0; gA.sgst = t0 - h0; } }
       var tax = gA.cgst + gA.sgst + gA.igst;
-      var hd = ["TAX PAYABLE ON REVERSE CHARGE BASIS", "TAXABLE VALUE", inter ? "IGST (" + rate + "%)" : "CGST (" + (rate / 2).toFixed(1) + "%)", inter ? "SGST" : "SGST (" + (rate / 2).toFixed(1) + "%)", "TOTAL TAX (" + rate + "%)", "ACCOUNTED BY"];
+      var rp = rate > 0 ? " (" + rate + "%)" : "", hp = rate > 0 ? " (" + (rate / 2).toFixed(1) + "%)" : "", hd = ["TAX PAYABLE ON REVERSE CHARGE BASIS", "TAXABLE VALUE", inter ? "IGST" + rp : "CGST" + hp, inter ? "SGST" : "SGST" + hp, "TOTAL TAX" + rp, "ACCOUNTED BY"];
       var vals = [rcm ? "YES" : "NO", money2(taxable), money2(inter ? gA.igst : gA.cgst), inter ? "—" : money2(gA.sgst), money2(tax), ""];
       box(cols[0], tY + tB, XR, 128.06, FILL);
       box(X0, tY, 206.37, tY + tB, INK); box(X0, 136.0, 206.37, 136.52, INK); box(X0, tY, cols[0], 136.52, INK); box(XR, tY, 206.37, 136.52, INK);
@@ -18253,7 +18301,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* The PPA rate for a consumer in a month: the latest one in force, for this generator or for any. */
   function rateFor(cons, plant, month) {
     var best = null; cons = SOL.cons[cons] ? cons : consKey(cons);
-    solList(SOL.rates).forEach(function (r) { if (r.consumer !== cons || (r.plant && r.plant !== plant) || !(r.from <= month) || r.active === false) return; if (!best || r.from > best.from || (r.from === best.from && r.plant && !best.plant)) best = r; });
+    solList(SOL.rates).forEach(function (r) { if (r.consumer !== cons || (plant != null && r.plant && r.plant !== plant) || !(r.from <= month) || r.active === false) return; if (!best || r.from > best.from || (r.from === best.from && r.plant && !best.plant)) best = r; });
     return best;
   }
   function solChk(lvl, label, msg) { return { lvl: lvl, label: label, msg: msg || "" }; }
@@ -18354,7 +18402,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       box.appendChild(el("h3", { style: "margin-top:4px" }, "Uploaded files (" + ul.length + ")"));
       var uc = el("div", { class: "card list scroll", style: "margin-bottom:14px" }); box.appendChild(uc);
       sortTable(uc, "solUps", [
-        { label: "File", kind: "co", cell: function (u, td) { td.appendChild(el("b", null, u.name)); sub(td, fmtDate(new Date(u.at).toISOString().slice(0, 10)) + (u.byName ? " · " + u.byName : "")); } },
+        { label: "File", kind: "co", cell: function (u, td) { td.appendChild(el("b", null, u.name)); sub(td, fmtDay(u.at) + (u.byName ? " · " + u.byName : "")); } },
         { label: "Result", cell: function (u, td) { td.appendChild(chkTag(u.status === "ok" ? "pass" : u.status === "reading" ? "info" : u.status === "bad" ? "block" : "warn")); td.lastChild.textContent = u.status === "ok" ? "Read" : u.status === "reading" ? "Reading" : u.status === "bad" ? "Not read" : "Not used"; } },
         { label: "", cls: "desc", cell: function (u, td) { txt(td, u.msg || ""); } },
         { label: "", kind: "act", cls: "r", cell: function (u, td) { if (u.file) td.appendChild(solFileBtn(u.file)); else txt(td, "Not stored"); } }
@@ -18631,7 +18679,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function blRead(plant, month) {
     var md = monthDoc(plant, month), wind = plantKind(plant) === "wind", out = { banked: 0, lapsed: 0, src: "" };
     if (!md) return out;
-    if (md.bl) return { banked: wind ? n0(md.bl.banked) : 0, lapsed: n0(md.bl.lapsed), src: "confirmed " + (md.bl.at ? fmtDate(new Date(md.bl.at).toISOString().slice(0, 10)) : "") };
+    if (md.bl) return { banked: wind ? n0(md.bl.banked) : 0, lapsed: n0(md.bl.lapsed), src: "confirmed " + (md.bl.at ? fmtDay(md.bl.at) : "") };
     var a = md.adj, cs = a ? solList(a.consumers || {}) : [], sum = function (k) { return round2(cs.reduce(function (s0, c) { return s0 + n0(c[k]); }, 0)); };
     if (!a) return out;
     var bk = n0(a.banked) || sum("banked"), lp = n0(a.lapsed) || sum("lapsed"), sur = sum("surplus");
@@ -18860,7 +18908,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           var a = el("div", { class: "acts" });
           if (S.downloads) { var pd = el("button", { class: "btn sm", type: "button" }, "PDF"); pd.addEventListener("click", function () { solInvoicePdf(i, pd); }); a.appendChild(pd); }
           if (i.status !== "cancelled" && canSolar()) { var rc = el("button", { class: "btn sm primary", type: "button" }, "Record Receipt"); rc.addEventListener("click", function () { receiptForm(i); }); a.appendChild(rc); }
-          if (i.status !== "cancelled" && S.isAdmin && !invReceived(i).amt) { var cx = el("button", { class: "btn sm danger", type: "button" }, "Cancel"); cx.addEventListener("click", function () { cancelInvoice(i); }); a.appendChild(cx); }
+          if (i.status !== "cancelled" && S.isAdmin && !invReceived(i).amt && !invReceived(i).tds) { var cx = el("button", { class: "btn sm danger", type: "button" }, "Cancel"); cx.addEventListener("click", function () { cancelInvoice(i); }); a.appendChild(cx); }
           td.appendChild(a); } }
     ], rows, { sortIndex: 0, sortDir: -1 });
     var rl = solList(SOL.rcpt).filter(function (r) { return SOL.inv[r.invoiceId]; }).sort(function (a, b) { return natCmp(b.date, a.date); }).slice(0, 50);
@@ -19064,7 +19112,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var hd = el("div", { style: "display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:24px" }); hd.appendChild(el("h3", { style: "margin:0" }, "Profit by cost centre · " + periodTxt));
     var vs = el("select", { class: "field", id: "ccView", "aria-label": "Cost centre", style: "width:auto" }); fillSelect(vs, CC_VIEWS.map(function (v) { return [v[0], "By " + v[1].toLowerCase()]; }), SOL.ccv); vs.addEventListener("change", function () { SOL.ccv = vs.value; solRender(); }); hd.appendChild(vs);
     var xb = el("button", { class: "btn", type: "button" }, "Excel"); hd.appendChild(el("span", { class: "grow" })); hd.appendChild(xb); box.appendChild(hd);
-    box.appendChild(el("p", { class: "sub", style: "margin:4px 0 8px" }, SOL.ccv === "u" ? "Income isn't split to WEG / SEI IDs yet, so it shows on each transformer's row; the ID rows show the expenses tagged to them." : SOL.ccv === "loc" || SOL.ccv === "reg" ? "Each transformer counts for its " + (SOL.ccv === "loc" ? "location (district)" : "region") + ". Expenses for a company in general aren't tied to a place, so they show on their own row." : "Expenses tagged to a WEG / SEI ID count for its transformer."));
+    box.appendChild(el("p", { class: "sub", style: "margin:4px 0 8px" }, SOL.ccv === "u" ? "Income and the transformer's expenses are shared over its WEG / SEI IDs by kW; an ID with no kW stays on the transformer's row." : SOL.ccv === "loc" || SOL.ccv === "reg" ? "Each transformer counts for its " + (SOL.ccv === "loc" ? "location (district)" : "region") + ". Expenses for a company in general aren't tied to a place, so they show on their own row." : "Expenses tagged to a WEG / SEI ID count for its transformer."));
     var rs0 = ccRows(inv, consF ? [] : ex, SOL.ccv), c = el("div", { class: "card list scroll" }); box.appendChild(c);
     if (!rs0.length) { c.appendChild(el("div", { class: "empty" }, "Nothing for this choice.")); return; }
     sortTable(c, "solRepCC", [
@@ -19519,7 +19567,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var cs = solList(SOL.cons); if (!cs.length) { card.appendChild(el("div", { class: "empty" }, "No consumers yet.")); return; }
       sortTable(card, "solMC", [{ label: "Consumer", kind: "co", sort: function (c) { return c.name; }, cell: function (c, td) { td.appendChild(el("b", null, c.name)); var hs = consHtscs(c); sub(td, (hs.length > 1 ? "HTSCs " : "HTSC ") + hs.join(", ") + (c.active === false ? " · turned off" : "")); } },
         { label: "GSTIN", cell: function (c, td) { txt(td, c.gstin || ""); } }, { label: "Injection Voltage", cell: function (c, td) { txt(td, c.voltage || "Not set"); } },
-        { label: "Rate now", cls: "r num", cell: function (c, td) { var r = rateFor(c.id, "", todayYmd().slice(0, 7)); txt(td, r ? "₹" + r.rate : "Not set"); } }, { label: "Credit days", cls: "r num", cell: function (c, td) { txt(td, String(c.creditDays != null ? c.creditDays : 30)); } }, editBtn(consForm)], cs, { sortIndex: 0 });
+        { label: "Rate now", cls: "r num", cell: function (c, td) { var r = rateFor(c.id, null, todayYmd().slice(0, 7)); txt(td, r ? "₹" + r.rate : "Not set"); } }, { label: "Credit days", cls: "r num", cell: function (c, td) { txt(td, String(c.creditDays != null ? c.creditDays : 30)); } }, editBtn(consForm)], cs, { sortIndex: 0 });
     } else {
       var rl = solList(SOL.rates); if (!rl.length) { card.appendChild(el("div", { class: "empty" }, "No PPA rates yet.")); return; }
       sortTable(card, "solMR", [{ label: "Consumer", kind: "co", sort: function (r) { return consName(r.consumer); }, cell: function (r, td) { td.appendChild(el("b", null, consName(r.consumer))); var c0 = SOL.cons[r.consumer]; sub(td, c0 ? consHtscs(c0).join(", ") : r.consumer); } },

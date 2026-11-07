@@ -876,3 +876,9 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   Done, Take Another Photo, Cancel) and **Choose File(s)** picks several at once (on computers too). Where one document is kept,
   several photos or files become one PDF, a page each in order (`docsToPdf`; in Tally (Demo) each photo is straightened first).
   Upload Bills asks of several photos "Pages of One Bill" (one PDF) or "A Bill Each"; files chosen there stay a bill each.
+- **Staying up to date** (every app). Data is live while the app is open (Realtime: a bill accounted on one phone shows on the
+  others within a second or so). A phone pauses an app it isn't showing and the live stream can miss changes meanwhile, so coming
+  back after a minute or more reads everything again (`supabase-runtime.js`, `bvResync`). The three-line menu has **Refresh**
+  (loads the page again: the latest version and data; with a form being filled in it asks first, as unsaved entries would be lost).
+  Coming back after a minute or more also checks the page's version (one HEAD request, its ETag) and, after a new deploy, shows
+  "A new version of the app is ready." with Later / Reload; it never reloads by itself.

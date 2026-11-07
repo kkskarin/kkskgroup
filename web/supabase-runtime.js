@@ -18,6 +18,7 @@
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
   });
   window.bvSupabase = sb;
+  window.bvResync = function () { refreshAll(); };
 
   /* ================= Sign-in gate ================= */
   var ME = null; // { authId, uid, email, name, member (approved), super }
@@ -507,7 +508,12 @@
       if (rtUp && !was && pollTimer) { clearInterval(pollTimer); pollTimer = null; refreshAll(); }
       if (!rtUp && !pollTimer) pollTimer = setInterval(refreshAll, 30000);
     });
-    document.addEventListener("visibilitychange", function () { if (!document.hidden && !rtUp) refreshAll(); });
+    /* a phone pauses a page it isn't showing and the live stream can miss changes meanwhile: back after a minute or more, everything is read again */
+    var hiddenAt = 0;
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) { hiddenAt = Date.now(); return; }
+      if (!rtUp || (hiddenAt && Date.now() - hiddenAt >= 60000)) refreshAll(); hiddenAt = 0;
+    });
     window.addEventListener("online", refreshAll);
   }
 

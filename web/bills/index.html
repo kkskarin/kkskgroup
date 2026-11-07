@@ -459,7 +459,7 @@ body.tly .navbar #subnav button,body.tly .navbar #subnav button[aria-current="pa
 .insthead .lb{margin-right:6px}
 .costgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:6px}
 .modal.wide{max-width:520px;max-height:calc(100vh - 32px);overflow:auto}
-.docpick{max-width:360px}.docpick-th{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.docpick-t{position:relative;width:64px;height:64px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}.docpick-t img{width:100%;height:100%;object-fit:cover;display:block}.docpick-x{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:15px;line-height:22px;padding:0;cursor:pointer}.docpick-acts{display:grid;gap:10px;margin-top:14px}.docpick-acts .btn{width:100%;justify-content:center;padding:12px}
+.verbar{position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));margin:0 auto;max-width:520px;display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;padding:10px 12px 10px 16px;border-radius:10px;box-shadow:var(--shadow);z-index:60}.verbar span{flex:1}.verbar .btn:not(.primary){background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}.docpick{max-width:360px}.docpick-th{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.docpick-t{position:relative;width:64px;height:64px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}.docpick-t img{width:100%;height:100%;object-fit:cover;display:block}.docpick-x{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:15px;line-height:22px;padding:0;cursor:pointer}.docpick-acts{display:grid;gap:10px;margin-top:14px}.docpick-acts .btn{width:100%;justify-content:center;padding:12px}
 .modal.sigm{max-width:640px}
 .aitalk textarea{width:100%;min-height:72px}
 .aitalk.nested{border-top:1px solid var(--line,#e2e8f0);padding-top:12px;margin-top:14px}
@@ -997,7 +997,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       <div class="hmrow" id="hmMode"><span class="hml">Data</span><div class="modesw" id="modeSw" role="group" aria-label="Data" hidden></div></div>
       <button class="hmi" id="hmApps" type="button" role="menuitem" aria-expanded="false" aria-controls="hmAppsList"><span>All Apps</span><span class="count info" id="hmAppsCt" hidden></span><span class="chev" aria-hidden="true">&#9662;</span></button>
       <div class="hmapps" id="hmAppsList" hidden></div>
-      <button class="hmi" id="hmInst" type="button" role="menuitem" hidden><span>Install App</span></button><button class="hmi" id="hmSet" type="button" role="menuitem"><span>Personalise</span></button>
+      <button class="hmi" id="hmRef" type="button" role="menuitem"><span>Refresh</span></button><button class="hmi" id="hmInst" type="button" role="menuitem" hidden><span>Install App</span></button><button class="hmi" id="hmSet" type="button" role="menuitem"><span>Personalise</span></button>
       <button class="hmi" id="hmPw" type="button" role="menuitem" hidden><span>Password</span></button>
       <button class="hmi out" id="hmOut" type="button" role="menuitem"><span>Sign Out</span></button>
     </div></div>
@@ -3428,13 +3428,36 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     body.appendChild(ol); body.appendChild(el("p", { class: "hint", style: "margin:12px 0 0" }, "The KKSK Tally icon then appears with your apps and opens full screen. Sign in once inside it."));
     popForm("Install App", ios ? "On iPhone or iPad:" : "On this device:", body, "OK", function () { return true; });
   }
+  /* Refresh (the three-line menu): the page loads again, so the latest version of the app and the latest data. A form being filled
+     in asks first. Coming back to the app after a minute or more also checks for a new version (one small request) and offers Reload. */
+  var APP_VER = { tag: null, asked: false };
+  function pageTag() { return fetch(location.pathname, { method: "HEAD", cache: "no-store", credentials: "same-origin" }).then(function (r) { return r.ok ? (r.headers.get("etag") || r.headers.get("last-modified")) : null; }).catch(function () { return null; }); }
+  pageTag().then(function (t) { APP_VER.tag = t; });
+  document.addEventListener("input", function (e) { var t = e.target; if (t && t.type !== "search" && !/^Search/i.test(t.placeholder || "")) S._typed = true; }, true);
+  function formOpen() { return !!(S._typed && (document.querySelector(".modal-bg:not(.docpick-bg), .bcard") || $("vfLines"))); }
+  function hmRefresh() {
+    hmClose(); if (!formOpen()) { location.reload(); return; }
+    var body = el("div", { class: "mform" }); body.appendChild(el("p", { style: "margin:0" }, "Anything on this screen that isn't saved will be lost. Save it as a draft first if you need it."));
+    popChoice("Refresh Now?", body, [["Refresh", function () { location.reload(); }, true], ["Back", function () {}]]);
+  }
+  function verBar() {
+    if (APP_VER.asked || $("verBar")) return; APP_VER.asked = true;
+    var b = el("div", { class: "verbar", id: "verBar", role: "status" }), r = el("button", { type: "button", class: "btn primary sm" }, "Reload"), x = el("button", { type: "button", class: "btn sm" }, "Later");
+    b.appendChild(el("span", null, "A new version of the app is ready."));
+    r.addEventListener("click", function () { b.remove(); hmRefresh(); }); x.addEventListener("click", function () { b.remove(); });
+    b.appendChild(x); b.appendChild(r); document.body.appendChild(b);
+  }
+  (function () { var hid = 0; document.addEventListener("visibilitychange", function () {
+    if (document.hidden) { hid = Date.now(); return; }
+    if (hid && Date.now() - hid >= 60000 && APP_VER.tag) pageTag().then(function (t) { if (t && t !== APP_VER.tag) verBar(); }); hid = 0;
+  }); })();
   function hmSignOut() { hmClose(); if (window.bvAccount && window.bvAccount.signOut) window.bvAccount.signOut(); else if (window.bvSupabase) window.bvSupabase.auth.signOut(); }
   document.addEventListener("click", function (e) { var t = e.target && e.target.closest && e.target.closest(".head .sub"); if (t && window.matchMedia("(max-width:760px)").matches && !e.target.closest("a,button")) t.classList.toggle("open"); });
   function hmWire() {
     if (hmWire.done || !$("hdrMenu")) return; hmWire.done = true;
     $("hmenu").hidden = false;
     $("hdrMenu").addEventListener("click", function (e) { e.stopPropagation(); phoneHeader(); hmOpen(); });
-    $("hmApps").addEventListener("click", hmApps); $("hmSet").addEventListener("click", hmSettings); $("hmInst").addEventListener("click", hmInstall); $("hmPw").addEventListener("click", hmPassword); $("hmOut").addEventListener("click", hmSignOut);
+    $("hmApps").addEventListener("click", hmApps); $("hmSet").addEventListener("click", hmSettings); $("hmRef").addEventListener("click", hmRefresh); $("hmInst").addEventListener("click", hmInstall); $("hmPw").addEventListener("click", hmPassword); $("hmOut").addEventListener("click", hmSignOut);
   }
   /* Anyone on the shared login can ask the admin for a new profile under it. */
   function openProfileRequest() {

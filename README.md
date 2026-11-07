@@ -914,3 +914,7 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   read that overlaps a write is re-read, so a just-saved change never flashes back. Migration 20261107120000: database write rules —
   users/* only admins (plus a shared login's own profiles), roledefs/* admins, tly__* Super Admin and Chief Accountant, audit/* append-only.
   Preview only: a Tally voucher draft is left out of the daily cash totals (`allVouchers`).
+- **In-app scanner** (`camScan`, every Add a Document box): Take Photo(s) opens the camera inside the app (rear camera, full screen):
+  a tap on the round button takes a page and the camera stays open; the pages line up below, each with ×; Done hands them over
+  (one PDF, or the "Pages of One Bill / A Bill Each" question for Upload Bills, as before); Light toggles the torch where the phone
+  allows it; Cancel or Esc closes. Where the browser can't open the camera it falls back to the phone's own camera, one photo at a time.

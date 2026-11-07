@@ -459,7 +459,7 @@ body.tly .navbar #subnav button,body.tly .navbar #subnav button[aria-current="pa
 .insthead .lb{margin-right:6px}
 .costgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:6px}
 .modal.wide{max-width:520px;max-height:calc(100vh - 32px);overflow:auto}
-.docpick{max-width:360px}.docpick-acts{display:grid;gap:10px;margin-top:14px}.docpick-acts .btn{width:100%;justify-content:center;padding:12px}
+.docpick{max-width:360px}.docpick-th{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.docpick-t{position:relative;width:64px;height:64px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}.docpick-t img{width:100%;height:100%;object-fit:cover;display:block}.docpick-x{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:15px;line-height:22px;padding:0;cursor:pointer}.docpick-acts{display:grid;gap:10px;margin-top:14px}.docpick-acts .btn{width:100%;justify-content:center;padding:12px}
 .modal.sigm{max-width:640px}
 .aitalk textarea{width:100%;min-height:72px}
 .aitalk.nested{border-top:1px solid var(--line,#e2e8f0);padding-top:12px;margin-top:14px}
@@ -4177,19 +4177,66 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* Uploading a document on a phone: Take Photo (the camera, on every browser) or Choose File. Some phone browsers offer only
      the file picker for a box that takes PDFs and pictures, so the camera is asked for here directly. On a computer the file
      box opens as before. The photo (or file) is handed to the page's own file box, as if picked there. */
+  /* Add documents: Take Photo(s) (the camera, one photo after another) or Choose File(s) (several at once), on every phone.
+     Where a place keeps one document (a voucher's, an advance's, a bill's file), several photos or files become one PDF, a page
+     each (in Tally (Demo) each photo is straightened first). Upload Bills takes several: photos are asked about (pages of one bill,
+     or a bill each); chosen files stay a bill each, as before. */
   function docPick(input) {
+    if (!input) return;
     var touch = !!(window.matchMedia && (matchMedia("(pointer:coarse)").matches || matchMedia("(hover:none)").matches));
-    if (!touch || !input) { if (input) input.click(); return; }
-    var bg = el("div", { class: "modal-bg docpick-bg" }), m = el("div", { class: "modal docpick", role: "dialog", "aria-modal": "true", "aria-label": "Add a document" });
-    m.appendChild(el("h3", null, "Add a Document"));
-    var close = function () { bg.remove(); };
-    var cam = el("button", { type: "button", class: "btn primary" }, "Take Photo"), fil = el("button", { type: "button", class: "btn" }, "Choose File"), cn = el("button", { type: "button", class: "btn" }, "Cancel");
-    cam.addEventListener("click", function () { close(); var t = el("input", { type: "file", accept: "image/*", capture: "environment", hidden: "" }); document.body.appendChild(t);
-      t.addEventListener("change", function () { var fs = t.files; if (fs && fs.length) { try { var dt = new DataTransfer(); Array.prototype.forEach.call(fs, function (f) { dt.items.add(f); }); input.files = dt.files; } catch (e) { toast("This browser can't pass the photo on: use Choose File."); t.remove(); return; } input.dispatchEvent(new Event("change", { bubbles: true })); } t.remove(); });
-      t.click(); });
-    fil.addEventListener("click", function () { close(); input.click(); }); cn.addEventListener("click", close);
-    var ft = el("div", { class: "docpick-acts" }); ft.appendChild(cam); ft.appendChild(fil); ft.appendChild(cn); m.appendChild(ft);
-    bg.addEventListener("click", function (e) { if (e.target === bg) close(); }); bg.appendChild(m); document.body.appendChild(bg);
+    var many = !!input.multiple, acc = input.getAttribute("accept") || "", pdfOk = /pdf/i.test(acc);
+    function hand(fs) {
+      try { var dt = new DataTransfer(); fs.forEach(function (f) { dt.items.add(f); }); input.files = dt.files; }
+      catch (e) { toast("This browser can't pass the files on. Try Chrome or Safari."); return; }
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    function finish(fs, photos) {
+      fs = Array.prototype.slice.call(fs || []); if (!fs.length) return;
+      if (fs.length === 1) { hand(fs); return; }
+      if (many && !photos) { hand(fs); return; }
+      if (!pdfOk) { toast("Only one is kept here: the first was used."); hand([fs[0]]); return; }
+      var one = function () { toast("Putting the " + fs.length + " pages together"); docsToPdf(fs).then(function (f) { if (f) hand([f]); else toast("The pages couldn't be put together. Add them one at a time."); }); };
+      if (!many) { one(); return; }
+      var body = el("div", { class: "mform" }); body.appendChild(el("p", { style: "margin:0" }, "Are these " + fs.length + " photos pages of one bill, or a separate bill each?"));
+      popChoice("Photos Taken", body, [["Pages of One Bill", one, true], ["A Bill Each", function () { hand(fs); }]]);
+    }
+    function choose() { var t = el("input", { type: "file", accept: acc, multiple: "", hidden: "" }); document.body.appendChild(t); t.addEventListener("change", function () { var fs = Array.prototype.slice.call(t.files || []); t.remove(); finish(fs, false); }); t.click(); }
+    if (!touch) { choose(); return; }
+    var shots = [];
+    function snap() { var t = el("input", { type: "file", accept: "image/*", capture: "environment", hidden: "" }); document.body.appendChild(t); t.addEventListener("change", function () { var f = t.files && t.files[0]; t.remove(); if (f) shots.push(f); sheet(); }); t.click(); }
+    function sheet() {
+      var bg = el("div", { class: "modal-bg docpick-bg" }), m = el("div", { class: "modal docpick", role: "dialog", "aria-modal": "true", "aria-label": "Add a document" }), close = function () { bg.remove(); };
+      var n = shots.length; m.appendChild(el("h3", null, n ? n + (n === 1 ? " Photo Taken" : " Photos Taken") : "Add a Document"));
+      if (n) { var row = el("div", { class: "docpick-th" }); shots.forEach(function (f, i) { var w = el("span", { class: "docpick-t" }), im = el("img", { alt: "Photo " + (i + 1) }), x = el("button", { type: "button", class: "docpick-x", "aria-label": "Remove photo " + (i + 1) }, "×"); im.src = URL.createObjectURL(f); x.addEventListener("click", function () { shots.splice(i, 1); close(); sheet(); }); w.appendChild(im); w.appendChild(x); row.appendChild(w); }); m.appendChild(row); }
+      var ft = el("div", { class: "docpick-acts" }), b = function (t, cls, fn) { var x = el("button", { type: "button", class: "btn" + (cls ? " " + cls : "") }, t); x.addEventListener("click", function () { close(); fn(); }); ft.appendChild(x); };
+      if (n) { b("Done", "primary", function () { finish(shots, true); }); b("Take Another Photo", "", snap); b("Cancel", "", function () {}); }
+      else { b("Take Photo(s)", "primary", snap); b("Choose File(s)", "", choose); b("Cancel", "", function () {}); }
+      m.appendChild(ft); bg.addEventListener("click", function (e) { if (e.target === bg) close(); }); bg.appendChild(m); document.body.appendChild(bg);
+    }
+    sheet();
+  }
+  /* a small choice box: [label, fn, primary] buttons */
+  function popChoice(title, body, opts) {
+    var bg = el("div", { class: "modal-bg docpick-bg" }), m = el("div", { class: "modal docpick", role: "dialog", "aria-modal": "true", "aria-label": title }), close = function () { bg.remove(); };
+    m.appendChild(el("h3", null, title)); m.appendChild(body); var ft = el("div", { class: "docpick-acts" });
+    opts.forEach(function (o) { var x = el("button", { type: "button", class: "btn" + (o[2] ? " primary" : "") }, o[0]); x.addEventListener("click", function () { close(); o[1](); }); ft.appendChild(x); });
+    m.appendChild(ft); bg.appendChild(m); document.body.appendChild(bg);
+  }
+  /* photos and PDFs into one PDF, in order: a photo per page (straightened in Tally (Demo)), a PDF's pages as they are */
+  function docsToPdf(fs) {
+    return loadScript(PDFLIB).then(function () { return window.PDFLib.PDFDocument.create(); }).then(function (out) {
+      var chain = Promise.resolve();
+      fs.forEach(function (f) {
+        chain = chain.then(function () {
+          if (isPdf(f)) return f.arrayBuffer().then(function (buf) { return window.PDFLib.PDFDocument.load(buf, { ignoreEncryption: true }); }).then(function (src) { return out.copyPages(src, src.getPageIndices()); }).then(function (pp) { pp.forEach(function (pg) { out.addPage(pg); }); });
+          return (tly() ? flattenPhoto(f) : Promise.resolve(null)).then(function (flat) { return imgCanvas(flat || f); }).then(function (cv) {
+            var k = Math.min(1, 2400 / Math.max(cv.width, cv.height)), c2 = cv; if (k < 1) { c2 = document.createElement("canvas"); c2.width = Math.round(cv.width * k); c2.height = Math.round(cv.height * k); c2.getContext("2d").drawImage(cv, 0, 0, c2.width, c2.height); }
+            return new Promise(function (res) { c2.toBlob(res, "image/jpeg", 0.85); });
+          }).then(function (bl) { return bl.arrayBuffer(); }).then(function (buf) { return out.embedJpg(buf); }).then(function (img) { var pg = out.addPage([img.width, img.height]); pg.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height }); });
+        });
+      });
+      return chain.then(function () { return out.save(); });
+    }).then(function (bytes) { var d = new Date(), nm = "Scan " + d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2) + " " + ("0" + d.getHours()).slice(-2) + ("0" + d.getMinutes()).slice(-2) + ".pdf"; return new File([bytes], nm, { type: "application/pdf" }); }).catch(function () { return null; });
   }
   function keepFile(billId, f) {
     var t = fileType(f); if (!window.bvFiles || !f || !t || f.size > 25 * 1024 * 1024) return Promise.resolve(null);

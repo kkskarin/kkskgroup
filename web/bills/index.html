@@ -1087,6 +1087,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   </section>
   <section id="secAcct" hidden>
     <div class="head"><div class="grow"><h2>Accounting</h2><p class="sub">Every submitted bill and voucher comes here first. Set the ledgers and TDS and account it; only then can it go into a checking report. Postpone it to come back later, or send it back with a note.</p></div></div>
+    <div id="acApBack" hidden></div>
     <div class="filters">
       <div class="seg" role="tablist" aria-label="Show"><button type="button" role="tab" id="acSideB" aria-selected="true">Bills <span id="acNB"></span></button><button type="button" role="tab" id="acSideV" aria-selected="false">Vouchers <span id="acNV"></span></button></div>
       <select class="field" id="acSt" aria-label="Status"><option value="pending">Waiting</option><option value="held">Postponed</option><option value="back">Sent back</option><option value="approved">Accounted</option><option value="all">All</option></select>
@@ -3325,7 +3326,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       rawArr(R.vouchers).forEach(function (v) { if (divOf(v) === k && v.status !== "deleted" && (v.sentBack || v.acct === "back") && prepOf(v) === me) n++; });
       return n;
     }
-    if (k === "acc") { var w = function (x) { return !x.acct || x.acct === "pending"; }; rawArr(R.bills).forEach(function (b) { if (b.status === "done" && w(b) && can("acct", b.companyId)) n++; }); rawArr(R.vouchers).forEach(function (v) { if (v.status !== "deleted" && w(v) && can("acct", v.companyId)) n++; }); return n; }
+    if (k === "acc") { var w = function (x) { return !x.acct || x.acct === "pending"; }; n += apBackForMe(rawArr(R.bills)).length; rawArr(R.bills).forEach(function (b) { if (b.status === "done" && w(b) && can("acct", b.companyId)) n++; }); rawArr(R.vouchers).forEach(function (v) { if (v.status !== "deleted" && w(v) && can("acct", v.companyId)) n++; }); return n; }
     if (k === "apr") {
       var mineA = function (id) { return id === me || (S.isAdmin && !id); };
       rawArr(R.reports).forEach(function (r) { var st = stageOf(r); if ((st === "generated" || st === "printed") && mineA(reportApproverId(r))) n++; });
@@ -9513,7 +9514,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (S.tab === "Approvals" && apprUser()) {
       if (S.downloads) actBtnAll(box, "Download PDF", "", function (b) { downloadReport(r.id, b); });
       if (l1Wait(r) && meL1For(r)) { actBtnAll(box, "Checked, pass on", "primary", function () { l1PassForm(r); }); hint.textContent = "You are the checker: check it and pass it on to " + (approverName(r) || "the final approver") + ", who gives the final approval."; }
-      else if ((s === "generated" || s === "printed") && apprMine(r)) { actBtnAll(box, "Approve for payment", "primary", function () { if (r.kind === "inst") instApproveForm(r); else crApproveForm(r); }); hint.textContent = r.kind === "inst" ? "Approve the instalment, or part of it; the rest goes back to the purchaser." : "Approve it bill by bill: untick a bill to send it back, or lower its amount to approve part of it."; }
+      else if ((s === "generated" || s === "printed") && apprMine(r)) { actBtnAll(box, "Approve for payment", "primary", function () { if (r.kind === "inst") instApproveForm(r); else crApproveForm(r); }); if (r.kind !== "inst" && r.kind !== "vcr") actBtnAll(box, "Send back", "danger", function () { crSendBackForm(r); }); hint.textContent = r.kind === "inst" ? "Approve the instalment, or part of it; the rest goes back to the purchaser." : "Approve it bill by bill: untick a bill to send it back, or lower its amount to approve part of it."; }
       else if (s === "payment") {
         hint.textContent = apprByText(r) + ", " + stamp(r.approvedAt) + ".";
         if (admin && (r.kind === "inst" ? !advPaid(r.advanceId, r.inst) && !instLaterReport(r) : !inLockedPlan(r.id))) actBtnAll(box, "Undo approval", "", function () { if (r.kind === "inst") setStage(r, "printed", { apprAmt: null, backNote: "" }); else undoCrApprove(r); }, "Click again to undo the approval");
@@ -9796,6 +9797,53 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         var extra = { appr: appr, billIds: keep.map(function (b) { return b.id; }), sentBack: (r.sentBack || []).concat(back), lastBack: back, backNote: nt, taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to, approvedAt: Date.now(), approvedBy: meId() };
         Object.assign(extra, bh);
         return setStage(r, "payment", extra, [back.length || part ? nt : "", behalfNote(bh)].filter(Boolean).join(" · "));
+      });
+    });
+  }
+  /* Send back (the approver, on a Bill Checking Report waiting for approval): the ticked bills leave the report and go back to whoever
+     submitted them, unaccounted (acct "back", as Accounting's Send back), to their Postponed list with the note. The accountant who had
+     accounted each is told in Accounts (apprBack, until they press Got it). A report left with no bills is cancelled. */
+  function crSendBackForm(r) {
+    if (S._adm) { toast("No sending back while viewing as someone. Go back to your admin view."); return; }
+    var bills = reportBills(r); if (!bills.length) { toast("This report has no bills left."); return; }
+    var body = el("div", { class: "mform" }), tw = el("div", { class: "list scroll" }), rows = {};
+    var tb = el("table", { class: "t" }), th = el("thead"), hr = el("tr"); ["Send", "Bill", "Accounted by", "Amount"].forEach(function (h, i) { hr.appendChild(el("th", i === 3 ? { class: "r" } : null, h)); }); th.appendChild(hr); tb.appendChild(th);
+    var tbd = el("tbody"); tb.appendChild(tbd); tw.appendChild(tb); body.appendChild(tw);
+    bills.forEach(function (b) {
+      var tr = el("tr"), ck = el("input", { type: "checkbox", "aria-label": "Send back bill " + b.billNo }); ck.checked = true;
+      var c0 = el("td"); c0.appendChild(ck); tr.appendChild(c0);
+      var c1 = el("td"); c1.appendChild(el("b", { class: "mono" }, b.billNo || "")); sub(c1, fmtDate(b.billDate)); tr.appendChild(c1);
+      tr.appendChild(el("td", null, b.acctByName || userLabel(b.acctBy || "") || "Not recorded"));
+      tr.appendChild(el("td", { class: "r num" }, bm(b, crAmt(r, b)))); tbd.appendChild(tr); rows[b.id] = ck;
+    });
+    body.appendChild(tidyField("What needs fixing?", tidyBox("sbNote", "", "note", 400), "Any language. It is tidied into clean English and shown to the purchaser with the bill; the accountant sees it too."));
+    popForm("Send Back " + r.no, "The ticked bills go back to the purchaser with your note. Their accounting is reversed: once fixed and submitted again they go through Accounting again. The accountant who accounted them is told. A report left with no bills is cancelled.", body, "Send back", function () {
+      errClear(body); var back = bills.filter(function (b) { return rows[b.id].checked; });
+      if (!back.length) { toast("Tick at least one bill to send back."); return false; }
+      if ($("sbNote").value.trim().length < 4) { errOn("sbNote", "Write what needs fixing."); return false; }
+      return (tidyPending("sbNote") || Promise.resolve()).then(function () {
+        var nt = sentenceFix($("sbNote").value.trim()), now = Date.now(), me = meId(), myName = S.isAdmin ? (S.me && S.me.name) || "Admin" : pnm(preparedByText());
+        var keep = bills.filter(function (b) { return back.indexOf(b) < 0; }), backIds = back.map(function (b) { return b.id; });
+        var ups = back.map(function (b) {
+          var up = { status: "postponed", postponedAt: now, ownerId: b.submittedBy || b.ownerId || prepOf(b), acct: "back", acctNote: nt, acctAt: now, acctBy: me, acctByName: myName,
+            apprBack: { at: now, by: me, byName: myName, note: nt, report: r.no || "", acctBy: b.acctBy || "", acctByName: b.acctByName || "", acctAt: b.acctAt || null, seen: null },
+            acctLog: (b.acctLog || []).concat([{ at: now, by: me, byName: myName, note: "Sent back by the approver from " + (r.no || "the report") + ": " + nt }]) };
+          return { b: b, up: up };
+        });
+        var chain = Promise.resolve();
+        ups.forEach(function (u) { chain = chain.then(function () { return retry(function () { return S.db.doc("bills/" + u.b.id).update(u.up); }).then(function () { Object.assign(S.bills[u.b.id] || {}, u.up); }); }); });
+        return chain.then(function () {
+          if (!keep.length) return retry(function () { return S.db.doc("reports/" + r.id).delete(); }).then(function () { delete S.reports[r.id]; return "cancelled"; });
+          var t = sumBills(keep), doc = Object.assign({}, r); delete doc.id;
+          Object.assign(doc, { billIds: keep.map(function (b) { return b.id; }), sentBack: (r.sentBack || []).concat(backIds), taxable: t.taxable, gst: t.gst, total: t.total, periodFrom: t.from, periodTo: t.to, log: (r.log || []).concat([logEntry(stageOf(r), "Sent back " + plural(back.length, "bill") + " to the purchaser: " + nt)]) });
+          if (doc.amts) { doc.amts = Object.assign({}, doc.amts); backIds.forEach(function (id) { delete doc.amts[id]; }); }
+          if (doc.tds != null && doc.payable != null) doc.payable = round2((Number(doc.total) || 0) - (Number(doc.tds) || 0));
+          return retry(function () { return S.db.doc("reports/" + r.id).set(doc); }).then(function () { S.reports[r.id] = Object.assign({ id: r.id }, doc); return "kept"; });
+        }).then(function (how) {
+          invalidate(); renderNav(); toast(plural(back.length, "bill") + " sent back to the purchaser" + (how === "cancelled" ? "; " + r.no + " is cancelled." : "; " + r.no + " keeps " + plural(keep.length, "bill") + "."));
+          if (how === "cancelled") backToChecks(); else if (CK.viewId === r.id && !$("secCheckView").hidden) renderReport();
+          return true;
+        }, function (e) { toast(explain(e) + " Some bills may have gone back already: open the report again to see."); return false; });
       });
     });
   }
@@ -11484,7 +11532,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     }
     else if (r && (st === "generated" || st === "printed")) { step = "Waiting for approval"; cls = "s-" + st; h = holderAppr(b); }
     else if (r) { step = "In a Bill Checking Report draft"; cls = "s-" + st; h = holderPrep(b); }
-    else if (b.acct === "back") { step = "Sent back by the accountant"; cls = "s-tds"; h = holderPrep(b); }
+    else if (b.acct === "back") { step = b.apprBack ? "Sent back by the approver" : "Sent back by the accountant"; cls = "s-tds"; h = holderPrep(b); }
     else if (!acctOk(b)) { step = b.acct === "held" ? "Postponed by the accountant" : "With the accountant"; cls = b.acct === "held" ? "s-tds" : "s-draft"; h = holdersFor("acct", b.companyId, "Accountant"); }
     else { step = "Waiting for a Bill Checking Report"; cls = "s-draft"; h = holderPrep(b); }
     return { kind: "bill", x: b, id: b.id, no: b.billNo || "(no number yet)", date: b.billDate || "", cid: b.companyId, party: vendorLabelOfBill(b) || "Vendor not chosen", desc: b.narration || "",
@@ -15610,7 +15658,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function acctLabel(x) {
     if (x.acct === "approved") return ["Accounted", "s-payment"];
     if (x.acct === "held") return ["Postponed by accountant", "s-tds"];
-    if (x.acct === "back") return ["Sent back by accountant", "s-tds"];
+    if (x.acct === "back") return [x.apprBack ? "Sent back by approver" : "Sent back by accountant", "s-tds"];
     return ["With accountant", "s-draft"];
   }
 
@@ -16846,7 +16894,23 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function acctVchs() { return vchList().filter(function (v) { return v.companyId && (S.isAdmin || canStep("acct", v.companyId)) && !(vcrOf(v.id) && !v.acct); }); }
   function acctWaitN() { var f = function (x) { return !x.acct || x.acct === "pending"; }; return acctBills().filter(f).length + acctVchs().filter(f).length; }
   function personDept(uid) { var u = S.users[uid] || (uid === meId() ? S.myUser : null); return u ? deptName(u.deptId) : ""; }
+  /* bills an approver sent back that I had accounted, not yet marked seen */
+  function apBackForMe(list) { var me = meId(); return (list || []).filter(function (b) { return b && b.apprBack && !b.apprBack.seen && b.apprBack.acctBy && b.apprBack.acctBy === me; }); }
+  function renderApBack() {
+    var w = $("acApBack"); if (!w) return; var list = apBackForMe(Object.keys(S.bills || {}).map(function (k) { return S.bills[k]; })); w.textContent = ""; w.hidden = !list.length; if (!list.length) return;
+    w.appendChild(el("h3", { class: "aph" }, "Sent Back by the Approver (" + list.length + ")"));
+    list.sort(function (a, b) { return (b.apprBack.at || 0) - (a.apprBack.at || 0); }).forEach(function (b) {
+      var a = b.apprBack, d = el("div", { class: "flag w", style: "display:flex;gap:12px;align-items:flex-start;margin-bottom:8px" }), tx = el("div", { style: "flex:1" });
+      tx.appendChild(el("b", null, "Bill " + (b.billNo || "") + " · " + ((S.vendors[b.vendorId] || {}).name || "") ));
+      tx.appendChild(el("div", null, (a.byName || "The approver") + " sent it back from " + (a.report || "its report") + " on " + fmtDay(a.at) + ": " + (a.note || "")));
+      tx.appendChild(el("div", { class: "tsub" }, "You had accounted it; that accounting is reversed. It comes back to Accounting when the purchaser submits it again."));
+      var ok = el("button", { type: "button", class: "btn sm" }, "Got it");
+      ok.addEventListener("click", function () { ok.disabled = true; var nb = Object.assign({}, a, { seen: { at: Date.now(), by: meId() } }); retry(function () { return S.db.doc("bills/" + b.id).update({ apprBack: nb }); }).then(function () { b.apprBack = nb; invalidate(); renderApBack(); renderNav(); }, function (e) { ok.disabled = false; toast(explain(e)); }); });
+      d.appendChild(tx); d.appendChild(ok); w.appendChild(d);
+    });
+  }
   function renderAcct() {
+    renderApBack();
     var co = $("acCo"), pr = $("acPrep"), dp = $("acDept"), st = $("acSt"), q = $("acQ").value.trim().toLowerCase();
     fillSelect(co, [["", "All your companies"]].concat(acctCos().map(function (c) { return [c.id, c.shortName || c.name]; })), co.value);
     var isB = AC.side === "bills", src = isB ? acctBills() : acctVchs();

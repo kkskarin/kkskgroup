@@ -882,3 +882,10 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   (loads the page again: the latest version and data; with a form being filled in it asks first, as unsaved entries would be lost).
   Coming back after a minute or more also checks the page's version (one HEAD request, its ETag) and, after a new deploy, shows
   "A new version of the app is ready." with Later / Reload; it never reloads by itself.
+- **Send back by the approver** (Approvals › a Bill Checking Report waiting for approval, beside Approve for payment): the approver
+  ticks the bills (all to start), writes what needs fixing (required, tidied into English) and presses Send back. Each ticked bill leaves
+  the report and its accounting is reversed (`acct: "back"`, as Accounting's Send back): status postponed, back with whoever submitted it
+  (their Postponed list, "Sent back by <approver>: <note>"); fixed and submitted again it goes through Accounting again. The report keeps
+  the rest with its totals redone, or is cancelled when none are left. The bill keeps `apprBack` {at, by, byName, note, report, acctBy,
+  acctByName, acctAt, seen}: the accountant who had accounted it sees it in Accounts › Accounting under **Sent Back by the Approver**
+  (counted in their to-do) until they press Got it. Statuses read "Sent back by the approver".

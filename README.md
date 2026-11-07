@@ -875,7 +875,7 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   an advance's file, cheque templates): **Take Photo(s)** opens the camera again and again (the photos so far are shown, each with ×;
   Done, Take Another Photo, Cancel) and **Choose File(s)** picks several at once (on computers too). Where one document is kept,
   several photos or files become one PDF, a page each in order (`docsToPdf`; in Tally (Demo) each photo is straightened first).
-  Upload Bills asks of several photos "Pages of One Bill" (one PDF) or "A Bill Each"; files chosen there stay a bill each.
+  Photos taken in one go always become one PDF (Upload Bills sorts its pages into bills by itself); files chosen stay a bill each.
 - **Staying up to date** (every app). Data is live while the app is open (Realtime: a bill accounted on one phone shows on the
   others within a second or so). A phone pauses an app it isn't showing and the live stream can miss changes meanwhile, so coming
   back after a minute or more reads everything again (`supabase-runtime.js`, `bvResync`). The three-line menu has **Refresh**

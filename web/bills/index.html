@@ -4222,10 +4222,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (fs.length === 1) { hand(fs); return; }
       if (many && !photos) { hand(fs); return; }
       if (!pdfOk) { toast("Only one is kept here: the first was used."); hand([fs[0]]); return; }
-      var one = function () { toast("Putting the " + fs.length + " pages together"); docsToPdf(fs).then(function (f) { if (f) hand([f]); else toast("The pages couldn't be put together. Add them one at a time."); }); };
-      if (!many) { one(); return; }
-      var body = el("div", { class: "mform" }); body.appendChild(el("p", { style: "margin:0" }, "Are these " + fs.length + " photos pages of one bill, or a separate bill each?"));
-      popChoice("Photos Taken", body, [["Pages of One Bill", one, true], ["A Bill Each", function () { hand(fs); }]]);
+      /* photos taken in one go are the pages of one scan, as a scanner app would make: one PDF; Upload Bills then sorts its pages into bills by itself */
+      toast("Putting the " + fs.length + " pages together"); docsToPdf(fs).then(function (f) { if (f) hand([f]); else toast("The pages couldn't be put together. Add them one at a time."); });
     }
     function choose() { var t = el("input", { type: "file", accept: acc, multiple: "", hidden: "" }); document.body.appendChild(t); t.addEventListener("change", function () { var fs = Array.prototype.slice.call(t.files || []); t.remove(); finish(fs, false); }); t.click(); }
     if (!touch) { choose(); return; }

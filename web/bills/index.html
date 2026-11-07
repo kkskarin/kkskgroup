@@ -451,6 +451,7 @@ body.tly .navbar #subnav button,body.tly .navbar #subnav button[aria-current="pa
 .insthead .lb{margin-right:6px}
 .costgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:6px}
 .modal.wide{max-width:520px;max-height:calc(100vh - 32px);overflow:auto}
+.docpick{max-width:360px}.docpick-acts{display:grid;gap:10px;margin-top:14px}.docpick-acts .btn{width:100%;justify-content:center;padding:12px}
 .modal.sigm{max-width:640px}
 .aitalk textarea{width:100%;min-height:72px}
 .aitalk.nested{border-top:1px solid var(--line,#e2e8f0);padding-top:12px;margin-top:14px}
@@ -4154,6 +4155,23 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function fileType(f) { var t = f && f.type || ""; if (FILE_TYPES.test(t)) return t; var n = String(f && f.name || "").toLowerCase(); return /\.pdf$/.test(n) ? "application/pdf" : /\.jpe?g$/.test(n) ? "image/jpeg" : /\.png$/.test(n) ? "image/png" : /\.webp$/.test(n) ? "image/webp" : ""; }
   function fileSafeName(n) { var s = String(n || "bill").replace(/[^A-Za-z0-9._-]+/g, "-").replace(/-+/g, "-").replace(/^[-.]+|[-.]+$/g, "").slice(-80); return s || "bill"; }
   /* Uploads the file and notes it on the bill. Quietly does nothing where files can't be kept. */
+  /* Uploading a document on a phone: Take Photo (the camera, on every browser) or Choose File. Some phone browsers offer only
+     the file picker for a box that takes PDFs and pictures, so the camera is asked for here directly. On a computer the file
+     box opens as before. The photo (or file) is handed to the page's own file box, as if picked there. */
+  function docPick(input) {
+    var touch = !!(window.matchMedia && (matchMedia("(pointer:coarse)").matches || matchMedia("(hover:none)").matches));
+    if (!touch || !input) { if (input) input.click(); return; }
+    var bg = el("div", { class: "modal-bg docpick-bg" }), m = el("div", { class: "modal docpick", role: "dialog", "aria-modal": "true", "aria-label": "Add a document" });
+    m.appendChild(el("h3", null, "Add a Document"));
+    var close = function () { bg.remove(); };
+    var cam = el("button", { type: "button", class: "btn primary" }, "Take Photo"), fil = el("button", { type: "button", class: "btn" }, "Choose File"), cn = el("button", { type: "button", class: "btn" }, "Cancel");
+    cam.addEventListener("click", function () { close(); var t = el("input", { type: "file", accept: "image/*", capture: "environment", hidden: "" }); document.body.appendChild(t);
+      t.addEventListener("change", function () { var fs = t.files; if (fs && fs.length) { try { var dt = new DataTransfer(); Array.prototype.forEach.call(fs, function (f) { dt.items.add(f); }); input.files = dt.files; } catch (e) { toast("This browser can't pass the photo on: use Choose File."); t.remove(); return; } input.dispatchEvent(new Event("change", { bubbles: true })); } t.remove(); });
+      t.click(); });
+    fil.addEventListener("click", function () { close(); input.click(); }); cn.addEventListener("click", close);
+    var ft = el("div", { class: "docpick-acts" }); ft.appendChild(cam); ft.appendChild(fil); ft.appendChild(cn); m.appendChild(ft);
+    bg.addEventListener("click", function (e) { if (e.target === bg) close(); }); bg.appendChild(m); document.body.appendChild(bg);
+  }
   function keepFile(billId, f) {
     var t = fileType(f); if (!window.bvFiles || !f || !t || f.size > 25 * 1024 * 1024) return Promise.resolve(null);
     var path = (tly() ? "tly" : S.mode === "demo" ? "demo" : "live") + "/bills/" + billId + "/" + Date.now().toString(36) + "-" + fileSafeName(f.name);
@@ -4170,7 +4188,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (b.file) { w.textContent = "File kept: " + b.file.name; return w; }
     if (!window.bvFiles) return w;
     var inp0 = el("input", { type: "file", accept: "application/pdf,image/jpeg,image/png,image/webp", hidden: "" }), btn = el("button", { type: "button", class: "link-btn" }, "Attach the bill file");
-    btn.addEventListener("click", function () { inp0.click(); });
+    btn.addEventListener("click", function () { docPick(inp0); });
     inp0.addEventListener("change", function () { var f = inp0.files && inp0.files[0]; if (!f) return; if (!fileType(f)) { toast("Attach a PDF, JPG, PNG or WebP file."); return; } btn.disabled = true; btn.textContent = "Attaching"; keepFile(b.id, f).then(function (m) { if (!m) { btn.disabled = false; btn.textContent = "Attach the bill file"; } }); });
     w.appendChild(btn); w.appendChild(inp0); return w;
   }
@@ -4904,7 +4922,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   function finalBill(a, mode) {
     S.billLink = { advanceId: a.id, companyId: a.companyId, vendorId: a.vendorId || null, currency: a.currency || "INR", at: Date.now() };
     setTab("Bills");
-    if (mode === "upload") $("bFiles").click(); else createManual(null);
+    if (mode === "upload") docPick($("bFiles")); else createManual(null);
   }
   function takeLink() { var l = S.billLink; S.billLink = null; return l && Date.now() - l.at < 600000 ? l : null; }
   function linkInto(d, l) {
@@ -13030,7 +13048,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     /* an optional document (receipt, slip, photo): kept with the voucher, and Claude writes the lines from it */
     var dw = el("div", { class: "f wide" }); dw.appendChild(el("span", { class: "lb" }, "Document (optional)"));
     var dfi = el("input", { type: "file", accept: "application/pdf,image/jpeg,image/png,image/webp", hidden: "" }), dbn = el("button", { type: "button", class: "btn sm", id: "vfDocBtn" }, VH.D.file ? "Replace Document" : "Attach Document"), dln = el("span", { class: "hint", id: "vfDocLn" }, VH.D.file ? "Kept: " + VH.D.file.name : "A receipt, slip or photo. The details are written from it" + (S.sample ? " by Claude" : "") + "; check them.");
-    dbn.addEventListener("click", function () { dfi.click(); }); dfi.addEventListener("change", function () { vchDoc(dfi.files && dfi.files[0], dbn, dln); dfi.value = ""; });
+    dbn.addEventListener("click", function () { docPick(dfi); }); dfi.addEventListener("change", function () { vchDoc(dfi.files && dfi.files[0], dbn, dln); dfi.value = ""; });
     var drow = el("div", { class: "row", style: "display:flex;gap:10px;align-items:center;flex-wrap:wrap" }); drow.appendChild(dbn); drow.appendChild(dln); dw.appendChild(drow); dw.appendChild(dfi); f.appendChild(dw);
     drawVchLines();
     var tt = el("div", { class: "f" }); tt.appendChild(el("span", { class: "lb" }, "Total amount")); tt.appendChild(el("div", { class: "field ro num", id: "vfTotV" })); tt.appendChild(el("span", { class: "hint" }, "The lines added up. Paid in full.")); f.appendChild(tt);
@@ -16184,7 +16202,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var sw = el("div", { class: "f wide" }); sw.appendChild(el("span", { class: "lb" }, "Cheque scan or photo"));
     var sr = el("div", { class: "acts", style: "align-items:center" }), fi = el("input", { type: "file", accept: "application/pdf,image/jpeg,image/png,image/webp", hidden: "" }), ub = el("button", { type: "button", class: "btn sm" }, T.pad ? "Replace Scan" : "Upload Scan");
     if (T.pad) { sr.appendChild(el("span", null, T.pad.name || "cheque.pdf")); sr.appendChild(solFileBtn(T.pad)); }
-    ub.addEventListener("click", function () { fi.click(); }); fi.addEventListener("change", function () { var file = fi.files && fi.files[0]; fi.value = ""; if (file) chqUpload(file, T, ub); });
+    ub.addEventListener("click", function () { docPick(fi); }); fi.addEventListener("change", function () { var file = fi.files && fi.files[0]; fi.value = ""; if (file) chqUpload(file, T, ub); });
     sr.appendChild(ub); sr.appendChild(fi);
     if (T.pad) { var db = el("button", { type: "button", class: "btn sm" }, "Find Fields Again"); db.addEventListener("click", function () { chqDetect(T); }); sr.appendChild(db); }
     if (T.clean) { var cb2 = el("button", { type: "button", class: "btn sm", id: "cqCorners" }, "Adjust Corners"); cb2.addEventListener("click", function () { chqCornerEdit(T, cb2); }); sr.appendChild(cb2); }
@@ -19857,7 +19875,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("usLoc").addEventListener("change", function () { $("uELoc").hidden = true; });
     $("uCos").addEventListener("change", function () { $("uECos").hidden = true; });
     $("save").addEventListener("click", save); $("toggle").addEventListener("click", toggleActive);
-    $("bUpload").addEventListener("click", function () { $("bFiles").click(); });
+    $("bUpload").addEventListener("click", function () { docPick($("bFiles")); });
     $("bCopyLive").addEventListener("click", copyLiveForm);
     $("bFiles").addEventListener("change", function () { var fs = this.files; startUpload(fs); this.value = ""; });
     $("ckCo").addEventListener("change", renderChecks); $("ckQ").addEventListener("input", renderChecks);
@@ -19871,7 +19889,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     });
     
     $("bDoneCo").addEventListener("change", function () { B.doneLimit = 100; renderDone(); });
-    $("alUpload").addEventListener("click", function () { $("alFile").click(); });
+    $("alUpload").addEventListener("click", function () { docPick($("alFile")); });
     $("alFile").addEventListener("change", function () { var f = this.files && this.files[0]; this.value = ""; readAdvFile(f); });
     $("alManual").addEventListener("click", function () { if (tly()) return; ADV.log = ""; newAdv(null, null, ""); });
     $("alCo").addEventListener("change", renderAdvList); $("alQ").addEventListener("input", renderAdvList); $("alClosed").addEventListener("change", renderAdvList);
@@ -19899,7 +19917,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     $("vhNew").addEventListener("click", function () { openVchForm(null); });
     $("pyeQ").addEventListener("input", renderPayees); $("pyeMerge").addEventListener("click", pyeMergeForm);
     /* Upload Document: one PDF or one photo of one expense; the voucher is written from it, to check and complete */
-    $("vhUp").addEventListener("click", function () { $("vhUpF").value = ""; $("vhUpF").click(); });
+    $("vhUp").addEventListener("click", function () { $("vhUpF").value = ""; docPick($("vhUpF")); });
     $("vhUpF").addEventListener("change", function () { var f = this.files && this.files[0]; this.value = ""; if (!f) return; if (this.files.length > 1) { toast("Upload one document at a time: one expense per voucher."); return; } openVchForm(null); var b = $("vfDocBtn"), l = $("vfDocLn"); if (b && l) vchDoc(f, b, l, true); });
     $("vhCo").addEventListener("change", renderVch); $("vhQ").addEventListener("input", renderVch);
     $("vfBack").addEventListener("click", backToVch); $("vfCancel").addEventListener("click", backToVch); $("vfSave").addEventListener("click", saveVch);

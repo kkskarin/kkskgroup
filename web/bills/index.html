@@ -3,7 +3,12 @@
 <script>/* One page, four apps: the address picks which. /bills/ is the old address of Maintenance. */
 (function () { var seg = location.pathname.split("/")[1] || "";
   if (seg === "bills") { location.replace("/maintenance/" + location.search + location.hash); }
-  window.BV_APP = { maintenance: "mnt", renewable: "re", "bills-vouchers": "bnv", accounts: "acc", finance: "fin", approvals: "apr", tally: "tly" }[seg] || "mnt"; window.BV_HOME = "../"; })();</script>
+  window.BV_APP = { maintenance: "mnt", renewable: "re", "bills-vouchers": "bnv", accounts: "acc", finance: "fin", approvals: "apr", tally: "tly" }[seg] || "mnt"; window.BV_HOME = "../";
+  /* Tally (Demo) installs as an app on phones and computers (Add to Home Screen / Install App) */
+  if (seg === "tally") { var h = document.head, m = function (t, a) { var e = document.createElement(t); for (var k in a) e.setAttribute(k, a[k]); h.appendChild(e); };
+    m("link", { rel: "manifest", href: "/tally.webmanifest" }); m("meta", { name: "apple-mobile-web-app-capable", content: "yes" }); m("meta", { name: "mobile-web-app-capable", content: "yes" }); m("meta", { name: "apple-mobile-web-app-title", content: "KKSK Tally" });
+    window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); window.BV_INSTALL = e; });
+    if ("serviceWorker" in navigator) window.addEventListener("load", function () { navigator.serviceWorker.register("/sw.js", { scope: "/tally/" }).catch(function () {}); }); } })();</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script src="../supabase-runtime.js"></script>
 <link rel="stylesheet" href="../auth.css"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:calc(14px*var(--ts,1)) -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}@media print{html{--ts:1!important}}</style></head><body>
@@ -989,7 +994,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       <div class="hmrow" id="hmMode"><span class="hml">Data</span><div class="modesw" id="modeSw" role="group" aria-label="Data" hidden></div></div>
       <button class="hmi" id="hmApps" type="button" role="menuitem" aria-expanded="false" aria-controls="hmAppsList"><span>All Apps</span><span class="count info" id="hmAppsCt" hidden></span><span class="chev" aria-hidden="true">&#9662;</span></button>
       <div class="hmapps" id="hmAppsList" hidden></div>
-      <button class="hmi" id="hmSet" type="button" role="menuitem"><span>Personalise</span></button>
+      <button class="hmi" id="hmInst" type="button" role="menuitem" hidden><span>Install App</span></button><button class="hmi" id="hmSet" type="button" role="menuitem"><span>Personalise</span></button>
       <button class="hmi" id="hmPw" type="button" role="menuitem" hidden><span>Password</span></button>
       <button class="hmi out" id="hmOut" type="button" role="menuitem"><span>Sign Out</span></button>
     </div></div>
@@ -3380,7 +3385,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var p = $("hdrPanel"); if (!p.hidden) { hmClose(); return; }
     closeMeMenu(); var old = document.querySelector(".vamenu"); if (old) old.remove();
     p.hidden = false; $("hdrMenu").setAttribute("aria-expanded", "true"); $("hmAppsList").hidden = true; $("hmApps").setAttribute("aria-expanded", "false");
-    $("hmPw").hidden = true; /* the password is changed in Personalise */ $("hmSet").hidden = !settingsGroup();
+    $("hmPw").hidden = true; /* the password is changed in Personalise */ $("hmSet").hidden = !settingsGroup(); $("hmInst").hidden = !tly() || appInstalled();
     setTimeout(function () { document.addEventListener("click", hmOutside, true); document.addEventListener("keydown", hmKey, true); }, 0);
     var f = p.querySelector(".hmi:not([hidden])"); if (f) f.focus();
   }
@@ -3409,13 +3414,24 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       return window.bvAccount.changeMyPassword(a).then(function () { toast("Password changed. Use it the next time you sign in."); return true; }, function (e) { errOn("hpNew", (e && e.message) || "The password couldn't be changed."); return false; });
     });
   }
+  /* Install App (Tally (Demo)): the browser's own install box where it has one, otherwise the steps for that phone */
+  function appInstalled() { return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true; }
+  function hmInstall() {
+    hmClose(); var ev = window.BV_INSTALL;
+    if (ev) { ev.prompt(); (ev.userChoice || Promise.resolve({})).then(function (c) { window.BV_INSTALL = null; if (c && c.outcome === "accepted") toast("KKSK Tally is being added to this device. Open it from its icon."); }); return; }
+    var ua = navigator.userAgent || "", ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), body = el("div", { class: "mform" }), ol = el("ol", { style: "margin:0;padding-left:20px;line-height:1.7" });
+    (ios ? ["Open this page in Safari.", "Tap the Share button (the square with an arrow pointing up).", "Tap \u201cAdd to Home Screen\u201d, then \u201cAdd\u201d."]
+         : ["Open this page in Chrome.", "Tap the \u22ee menu at the top right.", "Tap \u201cInstall app\u201d or \u201cAdd to Home screen\u201d, then \u201cInstall\u201d."]).forEach(function (t) { ol.appendChild(el("li", null, t)); });
+    body.appendChild(ol); body.appendChild(el("p", { class: "hint", style: "margin:12px 0 0" }, "The KKSK Tally icon then appears with your apps and opens full screen. Sign in once inside it."));
+    popForm("Install App", ios ? "On iPhone or iPad:" : "On this device:", body, "OK", function () { return true; });
+  }
   function hmSignOut() { hmClose(); if (window.bvAccount && window.bvAccount.signOut) window.bvAccount.signOut(); else if (window.bvSupabase) window.bvSupabase.auth.signOut(); }
   document.addEventListener("click", function (e) { var t = e.target && e.target.closest && e.target.closest(".head .sub"); if (t && window.matchMedia("(max-width:760px)").matches && !e.target.closest("a,button")) t.classList.toggle("open"); });
   function hmWire() {
     if (hmWire.done || !$("hdrMenu")) return; hmWire.done = true;
     $("hmenu").hidden = false;
     $("hdrMenu").addEventListener("click", function (e) { e.stopPropagation(); phoneHeader(); hmOpen(); });
-    $("hmApps").addEventListener("click", hmApps); $("hmSet").addEventListener("click", hmSettings); $("hmPw").addEventListener("click", hmPassword); $("hmOut").addEventListener("click", hmSignOut);
+    $("hmApps").addEventListener("click", hmApps); $("hmSet").addEventListener("click", hmSettings); $("hmInst").addEventListener("click", hmInstall); $("hmPw").addEventListener("click", hmPassword); $("hmOut").addEventListener("click", hmSignOut);
   }
   /* Anyone on the shared login can ask the admin for a new profile under it. */
   function openProfileRequest() {

@@ -924,3 +924,9 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   and cleaned to a scanned look (`scanClean`, colour: the background is whitened by dividing each channel by its blurred surroundings, keeping
   stamps; a "bw" mode exists in code but isn't offered). A page in the strip opens with draggable corners, Retake and Apply. The same
   clean-up runs on photos from the phone's own camera in Tally (`flattenPhoto`).
+- **Many-page uploads: Claude sorts, the person attests when it isn't sure.** Every page is sorted (first page of a bill, a later page,
+  a copy, not a bill; supplier and bill number; the turn that makes it upright, in every app now, and `sure`). Pages may be jumbled or
+  upside down. When Claude says it isn't sure of a page, a bill has neither supplier nor number, or two bills look alike, **Check the
+  Pages** opens (`multiReview`): each page with its picture, which bill it belongs to (or New bill / Not a bill), and Turn; "These Are
+  Right: Create the Bills" makes the bills and reads them; Back leaves the file unread with a note. With no doubt the bills are made
+  straight away, as before.

@@ -919,3 +919,8 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   (one PDF, or the "Pages of One Bill / A Bill Each" question for Upload Bills, as before); Light toggles the torch where the phone
   allows it; Cancel or Esc closes. Simpler camera settings are tried in turn; when the camera still can't be started the box says why and
   Take Photo(s) then uses the phone's own camera, one photo at a time.
+  **Scanner-app scanning (no AI, OpenCV):** the page is outlined live as the camera finds it and taken by itself once held still
+  (`scanQuad` on a small copy of each frame, every 160 ms), or by the button; each page is cropped to the paper, squared up (`scanWarp`)
+  and cleaned to a scanned look (`scanClean`: Colour whitens the background by dividing each channel by its blurred surroundings, keeping
+  stamps; B&W is an adaptive threshold). A page in the strip opens with draggable corners, Colour / B&W, Retake and Apply. The same
+  clean-up runs on photos from the phone's own camera in Tally (`flattenPhoto`).

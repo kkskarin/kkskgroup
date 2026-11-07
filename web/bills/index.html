@@ -13382,7 +13382,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       f.appendChild(tidyField("Purpose", tidyBox("caPur", "", "purpose", 300), "What the cash is needed for, in any language."));
       /* every request names its Final Approver (an admin approves the admin's own requests straight away) */
       if (tly()) { CA.D = { companyId: co.value, ppl: tlyPplDef() }; f.appendChild(tlyPplBox(CA.D, "caP", "caCo", function () {})); }
-      else if (!adm()) f.appendChild(fld("Final Approver", approverSelect("caAppr", defaultApprover(meId())), "Who approves this request."));
+      else if (!adm()) f.appendChild(fld("Final Approver", approverSelect("caApprSel", defaultApprover(meId())), "Who approves this request."));
     } else if (mine) { var cs = $("caCo"), cv = cs.value; fillSelect(cs, companyOpts(cv, "cash"), cv); }
     $("caReqTitle").textContent = adm() ? "Request on someone's behalf" : "Ask for a cash advance";
     /* Bills & Vouchers: no cash balances shown; a people search to act on someone's behalf */
@@ -13519,7 +13519,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     else if (adm() && !who) { errOn("caWho", "Choose who it is for."); ok = false; }
     if (n == null || n <= 0) { errOn("caAmt", "Enter the amount needed."); ok = false; }
     if (!pur) { errOn("caPur", "Say what the cash is for."); ok = false; }
-    var apv = !tly() && $("caAppr") ? $("caAppr").value : defaultApprover(who); if (!tly() && !adm() && $("caAppr") && !apv) { errOn("caAppr", "Choose the final approver."); ok = false; }
+    var apv = !tly() && $("caApprSel") ? $("caApprSel").value : defaultApprover(who); if (!tly() && !adm() && $("caApprSel") && !apv) { errOn("caApprSel", "Choose the final approver."); ok = false; }
     if (tly() && CA.D) { CA.D.companyId = cid; tlyPplErrs(CA.D, "caP").forEach(function (e) { errOn(e[0], e[1]); ok = false; }); if (ok) { who = CA.D.ppl.prep; whoName = personName(who); apv = CA.D.ppl.a2; } }
     if (!ok) return;
     var id = newId("ca"), now = Date.now(), doc = { uid: who, name: adm() ? userLabel(who) : whoName || preparedByText(), companyId: cid, amount: round2(n), purpose: pur, approverId: apv || defaultApprover(who) || "", status: "pending", requestedAt: now, requestedBy: meId(), updatedAt: now };

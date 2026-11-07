@@ -13386,7 +13386,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var VPAY_MODES = [["cash", "Cash"], ["cheque", "Cheque"], ["neft", "NEFT / RTGS (bank transfer)"]];
   function vPayMode(v) { return v.payMode || (v.settle ? "cash" : ""); }
   function vPayModeText(v) { var m = vPayMode(v); return m === "cash" ? (v.settle ? "Cash (from cash advance)" : "Cash") : m === "cheque" ? "Cheque" : m === "neft" ? "NEFT / RTGS" : "By financier (not chosen)"; }
-  function allVouchers() { var src = (S.raw && S.raw.vouchers) || S.vouchers || {}; return Object.keys(src).map(function (k) { return Object.assign({ id: k }, src[k]); }).filter(function (v) { return v.status !== "deleted"; }); }
+  function allVouchers() { var src = (S.raw && S.raw.vouchers) || S.vouchers || {}; return Object.keys(src).map(function (k) { return Object.assign({ id: k }, src[k]); }).filter(function (v) { return v.status !== "deleted" && v.status !== "draft"; }); } /* a draft isn't cash paid yet */
   function payeeVouchers(name) { var n = normName(name), c = pyCanon(name), ids = pyIds(name); return n ? allVouchers().filter(function (v) { return pyCanon(v.payee) === c || (v.payeeIdNo && (idNorm(v.payeeIdNo) === ids.pan || idNorm(v.payeeIdNo) === ids.aadhaar)); }).sort(function (a, b) { return natCmp(b.voucherDate || "", a.voucherDate || "") || (b.createdAt || 0) - (a.createdAt || 0); }) : []; }
   function cashLimit(vtype) { return vtype === "Freight & Transport" ? CASH_FREIGHT : CASH_LIMIT; }
   /* The mode a voucher starts with, until the maker picks one: Cash while the day's cash to this payee from this company

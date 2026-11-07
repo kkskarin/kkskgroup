@@ -913,3 +913,4 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   merges objects key by key, so it was never removed and admin pages re-wrote users every minute). `supabase-runtime.js`: a collection
   read that overlaps a write is re-read, so a just-saved change never flashes back. Migration 20261107120000: database write rules —
   users/* only admins (plus a shared login's own profiles), roledefs/* admins, tly__* Super Admin and Chief Accountant, audit/* append-only.
+  Preview only: a Tally voucher draft is left out of the daily cash totals (`allVouchers`).

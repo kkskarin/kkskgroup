@@ -919,14 +919,16 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   (one PDF, or the "Pages of One Bill / A Bill Each" question for Upload Bills, as before); Light toggles the torch where the phone
   allows it; Cancel or Esc closes. Simpler camera settings are tried in turn; when the camera still can't be started the box says why and
   Take Photo(s) then uses the phone's own camera, one photo at a time.
-  **Scanner-app scanning (no AI, OpenCV):** the page is outlined live as the camera finds it and taken by itself once held still
-  (`scanQuad` on a small copy of each frame, every 160 ms), or by the button; each page is cropped to the paper, squared up (`scanWarp`)
-  and cleaned to a scanned look (`scanClean`, colour: the background is whitened by dividing each channel by its blurred surroundings, keeping
-  stamps; a "bw" mode exists in code but isn't offered). A page in the strip opens with draggable corners, Retake and Apply. The same
-  clean-up runs on photos from the phone's own camera in Tally (`flattenPhoto`).
+  Taking pictures is plain: the camera stays open, a tap takes a page, the pages line up below each with × to delete, Done hands
+  them over. Straightening and cleaning (`scanQuad` / `scanWarp` / `scanClean`, OpenCV, no AI) run when the upload is read in
+  Tally (`flattenPhoto`), not while taking pictures.
 - **Many-page uploads: Claude sorts, the person attests when it isn't sure.** Every page is sorted (first page of a bill, a later page,
   a copy, not a bill; supplier and bill number; the turn that makes it upright, in every app now, and `sure`). Pages may be jumbled or
   upside down. When Claude says it isn't sure of a page, a bill has neither supplier nor number, or two bills look alike, **Check the
   Pages** opens (`multiReview`): each page with its picture, which bill it belongs to (or New bill / Not a bill), and Turn; "These Are
   Right: Create the Bills" makes the bills and reads them; Back leaves the file unread with a note. With no doubt the bills are made
   straight away, as before.
+- **Tally (Demo) › Approvals** is laid out by state first: main tabs Pending Final Approval, Pending Checker Approval, Postponed
+  Payments, Approval History; under each, the purchase types All Purchase Types (opens first: Bills, Vouchers, Proformas and Imports
+  each under its heading), Bills, Vouchers, Proformas, Imports, Cash Advances (tab keys "Appr <state> <kind>", `TLY_APST` × `TLY_APK`;
+  `AP.k` "all" renders `apRenderList` per kind).

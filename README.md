@@ -870,7 +870,7 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   always the latest, and with no connection it shows a "No internet connection" page with Try Again. The three-line menu has
   **Install App** (Tally (Demo) only, hidden once installed): the browser's own install box where it offers one (Chrome, Edge),
   otherwise the steps (iPhone / iPad: Safari › Share › Add to Home Screen; Android: Chrome › ⋮ › Install app). Other apps are unchanged.
-  On an iPhone the strip under the clock is solid (white, or the dark surface in dark mode; `body::before`, the safe-area height), so the page never shows blurred behind it.
+  On an iPhone the app runs under the clock (`black-translucent`) with a solid KKSK dark-green strip there (`body::before`, the safe-area height; near-black in dark mode), so iOS draws no frosted bar and nothing shows blurred behind it.
 - **Adding documents on phones** (`docPick`, every upload: Upload Bills, a bill's file, Upload Document and a voucher's document,
   an advance's file, cheque templates): **Take Photo(s)** opens the camera again and again (the photos so far are shown, each with ×;
   Done, Take Another Photo, Cancel) and **Choose File(s)** picks several at once (on computers too). Where one document is kept,

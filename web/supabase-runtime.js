@@ -260,8 +260,22 @@
 
   /* Everyone signed in gets into the app. People not approved yet see its "Ask for Access" screen;
      the database only shows them what that screen needs. */
-  function admit(session, resolve) {
+  function admit(session, resolve, retried) {
+    /* a stored session whose token has run out (the app was closed for long): refresh it first, rather than asking with a dead token */
+    var exp = session && session.expires_at ? session.expires_at * 1000 : 0;
+    if (!retried && exp && exp < Date.now() + 30000) {
+      return sb.auth.refreshSession().then(function (x) {
+        if (!x.error && x.data && x.data.session) return admit(x.data.session, resolve, true);
+        return sb.auth.signOut().catch(function () {}).then(function () { onBody(function () { signInForm(resolve, "signin", "Your sign-in had expired. Please sign in again."); }); });
+      });
+    }
     return sb.rpc("app_whoami").then(function (r) {
+      if (r.error && !retried && /jwt|expired|token/i.test(r.error.message || "")) {
+        return sb.auth.refreshSession().then(function (x) {
+          if (!x.error && x.data && x.data.session) return admit(x.data.session, resolve, true);
+          return sb.auth.signOut().catch(function () {}).then(function () { onBody(function () { signInForm(resolve, "signin", "Your sign-in had expired. Please sign in again."); }); });
+        });
+      }
       if (r.error) { onBody(function () { signInForm(resolve, "signin", "Couldn't check your access (" + r.error.message + "). Try again."); }); return; }
       var w = r.data || {};
       ME = { authId: session.user.id, uid: w.uid, email: w.email, super: !!w.super, member: !!w.member, name: "" };

@@ -932,3 +932,6 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   Payments, Approval History; under each, the purchase types All Purchase Types (opens first: Bills, Vouchers, Proformas and Imports
   each under its heading), Bills, Vouchers, Proformas, Imports, Cash Advances (tab keys "Appr <state> <kind>", `TLY_APST` × `TLY_APK`;
   `AP.k` "all" renders `apRenderList` per kind).
+- **Sign-in after a long gap:** a stored session whose token has expired is refreshed before the access check (`admit`), and an
+  access check that still answers "JWT expired" refreshes once and retries; if the refresh fails the person is signed out cleanly and
+  asked to sign in again (instead of "Couldn't check your access (JWT expired)").

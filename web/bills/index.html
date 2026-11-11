@@ -1354,7 +1354,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   <section id="secSol" hidden><div id="solBody"></div></section>
 
   <section id="secCashAppr" hidden>
-    <div class="head"><div><h2>Cash Advances</h2><p class="sub" id="capSub"></p></div><span class="grow"></span>
+    <div class="head"><div><h2>Advances / Allocation Requests</h2><p class="sub" id="capSub"></p></div><span class="grow"></span>
       <select class="field" id="capWho" aria-label="Assigned to" style="width:auto;min-width:200px;margin-right:8px" hidden></select><select class="field" id="capDiv" aria-label="Filter by division" style="width:auto;min-width:180px"></select></div>
     <h3 style="margin-top:4px">Waiting for approval <span id="capPendN"></span></h3>
     <div class="card list scroll" id="capPend"></div>
@@ -1562,7 +1562,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
 
   <section id="secCash" hidden>
     <div class="head">
-      <div><h2>Cash Advance</h2><p class="sub" id="caSub"></p></div>
+      <div><h2>Advance / Allocation</h2><p class="sub" id="caSub"></p></div>
       <div class="acts2"><button class="btn" id="caCopy" type="button" hidden>Copy a Live Cash Advance</button></div>
     </div>
     <div class="card" id="caPpl" hidden style="padding:16px 20px;margin-bottom:16px">
@@ -1578,7 +1578,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     </div>
     <h3>Waiting for approval <span id="caPendN"></span></h3>
     <div class="card list scroll" id="caPend"></div>
-    <h3>Approved, to be paid by the financier <span id="caApprN"></span></h3>
+    <h3>Approved: with the Financier <span id="caApprN"></span></h3>
     <p class="sub" id="caApprSub" style="margin:-4px 0 10px">The financier pays these out from Payments › Advance Requests; each counts in the balance from then.</p>
     <div class="card list scroll" id="caAppr"></div>
     <div id="caBalW"><h3>Cash balances</h3>
@@ -1725,6 +1725,9 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     <h3>Advances Asked For <span id="asOpenN"></span></h3>
     <p class="sub" style="margin:-4px 0 10px">The balance when asked is what the person already held at the time of the request.</p>
     <div class="card list scroll" id="asOpen"></div>
+    <h3>Cash Allocations <span id="asAllocN"></span></h3>
+    <p class="sub" style="margin:-4px 0 10px">Amounts approved and kept with the Financier for a person, paid out against their approved vouchers and bills. Allocated, used so far and what is left.</p>
+    <div class="card list scroll" id="asAlloc"></div>
     <h3>Advance Ageing (AS Ageing) Summary</h3>
     <div class="card list scroll" id="asAge"></div>
   </section>
@@ -2076,7 +2079,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var REP_TABS = { h: "Reports", tabs: [["Transactions", "Transactions"], ["Payables", "Payables"]].concat(APP === "re" ? [["Solar Reports", "P&L"]] : []) };
   var SALES_TABS = { h: "Sales", tabs: [["Solar Month", "Monthly Billing"], ["Solar Invoices", "Invoices"]] };
   /* Bills & Vouchers only enters: no checking reports (each entry goes to Approvals by itself), no proformas or imports. */
-  var EXP_TABS = { h: "Expenses", tabs: APP === "bnv" ? [["All Entries", "All Bills & Vouchers"], ["Bills", "Enter Bills"], ["Cash Voucher", "Cash Vouchers"], ["Cash Advance", "Cash Advance"]] : [["Bills", "Enter Bills"], ["Checking Report", "Bill Checking"], ["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance Checking"], ["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Voucher Checking"], ["Cash Advance", "Cash Advance"]] };
+  var EXP_TABS = { h: "Expenses", tabs: APP === "bnv" ? [["All Entries", "All Bills & Vouchers"], ["Bills", "Enter Bills"], ["Cash Voucher", "Cash Vouchers"], ["Cash Advance", "Advance / Allocation"]] : [["Bills", "Enter Bills"], ["Checking Report", "Bill Checking"], ["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance Checking"], ["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Voucher Checking"], ["Cash Advance", "Advance / Allocation"]] };
   var ACC_TABS = { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Statements"]] };
   var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Requests", "Advance Requests"], ["Advance Summary", "Advances"], ["Salary", "Salary"]] };
   /* Masters: its own heading. Companies first, then (Renewable Energy) Consumers and PPA Rates, then Vendors and Ledgers. */
@@ -2093,7 +2096,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     bnv: [REP_TABS, EXP_TABS, MAS_TABS, { h: "Settings", tabs: SET_ALL.tabs.slice(0, 4).concat([["Templates", "Templates", true]], SET_ALL.tabs.slice(4)) }],
     acc: [REP_TABS, ACC_TABS, MAS_TABS, SET_ALL],
     fin: [REP_TABS, PAY_TABS, MAS_TABS, SET_ALL],
-    apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Cash Advances"]] }, SET_TABS],
+    apr: [{ h: "Approvals", tabs: [["Approvals", "Checking Reports"], ["Cash Approvals", "Advances / Allocation Requests"]] }, SET_TABS],
     /* Tally (Demo): purchaser, accountant and financier, nothing else; masters to look up */
     tly: [{ h: "Purchase", tabs: [["Bills", "Bill Entry", 0, "Bills"], ["Bill Sub", "Submitted Bills", 0, "Bills"], ["Bill All", "All Bills", 0, "Bills"], ["Cash Voucher", "Voucher Entry", 0, "Vouchers"], ["Vch Sub", "Submitted Vouchers", 0, "Vouchers"], ["Vch All", "All Vouchers", 0, "Vouchers"], ["Plan Advance", "Proforma Entry", 0, "Proformas"], ["Advance Report", "Advance Checking", 0, "Proformas"], ["Imports", "Import Entry", 0, "Imports"], ["Imp Duty", "Duties & Customs", 0, "Imports"], ["Advance Report Imp", "Advance Checking", 0, "Imports"], ["Cash Advance", "Cash Advances"]] }, { h: "Sales", tabs: [["Sales T", "Sales Entry"]] }, { h: "Accounts", tabs: [["Accounts", "Purchase"], ["Sales Acct", "Sales"], ["Verify", "Verification"]] }, { h: "Approvals", tabs: TLY_APST.reduce(function (o, st) { return o.concat(TLY_APK.map(function (k) { return ["Appr " + st[0] + k[0], k[1], 0, st[1]]; })); }, []) }, { h: "Finance", tabs: [["Mark Transaction", "Plan"], ["Pay Record", "Record"], ["Advance Requests", "Cash Advances"]] },
       { h: "Reports", tabs: [["Transactions", "Transactions", 0, "Purchase"], ["Ledger Books", "Ledger Statements", 0, "Accounts"], ["Vendor Stmt", "Vendor Statement", 0, "Accounts"], ["Payables", "Payables", 0, "Finance"]].concat(MASTERS, [BANK_TAB, CHQ_TAB, ["HSN", "HSN / SAC", 0, "m"], ["Tally DL", "Transactions", 0, "Tally Downloads"], ["Tally DLM", "Masters", 0, "Tally Downloads"], ["AI Use", "AI Usage Credits"]]) }, { h: "Settings", tabs: [["Personalise", "Personalise"]] }]
@@ -9863,7 +9866,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var pend = capPending().sort(function (a, b) { return (a.requestedAt || 0) - (b.requestedAt || 0); });
     var appr = caList().filter(function (a) { return a.status === "approved" && capMine(a); }).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); });
     $("capPendN").textContent = pend.length ? "(" + pend.length + ")" : "";
-    var who = { label: "Person", kind: "co", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, coLabel(a.companyId) + " · " + divName(a) + " · asked " + stamp(a.requestedAt)); } };
+    var who = { label: "Person", kind: "co", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, coLabel(a.companyId) + " · " + divName(a) + " · asked " + stamp(a.requestedAt)); td.appendChild(caTypeTag(a)); } };
     var pur = { label: "Purpose", cls: "desc", cell: function (a, td) { txt(td, a.purpose || ""); if (a.note) sub(td, "Note: " + a.note); } };
     var box = $("capPend"); box.textContent = "";
     if (!pend.length) box.appendChild(el("div", { class: "empty" }, "No requests waiting."));
@@ -9873,8 +9876,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           { var no = el("button", { class: "btn sm danger" }, "Decline"); no.addEventListener("click", function () { caDecline(a, no); }); w.appendChild(no); }
           td.appendChild(w); } }]), pend, { sortIndex: -1 });
     box = $("capAppr"); box.textContent = "";
-    if (!appr.length) box.appendChild(el("div", { class: "empty" }, "Nothing approved is waiting to be paid."));
-    else sortTable(box, "capAppr", [who, { label: "Approved", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.approvedAmount))); sub(td, fmtDay(a.approvedAt) + (Number(a.approvedAmount) !== Number(a.amount) ? ", asked " + money(a.amount) : "")); } }, pur,
+    if (!appr.length) box.appendChild(el("div", { class: "empty" }, "Nothing approved is waiting to be paid or allocated."));
+    else sortTable(box, "capAppr", [who, { label: "Approved", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.approvedAmount))); sub(td, fmtDay(a.approvedAt) + (Number(a.approvedAmount) !== Number(a.amount) ? ", asked " + money(a.amount) : "")); if (caType(a) === "car") sub(td, "Allocation: used " + money(allocUsed(a)) + ", " + money(allocRemain(a)) + " left"); } }, pur,
       { label: "Approval", cls: "desc", cell: function (a, td) { txt(td, apprByText(a)); } },
       { label: "", kind: "act", cls: "r", cell: function (a, td) { if (!S.isAdmin) return; var u = el("button", { class: "btn sm" }, "Undo approval"); u.addEventListener("click", function () { caUndo(a, u, "pending"); }); td.appendChild(u); } }], appr, { sortIndex: -1 });
   }
@@ -11367,7 +11370,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       var vendorAlloc = {}, vendorAmt = 0, others = [];
       g.items.forEach(function (it) { if (!MK.pl.sel[it.key]) return; var a = plAmt(it); if (a <= 0.004) return; if (it.it) { vendorAmt += a; if (it.it.b) vendorAlloc[it.it.b.id] = round2((vendorAlloc[it.it.b.id] || 0) + a); } else others.push({ it: it, a: a }); });
       var extra = { mode: mode, ref: ref, chequeId: chqId, bankAcctId: bank ? bank.id : null, chequeTpl: tp ? tp.id : null, acPayee: ack, planned: true };
-      function txDoc(base, amount, more) { return Object.assign({}, base, { kind: "payment", amount: round2(amount), rate: null, inr: null, date: d, reason: "", note: "", billId: null, updatedAt: now, updatedBy: meId(), createdAt: now, createdBy: meId(), byName: preparedByText() }, extra, more || {}); }
+      function txDoc(base, amount, more) { var d0 = Object.assign({}, base, { kind: "payment", amount: round2(amount), rate: null, inr: null, date: d, reason: "", note: "", billId: null, updatedAt: now, updatedBy: meId(), createdAt: now, createdBy: meId(), byName: preparedByText() }, extra, more || {}); d0.allocId = allocFor(d0) || null; return d0; }
       var docs = [];
       if (vendorAmt > 0.004) docs.push(txDoc({ companyId: g.cid, vendorId: g.vid, currency: g.cur }, vendorAmt, Object.keys(vendorAlloc).length ? { billAlloc: vendorAlloc } : {}));
       others.forEach(function (o) { docs.push(txDoc(txBase(o.it.row), o.a)); });
@@ -11493,6 +11496,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     if (doc.kind === "payment" && (doc.mode === "cash" || doc.mode === "advance")) doc.cashCheck = cashRec(payCash(Object.assign({ cid: doc.companyId, vid: doc.vendorId || "", payee: doc.payee || (x && x.payee) || "", voucherId: doc.voucherId || "" }, x && x.voucherIds ? { voucherIds: x.voucherIds } : {}), doc.amount, doc.date, id));
     else doc.cashCheck = null;
     if (!old && x && x.type === "vendor" && x.items && doc.kind === "payment" && !doc.billId) { var al = mkAlloc(x, doc.amount); if (al) doc.billAlloc = al; }
+    if (!old && doc.kind === "payment") doc.allocId = allocFor(doc) || null; /* counts against the beneficiary's open cash allocation, if any */
     if (old && old.billAlloc && (doc.billId !== (old.billId || null) || Math.abs((Number(doc.amount) || 0) - (Number(old.amount) || 0)) > 0.004)) doc.billAlloc = null; /* re-allocated by the ledger */
     id = id || newId("t");
     MK.busy = true;
@@ -12217,7 +12221,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   }
   /* Advances asked for or approved, not yet paid, with the balance when asked and the cash on hand now. */
   function asOpenAdvances() {
-    return caList().filter(function (a) { return (a.status === "approved" || a.status === "pending") && canSee(a.companyId) && (S.isAdmin || canViewPay(a.companyId)); })
+    return caList().filter(function (a) { return (a.status === "approved" || a.status === "pending") && !(a.status === "approved" && caType(a) === "car") && canSee(a.companyId) && (S.isAdmin || canViewPay(a.companyId)); })
       .map(function (a) { var cb = cashBalance(a.uid, a.companyId); return { a: a, cid: a.companyId, prep: a.uid, prepName: caName(a), ven: "", appr: a.approvedBy || "", date: "", atAsk: cashBalanceAt(a.uid, a.companyId, a.requestedAt || Date.now()), cb: cb, ag: asAgeing(a.uid, a.companyId) }; })
       .sort(function (x, y) { return (x.a.status === "approved" ? 0 : 1) - (y.a.status === "approved" ? 0 : 1) || (x.a.approvedAt || x.a.requestedAt || 0) - (y.a.approvedAt || y.a.requestedAt || 0); });
   }
@@ -12231,8 +12235,20 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     ppl.forEach(function (p) { tot.op += p.cb.opening; tot.rec += p.cb.received; tot.set += p.cb.settled; tot.pend += p.cb.pending; tot.bal += p.cb.balance; tot.free += p.cb.free; AS_AGE.forEach(function (a) { tot[a[0]] += p.ag[a[0]]; }); if (p.ag.oldest > oldest) oldest = p.ag.oldest; });
     Object.keys(tot).forEach(function (k) { tot[k] = round2(tot[k]); });
     var toPay = open.filter(function (r) { return r.a.status === "approved"; }), toPayAmt = round2(toPay.reduce(function (s0, r) { return s0 + (Number(r.a.approvedAmount) || 0); }, 0));
+    var alls = allocList().filter(function (a) { return canSee(a.companyId) && (S.isAdmin || canViewPay(a.companyId)) && msPass("as", { cid: a.companyId, prep: a.uid }, true); }), alRem = round2(alls.reduce(function (s0, a) { return s0 + allocRemain(a); }, 0));
+    var finCos = sorted().filter(function (c) { return canSee(c.id) && (S.isAdmin || canViewPay(c.id)) && msPass("as", { cid: c.id, prep: "" }, true); }), finCash = round2(finCos.reduce(function (s0, c) { return s0 + regAll(c.id); }, 0));
     statBoxes($("asStats"), [["Cash on hand", money(tot.free), plural(ppl.filter(function (p) { return Math.abs(p.cb.balance) > 0.004; }).length, "person") + " holding cash"], ["Settled", money(tot.set), tot.pend ? money(tot.pend) + " waiting for approval" : "By approved vouchers"],
-      ["Advances to pay", money(toPayAmt), plural(toPay.length, "approved advance")], ["Oldest cash", asOldestText(oldest), tot.a60p ? money(tot.a60p) + " over 60 days" : ""]]);
+      ["Advances to pay", money(toPayAmt), plural(toPay.length, "approved advance")], ["Allocated", money(alRem), plural(alls.length, "open allocation") + " with the Financier"], ["Financier cash", money(finCash), "Withdrawn, less handed over and paid in cash"], ["Oldest cash", asOldestText(oldest), tot.a60p ? money(tot.a60p) + " over 60 days" : ""]]);
+    $("asAllocN").textContent = alls.length ? "(" + alls.length + ")" : "";
+    var abx = $("asAlloc");
+    if (!alls.length) { abx.textContent = ""; abx.appendChild(el("div", { class: "empty" }, "No cash allocation is open.")); }
+    else sortTable(abx, "asAlloc", [
+      { label: "Person", kind: "co", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, coLabel(a.companyId) + " · approved " + fmtDay(a.approvedAt)); } },
+      { label: "Allocated", cls: "r num", sort: function (a) { return allocTotal(a); }, desc: true, cell: function (a, td) { td.appendChild(el("b", null, money(allocTotal(a)))); var mi = allocMovedIn(a), mo = allocMovedOut(a); if (mi || mo) sub(td, (mi ? "+" + money(mi) + " in" : "") + (mi && mo ? ", " : "") + (mo ? "−" + money(mo) + " out" : "")); } },
+      { label: "Used", cls: "r num", sort: function (a) { return allocUsed(a); }, desc: true, cell: function (a, td) { txt(td, money(allocUsed(a))); sub(td, plural(allocPays(a).length, "payment")); } },
+      { label: "Remaining", cls: "r num", sort: function (a) { return allocRemain(a); }, desc: true, cell: function (a, td) { var r = allocRemain(a); td.appendChild(el("b", r < -0.004 ? { style: "color:var(--bad)" } : null, money(r))); } },
+      { label: "Purpose", cls: "desc", cell: function (a, td) { txt(td, a.purpose || ""); if (a.note) sub(td, "Approver: " + a.note); } }
+    ], alls, { sortIndex: 1, sortDir: -1 });
     $("asXls").disabled = !ppl.length || !S.downloads;
     /* advances waiting */
     $("asOpenN").textContent = open.length ? "(" + open.length + ")" : "";
@@ -13854,9 +13870,49 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var CA = { busy: false };
   function caVisible(a) { return adm() || tly() || a.uid === meId() || (APP === "bnv" && (a.requestedBy === meId() || !!(S.vpeople || {})[a.uid])); }
   function caName(a) { return pnm(a.name) || (adm() ? userLabel(a.uid) : preparedByText()); }
+  /* ---- Two kinds of request (live): an Expense Advance (cash handed to the person, "ear"; every older request) and a Cash
+     Allocation ("car": the approved amount stays with the financier, reserved for that person, and is released as their
+     vouchers and bills are approved and paid in Payment Entry). An allocation is the cashadv doc itself: approved amount,
+     moves in and out (allocMoves), the payments linked to it (transactions.allocId) and, when done, allocClosed. ---- */
+  var CA_TYPES = [["car", "Cash Allocation"], ["ear", "Expense Advance"]];
+  function caType(a) { return a && a.rtype === "car" ? "car" : "ear"; }
+  function caTypeName(a) { return caType(a) === "car" ? "Cash Allocation" : "Expense Advance"; }
+  function caTypeTag(a) { return el("span", { class: "tag stg " + (caType(a) === "car" ? "s-generated" : "s-tds"), style: "margin-top:4px" }, caTypeName(a)); }
+  function allocList(cid, uid) { return caList().filter(function (a) { return caType(a) === "car" && a.status === "approved" && (!cid || a.companyId === cid) && (!uid || a.uid === uid); }); }
+  function allocMovedIn(a) { return round2((a.allocMoves || []).reduce(function (s0, m) { return s0 + (m.dir === "in" ? Number(m.amt) || 0 : 0); }, 0)); }
+  function allocMovedOut(a) { return round2((a.allocMoves || []).reduce(function (s0, m) { return s0 + (m.dir === "out" ? Number(m.amt) || 0 : 0); }, 0)); }
+  function allocTotal(a) { return round2((Number(a.approvedAmount) || 0) + allocMovedIn(a) - allocMovedOut(a)); }
+  function allocPays(a) { return txList().filter(function (t) { return t.allocId === a.id && t.kind === "payment"; }); }
+  function allocUsed(a) { return round2(allocPays(a).reduce(function (s0, t) { return s0 + (Number(t.amount) || 0); }, 0)); }
+  function allocRemain(a) { return round2(allocTotal(a) - allocUsed(a)); }
+  /* whose expense a payment settles: the preparer of its voucher, bill(s), proforma / import or duty */
+  function txBeneficiary(d) {
+    if (d.voucherId && S.vouchers[d.voucherId]) return prepOf(S.vouchers[d.voucherId]);
+    if (d.vcrId && S.reports[d.vcrId]) { var v0 = ((S.reports[d.vcrId].voucherIds || []).map(function (id) { return S.vouchers[id]; }).filter(Boolean))[0]; return v0 ? prepOf(v0) : ""; }
+    if (d.advanceId && S.advances[d.advanceId]) return prepOf(S.advances[d.advanceId]);
+    if (d.dutyId && S.duties && S.duties[d.dutyId]) return prepOf(S.duties[d.dutyId]);
+    var ids = Object.keys(d.billAlloc || {}); if (d.billId) ids.unshift(d.billId);
+    for (var i = 0; i < ids.length; i++) if (S.bills[ids[i]]) return prepOf(S.bills[ids[i]]);
+    return "";
+  }
+  /* the open allocation a new payment counts against: the beneficiary's oldest allocation with something left (else the oldest open one) */
+  function allocFor(d) {
+    var uid = txBeneficiary(d); if (!uid || !d.companyId) return null;
+    var open = allocList(d.companyId, uid).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); }); if (!open.length) return null;
+    var left = open.filter(function (a) { return allocRemain(a) > 0.004; }); return (left[0] || open[0]).id;
+  }
+  /* The financier's cash register, per company: withdrawals and cash returned to them, less hand-overs and cash payments they
+     recorded. Cash payments and returns count from CASH_REG_FROM (before that the app didn't keep this register). */
+  var CASH_REG_FROM = Date.UTC(2026, 10, 11);
+  function regCashPays(cid, uid) { return round2(txList().reduce(function (s0, t) { return s0 + (t.kind === "payment" && t.mode === "cash" && t.companyId === cid && t.createdBy === uid && (t.createdAt || 0) >= CASH_REG_FROM ? Number(t.amount) || 0 : 0); }, 0)); }
+  function regReturns(cid, uid) { return round2(caList().reduce(function (s0, a) { return s0 + (a.status === "returned" && a.companyId === cid && a.returnedBy === uid && (a.returnedAt || 0) >= CASH_REG_FROM ? Number(a.returnedAmount) || 0 : 0); }, 0)); }
+  function regFinanciers(cid) { var m = {}; wdList().forEach(function (x) { if (x.companyId === cid && x.uid) m[x.uid] = 1; }); caList().forEach(function (a) { if (a.companyId === cid && a.status === "returned" && a.returnedBy) m[a.returnedBy] = 1; }); return Object.keys(m); }
+  function regAll(cid) { return round2(regFinanciers(cid).reduce(function (s0, u) { return s0 + wdHeld(cid, u); }, 0)); }
+  /* what a company's cash is committed to: open allocations' remaining and approved advances not yet handed over */
+  function regCommitted(cid) { var r = 0; allocList(cid).forEach(function (a) { r += Math.max(0, allocRemain(a)); }); caList().forEach(function (a) { if (a.companyId === cid && a.status === "approved" && caType(a) !== "car") r += Number(a.approvedAmount) || 0; }); return round2(r); }
   function renderCash() {
     $("caCopy").hidden = !tly(); if (tly()) $("caApprSub").textContent = "Finance hands these over under Finance › Cash Advances; each counts in the balance from then.";
-    $("caSub").textContent = adm() ? "Cash advances people ask for. They are approved in the Approvals app; an approved advance counts in their balance once the financier pays it in Payment Entry." : "Ask the admin for a cash advance. Once approved, the financier pays it out; it is added to your balance then.";
+    $("caSub").textContent = adm() ? "Expense advances and cash allocations people ask for. They are approved in the Approvals app; an advance counts in the person's balance once the Financier hands it over; an allocation stays with the Financier and is paid out against their approved vouchers and bills." : "Ask for a Cash Allocation (the normal way: the money stays with the Financier, reserved for you, and is paid out against your approved vouchers and bills) or an Expense Advance (cash handed to you, for urgent outstation expenses).";
     var mine = !adm() && canDo("cash"); /* admins approve; to ask for someone, switch to their profile */
     $("caReqCard").hidden = !mine;
     $("caSend").textContent = adm() ? "Request for this person" : "Send request";
@@ -13872,13 +13928,16 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
         f.appendChild(fld("For", prepSelect("caWho", "cash", co.value, "", "Choose the person"), "Who the cash advance is for. Only people given cash advance for this company are listed."));
         co.addEventListener("change", function () { var o = $("caWho"), n = prepSelect("caWho", "cash", co.value, "", "Choose the person"); o.parentNode.replaceChild(n, o); });
       }
+      if (!tly()) { var ty = el("select", { class: "field", id: "caType" }); fillSelect(ty, CA_TYPES, "car"); f.appendChild(fld("Type of Request", ty, "Cash Allocation: the amount stays with the Financier, reserved for you, and is paid out against your approved vouchers and bills (the normal way in Erode). Expense Advance: cash handed to you, for urgent outstation expenses only."));
+        var bl = el("div", { class: "hint", id: "caBalLn", hidden: "", style: "grid-column:1/-1;margin:-4px 0 6px" }); f.appendChild(bl); f.addEventListener("change", function (e) { var id0 = e.target && e.target.id; if (id0 === "caCo" || id0 === "caFor" || id0 === "caWho" || id0 === "caType") caBalHint(); }); }
       f.appendChild(fld("Amount (₹)", inp("caAmt", "", { inputmode: "decimal", class: "field num" })));
       f.appendChild(tidyField("Purpose", tidyBox("caPur", "", "purpose", 300), "What the cash is needed for, in any language."));
       /* every request names its Final Approver (an admin approves the admin's own requests straight away) */
       if (tly()) { CA.D = { companyId: co.value, ppl: tlyPplDef() }; f.appendChild(tlyPplBox(CA.D, "caP", "caCo", function () {})); }
       else if (!adm()) f.appendChild(fld("Final Approver", approverSelect("caApprSel", defaultApprover(meId())), "Who approves this request."));
     } else if (mine) { var cs = $("caCo"), cv = cs.value; fillSelect(cs, companyOpts(cv, "cash"), cv); }
-    $("caReqTitle").textContent = adm() ? "Request on someone's behalf" : "Ask for a cash advance";
+    if (mine && !tly()) caBalHint();
+    $("caReqTitle").textContent = adm() ? "Request on someone's behalf" : "Ask for an advance or allocation";
     /* Bills & Vouchers: no cash balances shown; a people search to act on someone's behalf */
     $("caBalW").hidden = APP === "bnv"; $("caPpl").hidden = !(APP === "bnv" && mine); if (APP === "bnv" && mine) renderPeople();
     if (tly()) { $("caSub").textContent = "Cash advances asked for, for the person named in Prepared By. They are approved under Approvals › Cash Advances (the amount can be cut) and handed over under Finance › Cash Advances; vouchers paid from the cash settle them."; $("caReqTitle").textContent = "Ask for a cash advance"; }
@@ -13886,11 +13945,11 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var all = caList().filter(function (a) { return caVisible(a) && canSee(a.companyId); });
     var pend = all.filter(function (a) { return a.status === "pending"; }).sort(function (a, b) { return (a.requestedAt || 0) - (b.requestedAt || 0); });
     var appr = all.filter(function (a) { return a.status === "approved"; }).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); });
-    var hist = all.filter(function (a) { return a.status === "received" || a.status === "declined" || a.status === "returned"; }).sort(function (a, b) { return (b.receivedAt || b.returnedAt || b.declinedAt || 0) - (a.receivedAt || a.returnedAt || a.declinedAt || 0); });
+    var hist = all.filter(function (a) { return a.status === "received" || a.status === "declined" || a.status === "returned" || a.status === "closed"; }).sort(function (a, b) { return (b.receivedAt || b.returnedAt || b.declinedAt || 0) - (a.receivedAt || a.returnedAt || a.declinedAt || 0); });
     $("caPendN").textContent = pend.length ? "(" + pend.length + ")" : ""; $("caApprN").textContent = appr.length ? "(" + appr.length + ")" : "";
     var who = { label: "Person", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, "Asked " + stamp(a.requestedAt)); } };
     var coC = { label: "Company", cell: function (a, td) { td.appendChild(el("b", null, coLabel(a.companyId))); } };
-    var pur = { label: "Purpose", cls: "desc", cell: function (a, td) { txt(td, a.purpose || ""); if (a.note) sub(td, (tly() ? "Approver: " : "Admin: ") + a.note); if (tly() && a.apprRej) sub(td, "Returned: " + (a.apprRej.reason || "") + (a.apprRej.byName ? " (" + a.apprRej.byName + ")" : ""), "color:var(--bad);font-weight:600"); } };
+    var pur = { label: "Purpose", cls: "desc", cell: function (a, td) { txt(td, a.purpose || ""); if (!tly()) td.appendChild(caTypeTag(a)); if (a.note) sub(td, (tly() ? "Approver: " : "Admin: ") + a.note); if (tly() && a.apprRej) sub(td, "Returned: " + (a.apprRej.reason || "") + (a.apprRej.byName ? " (" + a.apprRej.byName + ")" : ""), "color:var(--bad);font-weight:600"); } };
     var box = $("caPend");
     if (!pend.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "No requests waiting.")); }
     else sortTable(box, "caPend", [who, coC, { label: "Amount asked", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.amount))); } }].concat(adm() ? caCashCols() : []).concat([pur,
@@ -13901,8 +13960,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           else if (a.uid === meId()) { var cx = el("button", { class: "btn sm" }, "Withdraw"); cx.addEventListener("click", function () { caDelete(a, cx); }); w.appendChild(cx); }
           td.appendChild(w); } }]), pend, { sortIndex: -1 });
     box = $("caAppr");
-    if (!appr.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nothing approved is waiting to be paid.")); }
-    else sortTable(box, "caAppr", [who, coC, { label: "Approved", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.approvedAmount))); sub(td, fmtDay(a.approvedAt) + (Number(a.approvedAmount) !== Number(a.amount) ? ", asked " + money(a.amount) : "")); } }, pur,
+    if (!appr.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nothing approved is waiting to be paid or allocated.")); }
+    else sortTable(box, "caAppr", [who, coC, { label: "Approved", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(a.approvedAmount))); sub(td, fmtDay(a.approvedAt) + (Number(a.approvedAmount) !== Number(a.amount) ? ", asked " + money(a.amount) : "")); if (caType(a) === "car") { sub(td, "Allocated " + money(allocTotal(a)) + " · used " + money(allocUsed(a))); sub(td, money(allocRemain(a)) + " with the Financier", allocRemain(a) < -0.004 ? "color:var(--bad);font-weight:600" : "font-weight:600"); } } }, pur,
       { label: "", kind: "act", cls: "r", cell: function (a, td) {
           var w = el("div", { class: "acts" });
           td.appendChild(w); } }], appr, { sortIndex: -1 });
@@ -14003,6 +14062,21 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       { label: "Where it is", cell: function (b, td) { txt(td, txBillRow(b).step); } }
     ], bs, { sortIndex: -1, limit: 50 });
   }
+  /* under the form: what the person already holds (an Expense Advance adds to it, taken as the opening balance) or has allocated */
+  function caBalHint() {
+    var bl = $("caBalLn"); if (!bl) return; var cid = ($("caCo") || {}).value || "", t = ($("caType") || {}).value || "car", who = adm() ? ($("caWho") || {}).value : meId(), nm = "You";
+    if (!adm() && $("caFor")) { var fv = $("caFor").value; if (fv === "new") { who = ""; nm = "A new name"; } else if (fv && fv !== meId()) { who = fv; nm = vForName(fv) || "This person"; } }
+    if (adm() && who) nm = userLabel(who) || "This person";
+    bl.hidden = !cid; if (!cid) return; bl.textContent = "";
+    var co = coLabel(cid);
+    if (t === "ear") {
+      if (!who) { bl.textContent = nm + " holds no expense advance for " + co + " yet. This advance will be their opening balance."; return; }
+      var cb = cashBalance(who, cid); bl.textContent = (nm === "You" ? "You hold " : nm + " holds ") + money(cb.free) + " of expense advance for " + co + " now" + (cb.pending ? " (" + money(cb.pending) + " more in vouchers waiting)" : "") + ". It is taken as the opening balance; this advance adds to it.";
+    } else {
+      var op = who ? allocList(cid, who) : [], rem = round2(op.reduce(function (s0, a) { return s0 + allocRemain(a); }, 0));
+      bl.textContent = op.length ? (nm === "You" ? "You have " : nm + " has ") + plural(op.length, "allocation") + " open for " + co + ": " + money(rem) + " still available with the Financier. This request adds to it." : (nm === "You" ? "You have " : nm + " has ") + "no cash allocation open for " + co + ". The amount approved stays with the Financier and is paid out against approved vouchers and bills.";
+    }
+  }
   function caSend() {
     if (CA.busy) return;
     if (tidyPending("caPur")) { tidyPending("caPur").then(caSend); return; }
@@ -14016,12 +14090,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var apv = !tly() && $("caApprSel") ? $("caApprSel").value : defaultApprover(who); if (!tly() && !adm() && $("caApprSel") && !apv) { errOn("caApprSel", "Choose the final approver."); ok = false; }
     if (tly() && CA.D) { CA.D.companyId = cid; tlyPplErrs(CA.D, "caP").forEach(function (e) { errOn(e[0], e[1]); ok = false; }); if (ok) { who = CA.D.ppl.prep; whoName = personName(who); apv = CA.D.ppl.a2; } }
     if (!ok) return;
-    var id = newId("ca"), now = Date.now(), doc = { uid: who, name: adm() ? userLabel(who) : whoName || preparedByText(), companyId: cid, amount: round2(n), purpose: pur, approverId: apv || defaultApprover(who) || "", status: "pending", requestedAt: now, requestedBy: meId(), updatedAt: now };
+    var id = newId("ca"), now = Date.now(), doc = { uid: who, name: adm() ? userLabel(who) : whoName || preparedByText(), companyId: cid, amount: round2(n), purpose: pur, approverId: apv || defaultApprover(who) || "", status: "pending", requestedAt: now, requestedBy: meId(), updatedAt: now, rtype: tly() ? "ear" : (($("caType") || {}).value || "car") };
     if (tly()) { doc.tlyPpl = tlyPplDoc(CA.D.ppl); doc.approver1Id = CA.D.ppl.a1 || ""; doc.apprReq = { at: now, by: meId(), byName: pnm(preparedByText()) }; }
     if (adm()) Object.assign(doc, { status: "approved", approvedAmount: round2(n), approvedAt: now, approvedBy: meId(), note: "Requested by the admin" });
     CA.busy = true; $("caSend").disabled = true;
     retry(function () { return S.db.doc("cashadv/" + id).set(doc); }).then(function () {
-      S.cashadv[id] = Object.assign({ id: id }, doc); $("caAmt").value = ""; $("caPur").value = ""; if ($("caFor")) { fillSelect($("caFor"), prepOpts(), meId()); $("caForNew").value = ""; $("caForNew").closest(".f").hidden = true; } toast(adm() ? money(doc.amount) + " approved for " + doc.name + ". It counts once they mark it received." : "Request for " + money(doc.amount) + (tly() ? " sent for approval." : " sent to the admin.")); if (tly()) { $("caReqForm").textContent = ""; } renderCash(); renderNav();
+      S.cashadv[id] = Object.assign({ id: id }, doc); $("caAmt").value = ""; $("caPur").value = ""; caBalHint(); if ($("caFor")) { fillSelect($("caFor"), prepOpts(), meId()); $("caForNew").value = ""; $("caForNew").closest(".f").hidden = true; } toast(adm() ? money(doc.amount) + " approved for " + doc.name + ". It counts once they mark it received." : "Request for " + money(doc.amount) + (tly() ? " sent for approval." : " sent to the admin.")); if (tly()) { $("caReqForm").textContent = ""; } renderCash(); renderNav();
     }, function (e) { toast(explain(e)); }).then(function () { CA.busy = false; $("caSend").disabled = false; });
   }
   function caUpdate(a, patch, msg) {
@@ -14037,10 +14111,10 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     body.appendChild(fld("Amount to give (₹)", inp("caApAmt", fmtInput(a.amount), { inputmode: "decimal", class: "field num" }), "Asked for " + money(a.amount) + ". Change it to approve a different amount."));
     body.appendChild(fld("Note (optional)", inp("caApNote", "", { maxlength: "200" })));
     behalfField(body, caApproverId(a));
-    popForm("Approve cash advance", caName(a) + ", " + coLabel(a.companyId) + ". " + (a.purpose || ""), body, "Approve", function () {
+    popForm("Approve " + caTypeName(a).toLowerCase(), caName(a) + ", " + coLabel(a.companyId) + ". " + (a.purpose || "") + (caType(a) === "car" ? " The amount stays with the Financier, reserved for them, and is paid out against their approved vouchers and bills." : ""), body, "Approve", function () {
       errClear(body); var n = num($("caApAmt").value), bh = behalfRead(); if (!bh) return false;
       if (n == null || n <= 0) { errOn("caApAmt", "Enter the amount to give."); return false; }
-      return caUpdate(a, Object.assign({ status: "approved", approvedAmount: round2(n), approvedAt: Date.now(), approvedBy: meId(), note: $("caApNote").value.trim() }, bh), "Approved " + money(round2(n)) + " for " + caName(a) + ". It counts once they mark it received.");
+      return caUpdate(a, Object.assign({ status: "approved", approvedAmount: round2(n), approvedAt: Date.now(), approvedBy: meId(), note: $("caApNote").value.trim() }, bh), "Approved " + money(round2(n)) + " for " + caName(a) + (caType(a) === "car" ? ": allocated with the Financier." : ". It counts once they mark it received."));
     });
   }
   function armed(btn) { if (btn.getAttribute("data-arm") === "1") return true; var lb = btn.textContent; btn.setAttribute("data-arm", "1"); btn.textContent = "Click again"; setTimeout(function () { if (btn.isConnected) { btn.removeAttribute("data-arm"); btn.textContent = lb; } }, 4000); return false; }
@@ -14114,7 +14188,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   var AQ = { sel: {}, busy: false };
   function arCan(cid) { return canStep("txn", cid) && !adm(); }
   function arSees(a) { return canSee(a.companyId) && (adm() || canStep("txn", a.companyId)) && payHere(a); }
-  function arRows(cid) { return caList().filter(function (a) { return a.status === "approved" && arSees(a) && (!cid || a.companyId === cid); }); }
+  function arRows(cid) { return caList().filter(function (a) { return a.status === "approved" && caType(a) !== "car" && arSees(a) && (!cid || a.companyId === cid); }); }
+  function arAllocs(cid) { return allocList(cid).filter(arSees).sort(function (a, b) { return (a.approvedAt || 0) - (b.approvedAt || 0); }); }
   function arRets(cid) { return caList().filter(function (a) { return a.status === "returning" && arSees(a) && (!cid || a.companyId === cid); }); }
   function arBadge() { return arRows("").length + arRets("").length; }
   /* The cash a financier holds for a company: what they withdrew, less what they handed over from it. Not tied to any one
@@ -14125,7 +14200,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     caList().forEach(function (a) { if (a.companyId !== cid) return;
       if (a.fromWd && a.handBy === uid && a.status === "received") h += Number(a.approvedAmount) || 0;
       if (a.wdId && a.wdBy === uid && (a.status === "approved" || a.fromWd)) w += Number(a.approvedAmount) || 0; });
-    return round2(w - h);
+    return round2(w - h + regReturns(cid, uid) - regCashPays(cid, uid));
   }
   function arPeople(rs) {
     var m = {}, out = [];
@@ -14139,14 +14214,15 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var cid = sel.value, rows = arRows(cid), rets = arRets(cid), me = meId();
     var sum = function (xs, f) { return round2(xs.reduce(function (s0, a) { return s0 + f(a); }, 0)); }, amt = function (a) { return Number(a.approvedAmount) || 0; };
     var cosAll = sorted().filter(function (c) { return (!cid || c.id === cid) && (adm() || canStep("txn", c.id)); }), heldAll = round2(cosAll.reduce(function (s0, c) { return s0 + wdHeld(c.id, me); }, 0));
-    statBoxes($("arStats"), [["To hand over", money(sum(rows, amt)), plural(arPeople(rows).length, "person") + ", " + plural(rows.length, "advance")], ["Cash with you", money(heldAll), "Withdrawn, not handed over yet"], ["Being returned", money(sum(rets, function (a) { return Number(a.amount) || 0; })), plural(rets.length, "person")]]);
+    var allocsAll = arAllocs(cid), allocRem = round2(allocsAll.reduce(function (s0, a) { return s0 + Math.max(0, allocRemain(a)); }, 0)), unalloc = round2(cosAll.reduce(function (s0, c) { return s0 + wdHeld(c.id, me) - regCommitted(c.id); }, 0));
+    statBoxes($("arStats"), [["To hand over", money(sum(rows, amt)), plural(arPeople(rows).length, "person") + ", " + plural(rows.length, "advance")], ["Cash with you", money(heldAll), "Withdrawn and returned, less handed over and paid in cash"], ["Allocated", money(allocRem), plural(allocsAll.length, "open allocation") + ", still to be used"], ["Unallocated cash", money(unalloc), unalloc < -0.004 ? "Short: withdraw more" : "Not reserved for anyone"], ["Being returned", money(sum(rets, function (a) { return Number(a.amount) || 0; })), plural(rets.length, "person")]]);
     var box = $("arList"); box.textContent = "";
     var any = false;
     cosAll.forEach(function (c) {
-      var rs = rows.filter(function (a) { return a.companyId === c.id; }), held = wdHeld(c.id, me); if (!rs.length && !(held > 0.004)) return; any = true;
-      var ppl = arPeople(rs), need = sum(rs, amt), short = round2(need - held);
+      var rs = rows.filter(function (a) { return a.companyId === c.id; }), held = wdHeld(c.id, me), als = allocsAll.filter(function (a) { return a.companyId === c.id; }); if (!rs.length && !(held > 0.004) && !als.length) return; any = true;
+      var ppl = arPeople(rs), need = sum(rs, amt), short = round2(need - held), alRem = round2(als.reduce(function (s0, a) { return s0 + Math.max(0, allocRemain(a)); }, 0)), un = round2(held - regCommitted(c.id));
       var card = el("div", { class: "card mkco" }), hd = el("div", { class: "cohead" });
-      hd.appendChild(el("b", null, c.name)); hd.appendChild(el("span", null, (rs.length ? money(need) + " to hand over to " + plural(ppl.length, "person") : "Nothing waiting") + " · cash with you " + money(held))); card.appendChild(hd);
+      hd.appendChild(el("b", null, c.name)); hd.appendChild(el("span", null, (rs.length ? money(need) + " to hand over to " + plural(ppl.length, "person") : "Nothing to hand over") + " · cash with you " + money(held) + " · allocated " + money(alRem) + " · unallocated " + money(un))); card.appendChild(hd);
       if (rs.length) {
         var tb = el("div", { class: "list scroll" }); card.appendChild(tb);
         sortTable(tb, "ar_" + c.id, [
@@ -14159,6 +14235,17 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
               if (!tly()) { var d = el("button", { class: "btn sm" }, "Pay Directly"); d.addEventListener("click", function () { arHand(g, "neft"); }); w.appendChild(d); }
               td.appendChild(w); } }]), ppl, { sortIndex: -1 });
       }
+      if (als.length) {
+        card.appendChild(el("h3", { class: "aph", style: "margin:14px 16px 6px" }, "Cash Allocations (" + als.length + ")"));
+        var ta = el("div", { class: "list scroll" }); card.appendChild(ta);
+        sortTable(ta, "aral_" + c.id, [
+          { label: "Person", kind: "co", cell: function (a, td) { td.appendChild(el("b", null, caName(a))); sub(td, "Approved " + fmtDay(a.approvedAt) + (a.purpose ? " · " + a.purpose : "")); if (a.note) sub(td, "Approver: " + a.note); } },
+          { label: "Allocated", cls: "r num", cell: function (a, td) { td.appendChild(el("b", null, money(allocTotal(a)))); var mi = allocMovedIn(a), mo = allocMovedOut(a); if (mi || mo) sub(td, "Approved " + money(a.approvedAmount) + (mi ? " + " + money(mi) + " moved in" : "") + (mo ? " − " + money(mo) + " moved out" : "")); } },
+          { label: "Used", cls: "r num", cell: function (a, td) { var ps = allocPays(a); txt(td, money(allocUsed(a))); sub(td, ps.length ? plural(ps.length, "payment") + " in Payment Entry" : "No payment yet"); } },
+          { label: "Remaining", cls: "r num", cell: function (a, td) { var r = allocRemain(a); td.appendChild(el("b", r < -0.004 ? { style: "color:var(--bad)" } : null, money(r))); if (r < -0.004) sub(td, "Paid over the allocation", "color:var(--bad)"); } },
+          { label: "", kind: "act", cls: "r", cell: function (a, td) { if (!arCan(c.id)) return; var w = el("div", { class: "acts" }), mv = el("button", { class: "btn sm" }, "Move"), cl = el("button", { class: "btn sm" }, "Close"); mv.addEventListener("click", function () { arMove(a, als); }); cl.addEventListener("click", function () { arCloseAlloc(a, cl); }); w.appendChild(mv); w.appendChild(cl); td.appendChild(w); } }
+        ], als, { sortIndex: -1 });
+      }
       if (arCan(c.id)) {
         var ft = el("div", { class: "form-foot", style: "padding:10px 16px" }), go = el("button", { class: "btn" + (short > 0.004 ? " primary" : ""), type: "button" }, "Withdraw Cash for " + (c.shortName || c.name));
         go.addEventListener("click", function () { arWithdraw(c.id, Math.max(0, short)); });
@@ -14166,7 +14253,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       }
       box.appendChild(card);
     });
-    if (!any) box.appendChild(el("div", { class: "card empty" }, "No approved cash advances are waiting. An advance appears here once the approver passes it."));
+    if (!any) box.appendChild(el("div", { class: "card empty" }, "No approved advances or allocations are waiting. They appear here once the approver passes them."));
     $("arRetN").textContent = rets.length ? "(" + rets.length + ")" : ""; box = $("arRet");
     if (!rets.length) { box.textContent = ""; box.appendChild(el("div", { class: "empty" }, "Nobody is returning cash.")); }
     else sortTable(box, "arRet", [
@@ -14184,6 +14271,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (a.status === "returned" && (a.returnedAt || 0) >= since) done.push({ k: "ret", x: a, xs: [a], at: a.returnedAt, amt: Number(a.returnedAmount) || 0, cid: a.companyId });
       else if (a.status === "received" && (a.receivedAt || 0) >= since) { var key = a.handId || a.id; if (seen[key]) { seen[key].xs.push(a); seen[key].amt = round2(seen[key].amt + (Number(a.approvedAmount) || 0)); return; }
         seen[key] = { k: "paid", x: a, xs: [a], at: a.receivedAt, amt: Number(a.approvedAmount) || 0, cid: a.companyId }; done.push(seen[key]); }
+      if (caType(a) === "car") { (a.allocMoves || []).forEach(function (m) { if (m.dir === "out" && (m.at || 0) >= since) done.push({ k: "move", x: a, xs: [a], m: m, at: m.at, amt: Number(m.amt) || 0, cid: a.companyId }); }); if (a.allocClosed && (a.allocClosed.at || 0) >= since) done.push({ k: "close", x: a, xs: [a], at: a.allocClosed.at, amt: Number(a.allocClosed.remaining) || 0, cid: a.companyId }); }
     });
     done.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
     $("arDoneN").textContent = done.length ? "(" + done.length + ")" : ""; box = $("arDone");
@@ -14191,11 +14279,14 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     else sortTable(box, "arDone", [
       { label: "Person", kind: "co", cell: function (r, td) { td.appendChild(el("b", null, r.k === "wd" ? (r.x.name || "Financier") : caName(r.x))); sub(td, coLabel(r.cid)); } },
       { label: "What", cell: function (r, td) { var a = r.x, rt = r.k === "ret";
+          if (r.k === "move") { td.appendChild(el("span", { class: "tag stg s-generated" }, "Allocation moved")); sub(td, fmtDay(r.m.at) + " · to " + (r.m.otherName || "unallocated cash") + (r.m.temp ? " · temporary" : "") + (r.m.note ? " · " + r.m.note : "")); return; }
+          if (r.k === "close") { td.appendChild(el("span", { class: "tag stg s-generated" }, "Allocation closed")); sub(td, fmtDay(r.at) + (a.allocClosed.note ? " · " + a.allocClosed.note : "") + " · " + money(r.amt) + " released"); return; }
           td.appendChild(el("span", { class: "tag stg s-payment" }, r.k === "wd" ? "Cash withdrawn" : rt ? "Cash returned" : a.fromWd || a.wdId ? "Handed over" : "Paid")); txt(td, "");
           var m = modeInfo(a.payMode), wm = { cheque: "Self cheque", atm: "ATM / card", counter: "Bank counter" }[a.wdMode];
           sub(td, r.k === "wd" ? fmtDate(a.wdDate) + (wm ? " · " + wm : "") + (a.wdRef ? " · " + a.wdRef : "") : fmtDate(rt ? a.returnedDate : a.receivedDate) + (m ? " · " + m[1] : "") + (a.payRef ? " · " + a.payRef : "") + (r.xs.length > 1 ? " · " + plural(r.xs.length, "advance") : "")); } },
       { label: "Amount", cls: "r num", cell: function (r, td) { td.appendChild(el("b", null, r.k === "ret" ? "(" + money(r.amt) + ")" : money(r.amt))); } },
       { label: "", kind: "act", cls: "r", cell: function (r, td) {
+          if (r.k === "move" || r.k === "close") return;
           var a = r.x, by = r.k === "wd" ? a.uid : r.k === "ret" ? a.returnedBy : a.receivedBy, at = r.k === "wd" ? a.requestedAt : r.k === "ret" ? a.returnedAt : a.receivedAt;
           if (!(adm() || (by === meId() && Date.now() - (at || 0) < TX_DAYS * 864e5))) return; var u = el("button", { class: "btn sm" }, "Undo");
           u.addEventListener("click", function () { if (!armed(u)) return;
@@ -14205,6 +14296,35 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
             else arUnhand(r.xs); });
           td.appendChild(u); } }
     ], done, { sortIndex: -1 });
+  }
+  /* Move part of an allocation to another person's open allocation in the same company (or release it to unallocated cash):
+     recorded on both allocations (allocMoves), with a note and whether it is temporary. */
+  function arMove(a, als) {
+    if (AQ.busy) return; var body = el("div", { class: "mform" }), rem = allocRemain(a);
+    body.appendChild(fld("Amount to move (₹)", inp("arMvAmt", rem > 0 ? fmtInput(rem) : "", { inputmode: "decimal", class: "field num" }), money(rem) + " of " + caName(a) + "'s allocation is still unused."));
+    var to = el("select", { class: "field", id: "arMvTo" }); fillSelect(to, [["", "Release to unallocated cash"]].concat(als.filter(function (b) { return b.id !== a.id; }).map(function (b) { return [b.id, caName(b) + " (" + money(allocRemain(b)) + " left" + (b.purpose ? ", " + b.purpose.slice(0, 40) : "") + ")"]; })), ""); body.appendChild(fld("To", to, "Another person's open allocation for " + coLabel(a.companyId) + ", or back to the company's unallocated cash."));
+    var tl = el("label", { class: "check" }), tc = el("input", { type: "checkbox", id: "arMvTemp" }); tl.appendChild(tc); tl.appendChild(document.createTextNode(" Temporary: meant to come back to " + caName(a) + " later (noted, not automatic)")); body.appendChild(tl);
+    body.appendChild(fld("Reason", inp("arMvNote", "", { maxlength: "160" }), "Why the cash is used elsewhere."));
+    popForm("Move allocation", "From " + caName(a) + ", " + coLabel(a.companyId) + ". The original allocation, what moved and what remains stay on record.", body, "Move", function () {
+      errClear(body); var n = num($("arMvAmt").value), tid = to.value, note = $("arMvNote").value.trim(), temp = tc.checked, tgt = tid ? S.cashadv[tid] : null;
+      if (n == null || n <= 0) { errOn("arMvAmt", "Enter the amount."); return false; }
+      if (n > rem + 0.004) { errOn("arMvAmt", "Only " + money(rem) + " is left to move."); return false; }
+      if (!note) { errOn("arMvNote", "Say why."); return false; }
+      var now = Date.now(), me = meId(), nm = adm() ? (S.me && S.me.name) || "Admin" : preparedByText();
+      var out = (a.allocMoves || []).concat([{ at: now, by: me, byName: nm, dir: "out", amt: round2(n), other: tid || "", otherName: tgt ? caName(tgt) : "", temp: temp, note: note }]);
+      AQ.busy = true;
+      return retry(function () { return S.db.doc("cashadv/" + a.id).update({ allocMoves: out, updatedAt: now, updatedBy: me }); }).then(function () { a.allocMoves = out;
+        if (!tgt) return; var inn = (tgt.allocMoves || []).concat([{ at: now, by: me, byName: nm, dir: "in", amt: round2(n), other: a.id, otherName: caName(a), temp: temp, note: note }]);
+        return retry(function () { return S.db.doc("cashadv/" + tgt.id).update({ allocMoves: inn, updatedAt: now, updatedBy: me }); }).then(function () { tgt.allocMoves = inn; });
+      }).then(function () { AQ.busy = false; invalidate(); toast(money(round2(n)) + (tgt ? " moved to " + caName(tgt) + "'s allocation." : " released to unallocated cash.")); renderAdvReq(); renderNav(); return true; }, function (e) { AQ.busy = false; toast(explain(e)); return false; });
+    });
+  }
+  /* Close an allocation: whatever is unused goes back to the company's unallocated cash; the record stays in the history. */
+  function arCloseAlloc(a, btn) {
+    if (AQ.busy || !armed(btn)) return; var rem = allocRemain(a), now = Date.now(), me = meId();
+    if (rem < -0.004) { toast("Payments exceed this allocation by " + money(-rem) + ". Move cash into it first, then close it."); return; }
+    AQ.busy = true; var p = { status: "closed", allocClosed: { at: now, by: me, byName: adm() ? (S.me && S.me.name) || "Admin" : preparedByText(), remaining: rem }, updatedAt: now, updatedBy: me };
+    retry(function () { return S.db.doc("cashadv/" + a.id).update(p); }).then(function () { S.cashadv[a.id] = Object.assign({}, a, p); AQ.busy = false; invalidate(); toast(caName(a) + "'s allocation closed; " + money(rem) + " back in unallocated cash."); renderAdvReq(); renderNav(); }, function (e) { AQ.busy = false; toast(explain(e)); });
   }
   /* Cash withdrawn from the bank for a company: any amount, held by the financier until handed over. */
   function arWithdraw(cid, suggest) {

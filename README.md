@@ -935,3 +935,18 @@ row (SOLAR or WIND) is billed and the wording on the bill.
 - **Sign-in after a long gap:** a stored session whose token has expired is refreshed before the access check (`admit`), and an
   access check that still answers "JWT expired" refreshes once and retries; if the refresh fails the person is signed out cleanly and
   asked to sign in again (instead of "Couldn't check your access (JWT expired)").
+- **Advances and allocations (live, 11 Nov 2026).** A request is one of two kinds (`cashadv.rtype`; missing = "ear"):
+  **Expense Advance** ("ear": the existing cash advance, cash handed to the person, for urgent outstation expenses) or
+  **Cash Allocation** ("car", the normal way in Erode: the approved amount stays with the Financier, reserved for the person, and is
+  paid out in Payment Entry against their approved vouchers and bills). The Expenses sub tab is **Advance / Allocation**; the form has
+  **Type of Request** (Cash Allocation first) and a line under it that follows the company, person and type: the expense advance
+  the person holds (taken as the opening balance, the new advance adds to it) or their open allocations (`caBalHint`). Approvals'
+  tab is **Advances / Allocation Requests**; each request carries its type. An allocation is the cashadv doc itself: approved amount
+  + `allocMoves` in − out (`allocTotal`), the payments linked to it (`transactions.allocId`, set by `allocFor` when a payment is
+  made: the beneficiary's oldest open allocation; the beneficiary is the preparer of the voucher, bill, proforma or duty paid),
+  `allocRemain`; **Close** (`allocClosed`, status "closed") releases what is left. **Finance › Advance Requests** shows per company:
+  To hand over (expense advances only), Cash with you, Allocated (remaining), Unallocated cash, Being returned; a **Cash
+  Allocations** table (Allocated, Used, Remaining, Move, Close); moves and closes in Done, Last 14 Days. **Move** sends part of one
+  person's allocation to another's (or releases it), with a reason and a "temporary" note (recorded, not automatic). The Financier's
+  **cash register** (`wdHeld`) now also adds cash returned to them and takes off cash payments they recorded in Payment Entry, both
+  from `CASH_REG_FROM` (11 Nov 2026). **Payments › Advances** adds Allocated and Financier cash boxes and a Cash Allocations table.

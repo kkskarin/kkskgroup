@@ -1702,7 +1702,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   </section>
   <section id="secAdvReq" hidden>
     <div class="head">
-      <div><h2 id="arTitle">Advance Requests</h2><p class="sub" id="arSub">Cash advances the approver has passed, company by company. Withdraw cash for the company (any amount; it is held by you), then hand each person the total of their advances in one go; or pay a person straight to their account. Also the cash people are returning.</p></div>
+      <div><h2 id="arTitle">Advance / Allocation Requests</h2><p class="sub" id="arSub">Expense advances to hand over and cash allocations held by you, company by company. Withdraw cash for the company (any amount; it is held by you). Hand each person their approved expense advances, or pay them straight to their account. Allocations stay with you and are paid out against approved vouchers and bills in Payment Entry; move or close an allocation here. Also the cash people are returning.</p></div>
       <span class="grow"></span>
       <select class="field" id="arCo" aria-label="Filter by company" style="width:auto;min-width:200px"></select>
     </div>
@@ -2081,7 +2081,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
   /* Bills & Vouchers only enters: no checking reports (each entry goes to Approvals by itself), no proformas or imports. */
   var EXP_TABS = { h: "Expenses", tabs: APP === "bnv" ? [["All Entries", "All Bills & Vouchers"], ["Bills", "Enter Bills"], ["Cash Voucher", "Cash Vouchers"], ["Cash Advance", "Advance / Allocation"]] : [["Bills", "Enter Bills"], ["Checking Report", "Bill Checking"], ["Plan Advance", "Proformas"], ["Imports", "Imports"], ["Advance Report", "Advance Checking"], ["Cash Voucher", "Cash Vouchers"], ["Voucher Checking Report", "Voucher Checking"], ["Cash Advance", "Advance / Allocation"]] };
   var ACC_TABS = { h: "Accounts", tabs: [["Accounts", "Accounting"], ["Notes", "Debit & Credit Notes"], ["Ledger Books", "Ledger Statements"]] };
-  var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Requests", "Advance Requests"], ["Advance Summary", "Advances"], ["Salary", "Salary"]] };
+  var PAY_TABS = { h: "Payments", tabs: [["Mark Transaction", "Payment Entry"], ["Advance Requests", "Advance / Allocation Requests"], ["Advance Summary", "Advances"], ["Salary", "Salary"]] };
   /* Masters: its own heading. Companies first, then (Renewable Energy) Consumers and PPA Rates, then Vendors and Ledgers. */
   /* Cheque Templates: where the financier pays (Renewable Energy pays its own; Finance pays the other divisions). */
   var CHQ_TAB = ["Cheques", "Cheque Templates", 0, "m"], BANK_TAB = ["Banks", "Bank Accounts", 0, "m"], OTHERS_TAB = ["Others", "Others", 0, "m"];

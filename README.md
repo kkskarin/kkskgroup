@@ -855,7 +855,7 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   tab is **Advances / Allocation Requests**; each request carries its type. An allocation is the cashadv doc itself: approved amount
   + `allocMoves` in − out (`allocTotal`), the payments linked to it (`transactions.allocId`, set by `allocFor` when a payment is
   made: the beneficiary's oldest open allocation; the beneficiary is the preparer of the voucher, bill, proforma or duty paid),
-  `allocRemain`; **Close** (`allocClosed`, status "closed") releases what is left. **Finance › Advance Requests** shows per company:
+  `allocRemain`; **Close** (`allocClosed`, status "closed") releases what is left. **Finance › Advance / Allocation Requests** (tab and title renamed) shows per company:
   To hand over (expense advances only), Cash with you, Allocated (remaining), Unallocated cash, Being returned; a **Cash
   Allocations** table (Allocated, Used, Remaining, Move, Close); moves and closes in Done, Last 14 Days. **Move** sends part of one
   person's allocation to another's (or releases it), with a reason and a "temporary" note (recorded, not automatic). The Financier's

@@ -18680,6 +18680,8 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var taxT = type === "Freight & Transport" || (type === "Self Invoice" && rcm), P = !taxT, wide = false; /* Supply Of is on every voucher, so a Cash Voucher prints it too */
     var INK = [15, 23, 42], HEAD = [30, 41, 59], BODY = [51, 65, 85], MUTE = [100, 116, 139], SUB = [71, 85, 105], FILL = [241, 245, 249];
     var PT = 25.4 / 72, TH = 0.265, FR = 0.79, X0 = 3.97, XI = 4.76, XR = 205.85, PH = doc.internal.pageSize.getHeight();
+    /* cell contents (S.No, description, amount, TDS row, ledger name, Supply Of): bold, 20% larger than before (9.9 pt), 25% more line spacing, a little letter spacing */
+    var CELL_S = 9.9, CELL_LH = 4.3, CELL_EM = 0.03;
     function F(font, st, size, col) { doc.setFont(font, st); doc.setFontSize(size); doc.setTextColor(col[0], col[1], col[2]); }
     function W(s0, em) { return doc.getTextWidth(s0) + (em ? em * doc.getFontSize() * PT * s0.length : 0); }
     /* text with CSS-style letter spacing (em), aligned left, centre or right */
@@ -18738,12 +18740,12 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     lab("PREPARED BY", 130.44, yB + 12.96, "center"); sigAt(sig.prep, 130.44, yB + 10.6, 27, 9.8); vl(145.52, yB, yB + hB);
     var lgN = ledText(v.ledgers) || "-", lgX0 = 145.79;
     if (!wide) {
-      F("Lato", "bold", 8.25, INK); T("Supply Of", 160.87, yB + 6.61, "center"); T(v.supplyOf || "-", 160.87, yB + 10.05, "center");
+      F("Lato", "bold", 8.25, INK); T("Supply Of", 160.87, yB + 6.4, "center"); F("Lato", "bold", CELL_S, INK); T(v.supplyOf || "-", 160.87, yB + 10.7, "center", CELL_EM);
       vl(175.95, yB, yB + hB); lgX0 = 176.21;
     }
-    var lgS = wide ? 9.75 : 8.25, lgLH = wide ? 3.97 : 3.44, lgC = (lgX0 + XR) / 2; F("Lato", "bold", lgS, INK);
-    var lgL = doc.splitTextToSize(lgN, XR - lgX0 - 4).slice(0, 2), lgY = yB + (wide ? 5.42 : 5.82) - (lgL.length - 1) * (wide ? 1.98 : 1.6);
-    lab("LEDGER NAME", lgC, lgY, "center", 0.065); F("Lato", "bold", lgS, INK); lgL.forEach(function (s0, i) { T(s0, lgC, lgY + (wide ? 4.76 : 4.23) + i * lgLH, "center"); });
+    var lgS = wide ? 11.7 : CELL_S, lgLH = wide ? 4.96 : CELL_LH, lgC = (lgX0 + XR) / 2; F("Lato", "bold", lgS, INK);
+    var lgL = doc.splitTextToSize(lgN, (XR - lgX0 - 4) * 0.93).slice(0, 2), lgY = yB + (wide ? 5.1 : 5.5) - (lgL.length - 1) * (wide ? 2.48 : 2.0);
+    lab("LEDGER NAME", lgC, lgY, "center", 0.065); F("Lato", "bold", lgS, INK); lgL.forEach(function (s0, i) { T(s0, lgC, lgY + (wide ? 5.3 : 4.7) + i * lgLH, "center", CELL_EM); });
     hl(yD - TH);
     /* ---- description head ---- */
     box(XI, yD, XR, yD + hD, FILL);
@@ -18755,16 +18757,16 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
     var tH = tds ? 5.83 : 0, rH = (hY - (tds ? tH + TH : 0) - (lines.length - 1) * TH) / lines.length;
     lines.forEach(function (ln, i) {
       var ry = yY + i * (rH + TH), cy = ry + rH / 2;
-      F("Lato", "normal", 8.25, BODY); T(String(i + 1), 9.5, cy + 0.7, "center");
-      var dl = doc.splitTextToSize(String(ln.d || ""), 155).slice(0, rH > 12 ? 3 : rH > 8 ? 2 : 1); dl.forEach(function (s0, k) { T(s0, 95.25, cy + 0.7 + (k - (dl.length - 1) / 2) * 3.44, "center"); });
-      F("LatoSemi", "normal", 8.25, INK); T(money(ln.amt), 191.03, cy + 0.7, "center");
+      F("Lato", "bold", CELL_S, INK); T(String(i + 1), 9.5, cy + 0.85, "center", CELL_EM);
+      var dl = doc.splitTextToSize(String(ln.d || ""), 143).slice(0, rH > 14 ? 3 : rH > 9.5 ? 2 : 1); dl.forEach(function (s0, k) { T(s0, 95.25, cy + 0.85 + (k - (dl.length - 1) / 2) * CELL_LH, "center", CELL_EM); });
+      F("Lato", "bold", CELL_S, INK); T(money(ln.amt), 191.03, cy + 0.85, "center", CELL_EM);
       if (i < lines.length - 1) hl(ry + rH);
     });
     if (tds) {
       var ty = yY + hY - tH; hl(ty - TH);
-      F("Lato", "normal", 8.25, BODY); T(String(lines.length + 1), 9.5, ty + tH / 2 + 0.8, "center");
-      F("Lato", "normal", 6, MUTE); T("LESS: TDS" + (v.tdsSection ? " (" + v.tdsSection + ")" : ""), 173.64, ty + tH / 2 + 0.27, "right", 0.085);
-      F("LatoSemi", "normal", 7.5, INK); TI(money(tds), 191.03, ty + tH / 2 + 0.8, "center");
+      F("Lato", "bold", CELL_S, INK); T(String(lines.length + 1), 9.5, ty + tH / 2 + 0.95, "center", CELL_EM);
+      F("Lato", "bold", 7.2, MUTE); T("LESS: TDS" + (v.tdsSection ? " (" + v.tdsSection + ")" : ""), 173.64, ty + tH / 2 + 0.4, "right", 0.106);
+      F("Lato", "bold", 9, INK); TI(money(tds), 191.03, ty + tH / 2 + 0.95, "center");
     }
     hl(yW - TH);
     /* ---- amount in words · net payable ---- */

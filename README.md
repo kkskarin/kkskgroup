@@ -861,3 +861,6 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   person's allocation to another's (or releases it), with a reason and a "temporary" note (recorded, not automatic). The Financier's
   **cash register** (`wdHeld`) now also adds cash returned to them and takes off cash payments they recorded in Payment Entry, both
   from `CASH_REG_FROM` (11 Nov 2026). **Payments › Advances** adds Allocated and Financier cash boxes and a Cash Allocations table.
+- **Voucher print cells** (every voucher type): S.No, description, amount, the TDS row, the ledger name and the Supply Of value are
+  bold at 9.9 pt (20% up from 8.25), with 25% more line spacing (4.3 mm) and 0.03 em letter spacing (`CELL_S` / `CELL_LH` / `CELL_EM` in
+  `drawVoucher`); the description wraps at 143 mm to allow for the spacing.

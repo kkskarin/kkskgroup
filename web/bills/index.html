@@ -19501,7 +19501,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           var a = el("div", { class: "acts" });
           if (S.downloads) { var pd = el("button", { class: "btn sm", type: "button" }, "PDF"); pd.addEventListener("click", function () { solInvoicePdf(i, pd); }); a.appendChild(pd); }
           if (i.status !== "cancelled" && canSolar()) { var rc = el("button", { class: "btn sm primary", type: "button" }, "Record Receipt"); rc.addEventListener("click", function () { receiptForm(i); }); a.appendChild(rc); }
-          if (i.status !== "cancelled" && S.isAdmin && !invReceived(i).amt && !invReceived(i).tds) { var cx = el("button", { class: "btn sm danger", type: "button" }, "Cancel"); cx.addEventListener("click", function () { cancelInvoice(i); }); a.appendChild(cx); }
+          if (i.status !== "cancelled" && (S.isAdmin || canStep("solar", i.companyId)) && !invReceived(i).amt && !invReceived(i).tds) { var cx = el("button", { class: "btn sm danger", type: "button" }, "Cancel"); cx.addEventListener("click", function () { cancelInvoice(i); }); a.appendChild(cx); }
           td.appendChild(a); } }
     ], rows, { sortIndex: 0, sortDir: -1 });
     var rl = solList(SOL.rcpt).filter(function (r) { return SOL.inv[r.invoiceId]; }).sort(function (a, b) { return natCmp(b.date, a.date); }).slice(0, 50);

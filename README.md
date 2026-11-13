@@ -831,8 +831,8 @@ row (SOLAR or WIND) is billed and the wording on the bill.
   present, low net (< 20% of A). The HT bill is only compared (units credited, wheeling and every other charge, consumer):
   a difference is a check to look at, never a blocker, and billing goes ahead without it.
 - **Issue** (with Preview PDF before issuing): number SHORT-NNN-YY/YY (e.g. ARA-001-26/27), one series per company per financial year, suggested and editable when
-  issuing but never one already used; the PDF holds the company's pages. An issued invoice is locked; cancel it (admin, with a
-  reason) and issue a new one for corrections.
+  issuing but never one already used; the PDF holds the company's pages. An issued invoice is locked; cancel it (an admin or anyone with the Sales step for that company, with a
+  reason, while no receipt is recorded on it) and issue a new one for corrections.
 - **Banked and lapsed units**: the adjusted report is also read for the generator's units banked (windmills) and lapsed
   this month (its totals, else the consumers' figures, else units not adjusted: banked for a windmill, lapsed for solar).
   The Issue dialog shows them for each generator HTSC on the bill (windmill: banked and lapsed; solar: lapsed only), to

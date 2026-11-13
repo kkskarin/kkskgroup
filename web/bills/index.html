@@ -19030,7 +19030,7 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
           var a = el("div", { class: "acts" });
           if (S.downloads) { var pd = el("button", { class: "btn sm", type: "button" }, "PDF"); pd.addEventListener("click", function () { solInvoicePdf(i, pd); }); a.appendChild(pd); }
           if (i.status !== "cancelled" && canSolar()) { var rc = el("button", { class: "btn sm primary", type: "button" }, "Record Receipt"); rc.addEventListener("click", function () { receiptForm(i); }); a.appendChild(rc); }
-          if (i.status !== "cancelled" && (S.isAdmin || canStep("solar", i.companyId)) && !invReceived(i).amt && !invReceived(i).tds) { var cx = el("button", { class: "btn sm danger", type: "button" }, "Cancel"); cx.addEventListener("click", function () { cancelInvoice(i); }); a.appendChild(cx); }
+          if (i.status !== "cancelled" && (S.isAdmin || canStep("solar", i.companyId)) && !invReceived(i).amt && !invReceived(i).tds) { var ed = el("button", { class: "btn sm", type: "button" }, "Edit"); ed.addEventListener("click", function () { editInvoice(i); }); a.appendChild(ed); var cx = el("button", { class: "btn sm danger", type: "button" }, "Cancel"); cx.addEventListener("click", function () { cancelInvoice(i); }); a.appendChild(cx); }
           td.appendChild(a); } }
     ], rows, { sortIndex: 0, sortDir: -1 });
     var rl = solList(SOL.rcpt).filter(function (r) { return SOL.inv[r.invoiceId]; }).sort(function (a, b) { return natCmp(b.date, a.date); }).slice(0, 50);
@@ -19061,6 +19061,26 @@ html[data-theme="dark"] .t tbody tr:where(:nth-child(even)) td{background:transp
       if (a == null || a < 0 || (a === 0 && !t)) { errOn("srAmt", "Enter the amount received."); return false; }
       var id = newId("sr"), doc = { invoiceId: iv.id, companyId: iv.companyId, consumer: iv.consumer, date: d, amount: round2(a), tds: round2(t), bank: $("srBank").value.trim(), utr: $("srUtr").value.trim(), note: $("srNote").value.trim(), at: Date.now(), by: meId() };
       return retry(function () { return S.db.doc("solar_receipts/" + id).set(doc); }).then(function () { SOL.rcpt[id] = Object.assign({ id: id }, doc); var b = invReceived(iv).bal; toast("Receipt saved." + (b < -0.5 ? " That is " + rs(-b) + " more than the invoice." : b > 0.5 ? " " + rs(b) + " is still due." : "")); solRender(); return true; }, function (e) { toast(explain(e)); return false; });
+    });
+  }
+  /* Edit an issued invoice's number, date and credit days while nothing is received on it; the figures come from the month and stay. */
+  function editInvoice(iv) {
+    var body = el("div", { class: "mform" }), d0 = iv.date;
+    body.appendChild(fld("Invoice number", inp("seNo", iv.no, { maxlength: "40", class: "field mono" })));
+    body.appendChild(fld("Invoice date", inp("seDate", iv.date, { type: "date" })));
+    body.appendChild(fld("Payment due in (days)", inp("seDays", String(iv.creditDays != null ? iv.creditDays : Math.max(0, daysBetween(iv.date, iv.dueDate))), { inputmode: "numeric", class: "field num" }), "The due date follows from the invoice date."));
+    body.appendChild(el("p", { class: "sub", style: "margin:6px 0 0" }, "Units, rate and amounts come from the month\u2019s readings; correct those in Monthly Billing."));
+    popForm("Edit invoice " + iv.no, iv.consSnap.name + " \u00b7 " + monthLabel(iv.month), body, "Save", function () {
+      errClear(body); var no = $("seNo").value.trim().replace(/\s+/g, ""), dt = $("seDate").value, days = Math.round(n0($("seDays").value));
+      if (!no) { errOn("seNo", "Type the invoice number."); return false; }
+      if (!ymdOk(dt)) { errOn("seDate", "Choose the invoice date."); return false; }
+      if (dt > todayYmd()) { errOn("seDate", "The invoice date can\u2019t be in the future."); return false; }
+      if (days < 0) { errOn("seDays", "Days can\u2019t be below 0."); return false; }
+      var k = no.toUpperCase(); if (solList(SOL.inv).some(function (i) { return i.id !== iv.id && i.companyId === iv.companyId && String(i.no).replace(/\s+/g, "").toUpperCase() === k; })) { errOn("seNo", "Invoice " + no + " is already used by " + coLabel(iv.companyId) + "."); return false; }
+      var r = invReceived(iv); if (r.amt || r.tds) { toast("A receipt is recorded on this invoice; remove it first."); return false; }
+      var mm = /-(\d+)-(\d{2})\/(\d{2})$/.exec(no), up = { no: no, date: dt, dueDate: addDays(dt, days), creditDays: days, fy: mm ? mm[2] + "-" + mm[3] : fyOf(dt), seq: mm ? Number(mm[1]) : iv.seq, editedAt: Date.now(), editedBy: meId(), edits: (iv.edits || []).concat([{ at: Date.now(), by: meId(), byName: (S.me && S.me.name) || "", no: iv.no, date: iv.date, dueDate: iv.dueDate, creditDays: iv.creditDays }]) };
+      if (up.no === iv.no && up.date === iv.date && up.dueDate === iv.dueDate) { toast("Nothing changed."); return true; }
+      return retry(function () { return S.db.doc("solar_invoices/" + iv.id).update(up); }).then(function () { Object.assign(SOL.inv[iv.id], up); toast("Invoice " + up.no + " saved." + (up.no !== iv.no || up.date !== d0 ? " Download the PDF again." : "")); solRender(); return true; }, function (e) { toast(explain(e)); return false; });
     });
   }
   function cancelInvoice(iv) {
